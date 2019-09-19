@@ -1,0 +1,21 @@
+plugins {
+    id "java"
+    id "com.github.ManifestClasspath" version "0.1.0-RELEASE"
+}
+
+
+dependencies {
+    compile("org.springframework.boot:spring-boot-starter-web:2.1.0.RELEASE")
+    compile 'org.elasticsearch.client:elasticsearch-rest-high-level-client:6.5.3'
+    compile 'org.elasticsearch:elasticsearch:6.5.3'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.7'
+
+    annotationProcessor 'org.projectlombok:lombok:1.18.8'
+    compileOnly 'org.projectlombok:lombok:1.18.8'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.8'
+    testCompileOnly 'org.projectlombok:lombok:1.18.8'
+
+    compile group: 'commons-collections', name: 'commons-collections', version: '3.2.2'
+}
+
+
