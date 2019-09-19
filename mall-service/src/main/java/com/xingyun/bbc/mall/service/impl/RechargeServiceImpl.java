@@ -130,18 +130,18 @@ public class RechargeServiceImpl implements RechargeService{
 	}
 	
 	private int thirdPayTypeToTransThirdPayType(int thirdPayType){
-		if (thirdPayType == OrderPayEnum.ALIPAY.getValue()) {
+		if (thirdPayType == OrderPayEnum.ALI_PAY.getValue()) {
 			return UserAccountTransThdPayTypeEnum.ALIPAY_RECHARGE.getValue();
-		} else if (thirdPayType == OrderPayEnum.WEIXIN_PAY.getValue()) {
+		} else if (thirdPayType == OrderPayEnum.WECHAT_PAY.getValue()) {
 			return UserAccountTransThdPayTypeEnum.WEIXIN_RECHARGE.getValue();
 		} 
 		return -1;
 	}
 	
 	private int thirdPayTypeToUserDetailType(int thirdPayType) {
-		if (thirdPayType == OrderPayEnum.ALIPAY.getValue()) {
+		if (thirdPayType == OrderPayEnum.ALI_PAY.getValue()) {
 			return UserDetailTypeEnum.ALIPAY_RECHARGE.getValue();
-		} else if (thirdPayType == OrderPayEnum.WEIXIN_PAY.getValue()) {
+		} else if (thirdPayType == OrderPayEnum.WECHAT_PAY.getValue()) {
 			return UserDetailTypeEnum.WEIXIN_RECHARGE.getValue();
 		} 
 		return -1;

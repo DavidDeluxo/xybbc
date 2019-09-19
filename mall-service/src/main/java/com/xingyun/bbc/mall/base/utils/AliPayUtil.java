@@ -105,7 +105,7 @@ public class AliPayUtil implements ThirdPayUtil{
 		String payName = request.getParameter("buyer_id");
 		String recieveAccount = request.getParameter("seller_email");
 		String recieveName = request.getParameter("seller_id");
-		String thirdPayType = String.valueOf(OrderPayEnum.ALIPAY.getValue());
+		String thirdPayType = String.valueOf(OrderPayEnum.ALI_PAY.getValue());
 		return ThirdPayUtil.fillThirdPayInfo(forderId, thirdPayType, payAmount, payTime, thirdTradeNo, null, null, payAccount, payName, recieveAccount, recieveName);
 	}
 	

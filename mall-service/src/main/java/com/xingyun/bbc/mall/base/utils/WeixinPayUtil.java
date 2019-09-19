@@ -116,7 +116,7 @@ public class WeixinPayUtil implements ThirdPayUtil{
 		String bankCode = params.get("bank_type"); // 银行类型
 		String payAccount = params.get("openid");
 		String recieveAccount = params.get("mch_id"); // 商户号
-		String thirdPayType = String.valueOf(OrderPayEnum.WEIXIN_PAY.getValue()); 
+		String thirdPayType = String.valueOf(OrderPayEnum.WECHAT_PAY.getValue()); 
 		return ThirdPayUtil.fillThirdPayInfo(forderId, thirdPayType, payAmount, payTime, thirdTradeNo, bankCode, null, payAccount, null, recieveAccount, null);
 	}
 	

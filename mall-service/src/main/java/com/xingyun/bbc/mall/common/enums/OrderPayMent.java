@@ -3,11 +3,11 @@ package com.xingyun.bbc.mall.common.enums;
 public class OrderPayMent {
 	
 	public static enum PayTypeEnum {
-		BALANCE_PAY(1, "余额支付"),
-		CREDIT_PAY(2, "信用支付"),
-		ALI_PAY(3, "支付宝支付"),
-		WEIXIN_PAY(4, "微信支付"),
-		MIXTURE_PAY(5, "混合支付"),
+		BALANCE_PAY(1, "余额"),
+		ALI_PAY(2, "支付宝"),
+		WECHAT_PAY(3, "微信"),
+		CREDIT_PAY(4, "信用"),
+		MIX_PAY(5, "混合支付");
 		;
 
 		private final int value;
@@ -52,13 +52,13 @@ public class OrderPayMent {
 	
 	
 	public static enum OrderPayEnum {
-		BALANCE_PAY(1), // 余额支付
-		CREDIT_PAY(2), // 信用支付
-		ALIPAY(3), // 支付宝支付
-		WEIXIN_PAY(4), // 微信支付
-		MIXED_PAY(5), // 混合支付
+		BALANCE_PAY(1), //余额
+		ALI_PAY(2),//支付宝
+		WECHAT_PAY(3),//微信
+		CREDIT_PAY(4),//信用
+		MIX_PAY(5);//混合支付
 		;
-		// 支付方式 1余额,2信用,3支付宝,4微信支付,5混合支付'
+		// 支付方式 1余额,2支付宝,3微信,4信用,5混合支付
 
 		private int value;
 
