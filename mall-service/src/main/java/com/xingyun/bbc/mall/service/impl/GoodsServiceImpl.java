@@ -340,8 +340,7 @@ public class GoodsServiceImpl implements GoodsService {
         }
         this.addSoldOutCondition(criteria);
 
-        String dateScript = "DateFormat.getInstance().parse(doc['@timestamp'])";
-        String soldAmountScript = "DateFormat.getInstance().parse(doc['@timestamp']) + 1-Math.pow(doc['fsell_total'].value + 1, -1)";
+        String soldAmountScript = "1-Math.pow(doc['fsell_total'].value + 1, -1)";
         Map<String, Object> resultMap = esManager.functionQueryForResponse(criteria, soldAmountScript, CombineFunction.SUM);
         List<Map<String, Object>> resultList = (List<Map<String, Object>>) resultMap.get("resultList");
 
