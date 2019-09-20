@@ -422,6 +422,7 @@ public class WalletServiceImpl implements WalletService {
 
             if (!transferRes.isSuccess()) {
                 userAccountTrans.setFtransStatus(2);
+                userAccountTrans.setFremark("支付宝提现转账服务异常,转人工审核");
                 log.warn("支付宝提现转账服务异常|转人工审核");
             } else {
                 if (transferRes.getData()) {
