@@ -82,7 +82,7 @@ public class UserServiceImpl implements UserService {
                 .andEqualTo(User::getFpasswd,passWord)
                 .andLeft().orLike(User::getFmobile,dto.getUserAccount())
                 .orLike(User::getFmail,dto.getUserAccount())
-                .orLike(User::getFnickname,dto.getUserAccount()).addRight();
+                .orLike(User::getFuname,dto.getUserAccount()).addRight();
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
         if(userResult.getData() == null){
             return Result.failure(MallResultStatus.LOGIN_FAILURE);
@@ -487,6 +487,7 @@ public class UserServiceImpl implements UserService {
         Result<User> userResult = userApi.queryOneByCriteria(userCriteria);
         if(userResult.getData() != null){
             userVo = dozerHolder.convert(userResult.getData(),UserVo.class);
+            userVo.setFnickname(userVo.getFuname());
             if(userResult.getData().getFwithdrawPasswd().equals("")){
                 userVo.setFwithdrawPasswdStatus(0);
             }else{
@@ -498,31 +499,32 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Result<Integer> modifiyUserNickname(UserDto dto) {
-        //查询用户是否已设置用户名
+        //查询用户是否已设置用户名,将fnickname替换成funame
         if(dto.getFnickname().equals("")){
             Result.failure(MallResultStatus.REGISTER_NAME_IS_NULL);
         }
         Criteria<User, Object> userCriteria = Criteria.of(User.class);
         userCriteria.andEqualTo(User::getFisDelete,"0")
                 .andEqualTo(User::getFuid,dto.getFuid())
-                .fields(User::getFnickname);
+                .fields(User::getFuname);
         Result<User> userResult = userApi.queryOneByCriteria(userCriteria);
         if(userResult.getData() == null){
             Result.failure(MallResultStatus.ACCOUNT_NOT_EXIST);
         }
-        if(!userResult.getData().getFnickname().equals("")){
+        if(!userResult.getData().getFuname().equals("")){
             Result.failure(MallResultStatus.USER_NICKNAME_EXIST);
         }
         //查询是否重名
         Criteria<User, Object> userObjectCriteria = Criteria.of(User.class);
         userObjectCriteria.andEqualTo(User::getFisDelete,"0")
-                .andEqualTo(User::getFnickname,dto.getFnickname());
+                .andEqualTo(User::getFuname,dto.getFuname());
         Result<Integer> result = userApi.countByCriteria(userObjectCriteria);
         if(result.getData() != 0){
             Result.failure(MallResultStatus.REGISTER_NAME_EXIST);
         }
         User user = new User();
         user.setFnickname(dto.getFnickname());
+        user.setFuname(dto.getFnickname());
         user.setFuid(dto.getFuid());
         return userApi.updateNotNull(user);
     }
