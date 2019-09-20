@@ -222,6 +222,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         }
         OrderAftersaleBack aftersaleBack = mapper.map(aftersaleBackDto, OrderAftersaleBack.class);
         aftersaleBack.setFaftersaleBackId(aftersaleBackResult.getData().getFaftersaleBackId());
+        //更新售后回寄表
         Result<Integer> insResult = orderAftersaleBackApi.updateNotNull(aftersaleBack);
         if (!insResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -238,6 +239,14 @@ public class AftersaleServiceImpl implements AftersaleService {
                     throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
                 }
             }
+        }
+        //更新售后状态
+        OrderAftersale upAftersale = new OrderAftersale();
+        upAftersale.setForderAftersaleId(aftersaleBackDto.getForderAftersaleId());
+        upAftersale.setFaftersaleStatus(OrderAftersaleStatus.WAIT_RETURN_MONEY.getCode());
+        Result<Integer> aftersaleResult = orderAftersaleApi.updateNotNull(upAftersale);
+        if (!aftersaleResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         return Result.success();
     }
