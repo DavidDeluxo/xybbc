@@ -75,20 +75,20 @@ public class GoodsServiceImpl implements GoodsService {
     PageConfigApi pageConfigApi;
 
     @Override
-    public Result<SearchFilterVo> searchSkuFilter(SearchItemDto searchItemDto){
+    public Result<SearchFilterVo> searchSkuFilter(SearchItemDto searchItemDto) {
 
         SearchFilterVo filterVo = new SearchFilterVo();
         EsCriteria criteria = EsCriteria.build(searchItemDto);
         this.setPriceFilterCondition(searchItemDto, criteria);
         this.setAggregation(criteria);
-        Map<String, Object> resultMap  = esManager.queryWithAggregation(criteria, true);
+        Map<String, Object> resultMap = esManager.queryWithAggregation(criteria, true);
 
 
-        if(resultMap.get("aggregationMap") != null){
+        if (resultMap.get("aggregationMap") != null) {
             Map<String, Object> aggregationMap = (Map<String, Object>) resultMap.get("aggregationMap");
             //品牌
             List<Map<String, Object>> barndAggs = (List<Map<String, Object>>) aggregationMap.get("fbrand_id");
-            List<BrandFilterVo> brandFilterVoList  = getNameIdPairs(BrandFilterVo.class, barndAggs, null);
+            List<BrandFilterVo> brandFilterVoList = getNameIdPairs(BrandFilterVo.class, barndAggs, null);
             filterVo.setBrandList(brandFilterVoList);
 
             //原产地
@@ -111,15 +111,15 @@ public class GoodsServiceImpl implements GoodsService {
             filterVo.setAttributeFilterList(attributeFilterList);
 
             Result<List<GoodsCategory>> categoryResult = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class));
-            if(!categoryResult.isSuccess()){
+            if (!categoryResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
-            if(CollectionUtils.isNotEmpty(categoryResult.getData())){
+            if (CollectionUtils.isNotEmpty(categoryResult.getData())) {
                 Map<Long, List<GoodsCategory>> categoryMap = categoryResult.getData().stream().collect(Collectors.groupingBy(GoodsCategory::getFcategoryId, Collectors.toList()));
-                for(CategoryFilterVo categoryFilterVo : categoryFilterList){
+                for (CategoryFilterVo categoryFilterVo : categoryFilterList) {
                     Integer fcategoryId = categoryFilterVo.getFcategoryId();
                     List<GoodsCategory> categoryList = categoryMap.get(Long.parseLong(String.valueOf(fcategoryId)));
-                    if(CollectionUtils.isNotEmpty(categoryList)){
+                    if (CollectionUtils.isNotEmpty(categoryList)) {
                         GoodsCategory category = categoryList.get(0);
                         categoryFilterVo.setFcategorySort(category.getFcategorySort());
                         categoryFilterVo.setFcreateTime(category.getFcreateTime());
@@ -129,16 +129,16 @@ public class GoodsServiceImpl implements GoodsService {
             }
             filterVo.setCategoryList(categoryFilterList);
             Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
-            if(MapUtils.isNotEmpty(baseInfoMap) && baseInfoMap.get("totalHits") != null){
+            if (MapUtils.isNotEmpty(baseInfoMap) && baseInfoMap.get("totalHits") != null) {
                 filterVo.setTotalCount(Integer.parseInt(String.valueOf(baseInfoMap.get("totalHits"))));
             }
         }
         return Result.success(filterVo);
     }
 
-    private List<GoodsAttributeFilterVo> getGoodAttributeList(List<Map<String, Object>> attributeAggs){
+    private List<GoodsAttributeFilterVo> getGoodAttributeList(List<Map<String, Object>> attributeAggs) {
         List<GoodsAttributeFilterVo> resultList = new LinkedList<>();
-        if(CollectionUtils.isEmpty(attributeAggs)){
+        if (CollectionUtils.isEmpty(attributeAggs)) {
             return resultList;
         }
         List<Map<String, Object>> aggList = (List<Map<String, Object>>) attributeAggs.get(0).get("attribute_id");
@@ -150,31 +150,31 @@ public class GoodsServiceImpl implements GoodsService {
 
     @Async
     @Override
-    public Result<Integer> insertSearchRecordAsync(String keyword, Integer fuid){
+    public Result<Integer> insertSearchRecordAsync(String keyword, Integer fuid) {
         log.info("插入搜索历史:{}", keyword);
         GoodsSearchHistory insertParam = new GoodsSearchHistory();
-        if(fuid != null){
+        if (fuid != null) {
             insertParam.setFuid(Long.parseLong(String.valueOf(fuid)));
         }
         insertParam.setFsearchKeyword(keyword);
         Result<Integer> insertResult = goodsSearchHistoryApi.create(insertParam);
-        if(!insertResult.isSuccess()){
+        if (!insertResult.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
         return insertResult;
     }
 
     @Override
-    public Result<List<String>> queryHotSearch(){
+    public Result<List<String>> queryHotSearch() {
         List<String> resultList = new LinkedList<>();
         Result<List<PageConfig>> hotSearchResult = pageConfigApi.queryByCriteria(Criteria.of(PageConfig.class)
-                .andEqualTo(PageConfig::getFisDelete,0)
-                .andEqualTo(PageConfig::getFtype,5).sortDesc(PageConfig::getFcreateTime));
+                .andEqualTo(PageConfig::getFisDelete, 0)
+                .andEqualTo(PageConfig::getFtype, 5).sortDesc(PageConfig::getFcreateTime));
 
-        if(!hotSearchResult.isSuccess()){
+        if (!hotSearchResult.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
-        if(CollectionUtils.isEmpty(hotSearchResult.getData())){
+        if (CollectionUtils.isEmpty(hotSearchResult.getData())) {
             return Result.success(resultList);
         }
 
@@ -186,16 +186,16 @@ public class GoodsServiceImpl implements GoodsService {
 
 
     @Override
-    public Result<BrandPageVo> searchSkuBrandPage(Integer fbrandId){
+    public Result<BrandPageVo> searchSkuBrandPage(Integer fbrandId) {
         BrandPageVo brandPageVo = new BrandPageVo();
         Result<GoodsBrand> brandResult = goodsBrandApi.queryOneByCriteria(Criteria.of(GoodsBrand.class)
                 .andEqualTo(GoodsBrand::getFbrandId, fbrandId));
-        if(!brandResult.isSuccess()){
+        if (!brandResult.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
-        if(brandResult.getData() != null){
-            GoodsBrand goodsBrand  = brandResult.getData();
-            if(goodsBrand.getFisDelete() == 1){
+        if (brandResult.getData() != null) {
+            GoodsBrand goodsBrand = brandResult.getData();
+            if (goodsBrand.getFisDelete() == 1) {
                 throw new BizException(MallResultStatus.BRAND_IS_DELETED);
             }
             brandPageVo.setFbrandLogo(goodsBrand.getFbrandLogo());
@@ -206,7 +206,7 @@ public class GoodsServiceImpl implements GoodsService {
             brandPageVo.setForiginName(goodsBrand.getFcountryName());
             // 品牌商品总数
             Result<Integer> goodsCountResult = goodsSkuApi.countByCriteria(Criteria.of(GoodsSku.class).andEqualTo(GoodsSku::getFisDelete, 0));
-            if(!goodsCountResult.isSuccess()){
+            if (!goodsCountResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
             brandPageVo.setFgoodsTotalCount(goodsCountResult.getData());
@@ -215,66 +215,62 @@ public class GoodsServiceImpl implements GoodsService {
     }
 
 
-
-
-
-    private <T,U> List<T> getNameIdPairs(Class<T> clazz, List<Map<String, Object>> aggregationList, Class<U> clazz2){
+    private <T, U> List<T> getNameIdPairs(Class<T> clazz, List<Map<String, Object>> aggregationList, Class<U> clazz2) {
         Field id_field = null;
         Field name_field = null;
         Field sub_pair_list_field = null;
         Field[] fields = clazz.getDeclaredFields();
-        for(Field field : fields){
-           String fieldName = field.getName();
-           if(id_field == null && ID_PATTERN.matcher(fieldName).matches()){
-               id_field = field;
-           }
-           if(name_field == null && NAME_PATTERN.matcher(fieldName).matches()){
-               name_field = field;
-           }
-           if(sub_pair_list_field == null && SUB_PAIR_LIST_PATTERN.matcher(fieldName).matches()){
-               ParameterizedType pType = (ParameterizedType) field.getGenericType();
-               Type actualType = pType.getActualTypeArguments()[0];
-                if(actualType.getTypeName().equals(clazz2.getTypeName())){
+        for (Field field : fields) {
+            String fieldName = field.getName();
+            if (id_field == null && ID_PATTERN.matcher(fieldName).matches()) {
+                id_field = field;
+            }
+            if (name_field == null && NAME_PATTERN.matcher(fieldName).matches()) {
+                name_field = field;
+            }
+            if (sub_pair_list_field == null && SUB_PAIR_LIST_PATTERN.matcher(fieldName).matches()) {
+                ParameterizedType pType = (ParameterizedType) field.getGenericType();
+                Type actualType = pType.getActualTypeArguments()[0];
+                if (actualType.getTypeName().equals(clazz2.getTypeName())) {
                     sub_pair_list_field = field;
                 }
-           }
+            }
         }
 
-        if(id_field == null){
+        if (id_field == null) {
             throw new RuntimeException("没有找到id属性");
         }
-        if(name_field == null){
+        if (name_field == null) {
             throw new RuntimeException("没有找到名称属性");
         }
         id_field.setAccessible(true);
         name_field.setAccessible(true);
         List<T> resultList = new LinkedList<>();
-        if(CollectionUtils.isEmpty(aggregationList)){
+        if (CollectionUtils.isEmpty(aggregationList)) {
             return resultList;
         }
         try {
-            for (Map<String, Object> idMap : aggregationList){
+            for (Map<String, Object> idMap : aggregationList) {
                 Object valueObject = clazz.newInstance();
                 Object idValue = idMap.get(EsManager.AGGREGATION_KEY_NAME);
-                if(idMap != null){
-                    // set Id
-                    if(!id_field.getType().equals(Integer.class)){
+                if (idMap != null) {
+                    if (!id_field.getType().equals(Integer.class)) {
                         throw new IllegalArgumentException();
                     }
                     id_field.set(valueObject, Integer.parseInt(String.valueOf(idValue)));
-                    Map<String, Object> nameMap  = (Map<String, Object>) idMap.get(EsManager.SUBAGGREGATION_NAME);
-                    if(MapUtils.isNotEmpty(nameMap)){
+                    Map<String, Object> nameMap = (Map<String, Object>) idMap.get(EsManager.SUBAGGREGATION_NAME);
+                    if (MapUtils.isNotEmpty(nameMap)) {
                         Object[] nameMapValues = nameMap.values().toArray();
                         List<Map<String, Object>> nameList = (List<Map<String, Object>>) nameMapValues[0];
-                        if(CollectionUtils.isNotEmpty(nameList)){
+                        if (CollectionUtils.isNotEmpty(nameList)) {
                             Object nameValue = nameList.get(0).get(EsManager.AGGREGATION_KEY_NAME);
-                            if(!name_field.getType().equals(String.class)){
+                            if (!name_field.getType().equals(String.class)) {
                                 throw new IllegalArgumentException();
                             }
                             name_field.set(valueObject, String.valueOf(nameValue));
 
                             Map<String, Object> subAggMap = (Map<String, Object>) nameList.get(0).get(EsManager.SUBAGGREGATION_NAME);
-                            if(MapUtils.isNotEmpty(subAggMap) && clazz2 != null && sub_pair_list_field != null){
+                            if (MapUtils.isNotEmpty(subAggMap) && clazz2 != null && sub_pair_list_field != null) {
                                 Object[] subAggArray = subAggMap.values().toArray();
                                 List<Map<String, Object>> subAggList = (List<Map<String, Object>>) subAggArray[0];
                                 List<U> subPairList = this.getNameIdPairs(clazz2, subAggList, null);
@@ -284,32 +280,32 @@ public class GoodsServiceImpl implements GoodsService {
                         }
                     }
                 }
-                resultList.add( (T) valueObject);
+                resultList.add((T) valueObject);
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("内部调用错误");
         }
         return resultList;
     }
 
-    private void setPriceFilterCondition(SearchItemDto searchItemDto, EsCriteria criteria){
-        if(criteria == null){
+    private void setPriceFilterCondition(SearchItemDto searchItemDto, EsCriteria criteria) {
+        if (criteria == null) {
             return;
         }
         String priceFieldName = PRICE_TYPE_PREFIX + searchItemDto.getFuserTypeId() + PRICE_TYPE_SUFFIX;
 
-        if(searchItemDto.getPriceOrderBy() != null){
+        if (searchItemDto.getPriceOrderBy() != null) {
             criteria.sortBy(priceFieldName, searchItemDto.getPriceOrderBy());
         }
 
-        if(searchItemDto.getFpriceStart() != null){
+        if (searchItemDto.getFpriceStart() != null) {
             BigDecimal startPrice_yuan = searchItemDto.getFpriceStart();
             BigDecimal startPrice_penny = startPrice_yuan.multiply(ONE_HUNDRED).setScale(0, BigDecimal.ROUND_HALF_UP);
             criteria.rangeFrom(priceFieldName, String.valueOf(startPrice_penny));
         }
 
-        if(searchItemDto.getFpriceEnd() != null){
+        if (searchItemDto.getFpriceEnd() != null) {
             BigDecimal endPrice_yuan = searchItemDto.getFpriceEnd();
             BigDecimal endPrice_penny = endPrice_yuan.multiply(ONE_HUNDRED).setScale(0, BigDecimal.ROUND_HALF_UP);
             criteria.rangeTo(priceFieldName, String.valueOf(endPrice_penny));
@@ -318,8 +314,8 @@ public class GoodsServiceImpl implements GoodsService {
 
 
     @Override
-    public Result<PageVo<SearchItemVo>> searchSkuList(SearchItemDto searchItemDto){
-        if(!StringUtils.isEmpty(searchItemDto.getSearchFullText())){
+    public Result<PageVo<SearchItemVo>> searchSkuList(SearchItemDto searchItemDto) {
+        if (!StringUtils.isEmpty(searchItemDto.getSearchFullText())) {
             this.insertSearchRecordAsync(searchItemDto.getSearchFullText(), searchItemDto.getFuid());
         }
 
@@ -327,17 +323,17 @@ public class GoodsServiceImpl implements GoodsService {
         pageVo.setTotalCount(0);
         pageVo.setPageSize(1);
         EsCriteria criteria = EsCriteria.build(searchItemDto);
-        if(CollectionUtils.isNotEmpty(searchItemDto.getFattributeItemId())){
+        if (CollectionUtils.isNotEmpty(searchItemDto.getFattributeItemId())) {
             String fieldname = "attributes.fclass_attribute_item_id";
             DisMaxQueryBuilder disMaxQuerys = QueryBuilders.disMaxQuery();
-            for(Object value : searchItemDto.getFattributeItemId()){
+            for (Object value : searchItemDto.getFattributeItemId()) {
                 disMaxQuerys.add(QueryBuilders.termsQuery(fieldname, value));
             }
             criteria.getFilterBuilder().must(QueryBuilders.nestedQuery("attributes", disMaxQuerys, ScoreMode.None));
         }
 
         this.setPriceFilterCondition(searchItemDto, criteria);
-        if(searchItemDto.getIsStockNotEmpty() != null && searchItemDto.getIsStockNotEmpty() == 1){
+        if (searchItemDto.getIsStockNotEmpty() != null && searchItemDto.getIsStockNotEmpty() == 1) {
             criteria.rangeFrom("fstock_remain_num_total", 1);
         }
         this.addSoldOutCondition(criteria);
@@ -349,50 +345,50 @@ public class GoodsServiceImpl implements GoodsService {
         List<SearchItemVo> voList = new LinkedList<>();
         pageVo.setList(voList);
         Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
-        if(!CollectionUtils.isEmpty(resultList)){
-            for (Map<String, Object> map : resultList){
+        if (!CollectionUtils.isEmpty(resultList)) {
+            for (Map<String, Object> map : resultList) {
                 SearchItemVo vo = new SearchItemVo();
-                if(map.get("fskuId") != null){
+                if (map.get("fskuId") != null) {
                     vo.setFskuId(Integer.parseInt(String.valueOf(map.get("fskuId"))));
                 }
-                if(map.get("fskuName") != null){
+                if (map.get("fskuName") != null) {
                     vo.setFskuName(String.valueOf(map.get("fskuName")));
                 }
-                if(map.get("ftradeId") != null){
+                if (map.get("ftradeId") != null) {
                     vo.setFtradedId(Integer.parseInt(String.valueOf(map.get("ftradeId"))));
                 }
-                if(map.get("ftradeName") != null){
+                if (map.get("ftradeName") != null) {
                     vo.setFtradeName(String.valueOf(map.get("ftradeName")));
                 }
-                if(map.get("fsellTotal") != null){
+                if (map.get("fsellTotal") != null) {
                     vo.setFsellNum(Long.parseLong(String.valueOf(map.get("fsellTotal"))));
                 }
-                if(map.get("fskuThumbImage") != null){
+                if (map.get("fskuThumbImage") != null) {
                     vo.setFimgUrl(String.valueOf(map.get("fskuThumbImage")));
                 }
-                if(map.get("fgoodsId") != null){
+                if (map.get("fgoodsId") != null) {
                     vo.setFgoodsId(Integer.parseInt(String.valueOf(map.get("fgoodsId"))));
                 }
-                if(map.get("fskuStatus") != null){
+                if (map.get("fskuStatus") != null) {
                     vo.setFskuStatus(Integer.parseInt(String.valueOf(map.get("fskuStatus"))));
                 }
-                if(map.get("flabelId") != null){
+                if (map.get("flabelId") != null) {
                     vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
                 }
 
                 String priceName = PRICE_TYPE_PREFIX_CAMEL + searchItemDto.getFuserTypeId();
-                if(map.get(priceName) != null){
+                if (map.get(priceName) != null) {
                     Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
-                    if(priceMap.get("min_price") != null){
+                    if (priceMap.get("min_price") != null) {
                         BigDecimal min_price_penny = new BigDecimal(String.valueOf(priceMap.get("min_price")));
                         BigDecimal min_price_yuan = min_price_penny.divide(ONE_HUNDRED).setScale(2, BigDecimal.ROUND_HALF_UP);
                         vo.setFbatchSellPrice(min_price_yuan);
-                    }else{
+                    } else {
                         vo.setFbatchSellPrice(BigDecimal.ZERO);
                     }
                 }
 
-                if(map.get("fstockRemainNumTotal") != null){
+                if (map.get("fstockRemainNumTotal") != null) {
                     vo.setFremainTotal(Integer.parseInt(String.valueOf(map.get("fstockRemainNumTotal"))));
                 }
                 voList.add(vo);
@@ -404,8 +400,8 @@ public class GoodsServiceImpl implements GoodsService {
         return Result.success(pageVo);
     }
 
-    private void addSoldOutCondition(EsCriteria criteria){
-        if(criteria == null){
+    private void addSoldOutCondition(EsCriteria criteria) {
+        if (criteria == null) {
             return;
         }
         DisMaxQueryBuilder disMaxQueryBuilder = QueryBuilders.disMaxQuery();
@@ -417,21 +413,22 @@ public class GoodsServiceImpl implements GoodsService {
 
     /**
      * 添加聚合条件
+     *
      * @param criteria
      */
-    private void setAggregation(EsCriteria criteria){
-        if(criteria == null){
+    private void setAggregation(EsCriteria criteria) {
+        if (criteria == null) {
             return;
         }
         criteria.termAggregate("fcategory_id3", "fcategory_id3").subAggregate("fcategory_name3", "fcategory_name3.keyword");
-        criteria.termAggregate("fbrand_id","fbrand_id").subAggregate("fbrand_name", "fbrand_name.keyword");
-        criteria.termAggregate("forigin_id", "forigin_id").subAggregate("forigin_name","forigin_name.keyword");
-        criteria.termAggregate("ftrade_id", "ftrade_id").subAggregate("ftrade_name","ftrade_name.keyword");
+        criteria.termAggregate("fbrand_id", "fbrand_id").subAggregate("fbrand_name", "fbrand_name.keyword");
+        criteria.termAggregate("forigin_id", "forigin_id").subAggregate("forigin_name", "forigin_name.keyword");
+        criteria.termAggregate("ftrade_id", "ftrade_id").subAggregate("ftrade_name", "ftrade_name.keyword");
 
         AggregationBuilder attributeAgg = AggregationBuilders.terms("attribute_id").field("attributes.fclass_attribute_id").order(BucketOrder.count(false))
                 .subAggregation(AggregationBuilders.terms("attribute_name").field("attributes.fclass_attribute_name.keyword").order(BucketOrder.count(false))
-                .subAggregation(AggregationBuilders.terms("attribute_item_id").field("attributes.fclass_attribute_item_id").order(BucketOrder.count(false))
-                .subAggregation(AggregationBuilders.terms("attribute_item_value").field("attributes.fclass_attribute_item_val.keyword").order(BucketOrder.count(false)))));
+                        .subAggregation(AggregationBuilders.terms("attribute_item_id").field("attributes.fclass_attribute_item_id").order(BucketOrder.count(false))
+                                .subAggregation(AggregationBuilders.terms("attribute_item_value").field("attributes.fclass_attribute_item_val.keyword").order(BucketOrder.count(false)))));
 
         AggregationBuilder nestedAgg = AggregationBuilders.nested("attribute", "attributes").subAggregation(attributeAgg);
         criteria.getAggBuilders().put("attribute", nestedAgg);
