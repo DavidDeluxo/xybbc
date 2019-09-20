@@ -31,7 +31,7 @@ public enum MallResultStatus implements IResultStatus {
     BRAND_IS_DELETED("2001", "该品牌已被删除"),
     USER_PAY_PWD_NOT_SET("2009", "未设置提现支付密码"),
     ACCOUNT_BALANCE_INSUFFICIENT("2011", "账户余额不足"),
-    WITHDRAW_PASSWORD_ERROR("2013","提现密码不挣钱"),
+    WITHDRAW_PASSWORD_ERROR("2013","提现密码不正确"),
     REEZE_WITHDRAW_ERROR("2016","提现冻结金额小于0"),
     ;
     private String code;

@@ -280,6 +280,12 @@ public class WalletServiceImpl implements WalletService {
             log.warn("提现冻结金额小于0");
             throw new BizException(MallResultStatus.REEZE_WITHDRAW_ERROR);
         }
+
+        BigDecimal sub = new BigDecimal(result.getData().getFbalance()).subtract(PriceUtil.toPenny(withdrawDto.getWithdrawAmount()));
+        if (sub.longValue() < 0L) {
+            throw new BizException(MallResultStatus.ACCOUNT_BALANCE_INSUFFICIENT);
+        }
+
         return uid;
     }
 
@@ -416,6 +422,7 @@ public class WalletServiceImpl implements WalletService {
 
             if (!transferRes.isSuccess()) {
                 userAccountTrans.setFtransStatus(2);
+                userAccountTrans.setFremark("支付宝提现转账服务异常,转人工审核");
                 log.warn("支付宝提现转账服务异常|转人工审核");
             } else {
                 if (transferRes.getData()) {
@@ -426,7 +433,7 @@ public class WalletServiceImpl implements WalletService {
                     log.info("支付宝提现转账成功");
                 } else {
                     userAccountTrans.setFremark("支付宝转账失败," + transferRes.getMsg());
-                    log.warn("支付宝提现转账失败|失败原因:{}", userAccountTrans.getFremark());
+                    log.warn("支付宝提现转账失败|失败原因:{}",  transferRes.getMsg());
                 }
 
             }

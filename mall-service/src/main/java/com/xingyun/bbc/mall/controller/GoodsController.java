@@ -52,9 +52,6 @@ public class GoodsController {
         return goodsService.queryHotSearch();
     }
 
-    public static void main(String[] args){
-
-    }
 
 
 }

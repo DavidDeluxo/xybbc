@@ -18,8 +18,6 @@ public interface GoodsService {
 
     Result<BrandPageVo> searchSkuBrandPage(Integer fbrandId);
 
-    Result<Integer> insertSearchRecordAsync(String keyword, Integer fuid);
-
     Result<List<String>> queryHotSearch();
 
 }
