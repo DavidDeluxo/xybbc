@@ -53,6 +53,8 @@ public class GoodsServiceImpl implements GoodsService {
 
     private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
     private static final String PRICE_TYPE_PREFIX = "price_type_";
+    private static final String PRICE_TYPE_PREFIX_CAMEL = "priceType";
+
     private static final String PRICE_TYPE_SUFFIX = ".min_price";
 
     private static final Pattern ID_PATTERN = Pattern.compile(".*Id");
@@ -377,26 +379,19 @@ public class GoodsServiceImpl implements GoodsService {
                 if(map.get("flabelId") != null){
                     vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
                 }
-                if(map.get("prices") != null){
-                    List<Map<String, Object>> priceList = (List<Map<String, Object>>) map.get("prices");
-                    if(CollectionUtils.isNotEmpty(priceList)){
-                      Map<String, List<Map<String, Object>>> priceMap  = priceList.stream()
-                              .collect(Collectors.groupingBy(o-> String.valueOf(o.get("fuser_type_id")), Collectors.toList()));
-                      if(priceMap.get(searchItemDto.getFuserTypeId()) != null){
-                         List<Map<String, Object>> priceListofType = priceMap.get(searchItemDto.getFuserTypeId());
-                          if(CollectionUtils.isNotEmpty(priceListofType)){
-                             Map<String, Object> price = priceListofType.get(0);
-                             if(price.get("min_price") != null){
-                                 BigDecimal price_penny = new BigDecimal(String.valueOf(price.get("min_price")));
-                                 BigDecimal price_yuan = price_penny.divide(ONE_HUNDRED).setScale(2, BigDecimal.ROUND_HALF_UP);
-                                 vo.setFbatchSellPrice(price_yuan);
-                             }else {
-                                 vo.setFbatchSellPrice(BigDecimal.ZERO);
-                             }
-                          }
-                      }
+
+                String priceName = PRICE_TYPE_PREFIX_CAMEL + searchItemDto.getFuserTypeId();
+                if(map.get(priceName) != null){
+                    Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
+                    if(priceMap.get("min_price") != null){
+                        BigDecimal min_price_penny = new BigDecimal(String.valueOf(priceMap.get("min_price")));
+                        BigDecimal min_price_yuan = min_price_penny.divide(ONE_HUNDRED).setScale(2, BigDecimal.ROUND_HALF_UP);
+                        vo.setFbatchSellPrice(min_price_yuan);
+                    }else{
+                        vo.setFbatchSellPrice(BigDecimal.ZERO);
                     }
                 }
+
                 if(map.get("fstockRemainNumTotal") != null){
                     vo.setFremainTotal(Integer.parseInt(String.valueOf(map.get("fstockRemainNumTotal"))));
                 }
