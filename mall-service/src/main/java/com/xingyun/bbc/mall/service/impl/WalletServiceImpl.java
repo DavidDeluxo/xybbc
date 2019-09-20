@@ -433,7 +433,7 @@ public class WalletServiceImpl implements WalletService {
                     log.info("支付宝提现转账成功");
                 } else {
                     userAccountTrans.setFremark("支付宝转账失败," + transferRes.getMsg());
-                    log.warn("支付宝提现转账失败|失败原因:{}", userAccountTrans.getFremark());
+                    log.warn("支付宝提现转账失败|失败原因:{}",  transferRes.getMsg());
                 }
 
             }
