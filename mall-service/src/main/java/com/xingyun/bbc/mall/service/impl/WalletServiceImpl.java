@@ -280,6 +280,12 @@ public class WalletServiceImpl implements WalletService {
             log.warn("提现冻结金额小于0");
             throw new BizException(MallResultStatus.REEZE_WITHDRAW_ERROR);
         }
+
+        BigDecimal sub = new BigDecimal(result.getData().getFbalance()).subtract(PriceUtil.toPenny(withdrawDto.getWithdrawAmount()));
+        if (sub.longValue() < 0L) {
+            throw new BizException(MallResultStatus.ACCOUNT_BALANCE_INSUFFICIENT);
+        }
+
         return uid;
     }
 
