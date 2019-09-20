@@ -41,4 +41,18 @@ public class WithdrawDto implements Serializable {
     @ApiModelProperty(hidden = true)
     private Long uid;
 
+    @ApiModelProperty("支付宝账号")
+    private String accountNumber;
+
+    @ApiModelProperty("银行卡号")
+    private String cardNumber;
+
+    @ApiModelProperty("银行Code(开户行)")
+    private String bankCode;
+
+    @ApiModelProperty("银行名称(开户行)")
+    private String bankName;
+
+    @ApiModelProperty("姓名")
+    private String name;
 }

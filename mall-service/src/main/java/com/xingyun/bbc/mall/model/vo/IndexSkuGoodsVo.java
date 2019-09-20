@@ -17,8 +17,14 @@ public class IndexSkuGoodsVo {
     @ApiModelProperty("sku名称")
     private String fskuName;
 
-    @ApiModelProperty("缩略图地址")
-    private String fimgUrl;
+   /* @ApiModelProperty("缩略图地址")
+    private String fimgUrl;*/
+
+
+    /** sku主图 */
+    @ApiModelProperty("sku主图")
+    private String fskuThumbImage;
+
 
     @ApiModelProperty("价格")
     private BigDecimal fbatchSellPrice;

@@ -197,7 +197,7 @@ public class IndexServiceImpl implements IndexService {
         Result<List<GoodsSku>> result = goodsSkuApi.queryByCriteria(
                 criteria.fields(
                         GoodsSku::getFskuName, GoodsSku::getFskuCode,
-                        GoodsSku::getFgoodsId, GoodsSku::getFskuId,
+                        GoodsSku::getFgoodsId, GoodsSku::getFskuId,GoodsSku::getFskuThumbImage,
                         GoodsSku::getFisUserTypeDiscount)
                         .page(categoryDto.getCurrentPage(), categoryDto.getPageSize())
                        );
@@ -212,7 +212,7 @@ public class IndexServiceImpl implements IndexService {
         List<IndexSkuGoodsVo> indexSkuGoodsVoList = result.getData().stream().map(goodsSku -> {
             IndexSkuGoodsVo indexSkuGoodsVo = dozerMapper.map(goodsSku, IndexSkuGoodsVo.class);
             //1--------封装缩略图
-            Criteria<GoodsThumbImage, Object> goodsThumbImageCriteria = Criteria.of(GoodsThumbImage.class)
+           /* Criteria<GoodsThumbImage, Object> goodsThumbImageCriteria = Criteria.of(GoodsThumbImage.class)
                     .andEqualTo(GoodsThumbImage::getFimgType, 2)
                     .andEqualTo(GoodsThumbImage::getFgoodsId, goodsSku.getFgoodsId());
             Result<GoodsThumbImage> goodsThumbImage = goodsThumbImageApi.queryOneByCriteria(goodsThumbImageCriteria);
@@ -223,7 +223,7 @@ public class IndexServiceImpl implements IndexService {
             }
             if (Objects.nonNull(goodsThumbImage.getData())) {
                 indexSkuGoodsVo.setFimgUrl(goodsThumbImage.getData().getFimgUrl());
-            }
+            }*/
         /*     if (CollectionUtils.isNotEmpty(goodsThumbImage.getData())) {
                 indexSkuGoodsVo.setFimgUrl(goodsThumbImage.getData().get(0).getFimgUrl());
             }*/

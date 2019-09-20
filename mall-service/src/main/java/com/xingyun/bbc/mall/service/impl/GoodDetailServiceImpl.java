@@ -155,9 +155,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         if (null != goodsVo.getFbrandId()) {
             GoodsBrand goodsBrand = goodsBrandApi.queryOneByCriteria(Criteria.of(GoodsBrand.class)
                     .andEqualTo(GoodsBrand::getFbrandId, goodsVo.getFbrandId())
-                    .fields(GoodsBrand::getFbrandName)).getData();
+                    .fields(GoodsBrand::getFbrandName, GoodsBrand::getFbrandLogo)).getData();
             if (null != goodsBrand && null != goodsBrand.getFbrandName()) {
                 goodsVo.setFbrandName(goodsBrand.getFbrandName());
+                goodsVo.setFbrandLogo(goodsBrand.getFbrandLogo() == null ? "" : goodsBrand.getFbrandLogo());
             }
         }
 
@@ -504,14 +505,14 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     .andEqualTo(SkuBatchUserPrice::getFbatchPackageId, goodsDetailDto.getFbatchPackageId())
                     .andEqualTo(SkuBatchUserPrice::getFuserTypeId, foperateType)
                     .fields(SkuBatchUserPrice::getFbatchSellPrice));
-            if (skuBatchUserPriceResult.isSuccess()) {
+            if (skuBatchUserPriceResult.isSuccess() && null != skuBatchUserPriceResult.getData().getFbatchSellPrice()) {
                 price = skuBatchUserPriceResult.getData().getFbatchSellPrice();
             }
         } else {
             Result<GoodsSkuBatchPrice> goodsSkuBatchPriceResult = goodsSkuBatchPriceApi.queryOneByCriteria(Criteria.of(GoodsSkuBatchPrice.class)
                     .andEqualTo(GoodsSkuBatchPrice::getFbatchPackageId, goodsDetailDto.getFbatchPackageId())
                     .fields(GoodsSkuBatchPrice::getFbatchSellPrice));
-            if (goodsSkuBatchPriceResult.isSuccess()) {
+            if (goodsSkuBatchPriceResult.isSuccess() && null != goodsSkuBatchPriceResult.getData().getFbatchSellPrice()) {
                 price = goodsSkuBatchPriceResult.getData().getFbatchSellPrice();
             }
         }

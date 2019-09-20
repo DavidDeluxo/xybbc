@@ -28,7 +28,11 @@ public enum MallResultStatus implements IResultStatus {
     USER_NICKNAME_EXIST("1023", "用户名已设置"),
     USER_WITHDRAW_RATE_NOT_CONFIG("1024","用户费率暂时未配置，稍后再试.."),
     BANK_NOT_CONFIG("1025","银行开户行数据未配置，稍后再试.."),
-    BRAND_IS_DELETED("2001", "该品牌已被删除")
+    BRAND_IS_DELETED("2001", "该品牌已被删除"),
+    USER_PAY_PWD_NOT_SET("2009", "未设置提现支付密码"),
+    ACCOUNT_BALANCE_INSUFFICIENT("2011", "账户余额不足"),
+    WITHDRAW_PASSWORD_ERROR("2013","提现密码不挣钱"),
+    REEZE_WITHDRAW_ERROR("2016","提现冻结金额小于0"),
     ;
     private String code;
     private String msg;

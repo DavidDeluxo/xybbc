@@ -5,17 +5,14 @@ import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.order.api.OrderPaymentApi;
 import com.xingyun.bbc.core.order.po.OrderPayment;
 import com.xingyun.bbc.core.query.Criteria;
-import com.xingyun.bbc.core.user.api.BankDepositApi;
-import com.xingyun.bbc.core.user.api.UserAccountApi;
-import com.xingyun.bbc.core.user.api.UserApi;
-import com.xingyun.bbc.core.user.api.UserWithdrawRateApi;
-import com.xingyun.bbc.core.user.po.BankDeposit;
-import com.xingyun.bbc.core.user.po.User;
-import com.xingyun.bbc.core.user.po.UserAccount;
-import com.xingyun.bbc.core.user.po.UserWithdrawRate;
+import com.xingyun.bbc.core.user.api.*;
+import com.xingyun.bbc.core.user.po.*;
+import com.xingyun.bbc.core.utils.IdGenerator;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.core.utils.StringUtil;
 import com.xingyun.bbc.mall.base.enums.MallResultStatus;
+import com.xingyun.bbc.mall.base.utils.EncryptUtils;
+import com.xingyun.bbc.mall.base.utils.MD5Util;
 import com.xingyun.bbc.mall.base.utils.PriceUtil;
 import com.xingyun.bbc.mall.model.dto.WithdrawDto;
 import com.xingyun.bbc.mall.model.dto.WithdrawRateDto;
@@ -23,13 +20,14 @@ import com.xingyun.bbc.mall.model.vo.BanksVo;
 import com.xingyun.bbc.mall.model.vo.WalletAmountVo;
 import com.xingyun.bbc.mall.model.vo.WithdrawRateVo;
 import com.xingyun.bbc.mall.service.WalletService;
+import com.xingyun.bbc.pay.api.AliPayApi;
+import com.xingyun.bbc.pay.model.dto.TransferDto;
 import io.seata.spring.annotation.GlobalTransactional;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 
@@ -63,6 +61,14 @@ public class WalletServiceImpl implements WalletService {
     private UserWithdrawRateApi userWithdrawRateApi;
     @Autowired
     private BankDepositApi bankDepositApi;
+    @Autowired
+    private UserAccountTransApi userAccountTransApi;
+    @Autowired
+    private UserAccountTransWaterApi userAccountTransWaterApi;
+    @Autowired
+    private UserAccountWaterApi userAccountWaterApi;
+    @Autowired
+    private AliPayApi aliPayApi;
 
     @Override
     public WalletAmountVo queryAmount(Long uid) {
@@ -151,66 +157,135 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @GlobalTransactional
     public Boolean withdraw(@Valid WithdrawDto withdrawDto) {
-        // 提现费率，若不存在则默认为0
-//        Float poundagePercent = 0f;
-//        this.queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(withdrawDto.getWay()));
-//        if(redisUtil.getFeeRate("withdraw") != null){
-//
-//
-//            poundagePercent = Float.parseFloat(redisUtil.getFeeRate("withdraw"));
-//        }
-//        //计算手续费
-//        BigDecimal feeRate = new BigDecimal(poundagePercent).divide(new BigDecimal(10000));
-//        BigDecimal transAmount = new BigDecimal(userAccountTrans.getTransAmountParam());
-//        userAccountTrans.setFtransAmount(transAmount.longValue());
-//        BigDecimal feeAmount = transAmount.multiply(feeRate);
-//        BigDecimal transActualAmount = transAmount.subtract(feeAmount);
-//        userAccountTrans.setFtransActualAmount(transActualAmount.longValue());
-//        userAccountTrans.setFtransPoundage(feeAmount.longValue());
-//        int fuid = userAccountTrans.getFuid();
-//        //判断金额是否正确（提现、余额金额不能小于等于0，更新后的余额、冻结金额不能小于0）
-//        UserAccount account = userAccountMapper.queryAccount(fuid);
-//        BigDecimal oldBalance = new BigDecimal(account.getFbalance());
-//        BigDecimal newBalance = oldBalance.subtract(transAmount);
-//        BigDecimal freezeWithdraw = new BigDecimal(account.getFfreezeWithdraw());
-//        if(oldBalance.longValue() <= 0L || transAmount.longValue() <= 0L || newBalance.longValue() < 0L || freezeWithdraw.longValue() < 0L){
-//            // 回滚事务
-//            logger.info("提现金额有误，提现失败，事务回滚");
-//            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-//            return -1;
-//        }
-//        // 生成订单号
-//        String ftransDetail = OrderIdCreator.getOrderId("T", serverId, userAccountTrans.getFuid());
-//        // 提现申请插入数据库
-//        userAccountTrans.setFtransDetail(ftransDetail);
-//        int flag1 = userAccountTransMapper.insert(userAccountTrans);
-//        logger.info("生成提现订单，用户id：" + userAccountTrans.getFuid() + ",订单号：" + ftransDetail);
-//        logger.info("用户id：" + userAccountTrans.getFuid() + ",提现金额：" + PriceUtil.cartPennyToYuan(transAmount) + ",手续费：" + PriceUtil.cartPennyToYuan(feeAmount));
-//        // 申请数据插入流水表
-//        int flag2 = userAccountTransMapper.addWater(userAccountTrans.getFtransDetail());
-//        // 修改用户账户表，冻结提现金额
-//        UserAccount userAccount = new UserAccount();
-//        userAccount.setFuid(fuid);
-//        userAccount.setFbalance(newBalance.longValue());
-//        userAccount.setFfreezeWithdraw(transAmount.add(freezeWithdraw).longValue());
-//        userAccount.setFopMemo("申请提现，金额：" + transAmount + "分");
-//        int flag3 = userAccountMapper.updateByFuid(userAccount);
-//        logger.info("冻结提现金额：" + PriceUtil.cartPennyToYuan(transAmount) + "，用户id：" + userAccountTrans.getFuid());
-//        int flag4 = userAccountMapper.insertWater(fuid);
-//        if (flag1 > 0 && flag2 > 0 && flag3 > 0 && flag4 > 0) {
-//            return 1;
-//        }else{
-//            logger.info("提现流程有误，事务回滚");
-//            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-//            return 0;
-//        }
+        // 校验
+        Long uid = this.withdrawCheck(withdrawDto);
+
+        // 获取提现费率
+        WithdrawRate withdrawRate = new WithdrawRate(withdrawDto).get();
+
+        BigDecimal transAmount = withdrawRate.getTransAmount();
+
+        // build UserAccountTrans
+        AccountTrans accountTrans = new AccountTrans(withdrawDto, uid, withdrawRate, transAmount).put();
+        UserAccountTrans userAccountTrans = accountTrans.getUserAccountTrans();
+
+        // 生成订单号
+        String transId = IdGenerator.INSTANCE.nextId();
+
+        // 判断金额是否正确(提现、余额金额不能小于等于0，更新后的余额、冻结金额不能小于0)
+        CheckAfterMoney checkAfterMoney = new CheckAfterMoney(uid, transAmount).check();
+
+        // 提现申请插入数据库
+        this.addAccountTrans(userAccountTrans, transId);
+
+        log.info("|生成提现订单|用户id:{}|订单号:{}|", uid, transId);
+
+        log.info("|用户id:{}|提现金额:{}|手续费:{}|", uid, PriceUtil.toYuan(transAmount), PriceUtil.toYuan(accountTrans.getFeeAmount()));
+
+        // 申请数据插入流水表
+        this.addAccountTransWater(transId);
+
+        // 修改用户账户表，冻结提现金额
+        this.modifyAccount(uid, transAmount, checkAfterMoney.getNewBalance(), checkAfterMoney.getFreezeWithdraw());
+
+        log.info("|冻结提现金额:{}|用户id:{}|", PriceUtil.toYuan(transAmount), uid);
+
+        // 添加账户流水
+        this.addAccountWater(uid);
+
+        // 提现方式|1:支付宝|2:银行卡
+        if (withdrawDto.getWay() == 1) {
+            // 支付宝转账
+            new AlipayTransfer(withdrawDto, accountTrans.getTransActualAmount(), transId).transfer();
+        }
+
         return true;
+    }
+
+    private void addAccountWater(Long uid) {
+        Result<UserAccount> userAccountResult = userAccountApi.queryById(uid);
+        if (!userAccountResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (null == userAccountResult.getData()) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+
+        UserAccountWater accountWater = new UserAccountWater();
+        BeanUtils.copyProperties(userAccountResult.getData(), accountWater);
+        Result<Integer> waterResult = userAccountWaterApi.create(accountWater);
+        if (!waterResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (waterResult.getData() < 0) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+    }
+
+    private void modifyAccount(Long uid, BigDecimal transAmount, BigDecimal newBalance, BigDecimal freezeWithdraw) {
+        UserAccount userAccount = new UserAccount();
+        userAccount.setFuid(uid);
+        userAccount.setFbalance(newBalance.longValue());
+        userAccount.setFfreezeWithdraw(transAmount.add(freezeWithdraw).longValue());
+        userAccount.setFoperateRemark("申请提现,金额:" + transAmount + "分");
+
+        Result<Integer> accountResult = userAccountApi.updateNotNull(userAccount);
+        if (!accountResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (accountResult.getData() < 0) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+    }
+
+    private void addAccountTransWater(String transId) {
+        Result<UserAccountTrans> userAccountTransResult = userAccountTransApi.queryById(transId);
+        if (!userAccountTransResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (null == userAccountTransResult.getData()) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+
+        UserAccountTransWater accountTransWater = new UserAccountTransWater();
+        BeanUtils.copyProperties(userAccountTransResult.getData(), accountTransWater);
+        accountTransWater.setFtransId(transId);
+        Result<Integer> accountWaterResult = userAccountTransWaterApi.create(accountTransWater);
+        if (!accountWaterResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (accountWaterResult.getData() < 0) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+    }
+
+    private void addAccountTrans(UserAccountTrans userAccountTrans, String transId) {
+        userAccountTrans.setFtransId(transId);
+
+        Result<Integer> accountTransResult = userAccountTransApi.create(userAccountTrans);
+        if (!accountTransResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (accountTransResult.getData() < 0) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+    }
+
+    private Long withdrawCheck(@Valid WithdrawDto withdrawDto) {
+        Long uid = withdrawDto.getUid();
+        if (!this.checkPayPwd(uid)) {
+
+            throw new BizException(MallResultStatus.USER_PAY_PWD_NOT_SET);
+        }
+        User user = this.checkUser(uid);
+
+        WalletAmountVo walletAmount = this.queryAmount(uid);
+
+        if (walletAmount.getBalance().compareTo(new BigDecimal("0.00")) <= 0) {
+
+            throw new BizException(MallResultStatus.ACCOUNT_BALANCE_INSUFFICIENT);
+        }
+
+        String passWord = EncryptUtils.aesDecrypt(withdrawDto.getWithdrawPwd());
+
+        if (StringUtil.isBlank(passWord)) throw new BizException(MallResultStatus.WITHDRAW_PASSWORD_ERROR);
+
+        passWord = MD5Util.MD5EncodeUtf8(passWord);
+
+        if (!passWord.equals(user.getFwithdrawPasswd()))
+            throw new BizException(MallResultStatus.WITHDRAW_PASSWORD_ERROR);
+
+        Result<UserAccount> result = userAccountApi.queryById(uid);
+        if (!result.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (null == result.getData()) throw new BizException(MallResultStatus.ACCOUNT_NOT_EXIST);
+
+        if (result.getData().getFfreezeWithdraw().longValue() < 0) {
+            log.warn("提现冻结金额小于0");
+            throw new BizException(MallResultStatus.REEZE_WITHDRAW_ERROR);
+        }
+        return uid;
     }
 
     private List<WithdrawRateVo> toWithdrawRateVos(List<UserWithdrawRate> userRate) {
         return userRate.stream().map(rate ->
                 new WithdrawRateVo()
-                        .setFrate(PriceUtil.toYuan(rate.getFrate()))
+                        .setFrate(new BigDecimal(rate.getFrate()).divide(new BigDecimal(10000)))
                         .setFwithdrawType(rate.getFwithdrawType())
         ).collect(Collectors.toList());
     }
@@ -238,5 +313,182 @@ public class WalletServiceImpl implements WalletService {
         // 邮箱是否验证：0否，1是
         if (user.getFmailIsValid() != 1) throw new BizException(MallResultStatus.ACCOUNT_MAIL_NOT_VERIFY);
         return user;
+    }
+
+    @Getter
+    private class WithdrawRate {
+        private @Valid WithdrawDto withdrawDto;
+        private BigDecimal feeRate;
+        private BigDecimal transAmount;
+
+        public WithdrawRate(@Valid WithdrawDto withdrawDto) {
+            this.withdrawDto = withdrawDto;
+        }
+
+        public WithdrawRate get() {
+            // 提现费率，若不存在则默认为0
+            float poundagePercent = 0f;
+            List<WithdrawRateVo> withdrawRates = WalletServiceImpl.this.queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(withdrawDto.getWay()));
+            if (!CollectionUtils.isEmpty(withdrawRates)) {
+                poundagePercent = withdrawRates.stream().findFirst().get().getFrate().floatValue();
+            }
+            //计算手续费
+            feeRate = new BigDecimal(poundagePercent).divide(new BigDecimal(10000));
+            transAmount = withdrawDto.getWithdrawAmount();
+            return this;
+        }
+    }
+
+    @Getter
+    private class AccountTrans {
+        private @Valid WithdrawDto withdrawDto;
+        private Long uid;
+        private WithdrawRate withdrawRate;
+        private BigDecimal transAmount;
+        private UserAccountTrans userAccountTrans;
+        private BigDecimal feeAmount;
+        private BigDecimal transActualAmount;
+
+        public AccountTrans(@Valid WithdrawDto withdrawDto, Long uid, WithdrawRate withdrawRate, BigDecimal transAmount) {
+            this.withdrawDto = withdrawDto;
+            this.uid = uid;
+            this.withdrawRate = withdrawRate;
+            this.transAmount = transAmount;
+        }
+
+        public AccountTrans put() {
+            userAccountTrans = new UserAccountTrans();
+            userAccountTrans.setFuid(uid);
+            userAccountTrans.setFtransTypes(2);//提现
+            userAccountTrans.setFtransReason("提现申请");
+            userAccountTrans.setFtransAmount(transAmount.longValue());
+            feeAmount = transAmount.multiply(withdrawRate.getFeeRate());
+            transActualAmount = transAmount.subtract(feeAmount);
+            userAccountTrans.setFtransActualAmount(transActualAmount.longValue());
+            userAccountTrans.setFtransPoundage(feeAmount.longValue());
+
+
+            // 第三方支付类型：1 支付宝  2 微信支付 3 汇付天下 4 线下汇款
+            userAccountTrans.setFrechargeType(4);
+            userAccountTrans.setFtransStatus(1);
+            userAccountTrans.setFwithdrawType(2);
+
+            userAccountTrans.setFwithdrawBank(withdrawDto.getBankName());
+            userAccountTrans.setFaccountHolder(withdrawDto.getName());
+            userAccountTrans.setFwithdrawAccount(withdrawDto.getCardNumber());
+            return this;
+        }
+    }
+
+    private class AlipayTransfer {
+        private @Valid WithdrawDto withdrawDto;
+        private BigDecimal transActualAmount;
+        private String transId;
+
+        public AlipayTransfer(@Valid WithdrawDto withdrawDto, BigDecimal transActualAmount, String transId) {
+            this.withdrawDto = withdrawDto;
+            this.transActualAmount = transActualAmount;
+            this.transId = transId;
+        }
+
+        public void transfer() {
+
+            Result<UserAccountTrans> transResult = userAccountTransApi.queryById(transId);
+            if (!transResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            UserAccountTrans userAccountTrans = transResult.getData();
+            if (null == userAccountTrans) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+
+            userAccountTrans.setFrechargeType(1);
+            userAccountTrans.setFwithdrawType(1);
+            userAccountTrans.setFwithdrawAccount(withdrawDto.getAccountNumber());
+
+            log.info("-------------------支付宝提现转账开始--------------------");
+            // 远程调用支付宝转账
+            Result<Boolean> transferRes = aliPayApi.transfer(new TransferDto()
+                    .setAmount(PriceUtil.toYuan(transActualAmount).toString())
+                    .setOutBizNo(transId)
+                    .setPayeeAccount(withdrawDto.getAccountNumber())
+                    .setPayeeRealName(withdrawDto.getName())
+                    .setPayeeType("ALIPAY_LOGONID")//支付宝登录号，支持邮箱和手机号格式。
+                    .setPayerShowName(withdrawDto.getName())
+                    .setRemark("用户提现申请"));
+
+            if (!transferRes.isSuccess()) {
+                userAccountTrans.setFtransStatus(2);
+                log.warn("支付宝提现转账服务异常|转人工审核");
+            } else {
+                if (transferRes.getData()) {
+                    userAccountTrans.setFtransStatus(3);
+                    Date today = new Date();
+                    userAccountTrans.setFpassedTime(today);
+                    userAccountTrans.setFpayTime(today);
+                    log.info("支付宝提现转账成功");
+                } else {
+                    userAccountTrans.setFremark("支付宝转账失败," + transferRes.getMsg());
+                    log.warn("支付宝提现转账失败|失败原因:{}", userAccountTrans.getFremark());
+                }
+
+            }
+
+            Result<Integer> res = userAccountTransApi.updateNotNull(userAccountTrans);
+            if (!res.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            if (res.getData() <= 0) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+
+            // 修改账户流水表
+            this.modifyAccountTransWater(userAccountTrans);
+            log.info("---------------------支付宝提现转账结束----------------");
+        }
+
+        private void modifyAccountTransWater(UserAccountTrans userAccountTrans) {
+
+            UserAccountTransWater accountTransWater = new UserAccountTransWater();
+
+            accountTransWater.setFtransId(userAccountTrans.getFtransId());
+            Result<UserAccountTransWater> accountWaterResult = userAccountTransWaterApi.queryOne(accountTransWater);
+
+            if (!accountWaterResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            if (null == accountWaterResult.getData()) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+
+            BeanUtils.copyProperties(userAccountTrans, accountTransWater);
+            accountTransWater.setFtransId(userAccountTrans.getFtransId());
+            accountTransWater.setFwaterId(accountWaterResult.getData().getFwaterId());
+
+            Result<Integer> result = userAccountTransWaterApi.updateNotNull(accountTransWater);
+
+            if (!result.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            if (result.getData()<=0) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+
+        }
+    }
+
+    @Getter
+    private class CheckAfterMoney {
+        private Long uid;
+        private BigDecimal transAmount;
+        private BigDecimal newBalance;
+        private BigDecimal freezeWithdraw;
+
+        public CheckAfterMoney(Long uid, BigDecimal transAmount) {
+            this.uid = uid;
+            this.transAmount = transAmount;
+        }
+
+        public CheckAfterMoney check() {
+            Result<UserAccount> resultAccount = userAccountApi.queryById(uid);
+            if (!resultAccount.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+
+            UserAccount account = resultAccount.getData();
+            if (null == account) throw new BizException(MallResultStatus.ACCOUNT_NOT_EXIST);
+
+            BigDecimal oldBalance = new BigDecimal(account.getFbalance());
+            newBalance = oldBalance.subtract(transAmount);
+            freezeWithdraw = new BigDecimal(account.getFfreezeWithdraw());
+            if (oldBalance.longValue() <= 0L || transAmount.longValue() <= 0L || newBalance.longValue() < 0L || freezeWithdraw.longValue() < 0L) {
+                // 回滚事务
+                log.info("提现金额有误|提现失败|事务回滚");
+                throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+            }
+            return this;
+        }
     }
 }
