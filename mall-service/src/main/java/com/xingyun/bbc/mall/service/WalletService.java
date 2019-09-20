@@ -49,8 +49,8 @@ public interface WalletService {
 
     /**
      * 用户提现
-     * @param setUid
+     * @param withdrawDto
      * @return
      */
-    Boolean withdraw(@Valid WithdrawDto setUid);
+    Boolean withdraw(@Valid WithdrawDto withdrawDto);
 }

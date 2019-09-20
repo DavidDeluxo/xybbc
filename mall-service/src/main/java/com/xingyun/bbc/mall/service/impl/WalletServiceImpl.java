@@ -24,13 +24,17 @@ import com.xingyun.bbc.mall.model.vo.WalletAmountVo;
 import com.xingyun.bbc.mall.model.vo.WithdrawRateVo;
 import com.xingyun.bbc.mall.service.WalletService;
 import io.seata.spring.annotation.GlobalTransactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.util.CollectionUtils;
+import org.springframework.validation.annotation.Validated;
 
 import javax.validation.Valid;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -44,7 +48,8 @@ import static com.xingyun.bbc.mall.common.enums.OrderPayMent.OrderPayStatusEnum.
  * @date 2019/9/16 16:34
  * @Description
  */
-
+@Slf4j
+@Validated
 @Service
 public class WalletServiceImpl implements WalletService {
 
@@ -106,8 +111,8 @@ public class WalletServiceImpl implements WalletService {
 
             rateQuery.andEqualTo(UserWithdrawRate::getFwithdrawType, rateDto.getFwithdrawType());
             rateQuery.andEqualTo(UserWithdrawRate::getFstate, 1);
-            rateQuery.andGreaterThanOrEqualTo(UserWithdrawRate::getFeffectiveDate, today);
-            rateQuery.andLessThanOrEqualTo(UserWithdrawRate::getFinvalidDate, today);
+            rateQuery.andLessThanOrEqualTo(UserWithdrawRate::getFeffectiveDate, today);
+            rateQuery.andGreaterThanOrEqualTo(UserWithdrawRate::getFinvalidDate, today);
 
             Result<List<UserWithdrawRate>> userRateRes = userWithdrawRateApi.queryByCriteria(rateQuery);
 
@@ -145,8 +150,60 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @GlobalTransactional
-    public Boolean withdraw(@Valid WithdrawDto setUid) {
-
+    public Boolean withdraw(@Valid WithdrawDto withdrawDto) {
+        // 提现费率，若不存在则默认为0
+//        Float poundagePercent = 0f;
+//        this.queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(withdrawDto.getWay()));
+//        if(redisUtil.getFeeRate("withdraw") != null){
+//
+//
+//            poundagePercent = Float.parseFloat(redisUtil.getFeeRate("withdraw"));
+//        }
+//        //计算手续费
+//        BigDecimal feeRate = new BigDecimal(poundagePercent).divide(new BigDecimal(10000));
+//        BigDecimal transAmount = new BigDecimal(userAccountTrans.getTransAmountParam());
+//        userAccountTrans.setFtransAmount(transAmount.longValue());
+//        BigDecimal feeAmount = transAmount.multiply(feeRate);
+//        BigDecimal transActualAmount = transAmount.subtract(feeAmount);
+//        userAccountTrans.setFtransActualAmount(transActualAmount.longValue());
+//        userAccountTrans.setFtransPoundage(feeAmount.longValue());
+//        int fuid = userAccountTrans.getFuid();
+//        //判断金额是否正确（提现、余额金额不能小于等于0，更新后的余额、冻结金额不能小于0）
+//        UserAccount account = userAccountMapper.queryAccount(fuid);
+//        BigDecimal oldBalance = new BigDecimal(account.getFbalance());
+//        BigDecimal newBalance = oldBalance.subtract(transAmount);
+//        BigDecimal freezeWithdraw = new BigDecimal(account.getFfreezeWithdraw());
+//        if(oldBalance.longValue() <= 0L || transAmount.longValue() <= 0L || newBalance.longValue() < 0L || freezeWithdraw.longValue() < 0L){
+//            // 回滚事务
+//            logger.info("提现金额有误，提现失败，事务回滚");
+//            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+//            return -1;
+//        }
+//        // 生成订单号
+//        String ftransDetail = OrderIdCreator.getOrderId("T", serverId, userAccountTrans.getFuid());
+//        // 提现申请插入数据库
+//        userAccountTrans.setFtransDetail(ftransDetail);
+//        int flag1 = userAccountTransMapper.insert(userAccountTrans);
+//        logger.info("生成提现订单，用户id：" + userAccountTrans.getFuid() + ",订单号：" + ftransDetail);
+//        logger.info("用户id：" + userAccountTrans.getFuid() + ",提现金额：" + PriceUtil.cartPennyToYuan(transAmount) + ",手续费：" + PriceUtil.cartPennyToYuan(feeAmount));
+//        // 申请数据插入流水表
+//        int flag2 = userAccountTransMapper.addWater(userAccountTrans.getFtransDetail());
+//        // 修改用户账户表，冻结提现金额
+//        UserAccount userAccount = new UserAccount();
+//        userAccount.setFuid(fuid);
+//        userAccount.setFbalance(newBalance.longValue());
+//        userAccount.setFfreezeWithdraw(transAmount.add(freezeWithdraw).longValue());
+//        userAccount.setFopMemo("申请提现，金额：" + transAmount + "分");
+//        int flag3 = userAccountMapper.updateByFuid(userAccount);
+//        logger.info("冻结提现金额：" + PriceUtil.cartPennyToYuan(transAmount) + "，用户id：" + userAccountTrans.getFuid());
+//        int flag4 = userAccountMapper.insertWater(fuid);
+//        if (flag1 > 0 && flag2 > 0 && flag3 > 0 && flag4 > 0) {
+//            return 1;
+//        }else{
+//            logger.info("提现流程有误，事务回滚");
+//            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+//            return 0;
+//        }
         return true;
     }
 
