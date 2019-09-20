@@ -79,6 +79,7 @@ public class GoodsServiceImpl implements GoodsService {
 
         SearchFilterVo filterVo = new SearchFilterVo();
         EsCriteria criteria = EsCriteria.build(searchItemDto);
+        this.addSoldOutCondition(criteria);
         this.setPriceFilterCondition(searchItemDto, criteria);
         this.setAggregation(criteria);
         Map<String, Object> resultMap = esManager.queryWithAggregation(criteria, true);
@@ -322,6 +323,7 @@ public class GoodsServiceImpl implements GoodsService {
         PageVo<SearchItemVo> pageVo = new PageVo<>();
         pageVo.setTotalCount(0);
         pageVo.setPageSize(1);
+
         EsCriteria criteria = EsCriteria.build(searchItemDto);
         if (CollectionUtils.isNotEmpty(searchItemDto.getFattributeItemId())) {
             String fieldname = "attributes.fclass_attribute_item_id";
