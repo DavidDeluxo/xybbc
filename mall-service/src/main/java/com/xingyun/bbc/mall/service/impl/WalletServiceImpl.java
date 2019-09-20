@@ -315,10 +315,10 @@ public class WalletServiceImpl implements WalletService {
         if (user.getFverifyStatus() != 3) throw new BizException(MallResultStatus.ACCOUNT_NOT_AUTH);
 
         // 手机号是否验证：0否，1是
-        if (user.getFmoblieIsValid() != 1) throw new BizException(MallResultStatus.ACCOUNT_MOBILE_NOT_VERIFY);
+        //if (user.getFmoblieIsValid() != 1) throw new BizException(MallResultStatus.ACCOUNT_MOBILE_NOT_VERIFY);
 
         // 邮箱是否验证：0否，1是
-        if (user.getFmailIsValid() != 1) throw new BizException(MallResultStatus.ACCOUNT_MAIL_NOT_VERIFY);
+        //if (user.getFmailIsValid() != 1) throw new BizException(MallResultStatus.ACCOUNT_MAIL_NOT_VERIFY);
         return user;
     }
 
