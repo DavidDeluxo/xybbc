@@ -397,8 +397,9 @@ public class PayServiceImpl implements PayService {
 					}
 				} catch (IOException e) {
 					logger.info("p_notityXml:"+notityXml.toString());
-				}
+				}	
 				params = WeixinPayUtil.getMapFromXML(notityXml.toString());
+				logger.info("微信支付回调解析前字符串：" + notityXml.toString());
 				try {
 					request.getReader().close();
 				} catch (IOException e) {
