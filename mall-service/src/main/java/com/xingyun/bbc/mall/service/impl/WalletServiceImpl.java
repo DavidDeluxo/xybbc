@@ -1,18 +1,15 @@
 package com.xingyun.bbc.mall.service.impl;
 
+import com.netflix.discovery.converters.Auto;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.order.api.OrderPaymentApi;
 import com.xingyun.bbc.core.order.po.OrderPayment;
 import com.xingyun.bbc.core.query.Criteria;
-import com.xingyun.bbc.core.user.api.BankDepositApi;
-import com.xingyun.bbc.core.user.api.UserAccountApi;
-import com.xingyun.bbc.core.user.api.UserApi;
-import com.xingyun.bbc.core.user.api.UserWithdrawRateApi;
-import com.xingyun.bbc.core.user.po.BankDeposit;
-import com.xingyun.bbc.core.user.po.User;
-import com.xingyun.bbc.core.user.po.UserAccount;
-import com.xingyun.bbc.core.user.po.UserWithdrawRate;
+import com.xingyun.bbc.core.user.api.*;
+import com.xingyun.bbc.core.user.enums.AccountTransType;
+import com.xingyun.bbc.core.user.po.*;
+import com.xingyun.bbc.core.utils.IdGenerator;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.core.utils.StringUtil;
 import com.xingyun.bbc.mall.base.enums.MallResultStatus;
@@ -40,6 +37,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.netflix.config.DeploymentContext.ContextKey.serverId;
 import static com.xingyun.bbc.mall.common.enums.OrderPayMent.OrderPayStatusEnum.*;
 
 
@@ -63,6 +61,8 @@ public class WalletServiceImpl implements WalletService {
     private UserWithdrawRateApi userWithdrawRateApi;
     @Autowired
     private BankDepositApi bankDepositApi;
+    @Autowired
+    private UserAccountTransApi userAccountTransApi;
 
     @Override
     public WalletAmountVo queryAmount(Long uid) {
@@ -151,42 +151,70 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @GlobalTransactional
     public Boolean withdraw(@Valid WithdrawDto withdrawDto) {
+
+        Long uid = withdrawDto.getUid();
+        if (!this.checkPayPwd(uid)) {
+
+            throw new BizException(MallResultStatus.USER_PAY_PWD_NOT_SET);
+        }
+        this.checkUser(uid);
+
+        WalletAmountVo walletAmount = this.queryAmount(uid);
+
+        if (walletAmount.getBalance().compareTo(new BigDecimal("0.00")) <= 0) {
+
+            throw new BizException(MallResultStatus.ACCOUNT_BALANCE_INSUFFICIENT);
+        }
+
         // 提现费率，若不存在则默认为0
-//        Float poundagePercent = 0f;
-//        this.queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(withdrawDto.getWay()));
-//        if(redisUtil.getFeeRate("withdraw") != null){
-//
-//
-//            poundagePercent = Float.parseFloat(redisUtil.getFeeRate("withdraw"));
-//        }
-//        //计算手续费
-//        BigDecimal feeRate = new BigDecimal(poundagePercent).divide(new BigDecimal(10000));
-//        BigDecimal transAmount = new BigDecimal(userAccountTrans.getTransAmountParam());
-//        userAccountTrans.setFtransAmount(transAmount.longValue());
-//        BigDecimal feeAmount = transAmount.multiply(feeRate);
-//        BigDecimal transActualAmount = transAmount.subtract(feeAmount);
-//        userAccountTrans.setFtransActualAmount(transActualAmount.longValue());
-//        userAccountTrans.setFtransPoundage(feeAmount.longValue());
-//        int fuid = userAccountTrans.getFuid();
-//        //判断金额是否正确（提现、余额金额不能小于等于0，更新后的余额、冻结金额不能小于0）
-//        UserAccount account = userAccountMapper.queryAccount(fuid);
-//        BigDecimal oldBalance = new BigDecimal(account.getFbalance());
-//        BigDecimal newBalance = oldBalance.subtract(transAmount);
-//        BigDecimal freezeWithdraw = new BigDecimal(account.getFfreezeWithdraw());
-//        if(oldBalance.longValue() <= 0L || transAmount.longValue() <= 0L || newBalance.longValue() < 0L || freezeWithdraw.longValue() < 0L){
-//            // 回滚事务
-//            logger.info("提现金额有误，提现失败，事务回滚");
-//            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-//            return -1;
-//        }
-//        // 生成订单号
-//        String ftransDetail = OrderIdCreator.getOrderId("T", serverId, userAccountTrans.getFuid());
-//        // 提现申请插入数据库
-//        userAccountTrans.setFtransDetail(ftransDetail);
+        Float poundagePercent = 0f;
+        List<WithdrawRateVo> withdrawRates = this.queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(withdrawDto.getWay()));
+        if (!CollectionUtils.isEmpty(withdrawRates)) {
+            poundagePercent = withdrawRates.stream().findFirst().get().getFrate().floatValue();
+        }
+        //计算手续费
+        BigDecimal feeRate = new BigDecimal(poundagePercent).divide(new BigDecimal(10000));
+        BigDecimal transAmount = withdrawDto.getWithdrawAmount();
+
+        UserAccountTrans  userAccountTrans = new UserAccountTrans();
+        userAccountTrans.setFuid(uid);
+        userAccountTrans.setFtransTypes(2);//提现
+        userAccountTrans.setFtransReason("提现申请");
+        userAccountTrans.setFtransAmount(transAmount.longValue());
+        BigDecimal feeAmount = transAmount.multiply(feeRate);
+        BigDecimal transActualAmount = transAmount.subtract(feeAmount);
+        userAccountTrans.setFtransActualAmount(transActualAmount.longValue());
+        userAccountTrans.setFtransPoundage(feeAmount.longValue());
+
+        //判断金额是否正确（提现、余额金额不能小于等于0，更新后的余额、冻结金额不能小于0）
+        Result<UserAccount> resultAccount = userAccountApi.queryById(uid);
+        if (!resultAccount.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+
+        UserAccount account = resultAccount.getData();
+        if (null == account) throw new BizException(MallResultStatus.ACCOUNT_NOT_EXIST);
+
+        BigDecimal oldBalance = new BigDecimal(account.getFbalance());
+        BigDecimal newBalance = oldBalance.subtract(transAmount);
+        BigDecimal freezeWithdraw = new BigDecimal(account.getFfreezeWithdraw());
+        if (oldBalance.longValue() <= 0L || transAmount.longValue() <= 0L || newBalance.longValue() < 0L || freezeWithdraw.longValue() < 0L) {
+            // 回滚事务
+            log.info("提现金额有误，提现失败，事务回滚");
+            throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        }
+        // 生成订单号
+        String ftransDetail = IdGenerator.INSTANCE.nextId();
+
+        // 提现申请插入数据库
+        userAccountTrans.setFtransId(ftransDetail);
 //        int flag1 = userAccountTransMapper.insert(userAccountTrans);
-//        logger.info("生成提现订单，用户id：" + userAccountTrans.getFuid() + ",订单号：" + ftransDetail);
-//        logger.info("用户id：" + userAccountTrans.getFuid() + ",提现金额：" + PriceUtil.cartPennyToYuan(transAmount) + ",手续费：" + PriceUtil.cartPennyToYuan(feeAmount));
-//        // 申请数据插入流水表
+
+        Result<Integer> accountTransResult = userAccountTransApi.create(userAccountTrans);
+        if (!accountTransResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+
+
+        log.info("生成提现订单，用户id：" + userAccountTrans.getFuid() + ",订单号：" + ftransDetail);
+        log.info("用户id：" + userAccountTrans.getFuid() + ",提现金额：" + PriceUtil.toYuan(transAmount) + ",手续费：" + PriceUtil.toYuan(feeAmount));
+        // 申请数据插入流水表
 //        int flag2 = userAccountTransMapper.addWater(userAccountTrans.getFtransDetail());
 //        // 修改用户账户表，冻结提现金额
 //        UserAccount userAccount = new UserAccount();
@@ -195,14 +223,13 @@ public class WalletServiceImpl implements WalletService {
 //        userAccount.setFfreezeWithdraw(transAmount.add(freezeWithdraw).longValue());
 //        userAccount.setFopMemo("申请提现，金额：" + transAmount + "分");
 //        int flag3 = userAccountMapper.updateByFuid(userAccount);
-//        logger.info("冻结提现金额：" + PriceUtil.cartPennyToYuan(transAmount) + "，用户id：" + userAccountTrans.getFuid());
-//        int flag4 = userAccountMapper.insertWater(fuid);
+//        log.info("冻结提现金额：" + PriceUtil.cartPennyToYuan(transAmount) + "，用户id：" + userAccountTrans.getFuid());
+//        int flag4 = userAccountMapper.insertWater(uid);
 //        if (flag1 > 0 && flag2 > 0 && flag3 > 0 && flag4 > 0) {
 //            return 1;
-//        }else{
-//            logger.info("提现流程有误，事务回滚");
-//            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-//            return 0;
+//        } else {
+//            log.info("提现流程有误，事务回滚");
+//            throw new BizException(ResultStatus.NOT_IMPLEMENTED);
 //        }
         return true;
     }
@@ -210,7 +237,7 @@ public class WalletServiceImpl implements WalletService {
     private List<WithdrawRateVo> toWithdrawRateVos(List<UserWithdrawRate> userRate) {
         return userRate.stream().map(rate ->
                 new WithdrawRateVo()
-                        .setFrate(PriceUtil.toYuan(rate.getFrate()))
+                        .setFrate(new BigDecimal(rate.getFrate()).divide(new BigDecimal(10000)))
                         .setFwithdrawType(rate.getFwithdrawType())
         ).collect(Collectors.toList());
     }
