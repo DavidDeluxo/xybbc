@@ -193,7 +193,6 @@ public class WalletServiceImpl implements WalletService {
         // 添加账户流水
         this.addAccountWater(uid);
 
-
         // 提现方式|1:支付宝|2:银行卡
         if (withdrawDto.getWay() == 1) {
             // 支付宝转账
@@ -269,6 +268,14 @@ public class WalletServiceImpl implements WalletService {
         if (!passWord.equals(user.getFwithdrawPasswd()))
             throw new BizException(MallResultStatus.WITHDRAW_PASSWORD_ERROR);
 
+        Result<UserAccount> result = userAccountApi.queryById(uid);
+        if (!result.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (null == result.getData()) throw new BizException(MallResultStatus.ACCOUNT_NOT_EXIST);
+
+        if (result.getData().getFfreezeWithdraw().longValue() < 0) {
+            log.warn("提现冻结金额小于0");
+            throw new BizException(MallResultStatus.REEZE_WITHDRAW_ERROR);
+        }
         return uid;
     }
 
