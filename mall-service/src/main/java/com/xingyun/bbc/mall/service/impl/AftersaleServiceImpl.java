@@ -182,8 +182,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         }
         if (aftersaleDetailVo.getFaftersaleStatus() <= OrderAftersaleStatus.WAIT_FINANCE_VERIFY.getCode()) {
             aftersaleDetailVo.setFrefundTime(aftersaleBasicResult.getData().getFcreateTime());
-        }
-        if (OrderAftersaleStatus.REJECTED.getCode().equals(aftersaleDetailVo.getFaftersaleStatus()) || aftersaleDetailVo.getFaftersaleStatus() > OrderAftersaleStatus.WAIT_RETURN_GOODS.getCode()) {
+        } else {
             aftersaleDetailVo.setFrefundTime(aftersaleBasicResult.getData().getFmodifyTime());
         }
         return Result.success(aftersaleDetailVo);
