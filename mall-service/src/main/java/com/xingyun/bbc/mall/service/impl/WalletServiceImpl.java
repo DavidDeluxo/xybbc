@@ -257,8 +257,9 @@ public class WalletServiceImpl implements WalletService {
 
         WalletAmountVo walletAmount = this.queryAmount(uid);
 
-        if (walletAmount.getBalance().compareTo(new BigDecimal("0.00")) <= 0) {
-
+        if (walletAmount.getBalance().compareTo(new BigDecimal("0.00")) <= 0 ||
+                PriceUtil.toPenny(withdrawDto.getWithdrawAmount()).compareTo(walletAmount.getBalance()) > 0)
+        {
             throw new BizException(MallResultStatus.ACCOUNT_BALANCE_INSUFFICIENT);
         }
 
@@ -456,7 +457,7 @@ public class WalletServiceImpl implements WalletService {
             Result<Integer> result = userAccountTransWaterApi.updateNotNull(accountTransWater);
 
             if (!result.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-            if (result.getData()<=0) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+            if (result.getData() <= 0) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
 
         }
     }
