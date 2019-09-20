@@ -91,12 +91,12 @@ public class AftersaleServiceImpl implements AftersaleService {
         Result<List<OrderAftersale>> listResult = orderAftersaleApi.queryByCriteria(criteria);
         if (!listResult.isSuccess()) {
             logger.info("用户user_id {}获取售后订单信息失败", aftersaleLisDto.getFuserId());
-            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         Result<Integer> countResult = orderAftersaleApi.countByCriteria(criteria);
         if (!listResult.isSuccess()) {
             logger.info("用户user_id {}获取售后订单信息失败", aftersaleLisDto.getFuserId());
-            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         PageVo<AftersaleListVo> result = pageUtils.convert(countResult.getData(), listResult.getData(), AftersaleListVo.class, aftersaleLisDto);
 
@@ -121,7 +121,7 @@ public class AftersaleServiceImpl implements AftersaleService {
                         OrderAftersale::getFmodifyTime));
         if (!aftersaleBasicResult.isSuccess()) {
             logger.info("单号faftersaleId {}获取售后主表信息失败", faftersaleId);
-            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
 
         //获取skuName
@@ -137,7 +137,7 @@ public class AftersaleServiceImpl implements AftersaleService {
                 .fields(OrderAftersaleAdjust::getFaftersaleTotalAmount));
         if (!aftersaleAdjustResult.isSuccess()) {
             logger.info("单号faftersaleId {}获取售后总金额信息失败", faftersaleId);
-            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         Long faftersaleTotalAmount = aftersaleAdjustResult.getData().getFaftersaleTotalAmount();
         aftersaleDetailVo.setFaftersaleTotalAmount(new BigDecimal(faftersaleTotalAmount).divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP));
@@ -154,7 +154,7 @@ public class AftersaleServiceImpl implements AftersaleService {
                                 OrderAftersaleBack::getFdeliveryCity, OrderAftersaleBack::getFdeliveryArea, OrderAftersaleBack::getFdeliveryAddr));
                 if (!aftersaleBackResult.isSuccess()) {
                     logger.info("单号faftersaleId {}获取售后回寄信息失败", faftersaleId);
-                    throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+                    throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
                 }
                 OrderAftersaleBack aftersaleBack = aftersaleBackResult.getData();
                 if (null != aftersaleBack) {
@@ -172,7 +172,7 @@ public class AftersaleServiceImpl implements AftersaleService {
                         .fields(OrderConfig::getFminute));
                 if (!orderConfigResult.isSuccess()) {
                     logger.info("查询售后详情获取限时回寄分钟数失败");
-                    throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+                    throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
                 }
                 Long fminute = orderConfigResult.getData().getFminute();
                 Long time = aftersaleBasicResult.getData().getFmodifyTime().getTime();
@@ -208,15 +208,23 @@ public class AftersaleServiceImpl implements AftersaleService {
                 .andEqualTo(OrderAftersale::getForderAftersaleId, aftersaleBackDto.getForderAftersaleId())
                 .fields(OrderAftersale::getFaftersaleStatus));
         if (!statusResult.isSuccess()) {
-            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         if (!OrderAftersaleStatus.WAIT_RETURN_GOODS.getCode().equals(statusResult.getData().getFaftersaleStatus())) {
             return Result.success();
         }
-
-        Result<Integer> insResult = orderAftersaleBackApi.updateNotNull(mapper.map(aftersaleBackDto, OrderAftersaleBack.class));
+        //查询orderAftersaleBack id
+        Result<OrderAftersaleBack> aftersaleBackResult = orderAftersaleBackApi.queryOneByCriteria(Criteria.of(OrderAftersaleBack.class)
+                .andEqualTo(OrderAftersaleBack::getForderAftersaleId, aftersaleBackDto.getForderAftersaleId())
+                .fields(OrderAftersaleBack::getFaftersaleBackId));
+        if (!aftersaleBackResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        OrderAftersaleBack aftersaleBack = mapper.map(aftersaleBackDto, OrderAftersaleBack.class);
+        aftersaleBack.setFaftersaleBackId(aftersaleBackResult.getData().getFaftersaleBackId());
+        Result<Integer> insResult = orderAftersaleBackApi.updateNotNull(aftersaleBack);
         if (!insResult.isSuccess()) {
-            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         if (null != aftersaleBackDto.getFpicStr()) {
             String[] picStr = aftersaleBackDto.getFpicStr().split(",");
@@ -225,9 +233,9 @@ public class AftersaleServiceImpl implements AftersaleService {
                 orderAftersalePic.setForderAftersaleId(aftersaleBackDto.getForderAftersaleId());
                 orderAftersalePic.setFpicType(2);
                 orderAftersalePic.setFaftersalePic(pic);
-                Result<Integer> picInsResult = orderAftersalePicApi.updateNotNull(orderAftersalePic);
+                Result<Integer> picInsResult = orderAftersalePicApi.create(orderAftersalePic);
                 if (!picInsResult.isSuccess()) {
-                    throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+                    throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
                 }
             }
         }
@@ -241,7 +249,7 @@ public class AftersaleServiceImpl implements AftersaleService {
                 .fields(OrderAftersaleBack::getForderAftersaleId, OrderAftersaleBack::getFlogisticsCompanyId, OrderAftersaleBack::getFbackLogisticsOrder,
                         OrderAftersaleBack::getFbackRemark, OrderAftersaleBack::getFbackMobile));
         if (!aftersaleBackResult.isSuccess()) {
-            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         AftersaleBackVo aftersaleBackVo = mapper.map(aftersaleBackResult.getData(), AftersaleBackVo.class);
         //获取物流公司名称
@@ -249,7 +257,7 @@ public class AftersaleServiceImpl implements AftersaleService {
                 .andEqualTo(ShippingCompany::getFshippingCompanyId, aftersaleBackVo.getFlogisticsCompanyId())
                 .fields(ShippingCompany::getFshippingName));
         if (!shippingCompanyResult.isSuccess()) {
-            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         aftersaleBackVo.setFlogisticsCompanyName(shippingCompanyResult.getData().getFshippingName());
         Result<List<OrderAftersalePic>> picResult = orderAftersalePicApi.queryByCriteria(Criteria.of(OrderAftersalePic.class)
@@ -257,7 +265,7 @@ public class AftersaleServiceImpl implements AftersaleService {
                 .andEqualTo(OrderAftersalePic::getForderAftersaleId, faftersaleId)
                 .fields(OrderAftersalePic::getFaftersalePic));
         if (!picResult.isSuccess()) {
-            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         String picUrl = "";
         if (!CollectionUtils.isEmpty(picResult.getData())) {
@@ -279,7 +287,7 @@ public class AftersaleServiceImpl implements AftersaleService {
                 .andEqualTo(GoodsSku::getFskuCode, skuCode)
                 .fields(GoodsSku::getFskuName, GoodsSku::getFskuThumbImage));
         if (!goodsSkuResult.isSuccess()) {
-            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         if (null != goodsSkuResult.getData() && null != goodsSkuResult.getData().getFskuName()) {
             skuName = goodsSkuResult.getData().getFskuName();
