@@ -55,9 +55,9 @@ public class UserAddressController {
 
     @ApiOperation(value = "编辑用户收货地址", httpMethod = "POST")
     @PostMapping("/modifyUserAddress")
-    public Result modifyUserAddress(@RequestBody UserDeliveryUpdateDto userDeliveryDto, HttpServletRequest request){
+    public Result modifyUserAddress(UserDeliveryUpdateDto userDeliveryDto, HttpServletRequest request){
         userDeliveryDto.setFuid(Long.parseLong(request.getHeader("xyid")));
-        //userDeliveryDto.setFuid(Long.valueOf(10098));
+        //userDeliveryDto.setFuid(Long.valueOf(24));
         return userAddressService.modifyUserAddress(userDeliveryDto);
     }
 
