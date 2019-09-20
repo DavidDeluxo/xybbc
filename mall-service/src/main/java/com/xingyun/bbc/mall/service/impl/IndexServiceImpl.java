@@ -197,7 +197,8 @@ public class IndexServiceImpl implements IndexService {
         Result<List<GoodsSku>> result = goodsSkuApi.queryByCriteria(
                 criteria.fields(
                         GoodsSku::getFskuName, GoodsSku::getFskuCode,
-                        GoodsSku::getFgoodsId, GoodsSku::getFskuId,GoodsSku::getFskuThumbImage,
+                        GoodsSku::getFgoodsId, GoodsSku::getFskuId,
+                        GoodsSku::getFskuThumbImage,
                         GoodsSku::getFisUserTypeDiscount)
                         .page(categoryDto.getCurrentPage(), categoryDto.getPageSize())
                        );
