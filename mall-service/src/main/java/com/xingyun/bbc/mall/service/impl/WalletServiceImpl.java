@@ -23,8 +23,11 @@ import com.xingyun.bbc.mall.model.vo.BanksVo;
 import com.xingyun.bbc.mall.model.vo.WalletAmountVo;
 import com.xingyun.bbc.mall.model.vo.WithdrawRateVo;
 import com.xingyun.bbc.mall.service.WalletService;
+import io.seata.spring.annotation.GlobalTransactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import javax.validation.Valid;
@@ -141,6 +144,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
+    @GlobalTransactional
     public Boolean withdraw(@Valid WithdrawDto setUid) {
 
         return true;
