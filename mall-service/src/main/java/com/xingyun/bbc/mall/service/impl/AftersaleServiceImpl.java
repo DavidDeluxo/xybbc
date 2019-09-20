@@ -157,12 +157,14 @@ public class AftersaleServiceImpl implements AftersaleService {
                     throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
                 }
                 OrderAftersaleBack aftersaleBack = aftersaleBackResult.getData();
-                aftersaleDetailVo.setFdeliveryName(aftersaleBack.getFdeliveryName());
-                aftersaleDetailVo.setFdeliveryMobile(aftersaleBack.getFdeliveryMobile());
-                aftersaleDetailVo.setFdeliveryProvince(aftersaleBack.getFdeliveryProvince());
-                aftersaleDetailVo.setFdeliveryCity(aftersaleBack.getFdeliveryCity());
-                aftersaleDetailVo.setFdeliveryArea(aftersaleBack.getFdeliveryArea());
-                aftersaleDetailVo.setFdeliveryAddr(aftersaleBack.getFdeliveryAddr());
+                if (null != aftersaleBack) {
+                    aftersaleDetailVo.setFdeliveryName(aftersaleBack.getFdeliveryName());
+                    aftersaleDetailVo.setFdeliveryMobile(aftersaleBack.getFdeliveryMobile());
+                    aftersaleDetailVo.setFdeliveryProvince(aftersaleBack.getFdeliveryProvince());
+                    aftersaleDetailVo.setFdeliveryCity(aftersaleBack.getFdeliveryCity());
+                    aftersaleDetailVo.setFdeliveryArea(aftersaleBack.getFdeliveryArea());
+                    aftersaleDetailVo.setFdeliveryAddr(aftersaleBack.getFdeliveryAddr());
+                }
 
                 //查询限时回寄分钟数
                 Result<OrderConfig> orderConfigResult = orderConfigApi.queryOneByCriteria(Criteria.of(OrderConfig.class)
