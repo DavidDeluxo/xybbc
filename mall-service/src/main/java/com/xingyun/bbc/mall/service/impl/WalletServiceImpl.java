@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.service.impl;
 
+import com.google.common.collect.Lists;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.order.api.OrderPaymentApi;
@@ -14,6 +15,11 @@ import com.xingyun.bbc.mall.base.enums.MallResultStatus;
 import com.xingyun.bbc.mall.base.utils.EncryptUtils;
 import com.xingyun.bbc.mall.base.utils.MD5Util;
 import com.xingyun.bbc.mall.base.utils.PriceUtil;
+import com.xingyun.bbc.mall.base.utils.RandomUtils;
+import com.xingyun.bbc.mall.common.constans.MallRedisConstant;
+import com.xingyun.bbc.mall.common.ensure.Ensure;
+import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
+import com.xingyun.bbc.mall.common.lock.XybbcLock;
 import com.xingyun.bbc.mall.model.dto.WithdrawDto;
 import com.xingyun.bbc.mall.model.dto.WithdrawRateDto;
 import com.xingyun.bbc.mall.model.vo.BanksVo;
@@ -25,6 +31,7 @@ import com.xingyun.bbc.pay.model.dto.TransferDto;
 import io.seata.spring.annotation.GlobalTransactional;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -69,6 +76,8 @@ public class WalletServiceImpl implements WalletService {
     private UserAccountWaterApi userAccountWaterApi;
     @Autowired
     private AliPayApi aliPayApi;
+    @Autowired
+    private XybbcLock xybbcLock;
 
     @Override
     public WalletAmountVo queryAmount(Long uid) {
@@ -157,6 +166,24 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @GlobalTransactional
     public Boolean withdraw(@Valid WithdrawDto withdrawDto) {
+
+        String withdrawLockKey = this.getWithdrawKey(withdrawDto);
+
+        String withdrawLockValue = RandomUtils.getUUID();
+
+        try {
+
+            Ensure.that(xybbcLock.tryLock(withdrawLockKey, withdrawLockValue, 10)).isTrue(MallExceptionCode.WITHDRAW_PROCESSING);
+            return this.invokeWithdraw(withdrawDto);
+
+        } finally {
+
+            xybbcLock.releaseLock(withdrawLockKey, withdrawLockValue);
+        }
+
+    }
+
+    private boolean invokeWithdraw(@Valid WithdrawDto withdrawDto) {
         // 校验
         Long uid = this.withdrawCheck(withdrawDto);
 
@@ -249,17 +276,23 @@ public class WalletServiceImpl implements WalletService {
 
     private Long withdrawCheck(@Valid WithdrawDto withdrawDto) {
         Long uid = withdrawDto.getUid();
+
         if (!this.checkPayPwd(uid)) {
 
             throw new BizException(MallResultStatus.USER_PAY_PWD_NOT_SET);
         }
+
+        if (StringUtil.isBlank(withdrawDto.getAccountNumber())&&StringUtil.isBlank(withdrawDto.getCardNumber())){
+
+            throw new BizException(MallResultStatus.WITHDRAW_ACCOUNT_EMPTY);
+        }
+
         User user = this.checkUser(uid);
 
         WalletAmountVo walletAmount = this.queryAmount(uid);
 
         if (walletAmount.getBalance().compareTo(new BigDecimal("0.00")) <= 0 ||
-                PriceUtil.toPenny(withdrawDto.getWithdrawAmount()).compareTo(walletAmount.getBalance()) > 0)
-        {
+                PriceUtil.toPenny(withdrawDto.getWithdrawAmount()).compareTo(walletAmount.getBalance()) > 0) {
             throw new BizException(MallResultStatus.ACCOUNT_BALANCE_INSUFFICIENT);
         }
 
@@ -433,7 +466,7 @@ public class WalletServiceImpl implements WalletService {
                     log.info("支付宝提现转账成功");
                 } else {
                     userAccountTrans.setFremark("支付宝转账失败," + transferRes.getMsg());
-                    log.warn("支付宝提现转账失败|失败原因:{}",  transferRes.getMsg());
+                    log.warn("支付宝提现转账失败|失败原因:{}", transferRes.getMsg());
                 }
 
             }
@@ -498,5 +531,15 @@ public class WalletServiceImpl implements WalletService {
             }
             return this;
         }
+    }
+
+    private String getWithdrawKey(WithdrawDto withdrawDto) {
+
+        return StringUtils.join(Lists.newArrayList(MallRedisConstant.ADD_USER_WITHDRAW_LOCK, this.appendKey(withdrawDto), withdrawDto.getUid()), ":");
+    }
+
+    private String appendKey(WithdrawDto dto) {
+
+        return Lists.newArrayList(dto.getName(), dto.getWay(), StringUtil.isBlank(dto.getAccountNumber()) ? "" : dto.getAccountNumber(), StringUtil.isBlank(dto.getCardNumber()) ? "" : dto.getCardNumber(), dto.getWithdrawAmount()).toString();
     }
 }

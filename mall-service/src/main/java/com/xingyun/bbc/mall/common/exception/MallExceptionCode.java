@@ -34,7 +34,8 @@ public class MallExceptionCode implements IResultStatus {
     public static final MallExceptionCode NO_USER = new MallExceptionCode("6667", "没有用户信息");
     public static final MallExceptionCode NO_BATCH_USER_PRICE = new MallExceptionCode("6668", "没有SKU批次会员类型售价");
     public static final MallExceptionCode NO_BATCH_PRICE = new MallExceptionCode("6668", "没有SKU批次类型售价");
-    
+    public static final MallExceptionCode WITHDRAW_PROCESSING = new MallExceptionCode("6670", "上一笔提现正在处理中,稍后再试~");
+
     /**
      * 
      * pay模块错误信息

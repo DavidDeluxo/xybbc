@@ -49,6 +49,9 @@ dependencies {
     compile group: 'cn.afterturn', name: 'easypoi-base', version: '4.0.0'
     compile group: 'cn.afterturn', name: 'easypoi-web', version: '4.0.0'
     compile group: 'cn.afterturn', name: 'easypoi-annotation', version: '4.0.0'
+    compile group: 'cn.hutool', name: 'hutool-all', version: '4.1.1'
+    compile group: 'com.fasterxml.uuid', name: 'java-uuid-generator', version: '3.2.0'
+    compile group: 'redis.clients', name: 'jedis', version: '2.9.0'
     compile project(':mall-common-elasticsearch')
 }
 
