@@ -9,7 +9,6 @@ import com.xingyun.bbc.core.order.po.OrderPayment;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.*;
 import com.xingyun.bbc.core.user.po.*;
-import com.xingyun.bbc.core.utils.IdGenerator;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.core.utils.StringUtil;
 import com.xingyun.bbc.mall.base.enums.MallResultStatus;
@@ -196,7 +195,7 @@ public class WalletServiceImpl implements WalletService {
         BigDecimal transAmount = withdrawRate.getTransAmount();
 
         // build UserAccountTrans
-        AccountTrans accountTrans = new AccountTrans(withdrawDto, uid, withdrawRate, transAmount).put();
+        AccountTrans accountTrans = new AccountTrans(withdrawDto, uid, withdrawRate, transAmount).build();
         UserAccountTrans userAccountTrans = accountTrans.getUserAccountTrans();
 
         // 生成订单号
@@ -399,7 +398,7 @@ public class WalletServiceImpl implements WalletService {
             this.transAmount = transAmount;
         }
 
-        public AccountTrans put() {
+        public AccountTrans build() {
             userAccountTrans = new UserAccountTrans();
             userAccountTrans.setFuid(uid);
             userAccountTrans.setFtransTypes(2);//提现
