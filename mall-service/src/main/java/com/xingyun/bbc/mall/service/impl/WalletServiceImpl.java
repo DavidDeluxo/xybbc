@@ -79,6 +79,8 @@ public class WalletServiceImpl implements WalletService {
     private AliPayApi aliPayApi;
     @Autowired
     private XybbcLock xybbcLock;
+    @Autowired
+    private XyIdGenerator xyIdGenerator;
 
     @Override
     public WalletAmountVo queryAmount(Long uid) {
@@ -175,13 +177,13 @@ public class WalletServiceImpl implements WalletService {
         try {
 
             Ensure.that(xybbcLock.tryLock(withdrawLockKey, withdrawLockValue, 10)).isTrue(MallExceptionCode.WITHDRAW_PROCESSING);
+
             return this.invokeWithdraw(withdrawDto);
 
         } finally {
 
             xybbcLock.releaseLock(withdrawLockKey, withdrawLockValue);
         }
-
     }
 
     private boolean invokeWithdraw(@Valid WithdrawDto withdrawDto) {
@@ -198,7 +200,7 @@ public class WalletServiceImpl implements WalletService {
         UserAccountTrans userAccountTrans = accountTrans.getUserAccountTrans();
 
         // 生成订单号
-        String transId = XyIdGenerator.generateId("T","W");
+        String transId = xyIdGenerator.generateId("T", "W");
 
         // 判断金额是否正确(提现、余额金额不能小于等于0，更新后的余额、冻结金额不能小于0)
         CheckAfterMoney checkAfterMoney = new CheckAfterMoney(uid, transAmount).check();
@@ -283,7 +285,7 @@ public class WalletServiceImpl implements WalletService {
             throw new BizException(MallResultStatus.USER_PAY_PWD_NOT_SET);
         }
 
-        if (StringUtil.isBlank(withdrawDto.getAccountNumber())&&StringUtil.isBlank(withdrawDto.getCardNumber())){
+        if (StringUtil.isBlank(withdrawDto.getAccountNumber()) && StringUtil.isBlank(withdrawDto.getCardNumber())) {
 
             throw new BizException(MallResultStatus.WITHDRAW_ACCOUNT_EMPTY);
         }
