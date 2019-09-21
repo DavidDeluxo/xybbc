@@ -249,7 +249,12 @@ public class WalletServiceImpl implements WalletService {
         userAccount.setFbalance(newBalance.longValue());
         userAccount.setFfreezeWithdraw(transAmount.add(freezeWithdraw).longValue());
         userAccount.setFoperateRemark("申请提现,金额:" + transAmount + "分");
-        userAccount.setFmodifyTime(new Date());
+
+        Result<UserAccount> result = userAccountApi.queryById(uid);
+        if (!result.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (null == result.getData()) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        // 乐观锁-先查原来的值
+        userAccount.setFmodifyTime(result.getData().getFmodifyTime());
 
         Result<Integer> accountResult = userAccountApi.updateNotNull(userAccount);
         if (!accountResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
