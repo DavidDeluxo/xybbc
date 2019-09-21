@@ -175,7 +175,7 @@ public class WalletServiceImpl implements WalletService {
 
         try {
 
-            Ensure.that(xybbcLock.tryLock(withdrawLockKey, withdrawLockValue, 10)).isTrue(MallExceptionCode.WITHDRAW_PROCESSING);
+            Ensure.that(xybbcLock.tryLock(withdrawLockKey, withdrawLockValue, 300)).isTrue(MallExceptionCode.WITHDRAW_PROCESSING);
 
             return this.invokeWithdraw(withdrawDto);
 
