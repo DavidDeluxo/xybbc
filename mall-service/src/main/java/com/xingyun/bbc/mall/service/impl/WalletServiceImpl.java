@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mall.service.impl;
 
 import com.google.common.collect.Lists;
+import com.xingyun.bbc.common.redis.XyIdGenerator;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.order.api.OrderPaymentApi;
@@ -197,7 +198,7 @@ public class WalletServiceImpl implements WalletService {
         UserAccountTrans userAccountTrans = accountTrans.getUserAccountTrans();
 
         // 生成订单号
-        String transId = IdGenerator.INSTANCE.nextId();
+        String transId = XyIdGenerator.generateId("T","W");
 
         // 判断金额是否正确(提现、余额金额不能小于等于0，更新后的余额、冻结金额不能小于0)
         CheckAfterMoney checkAfterMoney = new CheckAfterMoney(uid, transAmount).check();
