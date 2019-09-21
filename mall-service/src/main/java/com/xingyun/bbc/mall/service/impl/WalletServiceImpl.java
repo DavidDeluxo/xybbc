@@ -249,6 +249,7 @@ public class WalletServiceImpl implements WalletService {
         userAccount.setFbalance(newBalance.longValue());
         userAccount.setFfreezeWithdraw(transAmount.add(freezeWithdraw).longValue());
         userAccount.setFoperateRemark("申请提现,金额:" + transAmount + "分");
+        userAccount.setFmodifyTime(new Date());
 
         Result<Integer> accountResult = userAccountApi.updateNotNull(userAccount);
         if (!accountResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -284,6 +285,9 @@ public class WalletServiceImpl implements WalletService {
             throw new BizException(MallResultStatus.USER_PAY_PWD_NOT_SET);
         }
 
+        BigDecimal transAmount = PriceUtil.toPenny(withdrawDto.getWithdrawAmount());
+        withdrawDto.setWithdrawAmount(transAmount);
+
         if (StringUtil.isBlank(withdrawDto.getAccountNumber()) && StringUtil.isBlank(withdrawDto.getCardNumber())) {
 
             throw new BizException(MallResultStatus.WITHDRAW_ACCOUNT_EMPTY);
@@ -294,7 +298,7 @@ public class WalletServiceImpl implements WalletService {
         WalletAmountVo walletAmount = this.queryAmount(uid);
 
         if (walletAmount.getBalance().compareTo(new BigDecimal("0.00")) <= 0 ||
-                PriceUtil.toPenny(withdrawDto.getWithdrawAmount()).compareTo(walletAmount.getBalance()) > 0) {
+                withdrawDto.getWithdrawAmount().compareTo(walletAmount.getBalance()) > 0) {
             throw new BizException(MallResultStatus.ACCOUNT_BALANCE_INSUFFICIENT);
         }
 
@@ -311,12 +315,12 @@ public class WalletServiceImpl implements WalletService {
         if (!result.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         if (null == result.getData()) throw new BizException(MallResultStatus.ACCOUNT_NOT_EXIST);
 
-        if (result.getData().getFfreezeWithdraw().longValue() < 0) {
+        if (result.getData().getFfreezeWithdraw() < 0) {
             log.warn("提现冻结金额小于0");
             throw new BizException(MallResultStatus.REEZE_WITHDRAW_ERROR);
         }
 
-        BigDecimal sub = new BigDecimal(result.getData().getFbalance()).subtract(PriceUtil.toPenny(withdrawDto.getWithdrawAmount()));
+        BigDecimal sub = new BigDecimal(result.getData().getFbalance()).subtract(withdrawDto.getWithdrawAmount());
         if (sub.longValue() < 0L) {
             throw new BizException(MallResultStatus.ACCOUNT_BALANCE_INSUFFICIENT);
         }
