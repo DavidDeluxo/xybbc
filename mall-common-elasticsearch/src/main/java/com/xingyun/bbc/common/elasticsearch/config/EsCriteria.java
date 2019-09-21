@@ -328,7 +328,7 @@ public class EsCriteria {
     }
 
     public EsCriteria sortBy(String fieldName, Object order) {
-        if (StringUtils.isEmpty(fieldName) || order == null) {
+        if (StringUtils.isEmpty(fieldName) || order == null || StringUtils.isEmpty(String.valueOf(order))) {
             return this;
         }
         SortOrder search_order = SortOrder.DESC;
