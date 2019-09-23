@@ -3,6 +3,7 @@ package com.xingyun.bbc.mall.service.impl;
 import com.xingyun.bbc.mall.base.utils.DecodeUtil;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.EncryptUtils;
+import com.xingyun.bbc.mall.base.utils.MD5Util;
 import com.xingyun.bbc.mall.base.utils.PriceUtil;
 import com.xingyun.bbc.mall.base.utils.ThirdPayUtil;
 import com.xingyun.bbc.mall.base.utils.ThirdPayUtilFactory;
@@ -95,7 +96,7 @@ public class PayServiceImpl implements PayService {
 	@Override
 	public Result<?> balancePay(BalancePayDto dto, HttpServletRequest request) {
 		
-		String fuid= request.getHeader("xyid").toString();
+		String fuid=request.getHeader("xyid").toString();
 		
 		logger.info("余额支付。用户id：" +fuid+ "，订单号：" + dto.getForderId() + "，余额类型：" + dto.getBalanceType());
 		
@@ -104,11 +105,12 @@ public class PayServiceImpl implements PayService {
 			return checkEntity;
 		}
 		// 检查订单是否能支付
-		checkEntity = this.checkOrderIsEnablePay(dto);
-		if (checkEntity != null) {
-			return checkEntity;
-		}
-		PayDto payDto = dozerHolder.convert(dto,PayDto.class);
+//		checkEntity = this.checkOrderIsEnablePay(dto);
+//		if (checkEntity != null) {
+//			return checkEntity;
+//		}
+		PayDto payDto =new PayDto();
+		payDto.setForderPaymentId(dto.getForderId());
 		Result<BalancePayVo> result = orderPayApi.balancePay(payDto);
 		return result;
 	}
@@ -272,7 +274,7 @@ public class PayServiceImpl implements PayService {
 				logger.info("校验余额支付失败：未设置支付密码！订单号：" + forderId + "，用户名：" + fuid + "，余额类型：" + balanceType);
 				return Result.failure(MallExceptionCode.PAY_PWD_IS_NOT_SET);
 			}
-			if (!EncryptUtils.aesDecrypt(payPwdMd5).equals(inputPayPwd)) {
+			if (!payPwdMd5.equals(MD5Util.MD5EncodeUtf8(inputPayPwd))) {
 				logger.info("校验余额支付失败：支付密码错误！订单号：" + forderId + "，用户名：" + fuid + "，余额类型：" + balanceType);
 				return Result.failure(MallExceptionCode.WITHDRAW_PSD_WRONG);
 			}
