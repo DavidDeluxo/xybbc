@@ -1,5 +1,7 @@
 package com.xingyun.bbc.mall.service.impl;
 
+import com.google.common.collect.Lists;
+import com.xingyun.bbc.common.redis.XyIdGenerator;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.order.api.OrderPaymentApi;
@@ -7,13 +9,17 @@ import com.xingyun.bbc.core.order.po.OrderPayment;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.*;
 import com.xingyun.bbc.core.user.po.*;
-import com.xingyun.bbc.core.utils.IdGenerator;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.core.utils.StringUtil;
 import com.xingyun.bbc.mall.base.enums.MallResultStatus;
 import com.xingyun.bbc.mall.base.utils.EncryptUtils;
 import com.xingyun.bbc.mall.base.utils.MD5Util;
 import com.xingyun.bbc.mall.base.utils.PriceUtil;
+import com.xingyun.bbc.mall.base.utils.RandomUtils;
+import com.xingyun.bbc.mall.common.constans.MallRedisConstant;
+import com.xingyun.bbc.mall.common.ensure.Ensure;
+import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
+import com.xingyun.bbc.mall.common.lock.XybbcLock;
 import com.xingyun.bbc.mall.model.dto.WithdrawDto;
 import com.xingyun.bbc.mall.model.dto.WithdrawRateDto;
 import com.xingyun.bbc.mall.model.vo.BanksVo;
@@ -25,6 +31,7 @@ import com.xingyun.bbc.pay.model.dto.TransferDto;
 import io.seata.spring.annotation.GlobalTransactional;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -69,6 +76,8 @@ public class WalletServiceImpl implements WalletService {
     private UserAccountWaterApi userAccountWaterApi;
     @Autowired
     private AliPayApi aliPayApi;
+    @Autowired
+    private XybbcLock xybbcLock;
 
     @Override
     public WalletAmountVo queryAmount(Long uid) {
@@ -103,7 +112,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     public Boolean checkPayPwd(Long uid) {
         User user = this.checkUser(uid);
-        return StringUtil.isBlank(user.getFwithdrawPasswd()) ? false : true;
+        return !StringUtil.isBlank(user.getFwithdrawPasswd());
     }
 
     @Override
@@ -157,26 +166,43 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @GlobalTransactional
     public Boolean withdraw(@Valid WithdrawDto withdrawDto) {
+
+        String withdrawLockKey = this.getWithdrawKey(withdrawDto);
+
+        String withdrawLockValue = RandomUtils.getUUID();
+
+        try {
+
+            Ensure.that(xybbcLock.tryLock(withdrawLockKey, withdrawLockValue, 300)).isTrue(MallExceptionCode.WITHDRAW_PROCESSING);
+
+            return this.invokeWithdraw(withdrawDto);
+
+        } finally {
+
+            xybbcLock.releaseLock(withdrawLockKey, withdrawLockValue);
+        }
+    }
+
+    private boolean invokeWithdraw(@Valid WithdrawDto withdrawDto) {
         // 校验
         Long uid = this.withdrawCheck(withdrawDto);
 
         // 获取提现费率
-        WithdrawRate withdrawRate = new WithdrawRate(withdrawDto).get();
+        WithdrawRate withdrawRate = new WithdrawRate(withdrawDto.getWay()).get();
 
-        BigDecimal transAmount = withdrawRate.getTransAmount();
+        BigDecimal transAmount = withdrawDto.getWithdrawAmount();
 
         // build UserAccountTrans
-        AccountTrans accountTrans = new AccountTrans(withdrawDto, uid, withdrawRate, transAmount).put();
-        UserAccountTrans userAccountTrans = accountTrans.getUserAccountTrans();
+        AccountTrans accountTrans = new AccountTrans(withdrawDto, uid, withdrawRate, transAmount).build();
 
         // 生成订单号
-        String transId = IdGenerator.INSTANCE.nextId();
+        String transId = XyIdGenerator.generateId("T", "W");
 
         // 判断金额是否正确(提现、余额金额不能小于等于0，更新后的余额、冻结金额不能小于0)
         CheckAfterMoney checkAfterMoney = new CheckAfterMoney(uid, transAmount).check();
 
         // 提现申请插入数据库
-        this.addAccountTrans(userAccountTrans, transId);
+        this.addAccountTrans(accountTrans.getUserAccountTrans(), transId);
 
         log.info("|生成提现订单|用户id:{}|订单号:{}|", uid, transId);
 
@@ -221,6 +247,12 @@ public class WalletServiceImpl implements WalletService {
         userAccount.setFfreezeWithdraw(transAmount.add(freezeWithdraw).longValue());
         userAccount.setFoperateRemark("申请提现,金额:" + transAmount + "分");
 
+        Result<UserAccount> result = userAccountApi.queryById(uid);
+        if (!result.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (null == result.getData()) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        // 乐观锁-先查原来的值
+        userAccount.setFmodifyTime(result.getData().getFmodifyTime());
+
         Result<Integer> accountResult = userAccountApi.updateNotNull(userAccount);
         if (!accountResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         if (accountResult.getData() < 0) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
@@ -249,17 +281,26 @@ public class WalletServiceImpl implements WalletService {
 
     private Long withdrawCheck(@Valid WithdrawDto withdrawDto) {
         Long uid = withdrawDto.getUid();
+
         if (!this.checkPayPwd(uid)) {
 
             throw new BizException(MallResultStatus.USER_PAY_PWD_NOT_SET);
         }
+
+        BigDecimal transAmount = PriceUtil.toPenny(withdrawDto.getWithdrawAmount());
+        withdrawDto.setWithdrawAmount(transAmount);
+
+        if (StringUtil.isBlank(withdrawDto.getAccountNumber()) && StringUtil.isBlank(withdrawDto.getCardNumber())) {
+
+            throw new BizException(MallResultStatus.WITHDRAW_ACCOUNT_EMPTY);
+        }
+
         User user = this.checkUser(uid);
 
         WalletAmountVo walletAmount = this.queryAmount(uid);
 
         if (walletAmount.getBalance().compareTo(new BigDecimal("0.00")) <= 0 ||
-                PriceUtil.toPenny(withdrawDto.getWithdrawAmount()).compareTo(walletAmount.getBalance()) > 0)
-        {
+                withdrawDto.getWithdrawAmount().compareTo(walletAmount.getBalance()) > 0) {
             throw new BizException(MallResultStatus.ACCOUNT_BALANCE_INSUFFICIENT);
         }
 
@@ -267,7 +308,7 @@ public class WalletServiceImpl implements WalletService {
 
         if (StringUtil.isBlank(passWord)) throw new BizException(MallResultStatus.WITHDRAW_PASSWORD_ERROR);
 
-        passWord = MD5Util.MD5EncodeUtf8(passWord);
+        passWord = MD5Util.MD5EncodeUtf8(withdrawDto.getWithdrawPwd());
 
         if (!passWord.equals(user.getFwithdrawPasswd()))
             throw new BizException(MallResultStatus.WITHDRAW_PASSWORD_ERROR);
@@ -276,12 +317,12 @@ public class WalletServiceImpl implements WalletService {
         if (!result.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         if (null == result.getData()) throw new BizException(MallResultStatus.ACCOUNT_NOT_EXIST);
 
-        if (result.getData().getFfreezeWithdraw().longValue() < 0) {
+        if (result.getData().getFfreezeWithdraw() < 0) {
             log.warn("提现冻结金额小于0");
             throw new BizException(MallResultStatus.REEZE_WITHDRAW_ERROR);
         }
 
-        BigDecimal sub = new BigDecimal(result.getData().getFbalance()).subtract(PriceUtil.toPenny(withdrawDto.getWithdrawAmount()));
+        BigDecimal sub = new BigDecimal(result.getData().getFbalance()).subtract(withdrawDto.getWithdrawAmount());
         if (sub.longValue() < 0L) {
             throw new BizException(MallResultStatus.ACCOUNT_BALANCE_INSUFFICIENT);
         }
@@ -324,24 +365,22 @@ public class WalletServiceImpl implements WalletService {
 
     @Getter
     private class WithdrawRate {
-        private @Valid WithdrawDto withdrawDto;
+        private Integer way;
         private BigDecimal feeRate;
-        private BigDecimal transAmount;
 
-        public WithdrawRate(@Valid WithdrawDto withdrawDto) {
-            this.withdrawDto = withdrawDto;
+        public WithdrawRate(Integer way) {
+            this.way = way;
         }
 
         public WithdrawRate get() {
             // 提现费率，若不存在则默认为0
             float poundagePercent = 0f;
-            List<WithdrawRateVo> withdrawRates = WalletServiceImpl.this.queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(withdrawDto.getWay()));
+            List<WithdrawRateVo> withdrawRates = WalletServiceImpl.this.queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(way));
             if (!CollectionUtils.isEmpty(withdrawRates)) {
                 poundagePercent = withdrawRates.stream().findFirst().get().getFrate().floatValue();
             }
             //计算手续费
             feeRate = new BigDecimal(poundagePercent).divide(new BigDecimal(10000));
-            transAmount = withdrawDto.getWithdrawAmount();
             return this;
         }
     }
@@ -363,7 +402,7 @@ public class WalletServiceImpl implements WalletService {
             this.transAmount = transAmount;
         }
 
-        public AccountTrans put() {
+        public AccountTrans build() {
             userAccountTrans = new UserAccountTrans();
             userAccountTrans.setFuid(uid);
             userAccountTrans.setFtransTypes(2);//提现
@@ -433,7 +472,7 @@ public class WalletServiceImpl implements WalletService {
                     log.info("支付宝提现转账成功");
                 } else {
                     userAccountTrans.setFremark("支付宝转账失败," + transferRes.getMsg());
-                    log.warn("支付宝提现转账失败|失败原因:{}",  transferRes.getMsg());
+                    log.warn("支付宝提现转账失败|失败原因:{}", transferRes.getMsg());
                 }
 
             }
@@ -498,5 +537,15 @@ public class WalletServiceImpl implements WalletService {
             }
             return this;
         }
+    }
+
+    private String getWithdrawKey(WithdrawDto withdrawDto) {
+
+        return StringUtils.join(Lists.newArrayList(MallRedisConstant.ADD_USER_WITHDRAW_LOCK, this.appendKey(withdrawDto), withdrawDto.getUid()), ":");
+    }
+
+    private String appendKey(WithdrawDto dto) {
+
+        return Lists.newArrayList(dto.getName(), dto.getWay(), StringUtil.isBlank(dto.getAccountNumber()) ? "" : dto.getAccountNumber(), StringUtil.isBlank(dto.getCardNumber()) ? "" : dto.getCardNumber(), dto.getWithdrawAmount()).toString();
     }
 }

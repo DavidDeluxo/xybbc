@@ -54,5 +54,6 @@ public class WithdrawDto implements Serializable {
     private String bankName;
 
     @ApiModelProperty("姓名")
+    @NotBlank(message = "姓名不能为空")
     private String name;
 }

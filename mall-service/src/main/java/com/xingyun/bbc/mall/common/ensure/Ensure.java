@@ -21,5 +21,8 @@ public class Ensure {
     public static EnsureStringExtension that(String param) {
         return new EnsureStringExtension(param);
     }
+    public static EnsureBooleanExtension that(Boolean param) {
+        return new EnsureBooleanExtension(param);
+    }
 
 }

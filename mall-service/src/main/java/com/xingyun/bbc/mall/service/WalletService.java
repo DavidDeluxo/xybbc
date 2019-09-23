@@ -21,7 +21,7 @@ public interface WalletService {
 
     /**
      * 查询钱包金额
-     *
+     * @author hekaijin
      * @param uid
      * @return
      */
@@ -29,6 +29,7 @@ public interface WalletService {
 
     /**
      * 校验用户是否设置支付密码
+     * @author hekaijin
      * @param uid
      * @return
      */
@@ -36,6 +37,7 @@ public interface WalletService {
 
     /**
      * 查询提现费率
+     * @author hekaijin
      * @param withdrawRateDto
      * @return
      */
@@ -43,12 +45,14 @@ public interface WalletService {
 
     /**
      * 查询银行卡开户行列表
+     * @author hekaijin
      * @return
      */
     List<BanksVo> queryBankList();
 
     /**
      * 用户提现
+     * @author hekaijin
      * @param withdrawDto
      * @return
      */
