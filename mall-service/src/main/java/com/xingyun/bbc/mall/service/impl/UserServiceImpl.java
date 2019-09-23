@@ -517,7 +517,7 @@ public class UserServiceImpl implements UserService {
         //查询是否重名
         Criteria<User, Object> userObjectCriteria = Criteria.of(User.class);
         userObjectCriteria.andEqualTo(User::getFisDelete,"0")
-                .andEqualTo(User::getFuname,dto.getFuname());
+                .andEqualTo(User::getFuname,dto.getFnickname());
         Result<Integer> result = userApi.countByCriteria(userObjectCriteria);
         if(result.getData() != 0){
             Result.failure(MallResultStatus.REGISTER_NAME_EXIST);
