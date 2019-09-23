@@ -272,7 +272,7 @@ public class PayServiceImpl implements PayService {
 				logger.info("校验余额支付失败：未设置支付密码！订单号：" + forderId + "，用户名：" + fuid + "，余额类型：" + balanceType);
 				return Result.failure(MallExceptionCode.PAY_PWD_IS_NOT_SET);
 			}
-			if (!payPwdMd5.equals(inputPayPwd)) {
+			if (!EncryptUtils.aesDecrypt(payPwdMd5).equals(inputPayPwd)) {
 				logger.info("校验余额支付失败：支付密码错误！订单号：" + forderId + "，用户名：" + fuid + "，余额类型：" + balanceType);
 				return Result.failure(MallExceptionCode.WITHDRAW_PSD_WRONG);
 			}
