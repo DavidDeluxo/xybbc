@@ -113,10 +113,10 @@ public class PayServiceImpl implements PayService {
 		}
 		PayDto payDto =new PayDto();
 		payDto.setForderPaymentId(dto.getForderId());
-		payDto.setPayAmount(Long.valueOf(dto.getPayAmount()));
-		payDto.setForderThirdpayType(0);
-		payDto.setPayTime(DateUtil.DateToString(dto.getLockTime(), DateStyle.YYYY_MM_DD_HH_MM_SS));
-		payDto.setThirdTradeNo(dto.getForderId());
+//		payDto.setPayAmount(Long.valueOf(dto.getPayAmount()));
+//		payDto.setForderThirdpayType(0);
+//		payDto.setPayTime(DateUtil.DateToString(dto.getLockTime(), DateStyle.YYYY_MM_DD_HH_MM_SS));
+//		payDto.setThirdTradeNo(dto.getForderId());
 		Result<BalancePayVo> result = orderPayApi.balancePay(payDto);
 		return result;
 	}
