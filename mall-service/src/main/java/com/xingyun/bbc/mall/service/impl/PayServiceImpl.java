@@ -1,5 +1,7 @@
 package com.xingyun.bbc.mall.service.impl;
 
+import com.xingyun.bbc.mall.base.utils.DateStyle;
+import com.xingyun.bbc.mall.base.utils.DateUtil;
 import com.xingyun.bbc.mall.base.utils.DecodeUtil;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.EncryptUtils;
@@ -96,8 +98,8 @@ public class PayServiceImpl implements PayService {
 	@Override
 	public Result<?> balancePay(BalancePayDto dto, HttpServletRequest request) {
 		
-		String fuid=request.getHeader("xyid").toString();
-		
+		String fuid= request.getHeader("xyid").toString();
+
 		logger.info("余额支付。用户id：" +fuid+ "，订单号：" + dto.getForderId() + "，余额类型：" + dto.getBalanceType());
 		
 		Result<?> checkEntity = this.checkBalancePayParams(fuid, dto.getForderId(), dto.getPayPwd(), Integer.parseInt(dto.getBalanceType()));
@@ -105,12 +107,16 @@ public class PayServiceImpl implements PayService {
 			return checkEntity;
 		}
 		// 检查订单是否能支付
-//		checkEntity = this.checkOrderIsEnablePay(dto);
-//		if (checkEntity != null) {
-//			return checkEntity;
-//		}
+		checkEntity = this.checkOrderIsEnablePay(dto);
+		if (checkEntity != null) {
+			return checkEntity;
+		}
 		PayDto payDto =new PayDto();
 		payDto.setForderPaymentId(dto.getForderId());
+		payDto.setPayAmount(Long.valueOf(dto.getPayAmount()));
+		payDto.setForderThirdpayType(0);
+		payDto.setPayTime(DateUtil.DateToString(dto.getLockTime(), DateStyle.YYYY_MM_DD_HH_MM_SS));
+		payDto.setThirdTradeNo(dto.getForderId());
 		Result<BalancePayVo> result = orderPayApi.balancePay(payDto);
 		return result;
 	}
@@ -358,9 +364,9 @@ public class PayServiceImpl implements PayService {
 			return Result.failure(MallExceptionCode.ORDER_IS_COMPLETION);
 		}
 		
-		long payAmouts=orderTotalAmount-fbalancePayAmount;
+		Long payAmouts=orderTotalAmount-fbalancePayAmount;
 		dto.setLockTime(lockTime);
-		dto.setPayAmount(PriceUtil.toYuan(payAmouts).toString());
+		dto.setPayAmount(payAmouts.toString());
 		return null;
 	}
 	
