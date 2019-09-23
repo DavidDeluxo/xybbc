@@ -78,8 +78,6 @@ public class WalletServiceImpl implements WalletService {
     private AliPayApi aliPayApi;
     @Autowired
     private XybbcLock xybbcLock;
-    @Autowired
-    private XyIdGenerator xyIdGenerator;
 
     @Override
     public WalletAmountVo queryAmount(Long uid) {
@@ -114,7 +112,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     public Boolean checkPayPwd(Long uid) {
         User user = this.checkUser(uid);
-        return StringUtil.isBlank(user.getFwithdrawPasswd()) ? false : true;
+        return !StringUtil.isBlank(user.getFwithdrawPasswd());
     }
 
     @Override
@@ -190,22 +188,21 @@ public class WalletServiceImpl implements WalletService {
         Long uid = this.withdrawCheck(withdrawDto);
 
         // 获取提现费率
-        WithdrawRate withdrawRate = new WithdrawRate(withdrawDto).get();
+        WithdrawRate withdrawRate = new WithdrawRate(withdrawDto.getWay()).get();
 
-        BigDecimal transAmount = withdrawRate.getTransAmount();
+        BigDecimal transAmount = withdrawDto.getWithdrawAmount();
 
         // build UserAccountTrans
         AccountTrans accountTrans = new AccountTrans(withdrawDto, uid, withdrawRate, transAmount).build();
-        UserAccountTrans userAccountTrans = accountTrans.getUserAccountTrans();
 
         // 生成订单号
-        String transId = xyIdGenerator.generateId("T", "W");
+        String transId = XyIdGenerator.generateId("T", "W");
 
         // 判断金额是否正确(提现、余额金额不能小于等于0，更新后的余额、冻结金额不能小于0)
         CheckAfterMoney checkAfterMoney = new CheckAfterMoney(uid, transAmount).check();
 
         // 提现申请插入数据库
-        this.addAccountTrans(userAccountTrans, transId);
+        this.addAccountTrans(accountTrans.getUserAccountTrans(), transId);
 
         log.info("|生成提现订单|用户id:{}|订单号:{}|", uid, transId);
 
@@ -368,24 +365,22 @@ public class WalletServiceImpl implements WalletService {
 
     @Getter
     private class WithdrawRate {
-        private @Valid WithdrawDto withdrawDto;
+        private Integer way;
         private BigDecimal feeRate;
-        private BigDecimal transAmount;
 
-        public WithdrawRate(@Valid WithdrawDto withdrawDto) {
-            this.withdrawDto = withdrawDto;
+        public WithdrawRate(Integer way) {
+            this.way = way;
         }
 
         public WithdrawRate get() {
             // 提现费率，若不存在则默认为0
             float poundagePercent = 0f;
-            List<WithdrawRateVo> withdrawRates = WalletServiceImpl.this.queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(withdrawDto.getWay()));
+            List<WithdrawRateVo> withdrawRates = WalletServiceImpl.this.queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(way));
             if (!CollectionUtils.isEmpty(withdrawRates)) {
                 poundagePercent = withdrawRates.stream().findFirst().get().getFrate().floatValue();
             }
             //计算手续费
             feeRate = new BigDecimal(poundagePercent).divide(new BigDecimal(10000));
-            transAmount = withdrawDto.getWithdrawAmount();
             return this;
         }
     }
