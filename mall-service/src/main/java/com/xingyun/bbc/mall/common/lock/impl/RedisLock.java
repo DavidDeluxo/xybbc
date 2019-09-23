@@ -30,11 +30,11 @@ public class RedisLock implements XybbcLock {
     private static final String DEL_LUA_SCRIPT = "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end";
 
     @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    private RedisTemplate<String, Object> redisCacheTemplate;
 
     @Override
     public boolean tryLock(String key, String value, long expiring) {
-        Boolean result = redisTemplate.execute((RedisCallback<Boolean>) redisConnection ->
+        Boolean result = redisCacheTemplate.execute((RedisCallback<Boolean>) redisConnection ->
                 redisConnection.set(SafeEncoder.encode(key), SafeEncoder.encode(value), Expiration.seconds(expiring),
                         RedisStringCommands.SetOption.SET_IF_ABSENT));
         return result.booleanValue();
@@ -42,7 +42,7 @@ public class RedisLock implements XybbcLock {
 
     @Override
     public boolean releaseLock(String key, String value) {
-        Boolean result = redisTemplate.execute((RedisCallback<Boolean>) redisConnection ->
+        Boolean result = redisCacheTemplate.execute((RedisCallback<Boolean>) redisConnection ->
                 redisConnection.eval(DEL_LUA_SCRIPT.getBytes(), ReturnType.BOOLEAN, 1,
                         SafeEncoder.encode(key), SafeEncoder.encode(value)));
         return result.booleanValue();
