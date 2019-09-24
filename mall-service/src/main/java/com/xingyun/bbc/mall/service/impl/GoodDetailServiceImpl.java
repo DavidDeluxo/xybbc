@@ -6,6 +6,8 @@ import com.xingyun.bbc.core.operate.api.CityRegionApi;
 import com.xingyun.bbc.core.operate.po.CityRegion;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.sku.api.*;
+import com.xingyun.bbc.core.sku.enums.GoodsSkuEnums;
+import com.xingyun.bbc.core.sku.enums.SkuBatchEnums;
 import com.xingyun.bbc.core.sku.po.*;
 import com.xingyun.bbc.core.sku.po.Goods;
 import com.xingyun.bbc.core.sku.po.GoodsSku;
@@ -191,6 +193,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         //sku规格
         Result<List<GoodsSku>> goodsSkuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
                 .andEqualTo(GoodsSku::getFgoodsId, fgoodsId)
+                .andEqualTo(GoodsSku::getFgoodStatus, GoodsSkuEnums.Status.OnShelves.getValue())
+                .andEqualTo(GoodsSku::getFisDelete, "0")
                 .fields(GoodsSku::getFskuId, GoodsSku::getFskuCode, GoodsSku::getFskuSpecValue));
         List<GoodsSkuVo> skuRes = dozerHolder.convert(goodsSkuResult.getData(), GoodsSkuVo.class);
 
@@ -204,6 +208,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         for (GoodsSkuVo skuVo : skuRes) {
             Result<List<SkuBatch>> skuBatchResult = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
                     .andEqualTo(SkuBatch::getFskuId, skuVo.getFskuId())
+                    .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
                     .fields(SkuBatch::getFvalidityEndDate, SkuBatch::getFsupplierSkuBatchId));
             List<GoodsSkuBatchVo> batchVert = dozerHolder.convert(skuBatchResult.getData(), GoodsSkuBatchVo.class);
             batchRes.addAll(batchVert);
@@ -455,6 +460,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     private GoodStockSellVo getSkuStockSell(GoodsDetailDto goodsDetailDto) {
         List<SkuBatch> skuStockSellResult = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
                 .andEqualTo(SkuBatch::getFskuId, goodsDetailDto.getFskuId())
+                .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
                 .fields(SkuBatch::getFsupplierSkuBatchId)).getData();
         GoodStockSellVo result = new GoodStockSellVo();
         result.setFsellNum(0l);
@@ -477,6 +483,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     private GoodStockSellVo getSpuStockSell(GoodsDetailDto goodsDetailDto) {
         List<GoodsSku> spuStockSellResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
                 .andEqualTo(GoodsSku::getFgoodsId, goodsDetailDto.getFgoodsId())
+                .andEqualTo(GoodsSku::getFgoodStatus, GoodsSkuEnums.Status.OnShelves.getValue())
+                .andEqualTo(GoodsSku::getFisDelete, "0")
                 .fields(GoodsSku::getFskuId)).getData();
         GoodStockSellVo result = new GoodStockSellVo();
         result.setFsellNum(0l);
@@ -563,6 +571,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         priceVo.setPriceEnd(BigDecimal.ZERO);
         List<SkuBatch> skuBatcheResult = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
                 .andEqualTo(SkuBatch::getFskuId, goodsDetailDto.getFskuId())
+                .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
                 .fields(SkuBatch::getFsupplierSkuBatchId)).getData();
 
         for (int i = 0; i < skuBatcheResult.size(); i++) {
@@ -601,6 +610,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         priceVo.setPriceEnd(BigDecimal.ZERO);
         List<GoodsSku> skuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
                 .andEqualTo(GoodsSku::getFgoodsId, goodsDetailDto.getFgoodsId())
+                .andEqualTo(GoodsSku::getFgoodStatus, GoodsSkuEnums.Status.OnShelves.getValue())
+                .andEqualTo(GoodsSku::getFisDelete, "0")
                 .fields(GoodsSku::getFskuId)).getData();
         for (int i = 0; i < skuResult.size(); i++) {
             GoodsDetailDto param = new GoodsDetailDto();
