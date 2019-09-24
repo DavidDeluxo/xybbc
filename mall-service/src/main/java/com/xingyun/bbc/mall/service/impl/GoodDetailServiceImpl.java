@@ -193,7 +193,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         //sku规格
         Result<List<GoodsSku>> goodsSkuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
                 .andEqualTo(GoodsSku::getFgoodsId, fgoodsId)
-                .andEqualTo(GoodsSku::getFgoodStatus, GoodsSkuEnums.Status.OnShelves.getValue())
+                .andEqualTo(GoodsSku::getFskuStatus, GoodsSkuEnums.Status.OnShelves.getValue())
                 .andEqualTo(GoodsSku::getFisDelete, "0")
                 .fields(GoodsSku::getFskuId, GoodsSku::getFskuCode, GoodsSku::getFskuSpecValue));
         List<GoodsSkuVo> skuRes = dozerHolder.convert(goodsSkuResult.getData(), GoodsSkuVo.class);
