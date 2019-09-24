@@ -296,6 +296,7 @@ public class UserServiceImpl implements UserService {
         user.setFmobile(dto.getFmobile());
         user.setFpasswd(passWord);
         user.setFfreezeStatus(1);
+        user.setFverifyStatus(1);
         user.setFlastloginTime(new Date());
         Result<Integer> result = userApi.create(user);
         Criteria<User, Object> criteria = Criteria.of(User.class);
@@ -692,7 +693,8 @@ public class UserServiceImpl implements UserService {
             return Result.failure(MallResultStatus.SMS_AUTH_NUM_ERROR);
         }
         Criteria<User, Object> criteria = Criteria.of(User.class);
-        criteria.andEqualTo(User::getFmobile,dto.getFmobile())
+        criteria.andLeft().orEqualTo(User::getFmobile,dto.getFmobile())
+                .orEqualTo(User::getFuname,dto.getFmobile()).addRight()
                 .andEqualTo(User::getFisDelete,"0").fields(User::getFuid);
         Result<User> result = userApi.queryOneByCriteria(criteria);
         if(result.getData() != null){
