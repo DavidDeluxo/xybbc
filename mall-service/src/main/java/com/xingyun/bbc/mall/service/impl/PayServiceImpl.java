@@ -366,7 +366,7 @@ public class PayServiceImpl implements PayService {
 		
 		Long payAmouts=orderTotalAmount-fbalancePayAmount;
 		dto.setLockTime(lockTime);
-		dto.setPayAmount(payAmouts.toString());
+		dto.setPayAmount(PriceUtil.toYuan(payAmouts).toString());
 		return null;
 	}
 	
