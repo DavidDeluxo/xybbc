@@ -86,6 +86,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     private SkuBatchUserPriceApi skuBatchUserPriceApi;
 
     @Autowired
+    private SkuUserDiscountConfigApi skuUserDiscountConfigApi;
+
+    @Autowired
     private UserDeliveryApi userDeliveryApi;
 
     @Autowired
@@ -509,20 +512,45 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         //是否支持平台会员折扣
         if (new Integer(1).equals(this.getIsUserDiscount(goodsDetailDto.getFskuId()))) {
             Integer foperateType = userApi.queryById(goodsDetailDto.getFuid()).getData().getFoperateType();
+
+            Result<List<SkuUserDiscountConfig>> skuUserDiscountResult = skuUserDiscountConfigApi.queryByCriteria(Criteria.of(SkuUserDiscountConfig.class)
+                    .andEqualTo(SkuUserDiscountConfig::getFskuId, goodsDetailDto.getFskuId())
+                    .andEqualTo(SkuUserDiscountConfig::getFuserTypeId, foperateType.longValue())
+                    .andEqualTo(SkuUserDiscountConfig::getFisDelete, 0)
+                    .fields(SkuUserDiscountConfig::getFdiscountId));
+            if (!skuUserDiscountResult.isSuccess()) {
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            }
+            if (null == skuUserDiscountResult.getData()) {
+                return this.getGeneralPrice(goodsDetailDto.getFbatchPackageId());
+            }
+
             Result<SkuBatchUserPrice> skuBatchUserPriceResult = skuBatchUserPriceApi.queryOneByCriteria(Criteria.of(SkuBatchUserPrice.class)
                     .andEqualTo(SkuBatchUserPrice::getFbatchPackageId, goodsDetailDto.getFbatchPackageId())
                     .andEqualTo(SkuBatchUserPrice::getFuserTypeId, foperateType)
                     .fields(SkuBatchUserPrice::getFbatchSellPrice));
-            if (skuBatchUserPriceResult.isSuccess() && null != skuBatchUserPriceResult.getData().getFbatchSellPrice()) {
+            if (!skuBatchUserPriceResult.isSuccess()) {
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            }
+            if (null != skuBatchUserPriceResult.getData().getFbatchSellPrice()) {
                 price = skuBatchUserPriceResult.getData().getFbatchSellPrice();
+            } else {
+                price = this.getGeneralPrice(goodsDetailDto.getFbatchPackageId());
             }
         } else {
-            Result<GoodsSkuBatchPrice> goodsSkuBatchPriceResult = goodsSkuBatchPriceApi.queryOneByCriteria(Criteria.of(GoodsSkuBatchPrice.class)
-                    .andEqualTo(GoodsSkuBatchPrice::getFbatchPackageId, goodsDetailDto.getFbatchPackageId())
-                    .fields(GoodsSkuBatchPrice::getFbatchSellPrice));
-            if (goodsSkuBatchPriceResult.isSuccess() && null != goodsSkuBatchPriceResult.getData().getFbatchSellPrice()) {
-                price = goodsSkuBatchPriceResult.getData().getFbatchSellPrice();
-            }
+            price = this.getGeneralPrice(goodsDetailDto.getFbatchPackageId());
+        }
+        return price;
+    }
+
+    //获取非折扣价格
+    private Long getGeneralPrice(Long fbatchPackageId) {
+        Long price = 0L;
+        Result<GoodsSkuBatchPrice> goodsSkuBatchPriceResult = goodsSkuBatchPriceApi.queryOneByCriteria(Criteria.of(GoodsSkuBatchPrice.class)
+                .andEqualTo(GoodsSkuBatchPrice::getFbatchPackageId, fbatchPackageId)
+                .fields(GoodsSkuBatchPrice::getFbatchSellPrice));
+        if (goodsSkuBatchPriceResult.isSuccess() && null != goodsSkuBatchPriceResult.getData().getFbatchSellPrice()) {
+            price = goodsSkuBatchPriceResult.getData().getFbatchSellPrice();
         }
         return price;
     }
