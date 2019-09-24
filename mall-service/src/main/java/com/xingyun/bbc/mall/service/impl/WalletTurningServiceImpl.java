@@ -102,7 +102,7 @@ public class WalletTurningServiceImpl implements WalletTurningService {
                 ,UserDetail::getFdetailType
                 ,UserDetail::getFtypeId
                 ,UserDetail::getFmodifyTime
-        ));
+        ).page(userWalletDetailDto.getCurrentPage(), userWalletDetailDto.getPageSize()));
         if (!result.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }

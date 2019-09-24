@@ -89,7 +89,7 @@ public class UserAddressServiceImpl implements UserAddressService {
         if(!StringUtils.isEmpty(userDeliveryDto.getFuid())){
             criteria.andEqualTo(UserDelivery::getFuid,userDeliveryDto.getFuid()).andEqualTo(UserDelivery::getFisDelete,0);
         }
-          Result<List<UserDelivery>> userDeliveryList = userDeliveryApi.queryByCriteria(criteria);
+          Result<List<UserDelivery>> userDeliveryList = userDeliveryApi.queryByCriteria(criteria.page(userDeliveryDto.getCurrentPage(), userDeliveryDto.getPageSize()));
           if (!userDeliveryList.isSuccess()) {
               throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
           }
