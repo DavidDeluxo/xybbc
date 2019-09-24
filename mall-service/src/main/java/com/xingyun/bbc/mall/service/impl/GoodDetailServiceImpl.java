@@ -483,7 +483,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     private GoodStockSellVo getSpuStockSell(GoodsDetailDto goodsDetailDto) {
         List<GoodsSku> spuStockSellResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
                 .andEqualTo(GoodsSku::getFgoodsId, goodsDetailDto.getFgoodsId())
-                .andEqualTo(GoodsSku::getFgoodStatus, GoodsSkuEnums.Status.OnShelves.getValue())
+                .andEqualTo(GoodsSku::getFskuStatus, GoodsSkuEnums.Status.OnShelves.getValue())
                 .andEqualTo(GoodsSku::getFisDelete, "0")
                 .fields(GoodsSku::getFskuId)).getData();
         GoodStockSellVo result = new GoodStockSellVo();
@@ -610,7 +610,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         priceVo.setPriceEnd(BigDecimal.ZERO);
         List<GoodsSku> skuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
                 .andEqualTo(GoodsSku::getFgoodsId, goodsDetailDto.getFgoodsId())
-                .andEqualTo(GoodsSku::getFgoodStatus, GoodsSkuEnums.Status.OnShelves.getValue())
+                .andEqualTo(GoodsSku::getFskuStatus, GoodsSkuEnums.Status.OnShelves.getValue())
                 .andEqualTo(GoodsSku::getFisDelete, "0")
                 .fields(GoodsSku::getFskuId)).getData();
         for (int i = 0; i < skuResult.size(); i++) {
