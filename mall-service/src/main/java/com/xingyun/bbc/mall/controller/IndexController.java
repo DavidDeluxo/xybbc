@@ -72,7 +72,7 @@ public class IndexController {
     //@PostMapping("/via/queryGoodsByCategoryId1")
     @PostMapping("/queryGoodsByCategoryId1")
     public Result<PageVo<IndexSkuGoodsVo>> queryGoodsByCategoryId1(CategoryDto categoryDto, HttpServletRequest request) {
-        //categoryDto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        categoryDto.setFuid(Long.parseLong(request.getHeader("xyid")));
         //categoryDto.setFuid(Long.valueOf(10157));
         return Result.success(indexService.queryGoodsByCategoryId1(categoryDto));
     }
