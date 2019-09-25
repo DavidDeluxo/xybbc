@@ -1,32 +1,23 @@
 package com.xingyun.bbc.mall.service.impl;
 
-
-import java.math.BigDecimal;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import com.xingyun.bbc.common.redis.XyIdGenerator;
 import com.xingyun.bbc.common.redis.order.OrderTypeEnum;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.user.api.UserAccountTransApi;
 import com.xingyun.bbc.core.user.api.UserAccountTransWaterApi;
-import com.xingyun.bbc.core.user.po.UserAccount;
 import com.xingyun.bbc.core.user.po.UserAccountTrans;
 import com.xingyun.bbc.core.user.po.UserAccountTransWater;
-import com.xingyun.bbc.core.utils.IdGenerator;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.PriceUtil;
-import com.xingyun.bbc.mall.model.dto.AccountWithdrawDto;
 import com.xingyun.bbc.mall.model.dto.UserRechargeDto;
 import com.xingyun.bbc.mall.model.vo.UserRechargeVo;
 import com.xingyun.bbc.mall.service.UserAccountService;
-
-import io.seata.spring.annotation.GlobalTransactional;
 
 
 /**
@@ -89,13 +80,5 @@ public class UserAccountServiceImpl implements UserAccountService {
         return Result.success(userRechargeVo);
     }
     
-    @Override
-    @GlobalTransactional
-    public Result<?> insertWithdraw(AccountWithdrawDto accountWithdrawDto) {
-        //把转账金额化为分
-        BigDecimal transAmount = PriceUtil.toPenny(accountWithdrawDto.getFtransAmount());
-        //获取账户原来数据
-        return Result.success("1");
-    }
 
 }

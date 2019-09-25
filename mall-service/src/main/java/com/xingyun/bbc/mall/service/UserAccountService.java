@@ -1,7 +1,6 @@
 package com.xingyun.bbc.mall.service;
 
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mall.model.dto.AccountWithdrawDto;
 import com.xingyun.bbc.mall.model.dto.UserRechargeDto;
 import com.xingyun.bbc.mall.model.vo.UserRechargeVo;
 
@@ -22,6 +21,4 @@ public interface UserAccountService {
 	 * @date 2019/8/20 13:49
 	 */
 	Result<UserRechargeVo> insertUserBalance(UserRechargeDto userRechargeDto);
-	
-	Result<?> insertWithdraw(AccountWithdrawDto accountWithdrawDto);
 }
