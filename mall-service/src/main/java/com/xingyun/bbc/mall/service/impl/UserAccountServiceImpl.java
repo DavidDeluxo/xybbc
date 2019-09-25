@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.xingyun.bbc.common.redis.XyIdGenerator;
 import com.xingyun.bbc.common.redis.order.OrderTypeEnum;
+import com.xingyun.bbc.common.redis.order.RechargeOrderBizEnum;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.user.api.UserAccountTransApi;
@@ -54,7 +55,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         //将充值金额转换为分
     	Long recharge = PriceUtil.toPenny(userRechargeDto.getFrecharger()).longValue();
         //生成充值单号
-        String transOrderId = XyIdGenerator.generateId(OrderTypeEnum.RECHARGE_ORDER.getCode());
+        String transOrderId = XyIdGenerator.generateId(OrderTypeEnum.RECHARGE_ORDER.getCode(),RechargeOrderBizEnum.TRADE.getCode());
         //需要向交易明细表中插入数据
         UserAccountTrans userAccountTrans = new UserAccountTrans();
         userAccountTrans.setFtransId(transOrderId);
