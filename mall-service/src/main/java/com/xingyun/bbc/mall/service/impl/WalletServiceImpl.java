@@ -334,6 +334,7 @@ public class WalletServiceImpl implements WalletService {
         return userRate.stream().map(rate ->
                 new WithdrawRateVo()
                         .setFrate(new BigDecimal(rate.getFrate()).divide(new BigDecimal(10000)))
+                        .setMinimumAmount(new BigDecimal(rate.getMinimumAmount()).divide(new BigDecimal(100)))
                         .setFwithdrawType(rate.getFwithdrawType())
         ).collect(Collectors.toList());
     }

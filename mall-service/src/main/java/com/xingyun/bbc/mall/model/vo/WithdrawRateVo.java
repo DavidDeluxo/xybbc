@@ -23,4 +23,7 @@ public class WithdrawRateVo {
     @ApiModelProperty("提现费率")
     private BigDecimal frate;
 
+    @ApiModelProperty("最低提现金额")
+    private BigDecimal minimumAmount;
+
 }
