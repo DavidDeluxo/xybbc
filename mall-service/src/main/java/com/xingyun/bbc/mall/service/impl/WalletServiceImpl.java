@@ -4,6 +4,8 @@ import com.google.common.collect.Lists;
 import com.xingyun.bbc.common.redis.XyIdGenerator;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
+import com.xingyun.bbc.core.operate.api.BankDepositApi;
+import com.xingyun.bbc.core.operate.po.BankDeposit;
 import com.xingyun.bbc.core.order.api.OrderPaymentApi;
 import com.xingyun.bbc.core.order.po.OrderPayment;
 import com.xingyun.bbc.core.query.Criteria;
