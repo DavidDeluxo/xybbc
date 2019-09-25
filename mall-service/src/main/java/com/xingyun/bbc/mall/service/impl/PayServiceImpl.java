@@ -1,7 +1,6 @@
 package com.xingyun.bbc.mall.service.impl;
 
-import com.xingyun.bbc.mall.base.utils.DateStyle;
-import com.xingyun.bbc.mall.base.utils.DateUtil;
+
 import com.xingyun.bbc.mall.base.utils.DecodeUtil;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.EncryptUtils;
@@ -14,6 +13,7 @@ import com.xingyun.bbc.mall.common.constans.PayConstants;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.BalancePayDto;
 import com.xingyun.bbc.mall.model.dto.RemittancetRechargeDto;
+import com.xingyun.bbc.mall.model.vo.OrderResultVo;
 import com.xingyun.bbc.mall.service.PayService;
 import com.xingyun.bbc.mall.service.RechargeService;
 import com.xingyun.bbc.order.api.OrderPayApi;
@@ -22,25 +22,23 @@ import com.xingyun.bbc.order.model.vo.pay.BalancePayVo;
 import com.xingyun.bbc.order.model.vo.pay.ThirdPayVo;
 import com.xingyun.bbc.pay.api.PayChannelApi;
 import com.xingyun.bbc.pay.model.dto.ThirdPayDto;
-
 import io.seata.spring.annotation.GlobalTransactional;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.google.common.base.Strings;
 import com.xingyun.bbc.core.order.api.OrderPaymentApi;
 import com.xingyun.bbc.core.order.po.OrderPayment;
+import com.xingyun.bbc.core.user.api.UserAccountApi;
 import com.xingyun.bbc.core.user.api.UserAccountTransApi;
 import com.xingyun.bbc.core.user.api.UserAccountTransWaterApi;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
+import com.xingyun.bbc.core.user.po.UserAccount;
 import com.xingyun.bbc.core.user.po.UserAccountTrans;
 import com.xingyun.bbc.core.user.po.UserAccountTransWater;
 import com.xingyun.bbc.core.utils.Result;
-
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -81,6 +79,9 @@ public class PayServiceImpl implements PayService {
     private UserApi userApi;
     
 	@Autowired
+	private UserAccountApi userAccountApi;
+    
+	@Autowired
 	private UserAccountTransApi userAccountTransApi;
 	
 	@Autowired
@@ -111,14 +112,59 @@ public class PayServiceImpl implements PayService {
 		if (checkEntity != null) {
 			return checkEntity;
 		}
+		/////////////////
+		Long totalAmount=null;//订单总金额
+		Long unPayAmount=null;//未支付金额
+		OrderPayment orderPayment=orderPaymentApi.queryById(dto.getForderId()).getData();
+		
+		//查询账号余额信息
+		UserAccount account=userAccountApi.queryById(fuid).getData();
+		if(account==null)
+		{
+			logger.info("余额支付。用户id：" +fuid+ "账号信息不存在");
+			return Result.failure(MallExceptionCode.USER_FREEZE_ERROR);
+		}else{
+			if(account.getFbalance()==0)
+			{
+				logger.info("余额支付。用户id：" +fuid+ "余额为0!");
+				return Result.failure(MallExceptionCode.BALANCE_NOT_ENOUGH);
+			}
+			if(account.getFfreezeWithdraw()>0)
+			{
+				logger.info("余额支付。用户id：" +fuid+ "提现冻结金额:"+account.getFfreezeWithdraw());
+				return Result.failure(MallExceptionCode.FREEZE_WITHDRAW);
+			}
+		}
+		totalAmount= orderPayment.getFtotalOrderAmount();
+		unPayAmount = totalAmount - orderPayment.getFbalancePayAmount() - orderPayment.getFcreditPayAmount();
+		Long fbalance=account.getFbalance();
+
+		
 		PayDto payDto =new PayDto();
 		payDto.setForderPaymentId(dto.getForderId());
-//		payDto.setPayAmount(Long.valueOf(dto.getPayAmount()));
-//		payDto.setForderThirdpayType(0);
-//		payDto.setPayTime(DateUtil.DateToString(dto.getLockTime(), DateStyle.YYYY_MM_DD_HH_MM_SS));
-//		payDto.setThirdTradeNo(dto.getForderId());
-		Result<BalancePayVo> result = orderPayApi.balancePay(payDto);
-		return result;
+		Result<BalancePayVo> code = orderPayApi.balancePay(payDto);
+		
+		OrderResultVo orderResultVo=new OrderResultVo();
+		//余额不足支付 此时为混合支付
+		if(unPayAmount > fbalance){
+			orderResultVo.setOrder_status(1); //还需要第三方支付状态
+		}else{
+			orderResultVo.setOrder_status(2); //余额足够
+		}
+		
+		if(code.getData().getCode()==200)
+		{
+			logger.info("余额部分支付成功。订单:"+dto.getForderId()+",总金额:"+PriceUtil.toYuan(totalAmount)+",金额："+fbalance);	
+			orderResultVo.setCode(200);
+			orderResultVo.setMsg("余额支付成功");
+			return Result.success(orderResultVo);
+		}else{
+			logger.info("余额部分支付失败。订单:"+dto.getForderId()+",总金额:"+PriceUtil.toYuan(totalAmount)+",金额："+fbalance);	
+			orderResultVo.setCode(code.getData().getCode());
+			orderResultVo.setMsg("余额支付失败");
+			return Result.success(orderResultVo);
+		}
+
 	}
 	
 	
@@ -444,7 +490,5 @@ public class PayServiceImpl implements PayService {
 	        }
 	        return sb.toString();
 	    }
-		
-
 
 }

@@ -48,6 +48,8 @@ public class MallExceptionCode implements IResultStatus {
     public static final MallExceptionCode PAY_PWD_IS_NOT_SET = new MallExceptionCode("7781", "支付密码未设置");
     public static final MallExceptionCode THIRD_PAY_NOTIFY_FAIL =new MallExceptionCode("7782", "返回回调失败字符串");
     public static final MallExceptionCode REMITTANCE_PAY_FAIL =new MallExceptionCode("7783", "线下汇款充值失败");
+    public static final MallExceptionCode BALANCE_NOT_ENOUGH =new MallExceptionCode("7784", "用户余额为0,请充值!");
+    public static final MallExceptionCode FREEZE_WITHDRAW =new MallExceptionCode("7785", "用户账户信息有误，请联系客服!");
     
     /**
      * 用户账号模块
