@@ -47,6 +47,12 @@ public class CartController {
         return cartApi.queryCart(queryCartDto.setFuid(fuid));
     }
 
+    @ApiOperation("查询购物车数量")
+    @PostMapping("/count")
+    public Result<Integer> countCart(HttpServletRequest request) {
+        return cartApi.countCart(UserUtil.uid(request));
+    }
+
 
     @ApiOperation("删除/清空购物车")
     @PostMapping("/clear")

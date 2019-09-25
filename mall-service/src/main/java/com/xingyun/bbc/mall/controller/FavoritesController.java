@@ -40,12 +40,17 @@ public class FavoritesController {
         return favoritesApi.addFavorites(favoritesDto.setFuid(fuid));
     }
 
-
     @ApiOperation("常购清单列表")
     @PostMapping("/list")
     public Result<PageVo<FavoritesVo>> favoritesList(@RequestBody FavoritesDto favoritesDto,HttpServletRequest request) {
         long fuid = UserUtil.uid(request);
         return favoritesApi.favoritesList(favoritesDto.setFuid(fuid));
+    }
+
+    @ApiOperation("查询常购清单数量")
+    @PostMapping("/count")
+    public Result<Integer> countFavorites(HttpServletRequest request) {
+        return favoritesApi.countFavorites(UserUtil.uid(request));
     }
 
     @ApiOperation("删除/清空常购清单")
