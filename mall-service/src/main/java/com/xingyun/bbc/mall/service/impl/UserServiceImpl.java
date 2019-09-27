@@ -99,7 +99,6 @@ public class UserServiceImpl implements UserService {
         userLoginVo.setExpire(expire);
         userLoginVo.setToken(token);
         userLoginVo.setFuid(user.getFuid());
-        userLoginVo.setFuserLevel(user.getFuserLevel());
         userLoginVo.setFfreezeStatus(user.getFfreezeStatus());
         userLoginVo.setFheadpic(user.getFheadpic());
         userLoginVo.setFnickname(user.getFnickname());
@@ -349,6 +348,9 @@ public class UserServiceImpl implements UserService {
         if(dto.getSalesVolume() != null){
             dto.setFsalesVolume(new BigDecimal(dto.getSalesVolume()).multiply(new BigDecimal(1000000)).longValue());
         }
+        if(dto.getFpaltformId() != null){
+            dto.setFplatform(VerifyPlatform.getMessageByCode(Integer.valueOf(String.valueOf(dto.getFpaltformId()))));
+        }
         //查询是否已认证
         Criteria<UserVerify, Object> criteria = Criteria.of(UserVerify.class);
         criteria.andEqualTo(UserVerify::getFuid,dto.getFuid()).fields(UserVerify::getFuserVerifyId);
@@ -482,7 +484,7 @@ public class UserServiceImpl implements UserService {
         userCriteria.andEqualTo(User::getFisDelete,"0")
                 .andEqualTo(User::getFuid,fuid)
                 .fields(User::getFuid,User::getFuname,User::getFnickname
-                        ,User::getFheadpic,User::getFuserLevel,User::getFoperateType
+                        ,User::getFheadpic,User::getFoperateType
                         ,User::getFfreezeStatus,User::getFverifyStatus,User::getFregisterFrom
                         ,User::getFmobile,User::getFmail,User::getFwithdrawPasswd);
         Result<User> userResult = userApi.queryOneByCriteria(userCriteria);
