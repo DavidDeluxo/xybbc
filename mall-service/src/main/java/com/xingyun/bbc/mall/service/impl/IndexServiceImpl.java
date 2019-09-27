@@ -265,15 +265,15 @@ public class IndexServiceImpl implements IndexService {
             //不同批次不同规格价格不同，取其中最低价展示
             if (categoryDto.getFuid() != null) {
                 //登录情况下
-                Result<User> User = userApi.queryById(categoryDto.getFuid());
-                if (!User.isSuccess()) {
+                Result<User> user = userApi.queryById(categoryDto.getFuid());
+                if (!user.isSuccess()) {
                     throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
                 }
-                if (Objects.isNull(User.getData())) {
+                if (Objects.isNull(user.getData())) {
                     throw new BizException(MallExceptionCode.NO_USER);
                 }
                 //先拿到会员类型
-                Integer operateType = User.getData().getFoperateType();
+                Integer operateType = user.getData().getFoperateType();
                 //判断sku是否支持平台会员类型折扣 0否 1是
                 //1支持情况下
                 if (goodsSku.getFisUserTypeDiscount().equals(1)) {
@@ -289,7 +289,8 @@ public class IndexServiceImpl implements IndexService {
                             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
                         }
                         if (CollectionUtils.isEmpty(skuBatchUserPriceList.getData())) {
-                            throw new BizException(MallExceptionCode.NO_BATCH_USER_PRICE);
+                            logger.info("批次id:::" +"-------------------------------------"+skuBatch.getFskuBatchId());
+;                            throw new BizException(MallExceptionCode.NO_BATCH_USER_PRICE);
                         }
                         //取不同规格中的最小价格
                         SkuBatchUserPrice min = skuBatchUserPriceList.getData().stream().min(Comparator.comparing(SkuBatchUserPrice::getFbatchSellPrice)).get();
