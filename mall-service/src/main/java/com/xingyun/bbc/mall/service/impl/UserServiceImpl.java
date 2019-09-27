@@ -8,6 +8,7 @@ import com.xingyun.bbc.core.operate.api.CityRegionApi;
 import com.xingyun.bbc.core.operate.po.CityRegion;
 import com.xingyun.bbc.core.user.api.UserAccountApi;
 import com.xingyun.bbc.core.user.api.UserVerifyApi;
+import com.xingyun.bbc.core.user.enums.UserVerifyEnums;
 import com.xingyun.bbc.core.user.po.UserAccount;
 import com.xingyun.bbc.core.user.po.UserVerify;
 import com.xingyun.bbc.mall.base.enums.MallResultStatus;
@@ -351,6 +352,10 @@ public class UserServiceImpl implements UserService {
         if(dto.getFpaltformId() != null){
             dto.setFplatform(VerifyPlatform.getMessageByCode(Integer.valueOf(String.valueOf(dto.getFpaltformId()))));
         }
+        //将微商名称取值改为fshopName
+        if(dto.getFoperateType() == UserVerifyEnums.Type.WeiMerchantBuy.getValue()){
+            dto.setFshopName(dto.getFname());
+        }
         //查询是否已认证
         Criteria<UserVerify, Object> criteria = Criteria.of(UserVerify.class);
         criteria.andEqualTo(UserVerify::getFuid,dto.getFuid()).fields(UserVerify::getFuserVerifyId);
@@ -391,6 +396,12 @@ public class UserServiceImpl implements UserService {
                 userVerifyVo = dozerHolder.convert(result.getData(),UserVerifyVo.class);
                 if(userVerifyVo.getFpaltformId() != null){
                     userVerifyVo.setFpaltformName(VerifyPlatform.getMessageByCode(userVerifyVo.getFpaltformId().intValue()));
+                }
+                if(userResult.getData().getFoperateType() == UserVerifyEnums.Type.WeiMerchantBuy.getValue()){
+                    //微商名称同步运营后台取值
+                    if(userVerifyVo.getFshopName() != null){
+                        userVerifyVo.setFname(userVerifyVo.getFshopName());
+                    }
                 }
                 if(userVerifyVo.getFsalesVolume() != null){
                     userVerifyVo.setSalesVolume(new BigDecimal(userVerifyVo.getFsalesVolume()).divide(new BigDecimal(1000000)).toString());
