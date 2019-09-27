@@ -28,7 +28,10 @@ public class UserLoginVo implements Serializable {
     private String fheadpic;
 
     @ApiModelProperty("用户等级")
-    private Long fuserLevel;
+    private Long fuserLevelId;
+
+    @ApiModelProperty("用户等级")
+    private String flevelName;
 
     @ApiModelProperty("认证类型：1实体门店，2网络店铺，3网络平台，4批采企业，5微商代购")
     private Integer foperateType;

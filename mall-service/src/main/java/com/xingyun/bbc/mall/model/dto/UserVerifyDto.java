@@ -95,4 +95,7 @@ public class UserVerifyDto {
 
     @ApiModelProperty("修改时间")
     private Date fmodifyTime;
+
+    @ApiModelProperty("销售平台")
+    private String fplatform;
 }
