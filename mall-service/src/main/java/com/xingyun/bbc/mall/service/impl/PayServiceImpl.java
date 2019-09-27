@@ -22,6 +22,9 @@ import com.xingyun.bbc.order.model.vo.pay.BalancePayVo;
 import com.xingyun.bbc.order.model.vo.pay.ThirdPayVo;
 import com.xingyun.bbc.pay.api.PayChannelApi;
 import com.xingyun.bbc.pay.model.dto.ThirdPayDto;
+import com.xingyun.bbc.pay.model.dto.ThirdPayResponseDto;
+import com.xingyun.bbc.pay.model.vo.PayInfoVo;
+
 import io.seata.spring.annotation.GlobalTransactional;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
@@ -195,6 +198,83 @@ public class PayServiceImpl implements PayService {
 	}
 	
 	@Override
+	public Result<?> newThirdPayResponse(@PathVariable String urlSuffix, HttpServletRequest request, HttpServletResponse response) {	
+		logger.info("第三方支付回调url："+request.getRequestURL()+"?"+request.getQueryString());
+		logger.info("第三方支付回调参数：" + JSON.toJSONString(request.getParameterMap()));
+		String returnUrlSuffix = "return", notifyUrlSuffix = "notify";
+		if (!returnUrlSuffix.equals(urlSuffix) && !notifyUrlSuffix.equals(urlSuffix)) {
+			logger.info("第三方支付响应URL错误。url后缀：" + urlSuffix);
+			return Result.failure(MallExceptionCode.THIRD_PAY_NOTIFY_FAIL);
+		}
+		Map<String, String> extraParams = this.parseExtraParams(request);
+		if (extraParams == null) {
+			logger.info("第三方支付回调异常，扩展参数为空。");
+			logger.info(JSON.toJSONString(request.getParameterMap()));
+			return Result.failure(MallExceptionCode.THIRD_PAY_NOTIFY_FAIL);
+		}
+		String payType = extraParams.get("payType");
+		String payScene = extraParams.get("payScene");
+		String isTerminal = extraParams.get("isTerminal");
+	
+		
+		ThirdPayUtil thirdPayUtil = "1".equals(isTerminal) ? thirdPayUtilFactory.createTerminalPayUtil(payType) : thirdPayUtilFactory.createThirdPayUtil(payType);
+//		if (thirdPayUtil == null) {
+//			return Result.failure(MallExceptionCode.THIRD_PAY_NOTIFY_FAIL);
+//		}
+//		Map<String, String> thirdPayInfo = thirdPayUtil.modifyParseInfoFromThirdPayResponse(request, response);
+		
+		Map<String, String> params=new HashMap<String, String>();
+		
+		ThirdPayResponseDto thirdPayResponseDto=new ThirdPayResponseDto();
+		thirdPayResponseDto.setPayType(payType);
+		thirdPayResponseDto.setIsTerminal(isTerminal);
+		thirdPayResponseDto.setParams(params);
+		PayInfoVo thirdPayInfo= (PayInfoVo) payApi.thirdPayResponse(thirdPayResponseDto).getData();
+		
+		if (thirdPayInfo == null) {
+			return Result.failure(MallExceptionCode.THIRD_PAY_NOTIFY_FAIL);
+		}
+		logger.info("------------------第三方支付回调返回："+thirdPayInfo);
+		String forderId = thirdPayInfo.getForderId();
+		int flag = 0;
+		if (ThirdPayUtil.PAY_SCENE_RECHARGE.equals(payScene)) {//充值
+			flag = rechargeService.newUpdateAfterRechargeSuccess(thirdPayInfo);
+			if (flag > 0) {
+//				this.closeOtherThirdPayOrder(forderId, payType);
+//				if (returnUrlSuffix.equals(urlSuffix)) {
+//					logger.info("支付订单:" + thirdPayInfo.get("forderId") + "充值返回" + thirdPayConfig.getRecharge_success_request());
+//					return Result.ok(thirdPayConfig.getRecharge_success_request());
+//				}
+				//logger.info("支付订单:" + thirdPayInfo.get("forderId") + "充值返回" + thirdPayUtil.thirdPayNotifySuccess(response));
+				//return Result.success(thirdPayUtil.thirdPayNotifySuccess(response));
+				logger.info("------------------第三方支付回调充值返回成功："+thirdPayInfo);
+				return Result.success();
+			}else{
+				logger.info("------------------第三方支付回调充值返回失败："+thirdPayInfo);
+			}
+		} else 
+			if (ThirdPayUtil.PAY_SCENE_ORDER.equals(payScene)) { //订单
+			PayDto payDto=new PayDto();
+			payDto.setForderPaymentId(forderId);
+			payDto.setForderThirdpayType(Integer.valueOf(thirdPayInfo.getThirdPayType()));
+			payDto.setPayAmount(Long.parseLong(thirdPayInfo.getPayAmount()));
+			payDto.setPayTime(thirdPayInfo.getPayTime());
+			payDto.setThirdTradeNo(thirdPayInfo.getThirdTradeNo());
+			payDto.setPayAccount(thirdPayInfo.getPayAccount());
+			payDto.setPayName(thirdPayInfo.getPayName());
+			logger.info("------------------第三方支付回调请求订单中心参数：forderId="+payDto.getForderPaymentId()+",forderThirdpayType="+payDto.getForderThirdpayType()
+				+",payAmount="+payDto.getPayAmount()+",payTime="+payDto.getPayName()+",thirdTradeNo="+payDto.getThirdTradeNo()+",payAccount="+payDto.getPayAccount()
+				+",payName="+payDto.getPayName());
+			Result<ThirdPayVo> result=orderPayApi.thirdPay(payDto);
+			logger.info("------------------第三方支付回调请求订单中心返回："+result.getData().getCode());
+			return result;
+		}
+		return Result.failure(MallExceptionCode.THIRD_PAY_NOTIFY_FAIL);
+	
+	}
+	
+	
+	@Override
 	public Result<?> thirdPayResponse(@PathVariable String urlSuffix, HttpServletRequest request, HttpServletResponse response) {	
 		logger.info("第三方支付回调url："+request.getRequestURL()+"?"+request.getQueryString());
 		logger.info("第三方支付回调参数：" + JSON.toJSONString(request.getParameterMap()));
@@ -256,7 +336,6 @@ public class PayServiceImpl implements PayService {
 			return result;
 		}
 		return Result.failure(MallExceptionCode.THIRD_PAY_NOTIFY_FAIL);
-	
 	}
 	
 	
@@ -427,18 +506,6 @@ public class PayServiceImpl implements PayService {
 				extraParams = JSON.parseObject(request.getParameter("body"), new TypeReference<HashMap<String, String>>() { });
 				if(extraParams == null || !ThirdPayUtilFactory.PAY_TYPE_ALI_OPEN.equals(extraParams.get("payType"))) {
 					extraParams = null;
-				}
-			}
-			if (extraParams == null) {
-				// 汇付扩展参数
-				String enCodeExt1=request.getParameter("ext1");
-				if (!Strings.isNullOrEmpty(enCodeExt1)) {
-				try {
-					String ext1=URLDecoder.decode(enCodeExt1, "UTF-8");
-					extraParams = JSON.parseObject(ext1, new TypeReference<HashMap<String, String>>() { });
-				} catch (UnsupportedEncodingException e) {
-					logger.error("汇付扩展参数异常！" + enCodeExt1);
-				}
 				}
 			}
 			if (extraParams == null) {

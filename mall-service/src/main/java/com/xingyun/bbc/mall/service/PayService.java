@@ -25,6 +25,8 @@ public interface PayService {
 	
 	Result<?> createThirdPayCode(ThirdPayDto dto,HttpServletRequest request);
 	
+	Result<?> newThirdPayResponse(@PathVariable String urlSuffix, HttpServletRequest request, HttpServletResponse response);
+	
 	Result<?> thirdPayResponse(@PathVariable String urlSuffix, HttpServletRequest request, HttpServletResponse response);
 	
 	Result<?> addBalance(RemittancetRechargeDto dto);

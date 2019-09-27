@@ -11,6 +11,8 @@ package com.xingyun.bbc.mall.service;
 
 import java.util.Map;
 
+import com.xingyun.bbc.pay.model.vo.PayInfoVo;
+
 
 
 
@@ -23,6 +25,8 @@ import java.util.Map;
 */
 public interface RechargeService {
 
+	
+	int newUpdateAfterRechargeSuccess(PayInfoVo thirdPayInfo);
 
 	
 	/**

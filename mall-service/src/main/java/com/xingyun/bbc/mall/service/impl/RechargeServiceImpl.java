@@ -26,6 +26,7 @@ import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.PriceUtil;
 import com.xingyun.bbc.mall.common.enums.OrderPayMent.OrderPayEnum;
 import com.xingyun.bbc.mall.service.RechargeService;
+import com.xingyun.bbc.pay.model.vo.PayInfoVo;
 
 import io.seata.spring.annotation.GlobalTransactional;
 
@@ -60,6 +61,71 @@ public class RechargeServiceImpl implements RechargeService{
     @Autowired
     private DozerHolder dozerHolder;
 	
+    
+    @Override
+	@GlobalTransactional
+	public int newUpdateAfterRechargeSuccess(PayInfoVo thirdPayInfo) {
+		int rechargeSuccessStatus = 3;
+		int thirdPayType = Integer.parseInt(thirdPayInfo.getThirdPayType());
+		String forderId = thirdPayInfo.getForderId();
+		long thirdPayAmount =  Long.parseLong(thirdPayInfo.getPayAccount());
+		String thirdTradeNo = thirdPayInfo.getThirdTradeNo();
+		synchronized (this) {
+			UserAccountTrans transInfo = transApi.queryById(forderId).getData();
+			if (transInfo == null) {
+				logger.info("充值记录不存在。订单号：" + forderId);
+				return 0;
+			}
+			if (transInfo.getFtransStatus() == rechargeSuccessStatus) {
+				logger.info("充值记录已成功。订单号：" + forderId);
+				return 2;
+			}
+			if (thirdPayAmount!=transInfo.getFtransAmount()) {
+				logger.info("充值失败，支付金额和充值单金额不匹配！！！。订单号：" + forderId + "充值单金额：" + transInfo.getFtransAmount() + "支付金额：" + thirdPayAmount);
+				return 0;
+			}
+			transInfo.setFtransStatus(rechargeSuccessStatus);
+			transInfo.setFrechargeType(this.thirdPayTypeToTransThirdPayType(thirdPayType));
+			transInfo.setFtransThdUid(thirdTradeNo);
+			transInfo.setFtransThdDetail(thirdPayInfo.getPayAccount());
+			transInfo.setFpayTime(new Date());
+			
+			Result<Integer> flagTrans = transApi.updateNotNull(transInfo);
+			UserAccountTransWater accountTransWater=  dozerHolder.convert(transInfo,UserAccountTransWater.class);
+			Result<Integer> flagTransWater = transWaterApi.create(accountTransWater);
+			Long fuid = transInfo.getFuid();
+			UserAccount account = accountApi.queryById(fuid).getData();
+			long balance = account.getFbalance();
+			long creditBalance = account.getFcreditBalance();
+			long newBalance = thirdPayAmount+balance;
+			account.setFbalance(newBalance);
+			String remark = "自动充值，金额(分)：" + thirdPayAmount;
+			account.setFoperateRemark(remark);
+			Result<Integer> flagAccount = accountApi.updateNotNull(account);
+			UserAccountWater userAccountWater=  dozerHolder.convert(account,UserAccountWater.class);
+			Result<Integer> flagAccountWater = accountWaterApi.create(userAccountWater);
+			int detailType = this.thirdPayTypeToUserDetailType(thirdPayType);
+			
+			UserDetail detail=new  UserDetail();
+			detail.setFdetailType(detailType);
+			detail.setFuid(fuid);
+			detail.setFtypeId(forderId);
+			detail.setFincomeAmount(thirdPayAmount);
+			detail.setFbalance(newBalance);
+			detail.setFcreditBalance(creditBalance);
+			detail.setFremark(remark);
+			Result<Integer> flagUserDetail = detailApi.create(detail);
+			if (!this.checkAllModifySuccess(flagTrans.getData(), flagTransWater.getData(), flagAccount.getData(), flagAccountWater.getData(), flagUserDetail.getData())) {
+				logger.info("充值失败，充值事务回滚！flagTrans, flagTransWater, flagAccount, flagAccountWater, flagUserDetail:" + flagTrans, flagTransWater, flagAccount, flagAccountWater, flagUserDetail);
+				TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+				return 0;
+			}
+			logger.info("充值成功！订单号：" + forderId);
+			return 1;
+		}
+	}
+    
+    
 
 	
 	@Override
@@ -128,6 +194,7 @@ public class RechargeServiceImpl implements RechargeService{
 			return 1;
 		}
 	}
+	
 	
 	private int thirdPayTypeToTransThirdPayType(int thirdPayType){
 		if (thirdPayType == OrderPayEnum.ALI_PAY.getValue()) {
