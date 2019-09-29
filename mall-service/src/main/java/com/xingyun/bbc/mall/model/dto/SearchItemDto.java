@@ -19,6 +19,8 @@ public class SearchItemDto {
         this.pageSize = 10;
         this.fuserTypeId = "1";
         this.fskuStatus = 1;
+        this.isLogin = false;
+        fuid = 1;
     }
 
     @ApiModelProperty("页大小")
@@ -88,4 +90,7 @@ public class SearchItemDto {
 
     @ApiModelProperty(value="属性值id")
     private List<Integer> fattributeItemId;
+
+    @ApiModelProperty(value = "用户是否登录", hidden = true)
+    private Boolean isLogin;
 }

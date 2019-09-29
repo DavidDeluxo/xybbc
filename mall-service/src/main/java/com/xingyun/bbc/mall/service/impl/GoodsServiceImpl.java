@@ -14,8 +14,9 @@ import com.xingyun.bbc.core.sku.api.GoodsSearchHistoryApi;
 import com.xingyun.bbc.core.sku.api.GoodsSkuApi;
 import com.xingyun.bbc.core.sku.po.GoodsBrand;
 import com.xingyun.bbc.core.sku.po.GoodsCategory;
-import com.xingyun.bbc.core.sku.po.GoodsSearchHistory;
 import com.xingyun.bbc.core.sku.po.GoodsSku;
+import com.xingyun.bbc.core.user.api.UserApi;
+import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.enums.MallResultStatus;
 import com.xingyun.bbc.mall.model.dto.SearchItemDto;
@@ -28,19 +29,20 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
-import org.elasticsearch.index.query.*;
+import org.elasticsearch.index.query.DisMaxQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.BucketOrder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +78,8 @@ public class GoodsServiceImpl implements GoodsService {
     PageConfigApi pageConfigApi;
     @Autowired
     SearchRecordService searchRecordService;
+    @Autowired
+    UserApi userApi;
 
     @Override
     public Result<SearchFilterVo> searchSkuFilter(SearchItemDto searchItemDto) {
@@ -194,8 +198,12 @@ public class GoodsServiceImpl implements GoodsService {
             searchRecordService.insertSearchRecordAsync(searchItemDto.getSearchFullText(), searchItemDto.getFuid());
         }
 
+        SearchItemListVo listVo = new SearchItemListVo();
+
         // 初始化PageVo
-        PageVo<SearchItemVo> pageVo = new PageVo<>();
+//        PageVo<SearchItemVo> pageVo = new PageVo<>();
+        SearchItemListVo<SearchItemVo> pageVo = new SearchItemListVo<>();
+        pageVo.setIsLogin(searchItemDto.getIsLogin());
         pageVo.setTotalCount(0);
         pageVo.setPageSize(1);
 
@@ -240,7 +248,7 @@ public class GoodsServiceImpl implements GoodsService {
                     vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
                 }
 
-                String priceName = PRICE_TYPE_PREFIX_CAMEL + searchItemDto.getFuserTypeId();
+                String priceName = this.getUserPriceType(searchItemDto);;
                 if (map.get(priceName) != null) {
                     Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
                     if (priceMap.get("min_price") != null) {
@@ -262,6 +270,30 @@ public class GoodsServiceImpl implements GoodsService {
             pageVo.setTotalCount(Integer.parseInt(String.valueOf(baseInfoMap.get("totalHits"))));
         }
         return Result.success(pageVo);
+    }
+
+    /**
+     * 根据用户身份选择价格类型
+     *
+     * @param searchItemDto
+     * @return
+     */
+    private String getUserPriceType(SearchItemDto searchItemDto) {
+        //默认为未认证
+        String fuserTypeId = "0";
+        if (searchItemDto.getIsLogin() && searchItemDto.getFuid() != null) {
+            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class).andEqualTo(User::getFuid, searchItemDto.getFuid()));
+            if (!userResult.isSuccess()) {
+                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            }
+            if (userResult.getData() == null) {
+                throw new BizException(MallResultStatus.USER_NOT_EXIST);
+            }
+            User user = userResult.getData();
+            fuserTypeId = String.valueOf(user.getFoperateType());
+        }
+        String priceName = PRICE_TYPE_PREFIX_CAMEL + fuserTypeId;
+        return priceName;
     }
 
     /**
@@ -302,6 +334,7 @@ public class GoodsServiceImpl implements GoodsService {
 
         return resultList;
     }
+
 
     private <T, U> List<T> getNameIdPairs(Class<T> clazz, List<Map<String, Object>> aggregationList, Class<U> clazz2) {
         Field id_field = null;
@@ -387,8 +420,8 @@ public class GoodsServiceImpl implements GoodsService {
         if (criteria == null) {
             return;
         }
-        String priceFieldName = PRICE_TYPE_PREFIX + searchItemDto.getFuserTypeId() + PRICE_TYPE_SUFFIX;
 
+        String priceFieldName = this.getUserPriceType(searchItemDto);
         if (searchItemDto.getPriceOrderBy() != null) {
             criteria.sortBy(priceFieldName, searchItemDto.getPriceOrderBy());
         }
@@ -422,11 +455,13 @@ public class GoodsServiceImpl implements GoodsService {
         }
 
         // 无货商品置底
-        DisMaxQueryBuilder disMaxQueryBuilder = QueryBuilders.disMaxQuery();
-        RangeQueryBuilder onOut = QueryBuilders.rangeQuery("fstock_remain_num_total").gt(0);
-        TermQueryBuilder soldOut = QueryBuilders.termQuery("fstock_remain_num_total", 0).boost(Integer.MIN_VALUE);
-        disMaxQueryBuilder.add(onOut).add(soldOut);
-        criteria.getFilterBuilder().must(disMaxQueryBuilder);
+        if (StringUtils.isNotEmpty(searchItemDto.getPriceOrderBy()) || StringUtils.isNotEmpty(searchItemDto.getSellAmountOrderBy())) {
+            DisMaxQueryBuilder disMaxQueryBuilder = QueryBuilders.disMaxQuery();
+            RangeQueryBuilder onOut = QueryBuilders.rangeQuery("fstock_remain_num_total").gt(0);
+            TermQueryBuilder soldOut = QueryBuilders.termQuery("fstock_remain_num_total", 0).boost(Integer.MIN_VALUE);
+            disMaxQueryBuilder.add(onOut).add(soldOut);
+            criteria.getFilterBuilder().must(disMaxQueryBuilder);
+        }
     }
 
     /**

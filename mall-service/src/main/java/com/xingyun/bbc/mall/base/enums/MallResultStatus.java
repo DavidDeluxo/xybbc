@@ -34,6 +34,7 @@ public enum MallResultStatus implements IResultStatus {
     WITHDRAW_PASSWORD_ERROR("2013","提现密码不正确"),
     REEZE_WITHDRAW_ERROR("2016","提现冻结金额小于0"),
     WITHDRAW_ACCOUNT_EMPTY("2019","支付宝账号或银行卡号为空"),
+    USER_NOT_EXIST("2020", "用户不存在")
     ;
     private String code;
     private String msg;
