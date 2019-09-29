@@ -16,7 +16,7 @@ import java.util.List;
 
 @Api("商品类目品牌")
 @RestController
-@RequestMapping("/category")
+@RequestMapping("/category/via")
 @Slf4j
 public class CategoryController {
 
