@@ -274,9 +274,10 @@ public class IndexServiceImpl implements IndexService {
                 }
                 //先拿到会员类型
                 Integer operateType = user.getData().getFoperateType();
+                Integer verifyStatus = user.getData().getFverifyStatus();
                 //判断sku是否支持平台会员类型折扣 0否 1是
                 //1支持情况下
-                if (goodsSku.getFisUserTypeDiscount().equals(1)) {
+                if (goodsSku.getFisUserTypeDiscount().equals(1) && verifyStatus.equals(3)) {
                     List<SkuBatchUserPrice> salePriceList = new ArrayList<>();
                     for (SkuBatch skuBatch : skuBatchList.getData()) {
                         String supplierSkuBatchId = skuBatch.getFsupplierSkuBatchId();
