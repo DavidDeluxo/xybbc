@@ -34,7 +34,9 @@ public class OrderController {
 	@PostMapping("/submit")
 	public Result<OrderSubmitVo> submit(@RequestBody  OrderSubmitDto orderSubmitDto, HttpServletRequest request) {
 		Long fuid = Long.valueOf(request.getHeader("xyid"));
+		String source = request.getHeader("source");
 		orderSubmitDto.setFuid(fuid);
+		orderSubmitDto.setSource(source);
 		return orderApi.submit(orderSubmitDto);
 	}
 }
