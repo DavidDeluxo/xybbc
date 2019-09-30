@@ -28,7 +28,7 @@ spring:
       discovery:
         enabled: true
         service-id: xybbc-config-server
-      label: core-test
+      label: john
       profile: dev
       retry:
         initial-interval: 1000
