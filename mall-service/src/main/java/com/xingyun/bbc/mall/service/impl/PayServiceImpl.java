@@ -43,8 +43,6 @@ import com.xingyun.bbc.core.utils.Result;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -244,13 +242,6 @@ public class PayServiceImpl implements PayService {
 		if (ThirdPayUtil.PAY_SCENE_RECHARGE.equals(payScene)) {//充值
 			flag = rechargeService.newUpdateAfterRechargeSuccess(thirdPayInfo);
 			if (flag > 0) {
-//				this.closeOtherThirdPayOrder(forderId, payType);
-//				if (returnUrlSuffix.equals(urlSuffix)) {
-//					logger.info("支付订单:" + thirdPayInfo.get("forderId") + "充值返回" + thirdPayConfig.getRecharge_success_request());
-//					return Result.ok(thirdPayConfig.getRecharge_success_request());
-//				}
-				//logger.info("支付订单:" + thirdPayInfo.get("forderId") + "充值返回" + thirdPayUtil.thirdPayNotifySuccess(response));
-				//return Result.success(thirdPayUtil.thirdPayNotifySuccess(response));
 				logger.info("------------------第三方支付回调充值返回成功："+thirdPayInfo);
 				return Result.success();
 			}else{
@@ -310,13 +301,6 @@ public class PayServiceImpl implements PayService {
 		if (ThirdPayUtil.PAY_SCENE_RECHARGE.equals(payScene)) {//充值
 			flag = rechargeService.updateAfterRechargeSuccess(thirdPayInfo);
 			if (flag > 0) {
-//				this.closeOtherThirdPayOrder(forderId, payType);
-//				if (returnUrlSuffix.equals(urlSuffix)) {
-//					logger.info("支付订单:" + thirdPayInfo.get("forderId") + "充值返回" + thirdPayConfig.getRecharge_success_request());
-//					return Result.ok(thirdPayConfig.getRecharge_success_request());
-//				}
-				//logger.info("支付订单:" + thirdPayInfo.get("forderId") + "充值返回" + thirdPayUtil.thirdPayNotifySuccess(response));
-				//return Result.success(thirdPayUtil.thirdPayNotifySuccess(response));
 				logger.info("------------------第三方支付回调充值返回成功："+thirdPayInfo);
 				return Result.success();
 			}else{
