@@ -136,4 +136,6 @@ public interface ThirdPayUtil {
 		payInfo.put("recieveName", recieveName);
 		return payInfo;
 	}
+	
+	Map<String, String> getParameters(HttpServletRequest request, HttpServletResponse response);
 }

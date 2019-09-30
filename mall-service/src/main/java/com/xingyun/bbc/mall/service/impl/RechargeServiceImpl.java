@@ -68,7 +68,7 @@ public class RechargeServiceImpl implements RechargeService{
 		int rechargeSuccessStatus = 3;
 		int thirdPayType = Integer.parseInt(thirdPayInfo.getThirdPayType());
 		String forderId = thirdPayInfo.getForderId();
-		long thirdPayAmount =  Long.parseLong(thirdPayInfo.getPayAccount());
+		long thirdPayAmount = Long.parseLong(thirdPayInfo.getPayAmount());
 		String thirdTradeNo = thirdPayInfo.getThirdTradeNo();
 		synchronized (this) {
 			UserAccountTrans transInfo = transApi.queryById(forderId).getData();
@@ -207,9 +207,9 @@ public class RechargeServiceImpl implements RechargeService{
 	
 	private int thirdPayTypeToUserDetailType(int thirdPayType) {
 		if (thirdPayType == OrderPayEnum.ALI_PAY.getValue()) {
-			return UserDetailTypeEnum.ALIPAY_RECHARGE.getValue();
+			return UserDetailTypeEnum.ALI_RECHARGE.getValue();
 		} else if (thirdPayType == OrderPayEnum.WECHAT_PAY.getValue()) {
-			return UserDetailTypeEnum.WEIXIN_RECHARGE.getValue();
+			return UserDetailTypeEnum.WECHAT_RECHARGE.getValue();
 		} 
 		return -1;
 	}

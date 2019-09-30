@@ -285,4 +285,11 @@ public class AliPayOpenUtil implements ThirdPayUtil{
 	}
 
 
+	@Override
+	public Map<String, String> getParameters(HttpServletRequest request, HttpServletResponse response) {
+		Map<String,String> params=ParameteMapUtil.getParameters(request);
+		return params;
+	}
+
+
 }

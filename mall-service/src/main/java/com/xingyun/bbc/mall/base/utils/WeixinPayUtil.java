@@ -402,5 +402,34 @@ public class WeixinPayUtil implements ThirdPayUtil{
 		logger.info("订单: {}关闭微信付款码失败, {}, {}, {}", forderId, returnMsg, err_code, err_code_des);
 		return "关闭微信付款码失败: " + err_code_des;
 	}
+
+
+	@Override
+	public Map<String, String> getParameters(HttpServletRequest request, HttpServletResponse response) {
+		String inputLine;
+		StringBuffer notityXml = new StringBuffer();
+		Map<String, String> params = new HashMap<>();
+		try {
+			while ((inputLine = request.getReader().readLine()) != null) {
+				notityXml.append(inputLine);
+			}
+		} catch (Exception e) {
+			logger.info("w_notityXml:"+notityXml.toString());
+			logger.info("微信输入流为空或已经关闭。");
+		}
+		if (Strings.isNullOrEmpty(notityXml.toString())) {
+			notityXml = notityXml.append(request.getAttribute("notityXml"));
+			params = (Map<String, String>) request.getAttribute("notifyParams");
+		} else {
+			params = getMapFromXML(notityXml.toString());
+		}
+		
+		try {
+			request.getReader().close();
+		} catch (IOException e) {
+			logger.info("-----微信输入流为空或已经关闭。");
+		}
+		return params;
+	}
 	
 }

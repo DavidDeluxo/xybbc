@@ -215,21 +215,25 @@ public class PayServiceImpl implements PayService {
 		String payType = extraParams.get("payType");
 		String payScene = extraParams.get("payScene");
 		String isTerminal = extraParams.get("isTerminal");
-	
 		
 		ThirdPayUtil thirdPayUtil = "1".equals(isTerminal) ? thirdPayUtilFactory.createTerminalPayUtil(payType) : thirdPayUtilFactory.createThirdPayUtil(payType);
-//		if (thirdPayUtil == null) {
-//			return Result.failure(MallExceptionCode.THIRD_PAY_NOTIFY_FAIL);
-//		}
-//		Map<String, String> thirdPayInfo = thirdPayUtil.modifyParseInfoFromThirdPayResponse(request, response);
-		
-		Map<String, String> params=new HashMap<String, String>();
+		if (thirdPayUtil == null) {
+			return Result.failure(MallExceptionCode.THIRD_PAY_NOTIFY_FAIL);
+		}
+		Map<String, String> params = thirdPayUtil.getParameters(request, response);
 		
 		ThirdPayResponseDto thirdPayResponseDto=new ThirdPayResponseDto();
 		thirdPayResponseDto.setPayType(payType);
 		thirdPayResponseDto.setIsTerminal(isTerminal);
 		thirdPayResponseDto.setParams(params);
-		PayInfoVo thirdPayInfo= (PayInfoVo) payApi.thirdPayResponse(thirdPayResponseDto).getData();
+		Result<PayInfoVo> result= payApi.thirdPayResponse(thirdPayResponseDto);
+		
+		PayInfoVo thirdPayInfo=new PayInfoVo();
+		
+		if(result.isSuccess())
+		{
+			thirdPayInfo=result.getData();
+		}
 		
 		if (thirdPayInfo == null) {
 			return Result.failure(MallExceptionCode.THIRD_PAY_NOTIFY_FAIL);
@@ -265,8 +269,8 @@ public class PayServiceImpl implements PayService {
 			logger.info("------------------第三方支付回调请求订单中心参数：forderId="+payDto.getForderPaymentId()+",forderThirdpayType="+payDto.getForderThirdpayType()
 				+",payAmount="+payDto.getPayAmount()+",payTime="+payDto.getPayName()+",thirdTradeNo="+payDto.getThirdTradeNo()+",payAccount="+payDto.getPayAccount()
 				+",payName="+payDto.getPayName());
-			Result<ThirdPayVo> result=orderPayApi.thirdPay(payDto);
-			logger.info("------------------第三方支付回调请求订单中心返回："+result.getData().getCode());
+			Result<ThirdPayVo> x=orderPayApi.thirdPay(payDto);
+			logger.info("------------------第三方支付回调请求订单中心返回："+x.getData().getCode());
 			return result;
 		}
 		return Result.failure(MallExceptionCode.THIRD_PAY_NOTIFY_FAIL);
@@ -329,7 +333,7 @@ public class PayServiceImpl implements PayService {
 			payDto.setPayAccount(thirdPayInfo.get("payAccount"));
 			payDto.setPayName(thirdPayInfo.get("payName"));
 			logger.info("------------------第三方支付回调请求订单中心参数：forderId="+payDto.getForderPaymentId()+",forderThirdpayType="+payDto.getForderThirdpayType()
-				+",payAmount="+payDto.getPayAmount()+",payTime="+payDto.getPayName()+",thirdTradeNo="+payDto.getThirdTradeNo()+",payAccount="+payDto.getPayAccount()
+				+",payAmount="+payDto.getPayAmount()+",payTime="+payDto.getPayTime()+",thirdTradeNo="+payDto.getThirdTradeNo()+",payAccount="+payDto.getPayAccount()
 				+",payName="+payDto.getPayName());
 			Result<ThirdPayVo> result=orderPayApi.thirdPay(payDto);
 			logger.info("------------------第三方支付回调请求订单中心返回："+result.getData().getCode());

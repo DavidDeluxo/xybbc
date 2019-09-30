@@ -1,6 +1,5 @@
 package com.xingyun.bbc.mall.controller;
 
-
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.enums.CompanyBankInfoEnums;
 import com.xingyun.bbc.mall.model.dto.BalancePayDto;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 
 import java.util.HashMap;
 import java.util.Map;
@@ -57,28 +55,25 @@ public class PayController {
 	}
 
 	@RequestMapping("/via/thirdpayresponse_{urlSuffix}")
-	public Result<?> thirdPayResponse(@PathVariable String urlSuffix, HttpServletRequest request,HttpServletResponse response) {
-		return payService.thirdPayResponse(urlSuffix, request, response);
+	public Result<?> thirdPayResponse(@PathVariable String urlSuffix, HttpServletRequest request,
+			HttpServletResponse response) {
+		return payService.newThirdPayResponse(urlSuffix, request, response);
 	}
-
-	
 
 	@ApiOperation("用户线下汇款获取公司银行账号信息")
 	@PostMapping("/getCompanyBankInfo")
-	public Result<?> getCompanyBankInfo() 
-	{
-		Map<String, String> result=new HashMap<String,String>();
+	public Result<?> getCompanyBankInfo() {
+		Map<String, String> result = new HashMap<String, String>();
 		result.put("companyName", CompanyBankInfoEnums.offlinePay.COMPANYNAME.getDesc());
 		result.put("companyBankCard", CompanyBankInfoEnums.offlinePay.COMPANYBANKCARD.getDesc());
-		result.put("companyBankName",CompanyBankInfoEnums.offlinePay.COMPANYBANKNAME.getDesc());
+		result.put("companyBankName", CompanyBankInfoEnums.offlinePay.COMPANYBANKNAME.getDesc());
 		return Result.success(result);
 	}
-	
+
 	@ApiOperation("用户线下汇款余额充值申请")
-	@PostMapping( "/addBalance")
-	public Result<?> addBalance(@RequestBody RemittancetRechargeDto dto) 
-	{
+	@PostMapping("/addBalance")
+	public Result<?> addBalance(@RequestBody RemittancetRechargeDto dto) {
 		return payService.addBalance(dto);
 	}
-	
+
 }

@@ -11,8 +11,22 @@ package com.xingyun.bbc.mall.base.enums;
 public class XyUserDetail {
 
 	public static enum UserDetailTypeEnum {
-		ALIPAY_RECHARGE(1, "支付宝充值"),
-		WEIXIN_RECHARGE(2, "微信充值"),
+		ALI_RECHARGE(1, "用户支付宝充值"),
+		WECHAT_RECHARGE(2, "用户微信充值"),
+		HF_RECHARGE(3, "用户汇付充值"),
+		OFFLINE_RECHARGE(4, "用户线下汇款充值"),
+		BALANCE_ORDER(5, "余额下单"),
+		ALI_ORDER(6, "支付宝下单"),
+		WECHAT_ORDER(7, "微信下单"),
+		BALANCE_WITHDRAW(8, "余额提现"),
+		CUSTOM_CANCEL(9, "客服取消订单"),
+		AFTERSALE_BALANCE(10, "售后退款至余额"),
+		AUTO_CANCEL_BALANCE(11, "自动取消订单退款至余额"),
+		MANUAL_CANCEL_BALANCE(12, "手动取消订单退款至余额"),
+		AFTERSALE_WORK_BALANCE(13, "售后工单调整信用额度"),
+		AFTERSALE_WORK_CREDIT(14, "账户调整单调整客户账户余额"),
+		USER_WORK_CREDIT(15, "支付宝下单"),
+		BUYAGENT_INCOME(16, "代购收益");
 		;
 		
 		

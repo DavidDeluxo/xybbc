@@ -238,4 +238,11 @@ public class AliPayUtil implements ThirdPayUtil{
 		return null;
 	}
 
+
+	@Override
+	public Map<String, String> getParameters(HttpServletRequest request, HttpServletResponse response) {
+		Map<String,String> params=this.getNotifyParams(request);
+		return params;
+	}
+
 }
