@@ -294,6 +294,7 @@ public class UserServiceImpl implements UserService {
         passWord = MD5Util.MD5EncodeUtf8(passWord);
         user.setFregisterFrom(dto.getFregisterFrom());
         user.setFmobile(dto.getFmobile());
+        user.setFuname(dto.getFmobile());
         user.setFpasswd(passWord);
         user.setFfreezeStatus(1);
         user.setFverifyStatus(1);
