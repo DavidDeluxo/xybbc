@@ -131,6 +131,9 @@ public class WalletTurningServiceImpl implements WalletTurningService {
             UserWalletDetailTotalVo userWalletDetailTotalVo = this.queryWalletTotal(userWalletQueryDto);
             userWalletDetailVo.setFincomeAmountTotal(userWalletDetailTotalVo.getFincomeAmountTotal());
             userWalletDetailVo.setFexpenseAmountTotal(userWalletDetailTotalVo.getFexpenseAmountTotal());
+            BigDecimal balance = userWalletDetailVo.getFbalance()
+                    .divide(PageConfigContants.BIG_DECIMAL_100, 2, BigDecimal.ROUND_HALF_UP);
+            userWalletDetailVo.setFbalance(balance);
             BigDecimal incomeAmount = userWalletDetailVo.getFincomeAmount()
                     .divide(PageConfigContants.BIG_DECIMAL_100, 2, BigDecimal.ROUND_HALF_UP);
             userWalletDetailVo.setFincomeAmount(incomeAmount);

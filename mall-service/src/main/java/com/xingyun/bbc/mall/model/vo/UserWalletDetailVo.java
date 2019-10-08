@@ -37,7 +37,7 @@ public class UserWalletDetailVo {
 
     /** 余额 */
     @ApiModelProperty("余额")
-    private Long fbalance;
+    private BigDecimal fbalance;
 
 
     /** 修改时间 */
