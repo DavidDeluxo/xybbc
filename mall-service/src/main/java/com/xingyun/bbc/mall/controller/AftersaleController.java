@@ -28,34 +28,33 @@ public class AftersaleController {
 
     @ApiOperation(value = "获取售后列表", httpMethod = "GET")
     @GetMapping("/getAftersaleLis")
-    public Result<PageVo<AftersaleListVo>> getAftersaleLis(@ModelAttribute AftersaleLisDto aftersaleLisDto, HttpServletRequest request){
-//      Long xyid = Long.parseLong(request.getHeader("xyid"));
-//      aftersaleLisDto.setFuserId(xyid);
-        aftersaleLisDto.setFuserId(23L);
+    public Result<PageVo<AftersaleListVo>> getAftersaleLis(@ModelAttribute AftersaleLisDto aftersaleLisDto, HttpServletRequest request) {
+        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        aftersaleLisDto.setFuserId(xyid);
         return aftersaleService.getAftersaleLis(aftersaleLisDto);
     }
 
     @ApiOperation(value = "获取售后详情", httpMethod = "GET")
     @GetMapping("/getAftersaleDetail")
-    public Result<AftersaleDetailVo> getAftersaleDetail(@RequestParam String faftersaleId){
+    public Result<AftersaleDetailVo> getAftersaleDetail(@RequestParam String faftersaleId) {
         return aftersaleService.getAftersaleDetail(faftersaleId);
     }
 
     @ApiOperation(value = "售后详情查询物流公司", httpMethod = "GET")
     @GetMapping("/getShippingCompany")
-    public Result<List<ShippingCompanyDto>> getShippingCompanyLis(@ModelAttribute ShippingCompanyDto shippingCompanyDto){
+    public Result<List<ShippingCompanyDto>> getShippingCompanyLis(@ModelAttribute ShippingCompanyDto shippingCompanyDto) {
         return aftersaleService.getShippingCompanyLis(shippingCompanyDto);
     }
 
     @ApiOperation(value = "售后详情查询回寄物流信息", httpMethod = "GET")
     @GetMapping("/getAftersaleBackShipping")
-    public Result<AftersaleBackVo> getAftersaleBackShipping(@RequestParam String faftersaleId){
+    public Result<AftersaleBackVo> getAftersaleBackShipping(@RequestParam String faftersaleId) {
         return aftersaleService.getAftersaleBackShipping(faftersaleId);
     }
 
     @ApiOperation(value = "售后详情用户上传回寄物流信息", httpMethod = "POST")
     @PostMapping("/modifyAftersaleBack")
-    public Result modifyAftersaleBack(@RequestBody @Validated  AftersaleBackDto aftersaleBackDto){
+    public Result modifyAftersaleBack(@RequestBody @Validated AftersaleBackDto aftersaleBackDto) {
         return aftersaleService.modifyAftersaleBack(aftersaleBackDto);
     }
 

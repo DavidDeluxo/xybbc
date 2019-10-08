@@ -82,22 +82,25 @@ public class AftersaleServiceImpl implements AftersaleService {
     public Result<PageVo<AftersaleListVo>> getAftersaleLis(AftersaleLisDto aftersaleLisDto) {
         //获取售后列表信息
         Criteria<OrderAftersale, Object> criteria = Criteria.of(OrderAftersale.class)
-                .andEqualTo(OrderAftersale::getFuid, aftersaleLisDto.getFuserId())
-                //售后状态1待客服审核 2待采购审核 3待仓库审核 4待财务审核 5已拒绝 6待退货 7待退款 8已成功 9已撤销  列表查询不限制状态
-                .fields(OrderAftersale::getForderAftersaleId, OrderAftersale::getFskuCode, OrderAftersale::getFaftersaleNum,
-                        OrderAftersale::getFaftersaleStatus, OrderAftersale::getFunitPrice, OrderAftersale::getFbatchPackageNum)
+                .andEqualTo(OrderAftersale::getFuid, aftersaleLisDto.getFuserId());
+        Result<Integer> countResult = orderAftersaleApi.countByCriteria(criteria);
+        if (!countResult.isSuccess()) {
+            logger.info("用户user_id {}获取售后订单信息失败", aftersaleLisDto.getFuserId());
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+
+        //售后状态1待客服审核 2待采购审核 3待仓库审核 4待财务审核 5已拒绝 6待退货 7待退款 8已成功 9已撤销  列表查询不限制状态
+        criteria.fields(OrderAftersale::getForderAftersaleId, OrderAftersale::getFskuCode, OrderAftersale::getFaftersaleNum,
+                OrderAftersale::getFaftersaleStatus, OrderAftersale::getFunitPrice, OrderAftersale::getFbatchPackageNum)
                 .page(aftersaleLisDto.getCurrentPage(), aftersaleLisDto.getPageSize())
                 .sortDesc(OrderAftersale::getFcreateTime);
+
         Result<List<OrderAftersale>> listResult = orderAftersaleApi.queryByCriteria(criteria);
         if (!listResult.isSuccess()) {
             logger.info("用户user_id {}获取售后订单信息失败", aftersaleLisDto.getFuserId());
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        Result<Integer> countResult = orderAftersaleApi.countByCriteria(criteria);
-        if (!listResult.isSuccess()) {
-            logger.info("用户user_id {}获取售后订单信息失败", aftersaleLisDto.getFuserId());
-            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        }
+
         PageVo<AftersaleListVo> result = pageUtils.convert(countResult.getData(), listResult.getData(), AftersaleListVo.class, aftersaleLisDto);
 
         //获取skuName
