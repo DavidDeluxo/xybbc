@@ -27,7 +27,7 @@ public class GoodspecificationDetailVo implements Serializable {
     @ApiModelProperty(value = "批次id")
     private String fskuBatchId;
 
-    @ApiModelProperty(value = "库存有效期结束日期")
+    @ApiModelProperty(value = "批次有效期--商品保质期")
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd")
     private Date fqualityEndDate;
 
