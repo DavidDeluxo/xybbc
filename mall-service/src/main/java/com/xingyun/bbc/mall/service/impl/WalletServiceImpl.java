@@ -311,7 +311,7 @@ public class WalletServiceImpl implements WalletService {
 
         if (StringUtil.isBlank(passWord)) throw new BizException(MallResultStatus.WITHDRAW_PASSWORD_ERROR);
 
-        passWord = MD5Util.MD5EncodeUtf8(withdrawDto.getWithdrawPwd());
+        passWord = MD5Util.MD5EncodeUtf8(passWord);
 
         if (!passWord.equals(user.getFwithdrawPasswd()))
             throw new BizException(MallResultStatus.WITHDRAW_PASSWORD_ERROR);
