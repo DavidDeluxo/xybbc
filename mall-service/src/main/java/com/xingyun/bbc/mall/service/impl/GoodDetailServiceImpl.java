@@ -9,12 +9,6 @@ import com.xingyun.bbc.core.sku.api.*;
 import com.xingyun.bbc.core.sku.enums.GoodsSkuEnums;
 import com.xingyun.bbc.core.sku.enums.SkuBatchEnums;
 import com.xingyun.bbc.core.sku.po.*;
-import com.xingyun.bbc.core.sku.po.Goods;
-import com.xingyun.bbc.core.sku.po.GoodsSku;
-import com.xingyun.bbc.core.sku.po.GoodsSkuBatchPrice;
-import com.xingyun.bbc.core.sku.po.SkuBatch;
-import com.xingyun.bbc.core.sku.po.SkuBatchPackage;
-import com.xingyun.bbc.core.sku.po.SkuBatchUserPrice;
 import com.xingyun.bbc.core.supplier.enums.TradeTypeEnums;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.api.UserDeliveryApi;
@@ -22,11 +16,9 @@ import com.xingyun.bbc.core.user.po.UserDelivery;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.common.constans.MallConstants;
-import com.xingyun.bbc.mall.common.enums.GoodsEnums;
 import com.xingyun.bbc.mall.model.dto.GoodsDetailDto;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.GoodDetailService;
-import com.xingyun.bbc.order.api.FavoritesApi;
 import com.xingyun.bbc.order.api.FreightApi;
 import com.xingyun.bbc.order.model.dto.freight.FreightDto;
 import org.apache.commons.collections.CollectionUtils;
@@ -212,7 +204,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             Result<List<SkuBatch>> skuBatchResult = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
                     .andEqualTo(SkuBatch::getFskuId, skuVo.getFskuId())
                     .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
-                    .fields(SkuBatch::getFvalidityEndDate, SkuBatch::getFsupplierSkuBatchId));
+                    .fields(SkuBatch::getFqualityEndDate, SkuBatch::getFsupplierSkuBatchId));
             List<GoodsSkuBatchVo> batchVert = dozerHolder.convert(skuBatchResult.getData(), GoodsSkuBatchVo.class);
             batchRes.addAll(batchVert);
             for (GoodsSkuBatchVo batchVo : batchVert) {
@@ -227,7 +219,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     detailVo.setFskuCode(skuVo.getFskuCode());
                     detailVo.setFskuSpecValue(skuVo.getFskuSpecValue());
                     detailVo.setFskuBatchId(batchVo.getFsupplierSkuBatchId());
-                    detailVo.setFvalidityEndDate(batchVo.getFvalidityEndDate());
+                    detailVo.setFqualityEndDate(batchVo.getFqualityEndDate());
                     detailVo.setFbatchPackageId(packageVo.getFbatchPackageId());
                     detailVo.setFbatchPackageNum(packageVo.getFbatchPackageNum());
                     detailVo.setFbatchStartNum(packageVo.getFbatchStartNum());
@@ -259,7 +251,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         for (GoodsSkuBatchVo batchRe : batchRes) {
             MallTVo tVoBatch = new MallTVo();
             tVoBatch.setTId(batchRe.getFsupplierSkuBatchId());
-            tVoBatch.setTName(new SimpleDateFormat("yyyy-MM-dd").format(batchRe.getFvalidityEndDate()));
+            tVoBatch.setTName(new SimpleDateFormat("yyyy-MM-dd").format(batchRe.getFqualityEndDate()));
             batchMall.add(tVoBatch);
         }
         GoodspecificationExVo batchEx = new GoodspecificationExVo();

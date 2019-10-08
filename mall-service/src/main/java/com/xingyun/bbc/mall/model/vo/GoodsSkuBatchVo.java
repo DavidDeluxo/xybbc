@@ -1,13 +1,9 @@
 package com.xingyun.bbc.mall.model.vo;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.Table;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -110,11 +106,11 @@ public class GoodsSkuBatchVo implements Serializable{
     private Integer fbatchStatus;
 
     /** 库存有效期起始日期 */
-    @ApiModelProperty(value = "库存有效期起始日期")
-    private Date fvalidityStartDate;
+    @ApiModelProperty(value = "批次有效期起始日期--商品保质期")
+    private Date fqualityStartDate;
 
     /** 库存有效期结束日期 */
-    @ApiModelProperty(value = "库存有效期结束日期")
-    private Date fvalidityEndDate;
+    @ApiModelProperty(value = "批次有效期结束日期--商品保质期")
+    private Date fqualityEndDate;
 
 }
