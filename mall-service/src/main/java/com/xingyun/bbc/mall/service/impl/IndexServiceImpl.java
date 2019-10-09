@@ -62,6 +62,9 @@ public class IndexServiceImpl implements IndexService {
     private GoodsApi goodsApi;
 
     @Autowired
+    GoodsCategoryApi goodsCategoryApi;
+
+    @Autowired
     private GoodsSkuApi goodsSkuApi;
 
     @Autowired
@@ -212,35 +215,25 @@ public class IndexServiceImpl implements IndexService {
         //第二步，封装sku中的缩略图，历史销量，最低价格
         List<IndexSkuGoodsVo> indexSkuGoodsVoList = result.getData().stream().map(goodsSku -> {
             IndexSkuGoodsVo indexSkuGoodsVo = dozerMapper.map(goodsSku, IndexSkuGoodsVo.class);
-            //1--------封装缩略图
-           /* Criteria<GoodsThumbImage, Object> goodsThumbImageCriteria = Criteria.of(GoodsThumbImage.class)
-                    .andEqualTo(GoodsThumbImage::getFimgType, 2)
-                    .andEqualTo(GoodsThumbImage::getFgoodsId, goodsSku.getFgoodsId());
-            Result<GoodsThumbImage> goodsThumbImage = goodsThumbImageApi.queryOneByCriteria(goodsThumbImageCriteria);
-           // Result<List<GoodsThumbImage>> goodsThumbImage = goodsThumbImageApi.queryByCriteria(goodsThumbImageCriteria);
-            String sql = goodsThumbImageCriteria.buildSql();
-            if (!goodsThumbImage.isSuccess()) {
-                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-            }
-            if (Objects.nonNull(goodsThumbImage.getData())) {
-                indexSkuGoodsVo.setFimgUrl(goodsThumbImage.getData().getFimgUrl());
-            }*/
-        /*     if (CollectionUtils.isNotEmpty(goodsThumbImage.getData())) {
-                indexSkuGoodsVo.setFimgUrl(goodsThumbImage.getData().get(0).getFimgUrl());
-            }*/
-            //2-------封装历史销量
+            //1-------封装历史销量
             Criteria<SkuBatch, Object> skuBatchCriteria = Criteria.of(SkuBatch.class)
-                    .andEqualTo(SkuBatch::getFskuId, goodsSku.getFskuId())
-                    .andEqualTo(SkuBatch::getFbatchStatus,2);
+                    .andEqualTo(SkuBatch::getFskuId, goodsSku.getFskuId());
             Result<List<SkuBatch>> skuBatchList = skuBatchApi.queryByCriteria(skuBatchCriteria);
             if (!skuBatchList.isSuccess()) {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
-          /*  if (CollectionUtils.isEmpty(skuBatchList.getData())) {
+            if (CollectionUtils.isEmpty(skuBatchList.getData())) {
                 //throw new BizException(MallExceptionCode.SKU_BATCH_IS_NONE);
                 return null;
-            }*/
-            if (CollectionUtils.isEmpty(skuBatchList.getData())) {
+            }
+            Criteria<SkuBatch, Object> batchCriteria = Criteria.of(SkuBatch.class)
+                    .andEqualTo(SkuBatch::getFskuId, goodsSku.getFskuId())
+                    .andEqualTo(SkuBatch::getFbatchStatus,2);
+            Result<List<SkuBatch>> skuBatchs = skuBatchApi.queryByCriteria(batchCriteria);
+            if (!skuBatchs.isSuccess()) {
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            }
+            if (CollectionUtils.isEmpty(skuBatchs.getData())) {
                 //throw new BizException(MallExceptionCode.SKU_BATCH_IS_NONE);
                 return null;
             }
@@ -279,7 +272,7 @@ public class IndexServiceImpl implements IndexService {
                 //1支持情况下
                 if (goodsSku.getFisUserTypeDiscount().equals(1) && verifyStatus.equals(3)) {
                     List<SkuBatchUserPrice> salePriceList = new ArrayList<>();
-                    for (SkuBatch skuBatch : skuBatchList.getData()) {
+                    for (SkuBatch skuBatch : skuBatchs.getData()) {
                         String supplierSkuBatchId = skuBatch.getFsupplierSkuBatchId();
                         Criteria<SkuBatchUserPrice, Object> skuBatchUserPriceCriteria = Criteria.of(SkuBatchUserPrice.class);
                         skuBatchUserPriceCriteria
@@ -310,7 +303,7 @@ public class IndexServiceImpl implements IndexService {
                 } else {
                     //2.不支持情况
                     List<GoodsSkuBatchPrice> salePriceList = new ArrayList<>();
-                    for (SkuBatch skuBatch : skuBatchList.getData()) {
+                    for (SkuBatch skuBatch : skuBatchs.getData()) {
                         String supplierSkuBatchId = skuBatch.getFsupplierSkuBatchId();
                         Criteria<GoodsSkuBatchPrice, Object> goodsSkuBatchPriceCriteria = Criteria.of(GoodsSkuBatchPrice.class);
                         goodsSkuBatchPriceCriteria.andEqualTo(GoodsSkuBatchPrice::getFsupplierSkuBatchId, supplierSkuBatchId);
@@ -358,5 +351,35 @@ public class IndexServiceImpl implements IndexService {
             return new PageVo<>(0, categoryDto.getCurrentPage(), categoryDto.getPageSize(), Lists.newArrayList());
         }
         return pageUtils.convert(totalResult.getData(), list, IndexSkuGoodsVo.class, categoryDto);
+    }
+
+    @Override
+    public Result<List<GoodsCategoryVo>> queryGoodsCategoryList() {
+        List<GoodsCategoryVo> categoryVoList = new LinkedList<>();
+        Result<List<Goods>> goodsResultAll = goodsApi.queryAll();
+        if(!goodsResultAll.isSuccess()){
+            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+        }
+        if(!org.springframework.util.CollectionUtils.isEmpty(goodsResultAll.getData())){
+            List<Goods> goodsListAll = goodsResultAll.getData();
+            List<Long> categoryListFiltered = goodsListAll.stream().map(Goods::getFcategoryId1).distinct().collect(Collectors.toList());
+            Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(
+                    Criteria.of(GoodsCategory.class).andIn(GoodsCategory::getFcategoryId , categoryListFiltered)
+                    .sortDesc(GoodsCategory::getFmodifyTime).andEqualTo(GoodsCategory::getFisDelete,0).andEqualTo(GoodsCategory::getFisDisplay,1));
+            if(!categoryListResultAll.isSuccess()){
+                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            }
+            if(!org.springframework.util.CollectionUtils.isEmpty(categoryListResultAll.getData())){
+                for(GoodsCategory category : categoryListResultAll.getData()){
+                    GoodsCategoryVo categoryVo = new GoodsCategoryVo();
+                    categoryVo.setFcategoryId(category.getFcategoryId());
+                    categoryVo.setFcategoryName(category.getFcategoryName());
+                    categoryVo.setFcategoryDesc(category.getFcategoryDesc());
+                    categoryVoList.add(categoryVo);
+                }
+
+            }
+        }
+        return Result.success(categoryVoList);
     }
 }
