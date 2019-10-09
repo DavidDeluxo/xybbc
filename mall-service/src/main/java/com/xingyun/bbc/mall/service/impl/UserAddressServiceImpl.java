@@ -107,14 +107,16 @@ public class UserAddressServiceImpl implements UserAddressService {
             if(isDefualt == 1){
                 List<UserDeliveryVo> userDeliveryVoList= this.getUserAddressList(userDelivery).getData();
                 UserDelivery update = new UserDelivery();
-                for (UserDeliveryVo userDeliveryVo:userDeliveryVoList) {
-                    Integer defualt = userDeliveryVo.getFisDefualt();
-                    if(defualt == 1){
-                        update.setFdeliveryUserId(userDeliveryVo.getFdeliveryUserId());
-                        update.setFisDefualt(0);
-                        Result<Integer> result = userDeliveryApi.updateNotNull(update);
-                        if (!result.isSuccess()) {
-                            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+                if(CollectionUtils.isNotEmpty(userDeliveryVoList)){
+                    for (UserDeliveryVo userDeliveryVo:userDeliveryVoList) {
+                        Integer defualt = userDeliveryVo.getFisDefualt();
+                        if(defualt == 1){
+                            update.setFdeliveryUserId(userDeliveryVo.getFdeliveryUserId());
+                            update.setFisDefualt(0);
+                            Result<Integer> result = userDeliveryApi.updateNotNull(update);
+                            if (!result.isSuccess()) {
+                                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+                            }
                         }
                     }
                 }
