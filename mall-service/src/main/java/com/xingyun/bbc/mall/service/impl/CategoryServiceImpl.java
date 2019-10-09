@@ -138,12 +138,15 @@ public class CategoryServiceImpl implements CategoryService {
         if(!CollectionUtils.isEmpty(goodsResultAll.getData())){
             List<Goods> goodsListAll = goodsResultAll.getData();
             List<Long> categoryListFiltered = goodsListAll.stream().map(Goods::getFcategoryId1).distinct().collect(Collectors.toList());
-            Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class).andIn(GoodsCategory::getFcategoryId , categoryListFiltered).sortDesc(GoodsCategory::getFmodifyTime));
+            Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class)
+                    .andIn(GoodsCategory::getFcategoryId , categoryListFiltered)
+                    .andEqualTo(GoodsCategory::getFisDelete, 0)
+                    .andEqualTo(GoodsCategory::getFisDisplay, 1)
+                    .sortDesc(GoodsCategory::getFmodifyTime));
             if(!categoryListResultAll.isSuccess()){
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
             if(!CollectionUtils.isEmpty(categoryListResultAll.getData())){
-
                 for(GoodsCategory category : categoryListResultAll.getData()){
                     GoodsCategoryVo categoryVo = new GoodsCategoryVo();
                     categoryVo.setFcategoryId(category.getFcategoryId());
@@ -151,7 +154,6 @@ public class CategoryServiceImpl implements CategoryService {
                     categoryVo.setFcategoryDesc(category.getFcategoryDesc());
                     categoryVoList.add(categoryVo);
                 }
-
             }
         }
         return Result.success(categoryVoList);
