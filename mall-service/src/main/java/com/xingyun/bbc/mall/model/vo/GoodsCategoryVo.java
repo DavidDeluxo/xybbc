@@ -40,6 +40,9 @@ public class GoodsCategoryVo implements Comparable<GoodsCategoryVo>{
     @ApiModelProperty("子类目列表")
     private List<GoodsCategoryVo> childrenList;
 
+    @ApiModelProperty("热门品牌")
+    private List<BrandListVo> hotBrandList;
+
     @Override
     public int compareTo(GoodsCategoryVo compare) {
         int i = this.getFcategorySort().compareTo(compare.getFcategorySort());
