@@ -524,8 +524,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             if (!skuBatchUserPriceResult.isSuccess()) {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
-            if (null != skuBatchUserPriceResult.getData().getFbatchSellPrice()) {
-                price = skuBatchUserPriceResult.getData().getFbatchSellPrice();
+            if (null != skuBatchUserPriceResult.getData()) {
+                if (null != skuBatchUserPriceResult.getData().getFbatchSellPrice()) {
+                    price = skuBatchUserPriceResult.getData().getFbatchSellPrice();
+                }
             } else {
                 price = this.getGeneralPrice(goodsDetailDto.getFbatchPackageId());
             }
@@ -541,8 +543,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         Result<GoodsSkuBatchPrice> goodsSkuBatchPriceResult = goodsSkuBatchPriceApi.queryOneByCriteria(Criteria.of(GoodsSkuBatchPrice.class)
                 .andEqualTo(GoodsSkuBatchPrice::getFbatchPackageId, fbatchPackageId)
                 .fields(GoodsSkuBatchPrice::getFbatchSellPrice));
-        if (goodsSkuBatchPriceResult.isSuccess() && null != goodsSkuBatchPriceResult.getData().getFbatchSellPrice()) {
-            price = goodsSkuBatchPriceResult.getData().getFbatchSellPrice();
+        if (goodsSkuBatchPriceResult.isSuccess() && null != goodsSkuBatchPriceResult.getData()) {
+            if (null != goodsSkuBatchPriceResult.getData().getFbatchSellPrice()) {
+                price = goodsSkuBatchPriceResult.getData().getFbatchSellPrice();
+            }
         }
         return price;
     }
