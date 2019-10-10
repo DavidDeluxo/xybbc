@@ -364,8 +364,11 @@ public class IndexServiceImpl implements IndexService {
             List<Goods> goodsListAll = goodsResultAll.getData();
             List<Long> categoryListFiltered = goodsListAll.stream().map(Goods::getFcategoryId1).distinct().collect(Collectors.toList());
             Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(
-                    Criteria.of(GoodsCategory.class).andIn(GoodsCategory::getFcategoryId , categoryListFiltered)
-                    .sortDesc(GoodsCategory::getFmodifyTime).andEqualTo(GoodsCategory::getFisDelete,0).andEqualTo(GoodsCategory::getFisDisplay,1));
+                    Criteria.of(GoodsCategory.class)
+                            .andIn(GoodsCategory::getFcategoryId , categoryListFiltered)
+                            .sortDesc(GoodsCategory::getFmodifyTime)
+                            .andEqualTo(GoodsCategory::getFisDelete,0)
+                            .andEqualTo(GoodsCategory::getFisDisplay,1));
             if(!categoryListResultAll.isSuccess()){
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
