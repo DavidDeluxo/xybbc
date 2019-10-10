@@ -5,9 +5,9 @@ import com.google.common.collect.Lists;
 import com.xingyun.bbc.common.redis.XyRedisManager;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
-
+import com.xingyun.bbc.core.operate.api.GuidePageApi;
 import com.xingyun.bbc.core.operate.api.PageConfigApi;
-
+import com.xingyun.bbc.core.operate.po.GuidePage;
 import com.xingyun.bbc.core.operate.po.PageConfig;
 import com.xingyun.bbc.core.query.Criteria;
 
@@ -17,16 +17,15 @@ import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
-
+import com.xingyun.bbc.mall.base.utils.JacksonUtils;
 import com.xingyun.bbc.mall.base.utils.PageUtils;
+import com.xingyun.bbc.mall.common.constans.GuidePageContants;
 import com.xingyun.bbc.mall.common.constans.PageConfigContants;
 
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.CategoryDto;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.IndexService;
-
-
 import org.apache.commons.collections.CollectionUtils;
 import org.dozer.Mapper;
 import org.slf4j.Logger;
@@ -53,6 +52,8 @@ public class IndexServiceImpl implements IndexService {
 
     @Autowired
     private PageConfigApi pageConfigApi;
+    @Autowired
+    private GuidePageApi  guidePageApi;
     @Resource
     private DozerHolder holder;
     @Autowired
@@ -384,5 +385,33 @@ public class IndexServiceImpl implements IndexService {
             }
         }
         return Result.success(categoryVoList);
+    }
+
+
+    @Override
+    public Result<List<GuidePageVo>> selectGuidePageVos(Integer ftype) {
+      try {
+        Criteria<GuidePage,Object> pageCriteria = Criteria.of(GuidePage.class);
+         String  redisKey = GuidePageContants.GUIDE_PAGE;
+         List<Object>  result = xyRedisManager.hValues(redisKey);//先查缓存是否命中,没有命中则查询GuidePageVo
+         if(result==null) {
+             pageCriteria.andEqualTo(GuidePage::getFtype, ftype);
+             Result<List<GuidePage>> res = guidePageApi.queryByCriteria(pageCriteria);
+             if(!res.isSuccess()) {
+                 throw  new  BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+             }else {
+                 List<GuidePage> guidePageList = res.getData();
+                 List<GuidePageVo> convetVoList = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(guidePageList), GuidePageVo.class);
+                 return  Result.success(convetVoList);
+             }
+         }else {
+             List<GuidePage> guidePage = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(result),GuidePage.class);
+             List<GuidePageVo> convetVoList = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(guidePage), GuidePageVo.class);
+             List<GuidePageVo> tempList = convetVoList.stream().filter(index -> index.getFtype()==ftype).collect(Collectors.toList());
+             return  Result.success(tempList);
+         }
+     }catch(Exception e) {
+         throw  new  BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+     }
     }
 }
