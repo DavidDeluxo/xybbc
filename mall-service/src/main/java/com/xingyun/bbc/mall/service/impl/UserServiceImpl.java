@@ -2,6 +2,7 @@ package com.xingyun.bbc.mall.service.impl;
 
 import com.google.common.base.Strings;
 import com.xingyun.bbc.common.redis.XyRedisManager;
+import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.helper.api.EmailApi;
 import com.xingyun.bbc.core.helper.api.SMSApi;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
@@ -29,6 +30,7 @@ import com.xingyun.bbc.mall.model.dto.*;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.UserService;
 import io.jsonwebtoken.Claims;
+import io.seata.spring.annotation.GlobalTransactional;
 import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -341,6 +343,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @GlobalTransactional
     public Result<Integer> userVerify(UserVerifyDto dto) {
         //根据认证状态作参数校验
         Integer mistakeMsg = checkUserVerifyDto(dto);
@@ -378,6 +381,9 @@ public class UserServiceImpl implements UserService {
         user.setFoperateType(dto.getFoperateType());
         user.setFuid(dto.getFuid());
         Result<Integer> updateNotNull = userApi.updateNotNull(user);
+        if (!updateNotNull.isSuccess()) {
+            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+        }
         return Result.success();
     }
 
@@ -803,6 +809,9 @@ public class UserServiceImpl implements UserService {
                     }
                     break;
                 case 2:
+                    if(dto.getFshopName() == null || dto.getFshopName().equals("")){
+                        return UserVerifyResultStatus.SHOP_NAME_NOT_EXIST.getCode();
+                    }
                     if(dto.getFpaltformId() == null && dto.getFpaltformId().equals("")){
                         return UserVerifyResultStatus.PALTFORM_NOT_EXIST.getCode();
                     }
@@ -852,6 +861,9 @@ public class UserServiceImpl implements UserService {
                 case 5:
                     if(dto.getFname() == null && dto.getFname().equals("")){
                         return UserVerifyResultStatus.FUNAME_NOT_EXIST.getCode();
+                    }
+                    if(dto.getFidcardNo() == null && dto.getFidcardNo().equals("")){
+                        return UserVerifyResultStatus.USER_IDCARD_NOT_EXIST.getCode();
                     }
                     if(dto.getFidcardBack() == null && dto.getFidcardBack().equals("")
                             || dto.getFidcardFront() == null && dto.getFidcardFront().equals("")){

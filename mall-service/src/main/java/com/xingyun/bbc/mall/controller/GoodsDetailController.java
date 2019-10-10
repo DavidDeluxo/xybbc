@@ -27,25 +27,25 @@ public class GoodsDetailController {
     private GoodDetailService goodDetailService;
 
     @ApiOperation(value = "获取商品主图", httpMethod = "GET")
-    @GetMapping("/getGoodDetailPic")
+    @GetMapping("/via/getGoodDetailPic")
     public Result<List<String>> getGoodDetailPic(@RequestParam Long fgoodsId, @RequestParam (required = false) Long fskuId){
         return goodDetailService.getGoodDetailPic(fgoodsId, fskuId);
     }
 
     @ApiOperation(value = "获取商品基本信息", httpMethod = "GET")
-    @GetMapping("/getGoodDetailBasic")
+    @GetMapping("/via/getGoodDetailBasic")
     public Result<GoodsVo> getGoodDetailBasic(@RequestParam Long fgoodsId, @RequestParam (required = false) Long fskuId){
         return goodDetailService.getGoodDetailBasic(fgoodsId, fskuId);
     }
 
     @ApiOperation(value = "获取商品属性", httpMethod = "GET")
-    @GetMapping("/getGoodsAttribute")
+    @GetMapping("/via/getGoodsAttribute")
     public Result<Map<String, List<GoodsAttributeVo>>> getGoodsAttribute(@RequestParam Long fgoodsId){
         return goodDetailService.getGoodsAttribute(fgoodsId);
     }
 
     @ApiOperation(value = "获取商品各种规格", httpMethod = "GET")
-    @GetMapping("/getGoodsSpecifi")
+    @GetMapping("/via/getGoodsSpecifi")
     public Result<GoodspecificationVo> getGoodsSpecifi(@RequestParam Long fgoodsId){
         return goodDetailService.getGoodsSpecifi(fgoodsId);
     }
@@ -60,11 +60,8 @@ public class GoodsDetailController {
     }
 
     @ApiOperation(value = "获取库存和销量", httpMethod = "POST")
-    @PostMapping("/getGoodStockSell")
-    public Result<GoodStockSellVo> getGoodStockSell(@RequestBody GoodsDetailDto goodsDetailDto, HttpServletRequest request){
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
-        goodsDetailDto.setFuid(xyid);
-//      goodsDetailDto.setFuid(1l);
+    @PostMapping("/via/getGoodStockSell")
+    public Result<GoodStockSellVo> getGoodStockSell(@RequestBody GoodsDetailDto goodsDetailDto){
         return goodDetailService.getGoodStockSell(goodsDetailDto);
     }
 
