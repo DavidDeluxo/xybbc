@@ -16,4 +16,6 @@ public interface IndexService {
     Result<List<PageConfigVo>> getConfig(Integer fposition);
 
     PageVo<IndexSkuGoodsVo> queryGoodsByCategoryId1(CategoryDto categoryDto);
+
+    Result<List<GoodsCategoryVo>> queryGoodsCategoryList();
 }

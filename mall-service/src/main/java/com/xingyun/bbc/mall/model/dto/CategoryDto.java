@@ -15,4 +15,7 @@ public class CategoryDto extends PageDto{
     @ApiModelProperty("用户ID")
     private Long fuid;
 
+    @ApiModelProperty(value = "用户是否登录", hidden = true)
+    private Boolean isLogin;
+
 }
