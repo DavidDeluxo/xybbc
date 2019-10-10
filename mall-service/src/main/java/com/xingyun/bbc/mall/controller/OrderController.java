@@ -4,8 +4,11 @@ import com.alibaba.fastjson.JSONObject;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.order.api.OrderCenterApi;
 import com.xingyun.bbc.order.api.TransportOrderCenterApi;
+import com.xingyun.bbc.order.model.dto.order.OrderExpressDto;
+import com.xingyun.bbc.order.model.dto.order.OrderStatusDto;
 import com.xingyun.bbc.order.model.dto.order.OrderSubmitDto;
 import com.xingyun.bbc.order.model.dto.order.TransportOrderDto;
+import com.xingyun.bbc.order.model.vo.order.OrderStatusVo;
 import com.xingyun.bbc.order.model.vo.order.OrderSubmitVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * @author Thstone
@@ -51,4 +55,19 @@ public class OrderController {
     public Result<JSONObject> queryExpress(@RequestBody  @Validated TransportOrderDto transportOrderDto) {
         return transportOrderCenterApi.queryExpress(transportOrderDto);
     }
+
+	@ApiOperation("查询商品订单下所有发货单的物流信息")
+	@PostMapping("/queryExpressBatch")
+	public Result<List<JSONObject>> queryExpressBatch(@RequestBody OrderExpressDto orderExpressDto) {
+		return transportOrderCenterApi.queryExpressBatch(orderExpressDto);
+	}
+
+	@ApiOperation("查询订单状态数量信息")
+	@PostMapping("/queryOrderStatusCount")
+	public  Result<List<OrderStatusVo>> queryOrderStatusCount(HttpServletRequest request){
+		Long fuid = Long.valueOf(request.getHeader("xyid"));
+		OrderStatusDto orderStatusDto = new OrderStatusDto();
+		orderStatusDto.setFuid(fuid);
+		return orderApi.queryOrderStatusCount(orderStatusDto);
+	}
 }
