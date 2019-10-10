@@ -60,11 +60,8 @@ public class GoodsDetailController {
     }
 
     @ApiOperation(value = "获取库存和销量", httpMethod = "POST")
-    @PostMapping("/getGoodStockSell")
-    public Result<GoodStockSellVo> getGoodStockSell(@RequestBody GoodsDetailDto goodsDetailDto, HttpServletRequest request){
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
-        goodsDetailDto.setFuid(xyid);
-//      goodsDetailDto.setFuid(1l);
+    @PostMapping("/via/getGoodStockSell")
+    public Result<GoodStockSellVo> getGoodStockSell(@RequestBody GoodsDetailDto goodsDetailDto){
         return goodDetailService.getGoodStockSell(goodsDetailDto);
     }
 
