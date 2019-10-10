@@ -4,10 +4,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.order.api.OrderCenterApi;
 import com.xingyun.bbc.order.api.TransportOrderCenterApi;
-import com.xingyun.bbc.order.model.dto.order.OrderExpressDto;
-import com.xingyun.bbc.order.model.dto.order.OrderStatusDto;
-import com.xingyun.bbc.order.model.dto.order.OrderSubmitDto;
-import com.xingyun.bbc.order.model.dto.order.TransportOrderDto;
+import com.xingyun.bbc.order.model.dto.order.*;
+import com.xingyun.bbc.order.model.vo.order.OrderConfirmVo;
 import com.xingyun.bbc.order.model.vo.order.OrderStatusVo;
 import com.xingyun.bbc.order.model.vo.order.OrderSubmitVo;
 import io.swagger.annotations.Api;
@@ -58,7 +56,7 @@ public class OrderController {
 
 	@ApiOperation("查询商品订单下所有发货单的物流信息")
 	@PostMapping("/queryExpressBatch")
-	public Result<List<JSONObject>> queryExpressBatch(@RequestBody OrderExpressDto orderExpressDto) {
+	public Result<List<JSONObject>> queryExpressBatch(@RequestBody @Validated OrderExpressDto orderExpressDto) {
 		return transportOrderCenterApi.queryExpressBatch(orderExpressDto);
 	}
 
@@ -69,5 +67,11 @@ public class OrderController {
 		OrderStatusDto orderStatusDto = new OrderStatusDto();
 		orderStatusDto.setFuid(fuid);
 		return orderApi.queryOrderStatusCount(orderStatusDto);
+	}
+
+	@ApiOperation("确认收货")
+	@PostMapping("/confirmReceipt")
+	public  Result<OrderConfirmVo> confirmReceipt(@RequestBody @Validated OrderConfirmDto orderConfirmDto) {
+		return orderApi.updateOrderConfirm(orderConfirmDto);
 	}
 }
