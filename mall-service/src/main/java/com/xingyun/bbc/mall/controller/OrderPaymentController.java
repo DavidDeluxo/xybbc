@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * @author Administrator
  * @version V1.0
@@ -34,7 +36,9 @@ public class OrderPaymentController {
 
 	@ApiOperation("查询订单列表")
 	@PostMapping("/selectOrderList")
-	public Result<OrderPaymentVo> selectOrderList(@RequestBody OrderPaymentDto orderPaymentDto) {
+	public Result<OrderPaymentVo> selectOrderList(@RequestBody OrderPaymentDto orderPaymentDto, HttpServletRequest request) {
+		Long fuid = Long.valueOf(request.getHeader("xyid"));
+		orderPaymentDto.setFuid(fuid);
 		return orderPaymentApi.selectOrderList(orderPaymentDto);
 	}
 
