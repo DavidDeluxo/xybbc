@@ -1,12 +1,16 @@
 package com.xingyun.bbc.mall.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.order.api.OrderCenterApi;
+import com.xingyun.bbc.order.api.TransportOrderCenterApi;
 import com.xingyun.bbc.order.model.dto.order.OrderSubmitDto;
+import com.xingyun.bbc.order.model.dto.order.TransportOrderDto;
 import com.xingyun.bbc.order.model.vo.order.OrderSubmitVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,6 +33,8 @@ public class OrderController {
 
 	@Autowired
 	OrderCenterApi orderApi;
+	@Autowired
+	TransportOrderCenterApi transportOrderCenterApi;
 
 	@ApiOperation("提交订单")
 	@PostMapping("/submit")
@@ -39,4 +45,10 @@ public class OrderController {
 		orderSubmitDto.setSource(source);
 		return orderApi.submit(orderSubmitDto);
 	}
+
+    @ApiOperation("查询发货单物流信息")
+    @PostMapping("/queryExpress")
+    public Result<JSONObject> queryExpress(@RequestBody  @Validated TransportOrderDto transportOrderDto) {
+        return transportOrderCenterApi.queryExpress(transportOrderDto);
+    }
 }

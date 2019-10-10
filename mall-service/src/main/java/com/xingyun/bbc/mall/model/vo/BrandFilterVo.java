@@ -7,6 +7,9 @@ import lombok.Data;
 @Data
 @ApiModel("品牌")
 public class BrandFilterVo {
+    {
+        fbrandName = "";
+    }
 
     @ApiModelProperty("品牌id")
     private Integer fbrandId;

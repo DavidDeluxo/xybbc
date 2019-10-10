@@ -37,7 +37,8 @@ public class CategoryServiceImpl implements CategoryService {
 
 
 
-        Result<List<GoodsBrand>> brandResult = goodsBrandApi.queryByCriteria(Criteria.of(GoodsBrand.class).andEqualTo(GoodsBrand::getFisDelete,0));
+        Result<List<GoodsBrand>> brandResult = goodsBrandApi.queryByCriteria(Criteria.of(GoodsBrand.class)
+                .andEqualTo(GoodsBrand::getFisDelete,0).andEqualTo(GoodsBrand::getFisDisplay, 1));
         if(!brandResult.isSuccess()){
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
