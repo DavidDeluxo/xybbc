@@ -8,10 +8,8 @@ import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.PageConfigApi;
 import com.xingyun.bbc.core.operate.po.PageConfig;
 import com.xingyun.bbc.core.query.Criteria;
-import com.xingyun.bbc.core.sku.api.GoodsBrandApi;
-import com.xingyun.bbc.core.sku.api.GoodsCategoryApi;
-import com.xingyun.bbc.core.sku.api.GoodsSearchHistoryApi;
-import com.xingyun.bbc.core.sku.api.GoodsSkuApi;
+import com.xingyun.bbc.core.sku.api.*;
+import com.xingyun.bbc.core.sku.po.Goods;
 import com.xingyun.bbc.core.sku.po.GoodsBrand;
 import com.xingyun.bbc.core.sku.po.GoodsCategory;
 import com.xingyun.bbc.core.sku.po.GoodsSku;
@@ -82,6 +80,8 @@ public class GoodsServiceImpl implements GoodsService {
     SearchRecordService searchRecordService;
     @Autowired
     UserApi userApi;
+    @Autowired
+    GoodsApi goodsApi;
 
     @Override
     public Result<SearchFilterVo> searchSkuFilter(SearchItemDto searchItemDto) {
@@ -183,8 +183,20 @@ public class GoodsServiceImpl implements GoodsService {
             brandPageVo.setFbrandId(goodsBrand.getFbrandId());
             brandPageVo.setFbrandPoster(goodsBrand.getFbrandPoster());
             brandPageVo.setForiginName(goodsBrand.getFcountryName());
-            // 品牌商品总数
-            Result<Integer> goodsCountResult = goodsSkuApi.countByCriteria(Criteria.of(GoodsSku.class).andEqualTo(GoodsSku::getFisDelete, 0));
+
+            Result<List<Goods>> goodsResult = goodsApi.queryByCriteria(Criteria.of(Goods.class).andEqualTo(Goods::getFbrandId, fbrandId));
+            if (!goodsResult.isSuccess()) {
+                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            }
+            List<Long> goodIds = new LinkedList<>();
+            if(CollectionUtils.isNotEmpty(goodsResult.getData())){
+                goodIds = goodsResult.getData().stream().map(Goods::getFgoodsId).collect(Collectors.toList());
+            }
+            // 品牌sku商品总数
+            Result<Integer> goodsCountResult = goodsSkuApi.countByCriteria(Criteria.of(GoodsSku.class)
+                    .andIn(GoodsSku::getFgoodsId, goodIds)
+                    .andEqualTo(GoodsSku::getFskuStatus, 1)
+                    .andEqualTo(GoodsSku::getFisDelete, 0));
             if (!goodsCountResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
