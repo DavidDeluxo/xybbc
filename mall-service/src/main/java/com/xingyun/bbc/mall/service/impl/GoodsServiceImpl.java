@@ -46,6 +46,7 @@ import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -193,15 +194,12 @@ public class GoodsServiceImpl implements GoodsService {
 
 
     @Override
-    public Result<PageVo<SearchItemVo>> searchSkuList(SearchItemDto searchItemDto) {
+    public Result<SearchItemListVo<SearchItemVo>> searchSkuList(SearchItemDto searchItemDto) {
         if (!StringUtils.isEmpty(searchItemDto.getSearchFullText())) {
             searchRecordService.insertSearchRecordAsync(searchItemDto.getSearchFullText(), searchItemDto.getFuid());
         }
 
-        SearchItemListVo listVo = new SearchItemListVo();
-
         // 初始化PageVo
-//        PageVo<SearchItemVo> pageVo = new PageVo<>();
         SearchItemListVo<SearchItemVo> pageVo = new SearchItemListVo<>();
         pageVo.setIsLogin(searchItemDto.getIsLogin());
         pageVo.setTotalCount(0);
@@ -271,6 +269,9 @@ public class GoodsServiceImpl implements GoodsService {
         }
         return Result.success(pageVo);
     }
+
+
+
 
     /**
      * 根据用户身份选择价格类型
@@ -422,21 +423,34 @@ public class GoodsServiceImpl implements GoodsService {
         }
 
         String priceFieldName = this.getUserPriceType(searchItemDto);
+        String fieldName = humpToLine2(priceFieldName) + ".min_price";
         if (searchItemDto.getPriceOrderBy() != null) {
-            criteria.sortBy(priceFieldName, searchItemDto.getPriceOrderBy());
+            criteria.sortBy(fieldName, searchItemDto.getPriceOrderBy());
         }
 
         if (searchItemDto.getFpriceStart() != null) {
             BigDecimal startPrice_yuan = searchItemDto.getFpriceStart();
             BigDecimal startPrice_penny = startPrice_yuan.multiply(ONE_HUNDRED).setScale(0, BigDecimal.ROUND_HALF_UP);
-            criteria.rangeFrom(priceFieldName, String.valueOf(startPrice_penny));
+            criteria.rangeFrom(fieldName, String.valueOf(startPrice_penny));
         }
 
         if (searchItemDto.getFpriceEnd() != null) {
             BigDecimal endPrice_yuan = searchItemDto.getFpriceEnd();
             BigDecimal endPrice_penny = endPrice_yuan.multiply(ONE_HUNDRED).setScale(0, BigDecimal.ROUND_HALF_UP);
-            criteria.rangeTo(priceFieldName, String.valueOf(endPrice_penny));
+            criteria.rangeTo(fieldName, String.valueOf(endPrice_penny));
         }
+    }
+
+    private static Pattern humpPattern = Pattern.compile("[A-Z0-9]");
+
+    public static String humpToLine2(String str) {
+        Matcher matcher = humpPattern.matcher(str);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            matcher.appendReplacement(sb, "_" + matcher.group(0).toLowerCase());
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
     }
 
     /**
