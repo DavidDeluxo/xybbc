@@ -63,6 +63,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         userAccountTrans.setFuid(userRechargeDto.getFuid());
         userAccountTrans.setFtransTypes(1);//设置类型为充值
         userAccountTrans.setFtransStatus(1);//设置充值状态 未付款
+        userAccountTrans.setFrechargeType(userRechargeDto.getFrechargeType());//支付类型
         Result<Integer> result = userAccountTransApi.create(userAccountTrans);//将数据插入交易明细表
         logger.info("生成第三方充值订单：" + transOrderId + "金额：" + recharge + "(单位，分)");
         if(result.isSuccess())
