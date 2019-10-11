@@ -60,6 +60,7 @@ public class GoodsServiceImpl implements GoodsService {
     private static final String PRICE_TYPE_PREFIX_CAMEL = "priceType";
 
     private static final String PRICE_TYPE_SUFFIX = ".min_price";
+    private static Pattern humpPattern = Pattern.compile("[A-Z0-9]");
 
     private static final Pattern ID_PATTERN = Pattern.compile(".*Id");
     private static final Pattern NAME_PATTERN = Pattern.compile(".*Name");
@@ -246,7 +247,8 @@ public class GoodsServiceImpl implements GoodsService {
                     vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
                 }
 
-                String priceName = this.getUserPriceType(searchItemDto);;
+                String priceName = this.getUserPriceType(searchItemDto);
+                ;
                 if (map.get(priceName) != null) {
                     Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
                     if (priceMap.get("min_price") != null) {
@@ -269,8 +271,6 @@ public class GoodsServiceImpl implements GoodsService {
         }
         return Result.success(pageVo);
     }
-
-
 
 
     /**
@@ -423,7 +423,7 @@ public class GoodsServiceImpl implements GoodsService {
         }
 
         String priceFieldName = this.getUserPriceType(searchItemDto);
-        String fieldName = humpToLine2(priceFieldName) + ".min_price";
+        String fieldName = humpToLine2(priceFieldName) + PRICE_TYPE_SUFFIX;
         if (searchItemDto.getPriceOrderBy() != null) {
             criteria.sortBy(fieldName, searchItemDto.getPriceOrderBy());
         }
@@ -441,8 +441,12 @@ public class GoodsServiceImpl implements GoodsService {
         }
     }
 
-    private static Pattern humpPattern = Pattern.compile("[A-Z0-9]");
-
+    /**
+     * 驼峰转下划线
+     *
+     * @param str
+     * @return
+     */
     public static String humpToLine2(String str) {
         Matcher matcher = humpPattern.matcher(str);
         StringBuffer sb = new StringBuffer();
