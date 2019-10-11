@@ -4,10 +4,7 @@ package com.xingyun.bbc.mall.controller;
 import com.xingyun.bbc.common.jwt.XyUserJwtManager;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.model.dto.SearchItemDto;
-import com.xingyun.bbc.mall.model.vo.BrandPageVo;
-import com.xingyun.bbc.mall.model.vo.PageVo;
-import com.xingyun.bbc.mall.model.vo.SearchFilterVo;
-import com.xingyun.bbc.mall.model.vo.SearchItemVo;
+import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.GoodsService;
 import com.xingyun.bbc.mall.service.UserService;
 import io.jsonwebtoken.Claims;
@@ -37,7 +34,7 @@ public class GoodsController {
 
     @ApiOperation("查询商品列表")
     @PostMapping("/via/skuSearch")
-    public Result<PageVo<SearchItemVo>> skuSearch(@RequestBody SearchItemDto dto, HttpServletRequest request) {
+    public Result<SearchItemListVo<SearchItemVo>> skuSearch(@RequestBody SearchItemDto dto, HttpServletRequest request) {
         this.getTokenInfo(dto, request);
         return goodsService.searchSkuList(dto);
     }
