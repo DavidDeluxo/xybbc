@@ -33,39 +33,36 @@ public class CategoryServiceImpl implements CategoryService {
     GoodsBrandApi goodsBrandApi;
 
     @Override
-    public Result<List<BrandListVo>> queryBrandList(Long fcategoryId){
-
-
+    public Result<List<BrandListVo>> queryBrandList(Long fcategoryId) {
 
         Result<List<GoodsBrand>> brandResult = goodsBrandApi.queryByCriteria(Criteria.of(GoodsBrand.class)
-                .andEqualTo(GoodsBrand::getFisDelete,0).andEqualTo(GoodsBrand::getFisDisplay, 1));
-        if(!brandResult.isSuccess()){
+                .andEqualTo(GoodsBrand::getFisDelete, 0).andEqualTo(GoodsBrand::getFisDisplay, 1));
+        if (!brandResult.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
-        if(CollectionUtils.isEmpty(brandResult.getData())){
+        if (CollectionUtils.isEmpty(brandResult.getData())) {
             return Result.success(new LinkedList<>());
         }
 
         List<GoodsBrand> brandList = brandResult.getData();
 
         //根据类目筛选品牌
-        if(fcategoryId != null){
-            Criteria<Goods,Object> goodsCriteria = Criteria.of(Goods.class);
-            goodsCriteria.andEqualTo(Goods::getFcategoryId1, fcategoryId);
+        if (fcategoryId != null) {
+            Criteria<Goods, Object> goodsCriteria = Criteria.of(Goods.class).andEqualTo(Goods::getFcategoryId1, fcategoryId);
             Result<List<Goods>> goodsResult = goodsApi.queryByCriteria(goodsCriteria);
-            if(!goodsResult.isSuccess()){
+            if (!goodsResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
-            if(CollectionUtils.isEmpty(goodsResult.getData())){
+            if (CollectionUtils.isEmpty(goodsResult.getData())) {
                 return Result.success();
             }
             List<Goods> goodsList = goodsResult.getData();
             List<Long> brandIdListFilter = goodsList.stream().map(Goods::getFbrandId).distinct().collect(Collectors.toList());
-            brandList = brandList.stream().filter(s->brandIdListFilter.contains(s.getFbrandId())).collect(Collectors.toList());
+            brandList = brandList.stream().filter(s -> brandIdListFilter.contains(s.getFbrandId())).collect(Collectors.toList());
         }
 
         List<BrandListVo> voList = new LinkedList<>();
-        for(GoodsBrand brand : brandList){
+        for (GoodsBrand brand : brandList) {
             BrandListVo brandListVo = new BrandListVo();
             BeanUtils.copyProperties(brand, brandListVo);
             voList.add(brandListVo);
@@ -75,19 +72,19 @@ public class CategoryServiceImpl implements CategoryService {
 
         List<GoodsCategoryVo> categoryVoList = new LinkedList<>();
         Result<List<Goods>> goodsResultAll = goodsApi.queryAll();
-        if(!goodsResultAll.isSuccess()){
+        if (!goodsResultAll.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
-        if(!CollectionUtils.isEmpty(goodsResultAll.getData())){
+        if (!CollectionUtils.isEmpty(goodsResultAll.getData())) {
             List<Goods> goodsListAll = goodsResultAll.getData();
             List<Long> categoryListFiltered = goodsListAll.stream().map(Goods::getFcategoryId1).distinct().collect(Collectors.toList());
-            Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class).andIn(GoodsCategory::getFcategoryId , categoryListFiltered));
-            if(!categoryListResultAll.isSuccess()){
+            Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class).andIn(GoodsCategory::getFcategoryId, categoryListFiltered));
+            if (!categoryListResultAll.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
-            if(!CollectionUtils.isEmpty(categoryListResultAll.getData())){
+            if (!CollectionUtils.isEmpty(categoryListResultAll.getData())) {
 
-                for(GoodsCategory category : categoryListResultAll.getData()){
+                for (GoodsCategory category : categoryListResultAll.getData()) {
                     GoodsCategoryVo categoryVo = new GoodsCategoryVo();
                     categoryVo.setFcategoryId(category.getFcategoryId());
                     categoryVo.setFcategoryName(category.getFcategoryName());
@@ -97,23 +94,24 @@ public class CategoryServiceImpl implements CategoryService {
             }
         }
         Map<String, Object> categoryMap = new HashMap<>();
-        categoryMap.put("categoryList",categoryVoList);
+        categoryMap.put("categoryList", categoryVoList);
         return Result.success(voList).setExtra(categoryMap);
     }
 
     @Override
-    public Result<List<GoodsCategoryVo>> queryCategoryTree(){
+    public Result<List<GoodsCategoryVo>> queryCategoryTree() {
         Result<List<GoodsCategory>> categoryResult = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class)
-                .andEqualTo(GoodsCategory::getFisDelete,0));
-        if(!categoryResult.isSuccess()){
+                .andEqualTo(GoodsCategory::getFisDisplay, 1)
+                .andEqualTo(GoodsCategory::getFisDelete, 0));
+        if (!categoryResult.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
-        if(CollectionUtils.isEmpty(categoryResult.getData())){
+        if (CollectionUtils.isEmpty(categoryResult.getData())) {
             return Result.success(new LinkedList<>());
         }
 
         List<GoodsCategoryVo> goodsCategoryVoList = new LinkedList<>();
-        for(GoodsCategory category : categoryResult.getData()){
+        for (GoodsCategory category : categoryResult.getData()) {
             GoodsCategoryVo categoryVo = new GoodsCategoryVo();
             BeanUtils.copyProperties(category, categoryVo);
             goodsCategoryVoList.add(categoryVo);
@@ -124,31 +122,106 @@ public class CategoryServiceImpl implements CategoryService {
                 .parallelStream().collect(Collectors.groupingBy(GoodsCategoryVo::getFparentCategoryId, Collectors.toList()));
         //查询一级类目列表
         List<GoodsCategoryVo> level1Categories = goodsCategoryVoList
-                .parallelStream().filter(category->category.getFparentCategoryId() == 0).sorted().collect(Collectors.toList());
+                .parallelStream().filter(category -> category.getFparentCategoryId() == 0).sorted().collect(Collectors.toList());
         this.fillChildrenCategoryList(level1Categories, parentCategoriesMap);
-        return Result.success(level1Categories);
-    }
 
-    @Override
-    public Result<List<GoodsCategoryVo>> queryGoodsCategoryList(){
-        List<GoodsCategoryVo> categoryVoList = new LinkedList<>();
-        Result<List<Goods>> goodsResultAll = goodsApi.queryAll();
-        if(!goodsResultAll.isSuccess()){
+        //添加热门品牌
+        Result<List<GoodsBrand>> hotBrandListResult = goodsBrandApi.queryByCriteria(Criteria.of(GoodsBrand.class)
+                .andEqualTo(GoodsBrand::getFisDelete, 0)
+                .andEqualTo(GoodsBrand::getFisDisplay, 1)
+                .andEqualTo(GoodsBrand::getFisHot, 1));
+        if (!hotBrandListResult.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
-        if(!CollectionUtils.isEmpty(goodsResultAll.getData())){
+        this.fillBrandsForL1Categories(level1Categories, hotBrandListResult.getData());
+
+        //添加热门推荐
+        GoodsCategoryVo hotRecommend = this.getHotRecommendCategory(goodsCategoryVoList, hotBrandListResult.getData());
+        List<GoodsCategoryVo> resultList = new LinkedList<>();
+        resultList.add(hotRecommend);
+        resultList.addAll(level1Categories);
+        return Result.success(resultList);
+    }
+
+    private void fillBrandsForL1Categories(List<GoodsCategoryVo> level1Categories, List<GoodsBrand> hotBrands){
+        for(GoodsCategoryVo l1Category : level1Categories){
+            Criteria<Goods, Object> goodsCriteria = Criteria.of(Goods.class).andEqualTo(Goods::getFcategoryId1, l1Category.getFcategoryId());
+            Result<List<Goods>> goodsResult = goodsApi.queryByCriteria(goodsCriteria);
+            if (!goodsResult.isSuccess()) {
+                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            }
+            if (CollectionUtils.isEmpty(goodsResult.getData())) {
+                continue;
+            }
+            List<Goods> goodsList = goodsResult.getData();
+            List<Long> brandIdListFilter = goodsList.stream().map(Goods::getFbrandId).distinct().collect(Collectors.toList());
+            List<GoodsBrand> goodsBrands = hotBrands.stream().filter(hotBrand -> brandIdListFilter.contains(hotBrand.getFbrandId())).collect(Collectors.toList());
+            List<BrandListVo> hotBrandVoList = new LinkedList<>();
+            for(GoodsBrand goodsBrand : goodsBrands){
+                BrandListVo brandListVo = new BrandListVo();
+                BeanUtils.copyProperties(goodsBrand, brandListVo);
+                hotBrandVoList.add(brandListVo);
+            }
+            l1Category.setHotBrandList(hotBrandVoList);
+        }
+
+    }
+
+    private GoodsCategoryVo getHotRecommendCategory(List<GoodsCategoryVo> goodsCategories, List<GoodsBrand> hotBrands) {
+        GoodsCategoryVo hotRecommend = new GoodsCategoryVo();
+        hotRecommend.setFcategoryName("热门推荐");
+        hotRecommend.setFcategoryId(0L);
+        //热门类目
+        List<GoodsCategoryVo> l2RecommendList = new LinkedList<>();
+        for (GoodsCategoryVo recommendL1 : goodsCategories) {
+            if (!CollectionUtils.isEmpty(recommendL1.getChildrenList())) {
+                for (GoodsCategoryVo l2Vo : recommendL1.getChildrenList()) {
+                    if (!CollectionUtils.isEmpty(l2Vo.getChildrenList())) {
+                        List<GoodsCategoryVo> l3VoList = l2Vo.getChildrenList();
+                        List<GoodsCategoryVo> l3RecommendList = l3VoList.stream().filter(l3Category->l3Category.getFisRecommed() == 1).collect(Collectors.toList());
+                        if(!CollectionUtils.isEmpty(l3RecommendList)){
+                            l2RecommendList.add(l2Vo);
+                        }
+                    }
+                }
+            }
+        }
+        hotRecommend.setChildrenList(l2RecommendList);
+
+        List<BrandListVo> hotBrandList = new LinkedList<>();
+        if (!CollectionUtils.isEmpty(hotBrands)) {
+            for (GoodsBrand hotBrand : hotBrands) {
+                BrandListVo brandVo = new BrandListVo();
+                BeanUtils.copyProperties(hotBrand, brandVo);
+                hotBrandList.add(brandVo);
+            }
+        }
+        Collections.sort(hotBrandList);
+        hotRecommend.setHotBrandList(hotBrandList);
+        return hotRecommend;
+    }
+
+
+    @Override
+    public Result<List<GoodsCategoryVo>> queryGoodsCategoryList() {
+        List<GoodsCategoryVo> categoryVoList = new LinkedList<>();
+        Result<List<Goods>> goodsResultAll = goodsApi.queryAll();
+        if (!goodsResultAll.isSuccess()) {
+            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+        }
+        if (!CollectionUtils.isEmpty(goodsResultAll.getData())) {
             List<Goods> goodsListAll = goodsResultAll.getData();
             List<Long> categoryListFiltered = goodsListAll.stream().map(Goods::getFcategoryId1).distinct().collect(Collectors.toList());
             Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class)
-                    .andIn(GoodsCategory::getFcategoryId , categoryListFiltered)
+                    .andIn(GoodsCategory::getFcategoryId, categoryListFiltered)
                     .andEqualTo(GoodsCategory::getFisDelete, 0)
                     .andEqualTo(GoodsCategory::getFisDisplay, 1)
                     .sortDesc(GoodsCategory::getFmodifyTime));
-            if(!categoryListResultAll.isSuccess()){
+            if (!categoryListResultAll.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
-            if(!CollectionUtils.isEmpty(categoryListResultAll.getData())){
-                for(GoodsCategory category : categoryListResultAll.getData()){
+            if (!CollectionUtils.isEmpty(categoryListResultAll.getData())) {
+                for (GoodsCategory category : categoryListResultAll.getData()) {
                     GoodsCategoryVo categoryVo = new GoodsCategoryVo();
                     categoryVo.setFcategoryId(category.getFcategoryId());
                     categoryVo.setFcategoryName(category.getFcategoryName());
@@ -162,13 +235,14 @@ public class CategoryServiceImpl implements CategoryService {
 
     /**
      * 填充子类目列表
+     *
      * @param categories
      * @param categoriesMap
      */
-    private void fillChildrenCategoryList(List<GoodsCategoryVo> categories, Map<Long, List<GoodsCategoryVo>> categoriesMap){
-        for (GoodsCategoryVo vo : categories){
+    private void fillChildrenCategoryList(List<GoodsCategoryVo> categories, Map<Long, List<GoodsCategoryVo>> categoriesMap) {
+        for (GoodsCategoryVo vo : categories) {
             List<GoodsCategoryVo> childrenList = categoriesMap.get(vo.getFcategoryId());
-            if(CollectionUtils.isEmpty(childrenList)){
+            if (CollectionUtils.isEmpty(childrenList)) {
                 continue;
             }
             Collections.sort(childrenList);

@@ -5,22 +5,23 @@ import com.xingyun.bbc.common.jwt.XyUserJwtManager;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.model.dto.*;
-
-
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.CategoryService;
 import com.xingyun.bbc.mall.service.IndexService;
-
 import io.jsonwebtoken.Claims;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -72,6 +73,13 @@ public class IndexController {
         Result<List<GoodsCategoryVo>> result = indexService.queryGoodsCategoryList();
         List<GoodsCategoryVo> list = result.getData();
         return Result.success(holder.convert(list, IndexGoodsCategoryVo.class));
+    }
+    
+    @ApiOperation(value="引导页启动页查询",httpMethod = "POST")
+    @ApiResponses({@ApiResponse(code = 200, response = GuidePageVo.class, message = "操作成功!") })
+    @PostMapping(value = "/selectGuidePage",consumes = MediaType.APPLICATION_JSON_VALUE)
+    public  Result<List<GuidePageVo>> selectGuidePageVos(@ApiParam(name = "引导页启动页查询", value = "传入json格式", required = false) @RequestBody GuidePageDto guidePageDto){
+        return indexService.selectGuidePageVos(guidePageDto.getFtype());
     }
 
 

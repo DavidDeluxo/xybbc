@@ -333,7 +333,7 @@ public class PayServiceImpl implements PayService {
 		
 		UserAccountTrans userAccountTrans=new UserAccountTrans();
 		userAccountTrans.setFtransId(dto.getForderId());
-		userAccountTrans.setFtransTypes(Integer.valueOf(dto.getPayType()));
+		userAccountTrans.setFrechargeType(Integer.valueOf(dto.getPayType()));
 		userAccountTrans.setFpayVoucher(dto.getPayVoucher());
 		Result<Integer> result=userAccountTransApi.updateNotNull(userAccountTrans);
 			if(result.isSuccess())

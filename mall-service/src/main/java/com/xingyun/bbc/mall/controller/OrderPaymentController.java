@@ -37,7 +37,7 @@ public class OrderPaymentController {
 	@ApiOperation("查询订单列表")
 	@PostMapping("/selectOrderList")
 	public Result<OrderPaymentVo> selectOrderList(@RequestBody OrderPaymentDto orderPaymentDto, HttpServletRequest request) {
-		Long fuid = Long.valueOf(request.getHeader("xyid"));
+		Long fuid = Long.parseLong(request.getHeader("xyid"));
 		orderPaymentDto.setFuid(fuid);
 		return orderPaymentApi.selectOrderList(orderPaymentDto);
 	}
