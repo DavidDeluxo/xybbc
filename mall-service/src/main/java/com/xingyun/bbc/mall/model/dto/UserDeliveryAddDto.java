@@ -3,6 +3,7 @@ package com.xingyun.bbc.mall.model.dto;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
@@ -18,25 +19,31 @@ public class UserDeliveryAddDto implements Serializable{
 
     /** 省份ID */
     @ApiModelProperty("省份ID")
+    @NotNull
     private Long fdeliveryProvinceId;
 
     /** 省份名称 */
     @ApiModelProperty("省份名称")
+    @NotNull
     private String fdeliveryProvinceName;
 
     /** 市ID */
     @ApiModelProperty("市ID")
+    @NotNull
     private Long fdeliveryCityId;
 
     /** 市名称 */
     @ApiModelProperty("市名称")
+    @NotNull
     private String fdeliveryCityName;
 
     /** 区/镇ID */
     @ApiModelProperty("区/镇ID")
+    @NotNull
     private Long fdeliveryAreaId;
 
     /** 区/镇名称 */
+    @NotNull
     @ApiModelProperty("区/镇名称")
     private String fdeliveryAreaName;
 
@@ -46,19 +53,18 @@ public class UserDeliveryAddDto implements Serializable{
 
     /** 手机号码 */
     @ApiModelProperty("手机号码")
+    @NotNull
     private String fdeliveryMobile;
 
     /** 姓名 */
     @ApiModelProperty("姓名")
+    @NotNull
     private String fdeliveryName;
 
     /** 详细地址 */
     @ApiModelProperty("详细地址")
+    @NotNull
     private String fdeliveryAddr;
-
- /*   *//** 地址邮编 *//*
-    @ApiModelProperty("地址邮编")
-    private String fdeliveryPostcode;*/
 
     /** 身份证号码 */
     @ApiModelProperty("身份证号码")
@@ -72,17 +78,7 @@ public class UserDeliveryAddDto implements Serializable{
     @ApiModelProperty("身份证反面")
     private String fdeliveryCardUrlBack;
 
-/*    *//** 是否删除(0 否 1是) *//*
-    @ApiModelProperty("是否删除(0 否 1是)")
-    private Integer fisDelete;
 
-    *//** 创建时间 *//*
-    @ApiModelProperty("创建时间")
-    private Date fcreateTime;
-
-    *//** 更新时间 *//*
-    @ApiModelProperty(" 更新时间")
-    private Date fmodifyTime;*/
 
 
 }
