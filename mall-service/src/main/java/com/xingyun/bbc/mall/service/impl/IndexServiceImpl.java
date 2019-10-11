@@ -26,6 +26,7 @@ import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.CategoryDto;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.IndexService;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.dozer.Mapper;
 import org.slf4j.Logger;
@@ -53,7 +54,7 @@ public class IndexServiceImpl implements IndexService {
     @Autowired
     private PageConfigApi pageConfigApi;
     @Autowired
-    private GuidePageApi  guidePageApi;
+    private GuidePageApi guidePageApi;
     @Resource
     private DozerHolder holder;
     @Autowired
@@ -95,19 +96,61 @@ public class IndexServiceImpl implements IndexService {
     public Result<List<PageConfigVo>> getConfig(Integer position) {
         List<PageConfigVo> pageConfigRedisResultList = this.selectPageConfigRedisList(position);
         //先查询pageConfigRedis key是否有被命中,没有命中则查询数据库
-        if (pageConfigRedisResultList == null || pageConfigRedisResultList.size() <= 0) {
+        if (CollectionUtils.isEmpty(pageConfigRedisResultList)) {
             Criteria<PageConfig, Object> pageConfigCriteria = Criteria.of(PageConfig.class);
             pageConfigCriteria.andEqualTo(PageConfig::getFposition, position);
             pageConfigCriteria.andEqualTo(PageConfig::getFisDelete, 0);//查询未删除的
+            if (position == 0 || position == 1) {
+                pageConfigCriteria.sort(PageConfig::getFsortValue);
+            } else {
+                pageConfigCriteria.sort(PageConfig::getFlocation);
+            }
             Result<List<PageConfig>> pageConfigResult = pageConfigApi.queryByCriteria(pageConfigCriteria);
             if (!pageConfigResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
             List<PageConfig> pageConfigs = pageConfigResult.getData();
             pageConfigRedisResultList = holder.convert(pageConfigs, PageConfigVo.class);
-            return Result.success(pageConfigRedisResultList);
+            //return Result.success(pageConfigRedisResultList);
+            if (position == 2) {
+                List<PageConfigVo> pageConfigVos = new ArrayList<>();
+                for (PageConfigVo pageConfigVo : pageConfigRedisResultList) {
+                    Integer viewType = pageConfigVo.getFviewType();
+                    Date currentTime = new Date();
+                    Date startTime = pageConfigVo.getFperiodStartTime();
+                    Date endTime = pageConfigVo.getFpeiodEndTime();
+                    if (viewType == 0) {
+                        pageConfigVos.add(pageConfigVo);
+                    } else {
+                        if (startTime.getTime() <= currentTime.getTime() && endTime.getTime() >= currentTime.getTime()) {
+                            pageConfigVos.add(pageConfigVo);
+                        }
+                    }
+                }
+                return Result.success(pageConfigVos);
+            }else {
+                return Result.success(pageConfigRedisResultList);
+            }
         } else {
-            return Result.success(pageConfigRedisResultList);
+            if (position == 2) {
+                List<PageConfigVo> pageConfigVos = new ArrayList<>();
+                for (PageConfigVo pageConfigVo : pageConfigRedisResultList) {
+                    Integer viewType = pageConfigVo.getFviewType();
+                    Date currentTime = new Date();
+                    Date startTime = pageConfigVo.getFperiodStartTime();
+                    Date endTime = pageConfigVo.getFpeiodEndTime();
+                    if (viewType == 0) {
+                        pageConfigVos.add(pageConfigVo);
+                    } else {
+                        if (startTime.getTime() <= currentTime.getTime() && endTime.getTime() >= currentTime.getTime()) {
+                            pageConfigVos.add(pageConfigVo);
+                        }
+                    }
+                }
+                return Result.success(pageConfigVos);
+            }else {
+                return Result.success(pageConfigRedisResultList);
+            }
         }
     }
 
@@ -205,7 +248,7 @@ public class IndexServiceImpl implements IndexService {
                         GoodsSku::getFskuThumbImage,
                         GoodsSku::getFisUserTypeDiscount)
                         .page(categoryDto.getCurrentPage(), categoryDto.getPageSize())
-                       );
+        );
         if (!result.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
@@ -229,7 +272,7 @@ public class IndexServiceImpl implements IndexService {
             }
             Criteria<SkuBatch, Object> batchCriteria = Criteria.of(SkuBatch.class)
                     .andEqualTo(SkuBatch::getFskuId, goodsSku.getFskuId())
-                    .andEqualTo(SkuBatch::getFbatchStatus,2);
+                    .andEqualTo(SkuBatch::getFbatchStatus, 2);
             Result<List<SkuBatch>> skuBatchs = skuBatchApi.queryByCriteria(batchCriteria);
             if (!skuBatchs.isSuccess()) {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -284,8 +327,9 @@ public class IndexServiceImpl implements IndexService {
                             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
                         }
                         if (CollectionUtils.isEmpty(skuBatchUserPriceList.getData())) {
-                            logger.info("批次id:::" +"-------------------------------------"+skuBatch.getFskuBatchId());
-;                            throw new BizException(MallExceptionCode.NO_BATCH_USER_PRICE);
+                            logger.info("批次id:::" + "-------------------------------------" + skuBatch.getFskuBatchId());
+                            ;
+                            throw new BizException(MallExceptionCode.NO_BATCH_USER_PRICE);
                         }
                         //取不同规格中的最小价格
                         SkuBatchUserPrice min = skuBatchUserPriceList.getData().stream().min(Comparator.comparing(SkuBatchUserPrice::getFbatchSellPrice)).get();
@@ -334,12 +378,12 @@ public class IndexServiceImpl implements IndexService {
             return indexSkuGoodsVo;
         }).collect(Collectors.toList());
         List<IndexSkuGoodsVo> list = new ArrayList<>();
-        for (IndexSkuGoodsVo indexSkuGoodsVo:indexSkuGoodsVoList) {
-            if(indexSkuGoodsVo != null){
+        for (IndexSkuGoodsVo indexSkuGoodsVo : indexSkuGoodsVoList) {
+            if (indexSkuGoodsVo != null) {
                 list.add(indexSkuGoodsVo);
             }
         }
-        if(list.size() > 1){
+        if (list.size() > 1) {
             Collections.sort(list, new Comparator<IndexSkuGoodsVo>() {
 
                 @Override
@@ -348,7 +392,7 @@ public class IndexServiceImpl implements IndexService {
                 }
             });
         }
-        if(categoryDto.getCurrentPage() > 10){
+        if (categoryDto.getCurrentPage() > 10) {
             return new PageVo<>(0, categoryDto.getCurrentPage(), categoryDto.getPageSize(), Lists.newArrayList());
         }
         return pageUtils.convert(totalResult.getData(), list, IndexSkuGoodsVo.class, categoryDto);
@@ -358,23 +402,23 @@ public class IndexServiceImpl implements IndexService {
     public Result<List<GoodsCategoryVo>> queryGoodsCategoryList() {
         List<GoodsCategoryVo> categoryVoList = new LinkedList<>();
         Result<List<Goods>> goodsResultAll = goodsApi.queryAll();
-        if(!goodsResultAll.isSuccess()){
+        if (!goodsResultAll.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
-        if(!org.springframework.util.CollectionUtils.isEmpty(goodsResultAll.getData())){
+        if (!org.springframework.util.CollectionUtils.isEmpty(goodsResultAll.getData())) {
             List<Goods> goodsListAll = goodsResultAll.getData();
             List<Long> categoryListFiltered = goodsListAll.stream().map(Goods::getFcategoryId1).distinct().collect(Collectors.toList());
             Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(
                     Criteria.of(GoodsCategory.class)
-                            .andIn(GoodsCategory::getFcategoryId , categoryListFiltered)
+                            .andIn(GoodsCategory::getFcategoryId, categoryListFiltered)
                             .sortDesc(GoodsCategory::getFmodifyTime)
-                            .andEqualTo(GoodsCategory::getFisDelete,0)
-                            .andEqualTo(GoodsCategory::getFisDisplay,1));
-            if(!categoryListResultAll.isSuccess()){
+                            .andEqualTo(GoodsCategory::getFisDelete, 0)
+                            .andEqualTo(GoodsCategory::getFisDisplay, 1));
+            if (!categoryListResultAll.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
-            if(!org.springframework.util.CollectionUtils.isEmpty(categoryListResultAll.getData())){
-                for(GoodsCategory category : categoryListResultAll.getData()){
+            if (!org.springframework.util.CollectionUtils.isEmpty(categoryListResultAll.getData())) {
+                for (GoodsCategory category : categoryListResultAll.getData()) {
                     GoodsCategoryVo categoryVo = new GoodsCategoryVo();
                     categoryVo.setFcategoryId(category.getFcategoryId());
                     categoryVo.setFcategoryName(category.getFcategoryName());
@@ -390,28 +434,28 @@ public class IndexServiceImpl implements IndexService {
 
     @Override
     public Result<List<GuidePageVo>> selectGuidePageVos(Integer ftype) {
-      try {
-        Criteria<GuidePage,Object> pageCriteria = Criteria.of(GuidePage.class);
-         String  redisKey = GuidePageContants.GUIDE_PAGE;
-         List<Object>  result = xyRedisManager.hValues(redisKey);//先查缓存是否命中,没有命中则查询GuidePageVo
-         if(result==null) {
-             pageCriteria.andEqualTo(GuidePage::getFtype, ftype);
-             Result<List<GuidePage>> res = guidePageApi.queryByCriteria(pageCriteria);
-             if(!res.isSuccess()) {
-                 throw  new  BizException(ResultStatus.INTERNAL_SERVER_ERROR);
-             }else {
-                 List<GuidePage> guidePageList = res.getData();
-                 List<GuidePageVo> convetVoList = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(guidePageList), GuidePageVo.class);
-                 return  Result.success(convetVoList);
-             }
-         }else {
-             List<GuidePage> guidePage = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(result),GuidePage.class);
-             List<GuidePageVo> convetVoList = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(guidePage), GuidePageVo.class);
-             List<GuidePageVo> tempList = convetVoList.stream().filter(index -> index.getFtype()==ftype).collect(Collectors.toList());
-             return  Result.success(tempList);
-         }
-     }catch(Exception e) {
-         throw  new  BizException(ResultStatus.INTERNAL_SERVER_ERROR);
-     }
+        try {
+            Criteria<GuidePage, Object> pageCriteria = Criteria.of(GuidePage.class);
+            String redisKey = GuidePageContants.GUIDE_PAGE;
+            List<Object> result = xyRedisManager.hValues(redisKey);//先查缓存是否命中,没有命中则查询GuidePageVo
+            if (result == null) {
+                pageCriteria.andEqualTo(GuidePage::getFtype, ftype);
+                Result<List<GuidePage>> res = guidePageApi.queryByCriteria(pageCriteria);
+                if (!res.isSuccess()) {
+                    throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+                } else {
+                    List<GuidePage> guidePageList = res.getData();
+                    List<GuidePageVo> convetVoList = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(guidePageList), GuidePageVo.class);
+                    return Result.success(convetVoList);
+                }
+            } else {
+                List<GuidePage> guidePage = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(result), GuidePage.class);
+                List<GuidePageVo> convetVoList = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(guidePage), GuidePageVo.class);
+                List<GuidePageVo> tempList = convetVoList.stream().filter(index -> index.getFtype() == ftype).collect(Collectors.toList());
+                return Result.success(tempList);
+            }
+        } catch (Exception e) {
+            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

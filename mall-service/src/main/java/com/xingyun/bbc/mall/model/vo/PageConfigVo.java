@@ -12,10 +12,6 @@ import java.util.Date;
 public class PageConfigVo {
 
 
-/*    *//** 主键id *//*
-    @ApiModelProperty(value = "主键id")
-    private Long fconfigId;*/
-
     /** 名称 */
     @ApiModelProperty(value = "名称")
     private String fconfigName;
@@ -44,33 +40,19 @@ public class PageConfigVo {
     @ApiModelProperty(value = "模块id 类型为1关联商 品分类的(分类id)  类型为2 关联商品品牌的品牌id  类型为3 关联商品标签的标签id")
     private Long frelationId;
 
-/*    *//** 是否删除 0未删除 1已删除 *//*
-    @ApiModelProperty(value = "是否删除 0未删除 1已删除")
-    private Integer fisDelete;*/
-
-/*    *//** 展示类型(0长期 1固定周期) *//*
+    /** 展示类型(0长期 1固定周期) */
     @ApiModelProperty(value = "展示类型(0长期 1固定周期)")
-    private Integer fviewType;*/
+    private Integer fviewType;
 
-  /*  *//** 固定周期开始时间 *//*
+    /** 固定周期开始时间 */
     @ApiModelProperty(value = "固定周期开始时间 ")
-    private Date fperiodStartTime;*/
+    private Date fperiodStartTime;
 
-/*    *//** 固定周期结束时间 *//*
+   /** 固定周期结束时间 */
     @ApiModelProperty(value = "固定周期结束时间")
-    private Date fpeiodEndTime;*/
+    private Date fpeiodEndTime;
 
    /** 后端接口地址 */
     @ApiModelProperty(value = "后端接口地址")
     private String fredirectUrl;
-
- /*   *//** 创建时间 *//*
-    @ApiModelProperty(value = "创建时间")
-    private Date fcreateTime;*/
-
-/*    *//** 修改时间 *//*
-    @ApiModelProperty(value = "修改时间")
-    private Date fmodifyTime;*/
-
-
 }
