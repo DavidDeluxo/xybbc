@@ -78,6 +78,7 @@ public class SearchItemDto {
     @ApiModelProperty("按价格排序 升序 'asc' 降序 'desc'")
     private String priceOrderBy;
 
+    @EsMark(policy = BuildPolicy.MUST, field = "fsku_status")
     @ApiModelProperty(value = "sku状态(1.已上架 2.已下架 3.待上架 4.新增)", hidden = true)
     private Integer fskuStatus;
 
