@@ -8,10 +8,8 @@ import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.PageConfigApi;
 import com.xingyun.bbc.core.operate.po.PageConfig;
 import com.xingyun.bbc.core.query.Criteria;
-import com.xingyun.bbc.core.sku.api.GoodsBrandApi;
-import com.xingyun.bbc.core.sku.api.GoodsCategoryApi;
-import com.xingyun.bbc.core.sku.api.GoodsSearchHistoryApi;
-import com.xingyun.bbc.core.sku.api.GoodsSkuApi;
+import com.xingyun.bbc.core.sku.api.*;
+import com.xingyun.bbc.core.sku.po.Goods;
 import com.xingyun.bbc.core.sku.po.GoodsBrand;
 import com.xingyun.bbc.core.sku.po.GoodsCategory;
 import com.xingyun.bbc.core.sku.po.GoodsSku;
@@ -46,6 +44,7 @@ import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -59,6 +58,7 @@ public class GoodsServiceImpl implements GoodsService {
     private static final String PRICE_TYPE_PREFIX_CAMEL = "priceType";
 
     private static final String PRICE_TYPE_SUFFIX = ".min_price";
+    private static Pattern humpPattern = Pattern.compile("[A-Z0-9]");
 
     private static final Pattern ID_PATTERN = Pattern.compile(".*Id");
     private static final Pattern NAME_PATTERN = Pattern.compile(".*Name");
@@ -80,6 +80,8 @@ public class GoodsServiceImpl implements GoodsService {
     SearchRecordService searchRecordService;
     @Autowired
     UserApi userApi;
+    @Autowired
+    GoodsApi goodsApi;
 
     @Override
     public Result<SearchFilterVo> searchSkuFilter(SearchItemDto searchItemDto) {
@@ -181,8 +183,20 @@ public class GoodsServiceImpl implements GoodsService {
             brandPageVo.setFbrandId(goodsBrand.getFbrandId());
             brandPageVo.setFbrandPoster(goodsBrand.getFbrandPoster());
             brandPageVo.setForiginName(goodsBrand.getFcountryName());
-            // 品牌商品总数
-            Result<Integer> goodsCountResult = goodsSkuApi.countByCriteria(Criteria.of(GoodsSku.class).andEqualTo(GoodsSku::getFisDelete, 0));
+
+            Result<List<Goods>> goodsResult = goodsApi.queryByCriteria(Criteria.of(Goods.class).andEqualTo(Goods::getFbrandId, fbrandId));
+            if (!goodsResult.isSuccess()) {
+                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            }
+            List<Long> goodIds = new LinkedList<>();
+            if(CollectionUtils.isNotEmpty(goodsResult.getData())){
+                goodIds = goodsResult.getData().stream().map(Goods::getFgoodsId).collect(Collectors.toList());
+            }
+            // 品牌sku商品总数
+            Result<Integer> goodsCountResult = goodsSkuApi.countByCriteria(Criteria.of(GoodsSku.class)
+                    .andIn(GoodsSku::getFgoodsId, goodIds)
+                    .andEqualTo(GoodsSku::getFskuStatus, 1)
+                    .andEqualTo(GoodsSku::getFisDelete, 0));
             if (!goodsCountResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
@@ -193,15 +207,12 @@ public class GoodsServiceImpl implements GoodsService {
 
 
     @Override
-    public Result<PageVo<SearchItemVo>> searchSkuList(SearchItemDto searchItemDto) {
+    public Result<SearchItemListVo<SearchItemVo>> searchSkuList(SearchItemDto searchItemDto) {
         if (!StringUtils.isEmpty(searchItemDto.getSearchFullText())) {
             searchRecordService.insertSearchRecordAsync(searchItemDto.getSearchFullText(), searchItemDto.getFuid());
         }
 
-        SearchItemListVo listVo = new SearchItemListVo();
-
         // 初始化PageVo
-//        PageVo<SearchItemVo> pageVo = new PageVo<>();
         SearchItemListVo<SearchItemVo> pageVo = new SearchItemListVo<>();
         pageVo.setIsLogin(searchItemDto.getIsLogin());
         pageVo.setTotalCount(0);
@@ -248,7 +259,8 @@ public class GoodsServiceImpl implements GoodsService {
                     vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
                 }
 
-                String priceName = this.getUserPriceType(searchItemDto);;
+                String priceName = this.getUserPriceType(searchItemDto);
+                ;
                 if (map.get(priceName) != null) {
                     Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
                     if (priceMap.get("min_price") != null) {
@@ -271,6 +283,7 @@ public class GoodsServiceImpl implements GoodsService {
         }
         return Result.success(pageVo);
     }
+
 
     /**
      * 根据用户身份选择价格类型
@@ -422,21 +435,38 @@ public class GoodsServiceImpl implements GoodsService {
         }
 
         String priceFieldName = this.getUserPriceType(searchItemDto);
+        String fieldName = humpToLine2(priceFieldName) + PRICE_TYPE_SUFFIX;
         if (searchItemDto.getPriceOrderBy() != null) {
-            criteria.sortBy(priceFieldName, searchItemDto.getPriceOrderBy());
+            criteria.sortBy(fieldName, searchItemDto.getPriceOrderBy());
         }
 
         if (searchItemDto.getFpriceStart() != null) {
             BigDecimal startPrice_yuan = searchItemDto.getFpriceStart();
             BigDecimal startPrice_penny = startPrice_yuan.multiply(ONE_HUNDRED).setScale(0, BigDecimal.ROUND_HALF_UP);
-            criteria.rangeFrom(priceFieldName, String.valueOf(startPrice_penny));
+            criteria.rangeFrom(fieldName, String.valueOf(startPrice_penny));
         }
 
         if (searchItemDto.getFpriceEnd() != null) {
             BigDecimal endPrice_yuan = searchItemDto.getFpriceEnd();
             BigDecimal endPrice_penny = endPrice_yuan.multiply(ONE_HUNDRED).setScale(0, BigDecimal.ROUND_HALF_UP);
-            criteria.rangeTo(priceFieldName, String.valueOf(endPrice_penny));
+            criteria.rangeTo(fieldName, String.valueOf(endPrice_penny));
         }
+    }
+
+    /**
+     * 驼峰转下划线
+     *
+     * @param str
+     * @return
+     */
+    public static String humpToLine2(String str) {
+        Matcher matcher = humpPattern.matcher(str);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            matcher.appendReplacement(sb, "_" + matcher.group(0).toLowerCase());
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
     }
 
     /**
