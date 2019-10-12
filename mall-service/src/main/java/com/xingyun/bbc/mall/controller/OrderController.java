@@ -1,10 +1,10 @@
 package com.xingyun.bbc.mall.controller;
 
-import com.alibaba.fastjson.JSONObject;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.order.api.OrderCenterApi;
 import com.xingyun.bbc.order.api.TransportOrderCenterApi;
 import com.xingyun.bbc.order.model.dto.order.*;
+import com.xingyun.bbc.order.model.vo.order.ExpressVo;
 import com.xingyun.bbc.order.model.vo.order.OrderConfirmVo;
 import com.xingyun.bbc.order.model.vo.order.OrderStatusVo;
 import com.xingyun.bbc.order.model.vo.order.OrderSubmitVo;
@@ -50,13 +50,13 @@ public class OrderController {
 
     @ApiOperation("查询发货单物流信息")
     @PostMapping("/queryExpress")
-    public Result<JSONObject> queryExpress(@RequestBody  @Validated TransportOrderDto transportOrderDto) {
+    public Result<ExpressVo> queryExpress(@RequestBody  @Validated TransportOrderDto transportOrderDto) {
         return transportOrderCenterApi.queryExpress(transportOrderDto);
     }
 
 	@ApiOperation("查询商品订单下所有发货单的物流信息")
 	@PostMapping("/queryExpressBatch")
-	public Result<List<JSONObject>> queryExpressBatch(@RequestBody @Validated OrderExpressDto orderExpressDto) {
+	public Result<List<ExpressVo>> queryExpressBatch(@RequestBody @Validated OrderExpressDto orderExpressDto) {
 		return transportOrderCenterApi.queryExpressBatch(orderExpressDto);
 	}
 
