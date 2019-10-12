@@ -242,8 +242,14 @@ public class AftersaleServiceImpl implements AftersaleService {
                 }
             }
         }
-        //更新售后状态
-        OrderAftersale upAftersale = new OrderAftersale();
+        //更新售后状态--修改时间加了乐观锁--先查询再保存
+        Result<OrderAftersale> queryAfterSaleResult = orderAftersaleApi.queryOneByCriteria(Criteria.of(OrderAftersale.class)
+                .andEqualTo(OrderAftersale::getForderAftersaleId, aftersaleBackDto.getForderAftersaleId())
+                .fields(OrderAftersale::getFmodifyTime));
+        if (!queryAfterSaleResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        OrderAftersale upAftersale = queryAfterSaleResult.getData();
         upAftersale.setForderAftersaleId(aftersaleBackDto.getForderAftersaleId());
         upAftersale.setFaftersaleStatus(OrderAftersaleStatus.WAIT_RETURN_MONEY.getCode());
         Result<Integer> aftersaleResult = orderAftersaleApi.updateNotNull(upAftersale);

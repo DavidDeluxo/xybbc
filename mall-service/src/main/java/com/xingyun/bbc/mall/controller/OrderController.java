@@ -3,11 +3,9 @@ package com.xingyun.bbc.mall.controller;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.order.api.OrderCenterApi;
 import com.xingyun.bbc.order.api.TransportOrderCenterApi;
+import com.xingyun.bbc.order.api.UserDeliveryCenterApi;
 import com.xingyun.bbc.order.model.dto.order.*;
-import com.xingyun.bbc.order.model.vo.order.ExpressVo;
-import com.xingyun.bbc.order.model.vo.order.OrderConfirmVo;
-import com.xingyun.bbc.order.model.vo.order.OrderStatusVo;
-import com.xingyun.bbc.order.model.vo.order.OrderSubmitVo;
+import com.xingyun.bbc.order.model.vo.order.*;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +35,8 @@ public class OrderController {
 	OrderCenterApi orderApi;
 	@Autowired
 	TransportOrderCenterApi transportOrderCenterApi;
+	@Autowired
+	UserDeliveryCenterApi userDeliveryCenterApi;
 
 	@ApiOperation("提交订单")
 	@PostMapping("/submit")
@@ -73,5 +73,14 @@ public class OrderController {
 	@PostMapping("/confirmReceipt")
 	public  Result<OrderConfirmVo> confirmReceipt(@RequestBody @Validated OrderConfirmDto orderConfirmDto) {
 		return orderApi.updateOrderConfirm(orderConfirmDto);
+	}
+
+	@ApiOperation("查询用户默认收货地址")
+	@PostMapping("/queryDefaultAddress")
+	public  Result<AddressVo> confirmReceipt(HttpServletRequest request) {
+		Long fuid = Long.valueOf(request.getHeader("xyid"));
+        ShipAddressDto  shipAddressDto = new ShipAddressDto();
+		shipAddressDto.setFuid(fuid);
+		return userDeliveryCenterApi.queryDefaultAddress(shipAddressDto);
 	}
 }
