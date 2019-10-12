@@ -87,6 +87,8 @@ public class IndexServiceImpl implements IndexService {
     @Autowired
     SkuBatchUserPriceApi skuBatchUserPriceApi;
 
+    @Autowired
+    private SkuUserDiscountConfigApi skuUserDiscountConfigApi;
 
     @Autowired
     private PageUtils pageUtils;
@@ -128,7 +130,7 @@ public class IndexServiceImpl implements IndexService {
                     }
                 }
                 return Result.success(pageConfigVos);
-            }else {
+            } else {
                 return Result.success(pageConfigRedisResultList);
             }
         } else {
@@ -148,7 +150,7 @@ public class IndexServiceImpl implements IndexService {
                     }
                 }
                 return Result.success(pageConfigVos);
-            }else {
+            } else {
                 return Result.success(pageConfigRedisResultList);
             }
         }
@@ -315,36 +317,74 @@ public class IndexServiceImpl implements IndexService {
                 //判断sku是否支持平台会员类型折扣 0否 1是
                 //1支持情况下
                 if (goodsSku.getFisUserTypeDiscount().equals(1) && verifyStatus.equals(3)) {
-                    List<SkuBatchUserPrice> salePriceList = new ArrayList<>();
-                    for (SkuBatch skuBatch : skuBatchs.getData()) {
-                        String supplierSkuBatchId = skuBatch.getFsupplierSkuBatchId();
-                        Criteria<SkuBatchUserPrice, Object> skuBatchUserPriceCriteria = Criteria.of(SkuBatchUserPrice.class);
-                        skuBatchUserPriceCriteria
-                                .andEqualTo(SkuBatchUserPrice::getFsupplierSkuBatchId, supplierSkuBatchId)
-                                .andEqualTo(SkuBatchUserPrice::getFuserTypeId, operateType);
-                        Result<List<SkuBatchUserPrice>> skuBatchUserPriceList = skuBatchUserPriceApi.queryByCriteria(skuBatchUserPriceCriteria);
-                        if (!skuBatchUserPriceList.isSuccess()) {
-                            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-                        }
-                        if (CollectionUtils.isEmpty(skuBatchUserPriceList.getData())) {
-                            logger.info("批次id:::" + "-------------------------------------" + skuBatch.getFskuBatchId());
-                            ;
-                            throw new BizException(MallExceptionCode.NO_BATCH_USER_PRICE);
-                        }
-                        //取不同规格中的最小价格
-                        SkuBatchUserPrice min = skuBatchUserPriceList.getData().stream().min(Comparator.comparing(SkuBatchUserPrice::getFbatchSellPrice)).get();
-                        salePriceList.add(min);
+                    //判断sku会员类型折扣是否配置
+                    Result<List<SkuUserDiscountConfig>> skuUserDiscountResult = skuUserDiscountConfigApi.queryByCriteria(Criteria.of(SkuUserDiscountConfig.class)
+                            .andEqualTo(SkuUserDiscountConfig::getFskuId, goodsSku.getFskuId())
+                            .andEqualTo(SkuUserDiscountConfig::getFuserTypeId, operateType)
+                            .andEqualTo(SkuUserDiscountConfig::getFisDelete, 0)
+                            .fields(SkuUserDiscountConfig::getFdiscountId));
+                    if (!skuUserDiscountResult.isSuccess()) {
+                        throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
                     }
-                    //取不同批次的最小价格
-                    SkuBatchUserPrice fbatchSellPrice = salePriceList.stream().min(Comparator.comparing(SkuBatchUserPrice::getFbatchSellPrice)).get();
-                    //封装关联批次号
-                    indexSkuGoodsVo.setFsupplierSkuBatchId(fbatchSellPrice.getFsupplierSkuBatchId());
-                    //封装关联包装规格Id
-                    indexSkuGoodsVo.setFbatchPackageId(fbatchSellPrice.getFbatchPackageId());
-                    //--------封装价格
-                    BigDecimal sellPrice = new BigDecimal(fbatchSellPrice.getFbatchSellPrice())
-                            .divide(PageConfigContants.BIG_DECIMAL_100, 2, BigDecimal.ROUND_HALF_UP);
-                    indexSkuGoodsVo.setFbatchSellPrice(sellPrice);
+                    //如果没有配置sku会员类型折扣则返回批次价格,有则返回会员类型价格
+                    if (CollectionUtils.isEmpty(skuUserDiscountResult.getData())){
+                        List<GoodsSkuBatchPrice> salePriceList = new ArrayList<>();
+                        for (SkuBatch skuBatch : skuBatchs.getData()) {
+                            String supplierSkuBatchId = skuBatch.getFsupplierSkuBatchId();
+                            Criteria<GoodsSkuBatchPrice, Object> goodsSkuBatchPriceCriteria = Criteria.of(GoodsSkuBatchPrice.class);
+                            goodsSkuBatchPriceCriteria.andEqualTo(GoodsSkuBatchPrice::getFsupplierSkuBatchId, supplierSkuBatchId);
+                            Result<List<GoodsSkuBatchPrice>> goodsSkuBatchPriceList = goodsSkuBatchPriceApi.queryByCriteria(goodsSkuBatchPriceCriteria);
+                            if (!goodsSkuBatchPriceList.isSuccess()) {
+                                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+                            }
+                            if (CollectionUtils.isEmpty(goodsSkuBatchPriceList.getData())) {
+                                throw new BizException(MallExceptionCode.NO_BATCH_PRICE);
+                            }
+                            //取不同规格中的最小价格
+                            GoodsSkuBatchPrice min = goodsSkuBatchPriceList.getData().stream().min(Comparator.comparing(GoodsSkuBatchPrice::getFbatchSellPrice)).get();
+                            salePriceList.add(min);
+                        }
+                        //取不同批次的最小价格
+                        GoodsSkuBatchPrice fbatchSellPrice = salePriceList.stream().min(Comparator.comparing(GoodsSkuBatchPrice::getFbatchSellPrice)).get();
+                        //封装关联批次号
+                        indexSkuGoodsVo.setFsupplierSkuBatchId(fbatchSellPrice.getFsupplierSkuBatchId());
+                        //封装关联包装规格Id
+                        indexSkuGoodsVo.setFbatchPackageId(fbatchSellPrice.getFbatchPackageId());
+                        //-----------封装价格
+                        BigDecimal sellPrice = new BigDecimal(fbatchSellPrice.getFbatchSellPrice())
+                                .divide(PageConfigContants.BIG_DECIMAL_100, 2, BigDecimal.ROUND_HALF_UP);
+                        indexSkuGoodsVo.setFbatchSellPrice(sellPrice);
+                    } else {
+                        List<SkuBatchUserPrice> salePriceList = new ArrayList<>();
+                        for (SkuBatch skuBatch : skuBatchs.getData()) {
+                            String supplierSkuBatchId = skuBatch.getFsupplierSkuBatchId();
+                            Criteria<SkuBatchUserPrice, Object> skuBatchUserPriceCriteria = Criteria.of(SkuBatchUserPrice.class);
+                            skuBatchUserPriceCriteria
+                                    .andEqualTo(SkuBatchUserPrice::getFsupplierSkuBatchId, supplierSkuBatchId)
+                                    .andEqualTo(SkuBatchUserPrice::getFuserTypeId, operateType);
+                            Result<List<SkuBatchUserPrice>> skuBatchUserPriceList = skuBatchUserPriceApi.queryByCriteria(skuBatchUserPriceCriteria);
+                            if (!skuBatchUserPriceList.isSuccess()) {
+                                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+                            }
+                            if (CollectionUtils.isEmpty(skuBatchUserPriceList.getData())) {
+                                logger.info("批次id:::" + "-------------------------------------" + skuBatch.getFskuBatchId());
+                                throw new BizException(MallExceptionCode.NO_BATCH_USER_PRICE);
+                            }
+                            //取不同规格中的最小价格
+                            SkuBatchUserPrice min = skuBatchUserPriceList.getData().stream().min(Comparator.comparing(SkuBatchUserPrice::getFbatchSellPrice)).get();
+                            salePriceList.add(min);
+                        }
+                        //取不同批次的最小价格
+                        SkuBatchUserPrice fbatchSellPrice = salePriceList.stream().min(Comparator.comparing(SkuBatchUserPrice::getFbatchSellPrice)).get();
+                        //封装关联批次号
+                        indexSkuGoodsVo.setFsupplierSkuBatchId(fbatchSellPrice.getFsupplierSkuBatchId());
+                        //封装关联包装规格Id
+                        indexSkuGoodsVo.setFbatchPackageId(fbatchSellPrice.getFbatchPackageId());
+                        //--------封装价格
+                        BigDecimal sellPrice = new BigDecimal(fbatchSellPrice.getFbatchSellPrice())
+                                .divide(PageConfigContants.BIG_DECIMAL_100, 2, BigDecimal.ROUND_HALF_UP);
+                        indexSkuGoodsVo.setFbatchSellPrice(sellPrice);
+                    }
                 } else {
                     //2.不支持情况
                     List<GoodsSkuBatchPrice> salePriceList = new ArrayList<>();
