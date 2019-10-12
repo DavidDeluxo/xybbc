@@ -3,6 +3,7 @@ package com.xingyun.bbc.mall.model.vo;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import javax.persistence.Column;
 import java.util.Date;
 
 /**
@@ -55,4 +56,8 @@ public class PageConfigVo {
    /** 后端接口地址 */
     @ApiModelProperty(value = "后端接口地址")
     private String fredirectUrl;
+
+    /** 是否删除 0未删除 1已删除 */
+    @ApiModelProperty(value = "是否删除 0未删除 1已删除")
+    private Integer fisDelete;
 }

@@ -166,7 +166,17 @@ public class IndexServiceImpl implements IndexService {
             if (CollectionUtils.isNotEmpty(result)) {
                 List<PageConfig> pageConfigs = holder.convert(result, PageConfig.class);
                 List<PageConfigVo> pageConfigVos = holder.convert(pageConfigs, PageConfigVo.class);
-                pageTempList = pageConfigVos.stream().filter(index -> index.getFposition() == position).collect(Collectors.toList());
+                pageTempList = pageConfigVos.stream().filter(index ->{
+                    if(index.getFisDelete() != null){
+                        boolean a = index.getFisDelete() == 0;
+                        boolean b = index.getFposition() == position;
+                        boolean c= a && b;
+                        return c;
+                    }else{
+                        boolean b = index.getFposition() == position;
+                        return b;
+                    }
+                   } ).collect(Collectors.toList());
                 if (position == 0 || position == 1) {
                     Collections.sort(pageTempList, new Comparator<PageConfigVo>() {
                         @Override
