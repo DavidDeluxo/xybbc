@@ -351,7 +351,7 @@ public class UserServiceImpl implements UserService {
             return Result.failure(mistakeMsg.toString(),UserVerifyResultStatus.getMessageByCode(mistakeMsg));
         }
         if(dto.getSalesVolume() != null){
-            dto.setFsalesVolume(new BigDecimal(dto.getSalesVolume()).multiply(new BigDecimal(1000000)).longValue());
+            dto.setFsalesVolume(new BigDecimal(dto.getSalesVolume()).multiply(new BigDecimal(100)).longValue());
         }
         if(dto.getFpaltformId() != null){
             dto.setFplatform(VerifyPlatform.getMessageByCode(Integer.valueOf(String.valueOf(dto.getFpaltformId()))));
@@ -411,7 +411,7 @@ public class UserServiceImpl implements UserService {
                     }
                 }
                 if(userVerifyVo.getFsalesVolume() != null){
-                    userVerifyVo.setSalesVolume(new BigDecimal(userVerifyVo.getFsalesVolume()).divide(new BigDecimal(1000000)).toString());
+                    userVerifyVo.setSalesVolume(new BigDecimal(userVerifyVo.getFsalesVolume()).divide(new BigDecimal(100)).toString());
                 }
                 if(userVerifyVo.getFshopProvinceId() != null){
                     Criteria<CityRegion,Object> provinceCriteria = Criteria.of(CityRegion.class);

@@ -14,6 +14,7 @@ import com.xingyun.bbc.core.user.api.UserAccountTransWaterApi;
 import com.xingyun.bbc.core.user.po.UserAccountTrans;
 import com.xingyun.bbc.core.user.po.UserAccountTransWater;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mall.base.enums.XyUserAccountTrans.UserAccountTransThdPayTypeEnum;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.PriceUtil;
 import com.xingyun.bbc.mall.model.dto.UserRechargeDto;
@@ -62,7 +63,14 @@ public class UserAccountServiceImpl implements UserAccountService {
         userAccountTrans.setFtransAmount(recharge);
         userAccountTrans.setFuid(userRechargeDto.getFuid());
         userAccountTrans.setFtransTypes(1);//设置类型为充值
-        userAccountTrans.setFtransStatus(1);//设置充值状态 未付款
+        if(userRechargeDto.getFrechargeType()==UserAccountTransThdPayTypeEnum.REITTANCE_RECHARGE.getValue())//线下汇款充值
+        {
+        	userAccountTrans.setFtransStatus(2);//设置充值状态待审核
+        	userAccountTrans.setFtransReason("线下汇款");//充值理由
+        }else{
+        	userAccountTrans.setFtransStatus(1);//设置充值状态未付款
+        }
+        
         userAccountTrans.setFrechargeType(userRechargeDto.getFrechargeType());//支付类型
         Result<Integer> result = userAccountTransApi.create(userAccountTrans);//将数据插入交易明细表
         logger.info("生成第三方充值订单：" + transOrderId + "金额：" + recharge + "(单位，分)");
