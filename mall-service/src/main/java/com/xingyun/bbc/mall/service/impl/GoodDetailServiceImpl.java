@@ -525,7 +525,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             if (!skuUserDiscountResult.isSuccess()) {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
-            if (null == skuUserDiscountResult.getData()) {
+            if (CollectionUtils.isEmpty(skuUserDiscountResult.getData())) {
                 return this.getGeneralPrice(goodsDetailDto.getFbatchPackageId());
             }
 
