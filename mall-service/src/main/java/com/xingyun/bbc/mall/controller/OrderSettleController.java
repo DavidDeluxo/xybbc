@@ -3,7 +3,6 @@ package com.xingyun.bbc.mall.controller;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.order.api.OrderSettleSplitApi;
 import com.xingyun.bbc.order.model.dto.order.*;
-import com.xingyun.bbc.order.model.vo.order.OrderBuyAgentVo;
 import com.xingyun.bbc.order.model.vo.order.OrderSetBuyAgentVo;
 import com.xingyun.bbc.order.model.vo.order.OrderSettleVo;
 import io.swagger.annotations.Api;
@@ -47,11 +46,13 @@ public class OrderSettleController {
 		return orderSettleSplitApi.querySettle(orderSubmitDto);
 	}
 
+	@ApiOperation("设置代购价(单个)")
 	@RequestMapping(value ="/updateBuyAgent",method = RequestMethod.POST)
 	public Result<OrderSetBuyAgentVo> updateBuyAgent(@RequestBody  OrderSettleSplitDto orderSettleSplitDto){
 		return orderSettleSplitApi.updateBuyAgent(orderSettleSplitDto);
 	}
 
+	@ApiOperation("设置代购价(批量)")
 	@RequestMapping(value ="/updateBuyAgentBatch",method = RequestMethod.POST)
 	public Result<List<OrderSetBuyAgentVo>> updateBuyAgentBatch(@RequestBody  OrderBuyAgentDto orderBuyAgentDto){
 		return orderSettleSplitApi.updateBuyAgentBatch(orderBuyAgentDto);
