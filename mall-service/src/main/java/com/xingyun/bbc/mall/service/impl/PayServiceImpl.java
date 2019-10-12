@@ -43,6 +43,7 @@ import com.xingyun.bbc.core.utils.Result;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -452,7 +453,11 @@ public class PayServiceImpl implements PayService {
 				logger.info("支付订单号查询返回结果为空！ 订单号：" + dto.getForderId());
 				return Result.failure(MallExceptionCode.ORDER_NOT_EXIST);
 			}
-			lockTime = orderPayment.getFlockTime();
+			Calendar cal = Calendar.getInstance();
+			Date d1 = orderPayment.getFcreateTime();
+			cal.setTime(d1);
+			cal.add(Calendar.MINUTE, 30);
+			lockTime= cal.getTime();
 			//orderFuid = String.valueOf(orderPayment.getFuid());
 			orderTotalAmount = orderPayment.getFtotalOrderAmount();
 			fbalancePayAmount=orderPayment.getFbalancePayAmount();
