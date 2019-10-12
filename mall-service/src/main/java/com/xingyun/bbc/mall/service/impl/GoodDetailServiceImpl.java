@@ -12,6 +12,8 @@ import com.xingyun.bbc.core.sku.po.*;
 import com.xingyun.bbc.core.supplier.enums.TradeTypeEnums;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.api.UserDeliveryApi;
+import com.xingyun.bbc.core.user.enums.UserVerifyStatusEnum;
+import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.user.po.UserDelivery;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
@@ -503,8 +505,18 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         Long price = 0l;
         //是否支持平台会员折扣
         if (new Integer(1).equals(this.getIsUserDiscount(goodsDetailDto.getFskuId()))) {
-            Integer foperateType = userApi.queryById(goodsDetailDto.getFuid()).getData().getFoperateType();
+            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
+                    .andEqualTo(User::getFuid, goodsDetailDto.getFuid())
+                    .fields(User::getFoperateType, User::getFverifyStatus));
+            if (!userResult.isSuccess()) {
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            }
+            //如果用户未认证直接查基础价格表
+            if (null == userResult.getData() || !UserVerifyStatusEnum.AUTHENTICATED.getCode().equals(userResult.getData().getFverifyStatus())) {
+                return this.getGeneralPrice(goodsDetailDto.getFbatchPackageId());
+            }
 
+            Integer foperateType = userResult.getData().getFoperateType();
             Result<List<SkuUserDiscountConfig>> skuUserDiscountResult = skuUserDiscountConfigApi.queryByCriteria(Criteria.of(SkuUserDiscountConfig.class)
                     .andEqualTo(SkuUserDiscountConfig::getFskuId, goodsDetailDto.getFskuId())
                     .andEqualTo(SkuUserDiscountConfig::getFuserTypeId, foperateType.longValue())
