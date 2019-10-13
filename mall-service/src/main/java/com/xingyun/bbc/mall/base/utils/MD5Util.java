@@ -3,61 +3,57 @@ package com.xingyun.bbc.mall.base.utils;
 import java.security.MessageDigest;
 
 /**
- * Created by dt
+ * @author pengaoluo
+ * @version 1.0.0
+ * @date 2019/8/26
+ * @copyright 本内容仅限于浙江云贸科技有限公司内部传阅，禁止外泄以及用于其他的商业目的
  */
 public class MD5Util {
 
-    private static final String salt="@#$$fdsdsijlg%(#*^23434rfdgjmo676yhhnj";
+    private static final char[] HEX_DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-    //这里主要是遍历8个byte，转化为16位进制的字符，即0-F
-    private static String byteArrayToHexString(byte b[]) {
-        StringBuffer resultSb = new StringBuffer();
+    private static final String SALT = "@#$$fdsdsijlg%(#*^23434rfdgjmo676yhhnj";
+
+    /**
+     * 遍历byte数组，转化为16位进制的字符
+     *
+     * @param b
+     * @return
+     */
+    private static String byteArrayToHexString(byte[] b) {
+        char[] chars = new char[b.length * 2];
         for (int i = 0; i < b.length; i++) {
-            resultSb.append(byteToHexString(b[i]));
+            int n = b[i];
+            if (n < 0) {
+                n += 256;
+            }
+            chars[i * 2] = HEX_DIGITS[n >>> 4];
+            chars[i * 2 + 1] = HEX_DIGITS[n & 0xf];
         }
-
-        return resultSb.toString();
-    }
-
-    //这里是针对单个byte，256的byte通过16拆分为d1和d2
-    private static String byteToHexString(byte b) {
-        int n = b;
-        if (n < 0) {
-            n += 256;
-        }
-        int d1 = n / 16;
-        int d2 = n % 16;
-        return hexDigits[d1] + hexDigits[d2];
+        return new String(chars);
     }
 
     /**
      * 返回大写MD5
      *
      * @param origin
-     * @param charsetname
+     * @param charsetName
      * @return
      */
-    private static String MD5Encode(String origin, String charsetname) {
+    public static String MD5Encode(String origin, String charsetName) {
         String resultString = null;
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            if (charsetname == null || "".equals(charsetname)) {
-                resultString = byteArrayToHexString(md.digest(origin.getBytes()));
-            } else {
-                resultString = byteArrayToHexString(md.digest(origin.getBytes(charsetname)));
-            }
+            resultString = byteArrayToHexString(md.digest(origin.getBytes(charsetName)));
         } catch (Exception exception) {
+            exception.printStackTrace();
         }
-        return resultString.toUpperCase();
+        return resultString;
     }
 
     public static String MD5EncodeUtf8(String origin) {
-        origin = origin + salt;
+        origin = origin + SALT;
         return MD5Encode(origin, "utf-8");
     }
-
-
-    private static final String hexDigits[] = {"0", "1", "2", "3", "4", "5",
-            "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"};
 
 }
