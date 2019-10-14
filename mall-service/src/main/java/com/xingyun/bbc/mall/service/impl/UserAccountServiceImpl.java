@@ -65,12 +65,9 @@ public class UserAccountServiceImpl implements UserAccountService {
         userAccountTrans.setFtransTypes(1);//设置类型为充值
         if(userRechargeDto.getFrechargeType()==UserAccountTransThdPayTypeEnum.REITTANCE_RECHARGE.getValue())//线下汇款充值
         {
-        	userAccountTrans.setFtransStatus(2);//设置充值状态待审核
         	userAccountTrans.setFtransReason("线下汇款");//充值理由
-        }else{
-        	userAccountTrans.setFtransStatus(1);//设置充值状态未付款
         }
-        
+        userAccountTrans.setFtransStatus(1);//设置充值状态未付款
         userAccountTrans.setFrechargeType(userRechargeDto.getFrechargeType());//支付类型
         Result<Integer> result = userAccountTransApi.create(userAccountTrans);//将数据插入交易明细表
         logger.info("生成第三方充值订单：" + transOrderId + "金额：" + recharge + "(单位，分)");

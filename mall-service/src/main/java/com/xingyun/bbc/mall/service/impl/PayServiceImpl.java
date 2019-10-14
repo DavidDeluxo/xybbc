@@ -131,11 +131,6 @@ public class PayServiceImpl implements PayService {
 				logger.info("余额支付。用户id：" +fuid+ "余额为0!");
 				return Result.failure(MallExceptionCode.BALANCE_NOT_ENOUGH);
 			}
-			if(account.getFfreezeWithdraw()>0)
-			{
-				logger.info("余额支付。用户id：" +fuid+ "提现冻结金额:"+account.getFfreezeWithdraw());
-				return Result.failure(MallExceptionCode.FREEZE_WITHDRAW);
-			}
 		}
 		totalAmount= orderPayment.getFtotalOrderAmount();
 		unPayAmount = totalAmount - orderPayment.getFbalancePayAmount() - orderPayment.getFcreditPayAmount();
@@ -335,6 +330,7 @@ public class PayServiceImpl implements PayService {
 		UserAccountTrans userAccountTrans=new UserAccountTrans();
 		userAccountTrans.setFtransId(dto.getForderId());
 		userAccountTrans.setFrechargeType(Integer.valueOf(dto.getPayType()));
+		userAccountTrans.setFtransStatus(2);//设置充值状态为待审核
 		userAccountTrans.setFpayVoucher(dto.getPayVoucher());
 		Result<Integer> result=userAccountTransApi.updateNotNull(userAccountTrans);
 			if(result.isSuccess())
