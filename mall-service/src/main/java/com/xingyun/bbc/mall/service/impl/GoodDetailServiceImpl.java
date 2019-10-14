@@ -126,7 +126,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         Result<Goods> goodsBasic = goodsApi.queryById(fgoodsId);
         if (!goodsBasic.isSuccess()) {
             logger.info("商品spu id {}获取商品基本信息失败", fgoodsId);
-            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         GoodsVo goodsVo = dozerMapper.map(goodsBasic.getData(), GoodsVo.class);
 
@@ -138,14 +138,18 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         }
         goodsVo.setFtradeType(tradeType);
 
-        //获取sku商品描述
+        //获取sku商品描述和商品主图
         goodsVo.setFskuDesc("");
         if (null != fskuId) {
             GoodsSku goodSkuDesc = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
                     .andEqualTo(GoodsSku::getFskuId, fskuId)
-                    .fields(GoodsSku::getFskuDesc)).getData();
+                    .fields(GoodsSku::getFskuDesc, GoodsSku::getFskuThumbImage)).getData();
             if (null != goodSkuDesc && null != goodSkuDesc.getFskuDesc()) {
                 goodsVo.setFskuDesc(goodSkuDesc.getFskuDesc());
+            }
+            //之前取spu表列表缩略图后改成sku表主图
+            if (null != goodSkuDesc && null != goodSkuDesc.getFskuThumbImage()) {
+                goodsVo.setFgoodsImgUrl(goodSkuDesc.getFskuThumbImage());
             }
         }
 
