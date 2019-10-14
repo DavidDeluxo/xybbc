@@ -295,9 +295,10 @@ public class WalletServiceImpl implements WalletService {
         User user = this.checkUser(uid);
 
         WalletAmountVo walletAmount = this.queryAmount(uid);
+        BigDecimal balance = PriceUtil.toPenny(walletAmount.getBalance());
 
-        if (walletAmount.getBalance().compareTo(new BigDecimal("0.00")) <= 0 ||
-                withdrawDto.getWithdrawAmount().compareTo(walletAmount.getBalance()) > 0) {
+        if (balance.compareTo(new BigDecimal("0.00")) <= 0 ||
+                withdrawDto.getWithdrawAmount().compareTo(balance) > 0) {
             throw new BizException(MallResultStatus.ACCOUNT_BALANCE_INSUFFICIENT);
         }
 
