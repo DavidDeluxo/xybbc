@@ -12,9 +12,7 @@ import com.xingyun.bbc.core.user.api.UserVerifyApi;
 import com.xingyun.bbc.core.user.enums.UserVerifyEnums;
 import com.xingyun.bbc.core.user.po.UserAccount;
 import com.xingyun.bbc.core.user.po.UserVerify;
-import com.xingyun.bbc.mall.base.enums.MallResultStatus;
-import com.xingyun.bbc.mall.base.enums.VerifyCategory;
-import com.xingyun.bbc.mall.base.enums.VerifyPlatform;
+import com.xingyun.bbc.mall.base.enums.*;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.EncryptUtils;
 import com.xingyun.bbc.mall.base.utils.MD5Util;
@@ -25,7 +23,6 @@ import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.common.constans.UserConstants;
-import com.xingyun.bbc.mall.base.enums.UserVerifyResultStatus;
 import com.xingyun.bbc.mall.model.dto.*;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.UserService;
@@ -395,14 +392,21 @@ public class UserServiceImpl implements UserService {
                 .andEqualTo(User::getFuid,dto.getFuid())
                 .fields(User::getFverifyStatus,User::getFoperateType);
         Result<User> userResult = userApi.queryOneByCriteria(userCriteria);
+        if(userResult.getData() == null){
+            Result.success(userVerifyVo);
+        }
         if(userResult.getData().getFoperateType().equals(dto.getFoperateType())){
             Criteria<UserVerify, Object> criteria = Criteria.of(UserVerify.class);
             criteria.andEqualTo(UserVerify::getFuid,dto.getFuid());
             Result<UserVerify> result = userVerifyApi.queryOneByCriteria(criteria);
             if(result.getData() != null){
                 userVerifyVo = dozerHolder.convert(result.getData(),UserVerifyVo.class);
-                if(userVerifyVo.getFpaltformId() != null){
-                    userVerifyVo.setFpaltformName(VerifyPlatform.getMessageByCode(userVerifyVo.getFpaltformId().intValue()));
+//                if(userVerifyVo.getFpaltformId() != null){
+//                    userVerifyVo.setFpaltformName(VerifyPlatform.getMessageByCode(userVerifyVo.getFpaltformId().intValue()));
+//                }
+                if(result.getData().getFplatform() != null){
+                    userVerifyVo.setFpaltformName(result.getData().getFplatform());
+                    userVerifyVo.setFpaltformId(VerifyEnums.platform.findByMsg(result.getData().getFplatform()).getCode().longValue());
                 }
                 if(userResult.getData().getFoperateType() == UserVerifyEnums.Type.WeiMerchantBuy.getValue()){
                     //微商名称同步运营后台取值
