@@ -385,7 +385,7 @@ public class WalletServiceImpl implements WalletService {
                 poundagePercent = withdrawRates.stream().findFirst().get().getFrate().floatValue();
             }
             //计算手续费
-            feeRate = new BigDecimal(poundagePercent).divide(new BigDecimal(10000));
+            feeRate = (new BigDecimal(poundagePercent).divide(new BigDecimal(10000)));
             return this;
         }
     }
@@ -413,10 +413,11 @@ public class WalletServiceImpl implements WalletService {
             userAccountTrans.setFtransTypes(2);//提现
             userAccountTrans.setFtransReason("提现申请");
             userAccountTrans.setFtransAmount(transAmount.longValue());
-            feeAmount = transAmount.multiply(withdrawRate.getFeeRate());
+            feeAmount = (transAmount.multiply((withdrawRate.getFeeRate().multiply(new BigDecimal(10000)))));
             transActualAmount = transAmount.subtract(feeAmount);
             userAccountTrans.setFtransActualAmount(transActualAmount.longValue());
             userAccountTrans.setFtransPoundage(feeAmount.longValue());
+            userAccountTrans.setFaccountHolder(withdrawDto.getName());
 
             // 支付宝
             if (withdrawDto.getWay() == 1) {
@@ -431,7 +432,6 @@ public class WalletServiceImpl implements WalletService {
                 userAccountTrans.setFtransStatus(1);
                 userAccountTrans.setFwithdrawType(2);
                 userAccountTrans.setFwithdrawBank(withdrawDto.getBankName());
-                userAccountTrans.setFaccountHolder(withdrawDto.getName());
                 userAccountTrans.setFwithdrawAccount(withdrawDto.getCardNumber());
             }
 
