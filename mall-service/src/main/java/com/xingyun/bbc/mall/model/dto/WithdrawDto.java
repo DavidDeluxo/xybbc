@@ -25,7 +25,6 @@ public class WithdrawDto implements Serializable {
     private static final long serialVersionUID = -3375325720449344887L;
 
     @NotNull(message = "提现金额不能为空")
-    @Min(value = 1L, message = "最低1元起提")
     @ApiModelProperty("提现金额")
     private BigDecimal withdrawAmount;
 

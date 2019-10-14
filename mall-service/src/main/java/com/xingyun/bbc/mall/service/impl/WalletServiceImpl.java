@@ -222,12 +222,6 @@ public class WalletServiceImpl implements WalletService {
         // 添加账户流水
         this.addAccountWater(uid);
 
-        // 提现方式|1:支付宝|2:银行卡
-        if (withdrawDto.getWay() == 1) {
-            // 支付宝转账
-            new AlipayTransfer(withdrawDto, accountTrans.getTransActualAmount(), transId).transfer();
-        }
-
         return true;
     }
 
@@ -330,6 +324,12 @@ public class WalletServiceImpl implements WalletService {
             throw new BizException(MallResultStatus.ACCOUNT_BALANCE_INSUFFICIENT);
         }
 
+        WithdrawRateVo withdrawRate = this.queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(withdrawDto.getWay())).stream().findFirst().get();
+
+        if (PriceUtil.toPenny(withdrawRate.getMinimumAmount()).compareTo(withdrawDto.getWithdrawAmount())>0){
+            throw new BizException(MallResultStatus.WITHDRAW_LES_MIN_AMOUNT);
+        }
+
         return uid;
     }
 
@@ -337,7 +337,7 @@ public class WalletServiceImpl implements WalletService {
         return userRate.stream().map(rate ->
                 new WithdrawRateVo()
                         .setFrate(new BigDecimal(rate.getFrate()).divide(new BigDecimal(10000)))
-                        .setMinimumAmount(new BigDecimal(rate.getMinimumAmount()).divide(new BigDecimal(100)))
+                        .setMinimumAmount(PriceUtil.toYuan(rate.getMinimumAmount()))
                         .setFwithdrawType(rate.getFwithdrawType())
         ).collect(Collectors.toList());
     }
@@ -417,98 +417,24 @@ public class WalletServiceImpl implements WalletService {
             userAccountTrans.setFtransActualAmount(transActualAmount.longValue());
             userAccountTrans.setFtransPoundage(feeAmount.longValue());
 
-
-            // 第三方支付类型：1 支付宝  2 微信支付 3 汇付天下 4 线下汇款
-            userAccountTrans.setFrechargeType(4);
-            userAccountTrans.setFtransStatus(1);
-            userAccountTrans.setFwithdrawType(2);
-
-            userAccountTrans.setFwithdrawBank(withdrawDto.getBankName());
-            userAccountTrans.setFaccountHolder(withdrawDto.getName());
-            userAccountTrans.setFwithdrawAccount(withdrawDto.getCardNumber());
-            return this;
-        }
-    }
-
-    private class AlipayTransfer {
-        private @Valid WithdrawDto withdrawDto;
-        private BigDecimal transActualAmount;
-        private String transId;
-
-        public AlipayTransfer(@Valid WithdrawDto withdrawDto, BigDecimal transActualAmount, String transId) {
-            this.withdrawDto = withdrawDto;
-            this.transActualAmount = transActualAmount;
-            this.transId = transId;
-        }
-
-        public void transfer() {
-
-            Result<UserAccountTrans> transResult = userAccountTransApi.queryById(transId);
-            if (!transResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-            UserAccountTrans userAccountTrans = transResult.getData();
-            if (null == userAccountTrans) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
-
-            userAccountTrans.setFrechargeType(1);
-            userAccountTrans.setFwithdrawType(1);
-            userAccountTrans.setFwithdrawAccount(withdrawDto.getAccountNumber());
-
-            log.info("-------------------支付宝提现转账开始--------------------");
-            // 远程调用支付宝转账
-            Result<Boolean> transferRes = aliPayApi.transfer(new TransferDto()
-                    .setAmount(PriceUtil.toYuan(transActualAmount).toString())
-                    .setOutBizNo(transId)
-                    .setPayeeAccount(withdrawDto.getAccountNumber())
-                    .setPayeeRealName(withdrawDto.getName())
-                    .setPayeeType("ALIPAY_LOGONID")//支付宝登录号，支持邮箱和手机号格式。
-                    .setPayerShowName(withdrawDto.getName())
-                    .setRemark("用户提现申请"));
-
-            if (!transferRes.isSuccess()) {
+            // 支付宝
+            if (withdrawDto.getWay() == 1) {
+                userAccountTrans.setFrechargeType(1);
                 userAccountTrans.setFtransStatus(2);
-                userAccountTrans.setFremark("支付宝提现转账服务异常,转人工审核");
-                log.warn("支付宝提现转账服务异常|转人工审核");
-            } else {
-                if (transferRes.getData()) {
-                    userAccountTrans.setFtransStatus(3);
-                    Date today = new Date();
-                    userAccountTrans.setFpassedTime(today);
-                    userAccountTrans.setFpayTime(today);
-                    log.info("支付宝提现转账成功");
-                } else {
-                    userAccountTrans.setFremark("支付宝转账失败," + transferRes.getMsg());
-                    log.warn("支付宝提现转账失败|失败原因:{}", transferRes.getMsg());
-                }
+                userAccountTrans.setFwithdrawType(1);
+                userAccountTrans.setFwithdrawAccount(withdrawDto.getAccountNumber());
 
+            //银行卡
+            }else if (withdrawDto.getWay() == 2){
+                userAccountTrans.setFrechargeType(4);
+                userAccountTrans.setFtransStatus(1);
+                userAccountTrans.setFwithdrawType(2);
+                userAccountTrans.setFwithdrawBank(withdrawDto.getBankName());
+                userAccountTrans.setFaccountHolder(withdrawDto.getName());
+                userAccountTrans.setFwithdrawAccount(withdrawDto.getCardNumber());
             }
 
-            Result<Integer> res = userAccountTransApi.updateNotNull(userAccountTrans);
-            if (!res.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-            if (res.getData() <= 0) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
-
-            // 修改账户流水表
-            this.modifyAccountTransWater(userAccountTrans);
-            log.info("---------------------支付宝提现转账结束----------------");
-        }
-
-        private void modifyAccountTransWater(UserAccountTrans userAccountTrans) {
-
-            UserAccountTransWater accountTransWater = new UserAccountTransWater();
-
-            accountTransWater.setFtransId(userAccountTrans.getFtransId());
-            Result<UserAccountTransWater> accountWaterResult = userAccountTransWaterApi.queryOne(accountTransWater);
-
-            if (!accountWaterResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-            if (null == accountWaterResult.getData()) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
-
-            BeanUtils.copyProperties(userAccountTrans, accountTransWater);
-            accountTransWater.setFtransId(userAccountTrans.getFtransId());
-            accountTransWater.setFwaterId(accountWaterResult.getData().getFwaterId());
-
-            Result<Integer> result = userAccountTransWaterApi.updateNotNull(accountTransWater);
-
-            if (!result.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-            if (result.getData() <= 0) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
-
+            return this;
         }
     }
 
