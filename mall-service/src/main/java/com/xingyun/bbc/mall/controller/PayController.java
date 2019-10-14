@@ -57,7 +57,7 @@ public class PayController {
 	@RequestMapping("/via/thirdpayresponse_{urlSuffix}")
 	public Result<?> thirdPayResponse(@PathVariable String urlSuffix, HttpServletRequest request,
 			HttpServletResponse response) {
-		return payService.thirdPayResponse(urlSuffix, request, response);
+		return payService.newThirdPayResponse(urlSuffix, request, response);
 	}
 
 	@ApiOperation("用户线下汇款获取公司银行账号信息")
