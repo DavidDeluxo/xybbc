@@ -824,6 +824,9 @@ public class UserServiceImpl implements UserService {
                     }
                     break;
                 case 3:
+                    if(dto.getFcompanyName() == null && dto.getFcompanyName().equals("")){
+                        return UserVerifyResultStatus.COMPANY_NAME_NOT_EXIST.getCode();
+                    }
                     if(dto.getFshopName() == null && dto.getFshopName().equals("")){
                         return UserVerifyResultStatus.PALTFORM_NAME_NOT_EXIST.getCode();
                     }
