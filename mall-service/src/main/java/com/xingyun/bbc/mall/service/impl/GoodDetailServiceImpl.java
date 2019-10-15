@@ -127,8 +127,11 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         //获取商品spu基本信息
         Result<Goods> goodsBasic = goodsApi.queryById(fgoodsId);
         if (!goodsBasic.isSuccess()) {
-            logger.info("商品spu id {}获取商品基本信息失败", fgoodsId);
+            logger.info("商品spu id {}获取商品基本信息调用远程服务失败", fgoodsId);
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (null == goodsBasic.getData()) {
+            return Result.success(null);
         }
         GoodsVo goodsVo = dozerMapper.map(goodsBasic.getData(), GoodsVo.class);
 
