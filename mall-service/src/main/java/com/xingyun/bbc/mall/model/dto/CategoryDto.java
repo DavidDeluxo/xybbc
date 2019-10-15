@@ -6,8 +6,8 @@ import lombok.EqualsAndHashCode;
 
 
 @Data
-@EqualsAndHashCode(callSuper=false)
-public class CategoryDto extends PageDto{
+@EqualsAndHashCode(callSuper = false)
+public class CategoryDto extends PageDto {
 
     @ApiModelProperty("一级类目Id")
     private Integer fcategoryId1;

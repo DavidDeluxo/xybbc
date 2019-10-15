@@ -15,7 +15,7 @@ import com.xingyun.bbc.core.user.po.UserDetail;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DateStyle;
 import com.xingyun.bbc.mall.base.utils.DateUtil;
-import com.xingyun.bbc.mall.base.utils.DozerHolder;
+
 import com.xingyun.bbc.mall.base.utils.PageUtils;
 
 import com.xingyun.bbc.mall.common.constans.PageConfigContants;
@@ -37,7 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import javax.annotation.Resource;
+
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
@@ -58,8 +58,6 @@ public class WalletTurningServiceImpl implements WalletTurningService {
 
     @Autowired
     private UserDetailApi userDetailApi;
-    @Resource
-    private DozerHolder holder;
     @Autowired
     private Mapper dozerMapper;
     @Autowired
@@ -67,24 +65,31 @@ public class WalletTurningServiceImpl implements WalletTurningService {
     @Autowired
     UserAccountTransWaterApi userAccountTransWaterApi;
 
-
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 查询钱包收支明细列表
+     * @Param: [userWalletDetailDto]
+     * @return: PageVo<UserWalletDetailVo>
+     * @date 2019/9/20 13:49
+     */
     @Override
     public PageVo<UserWalletDetailVo> queryWalletTurningList(UserWalletDetailDto userWalletDetailDto) {
-        if(userWalletDetailDto.getFuid() == null){
+        if (userWalletDetailDto.getFuid() == null) {
             throw new BizException(MallExceptionCode.NO_USER);
         }
         Criteria<UserDetail, Object> criteria = Criteria.of(UserDetail.class)
-                .andEqualTo(UserDetail::getFuid,userWalletDetailDto.getFuid())
-                .andLeft().andNotEqualTo(UserDetail::getFdetailType,6)
-                .andNotEqualTo(UserDetail::getFdetailType,7)
-                .andNotEqualTo(UserDetail::getFdetailType,9)
-                .andNotEqualTo(UserDetail::getFdetailType,14)
+                .andEqualTo(UserDetail::getFuid, userWalletDetailDto.getFuid())
+                .andLeft().andNotEqualTo(UserDetail::getFdetailType, 6)
+                .andNotEqualTo(UserDetail::getFdetailType, 7)
+                .andNotEqualTo(UserDetail::getFdetailType, 9)
+                .andNotEqualTo(UserDetail::getFdetailType, 14)
                 .addRight().sortDesc(UserDetail::getFmodifyTime);
-        if(!StringUtils.isEmpty(userWalletDetailDto.getQueryType()) && userWalletDetailDto.getQueryType() == 0){
-            criteria.andGreaterThan(UserDetail::getFincomeAmount,0);
-            }
-        if(!StringUtils.isEmpty(userWalletDetailDto.getQueryType()) && userWalletDetailDto.getQueryType() == 1){
-            criteria.andGreaterThan(UserDetail::getFexpenseAmount,0);
+        if (!StringUtils.isEmpty(userWalletDetailDto.getQueryType()) && userWalletDetailDto.getQueryType() == 0) {
+            criteria.andGreaterThan(UserDetail::getFincomeAmount, 0);
+        }
+        if (!StringUtils.isEmpty(userWalletDetailDto.getQueryType()) && userWalletDetailDto.getQueryType() == 1) {
+            criteria.andGreaterThan(UserDetail::getFexpenseAmount, 0);
         }
         Result<Integer> totalResult = userDetailApi.countByCriteria(criteria);
         if (!totalResult.isSuccess()) {
@@ -93,36 +98,36 @@ public class WalletTurningServiceImpl implements WalletTurningService {
         }
         if (0 == totalResult.getData() || Objects.isNull(totalResult.getData())) {
             return new PageVo<>(0, userWalletDetailDto.getCurrentPage(), userWalletDetailDto.getPageSize(), Lists.newArrayList());
-         }
+        }
         //查询用户交易明细表信息
         Result<List<UserDetail>> result = userDetailApi.queryByCriteria(criteria.fields(
                 UserDetail::getFexpenseAmount
-                ,UserDetail::getFincomeAmount
-                ,UserDetail::getFbalance
-                ,UserDetail::getFdetailType
-                ,UserDetail::getFtypeId
-                ,UserDetail::getFmodifyTime
+                , UserDetail::getFincomeAmount
+                , UserDetail::getFbalance
+                , UserDetail::getFdetailType
+                , UserDetail::getFtypeId
+                , UserDetail::getFmodifyTime
         ).page(userWalletDetailDto.getCurrentPage(), userWalletDetailDto.getPageSize()));
         if (!result.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        if(CollectionUtils.isEmpty(result.getData())){
+        if (CollectionUtils.isEmpty(result.getData())) {
             return new PageVo<>(0, userWalletDetailDto.getCurrentPage(), userWalletDetailDto.getPageSize(), Lists.newArrayList());
         }
-        List<UserWalletDetailVo> list =  result.getData().stream().map(userDetail ->{
-            UserWalletDetailVo userWalletDetailVo = dozerMapper.map(userDetail,UserWalletDetailVo.class);
+        List<UserWalletDetailVo> list = result.getData().stream().map(userDetail -> {
+            UserWalletDetailVo userWalletDetailVo = dozerMapper.map(userDetail, UserWalletDetailVo.class);
             Date modifyTime = userWalletDetailVo.getFmodifyTime();
             String modifyTimeStr = DateUtil.DateToString(modifyTime, DateStyle.YYYY_MM);
             String newTime = modifyTimeStr + "-01 00:00:00";
             //得到当月第一天开始日期
-            Date  beginDate = DateUtil.StringToDate(newTime);
+            Date beginDate = DateUtil.StringToDate(newTime);
             int year = DateUtil.getYear(modifyTime);
             int month = DateUtil.getMonth(modifyTime) + 1;
             //得到当月最后一天结束日期
-            Date lastDay = DateUtil.getLastActualDayOfMonth(year,month);
+            Date lastDay = DateUtil.getLastActualDayOfMonth(year, month);
             String lastDayTime = DateUtil.DateToString(lastDay, DateStyle.YYYY_MM_DD);
             String lastDayTimeStr = lastDayTime + " 23:59:59";
-            Date  lastTime = DateUtil.StringToDate(lastDayTimeStr);
+            Date lastTime = DateUtil.StringToDate(lastDayTimeStr);
 
             UserWalletQueryDto userWalletQueryDto = new UserWalletQueryDto();
             userWalletQueryDto.setFuid(userWalletDetailDto.getFuid());
@@ -142,47 +147,46 @@ public class WalletTurningServiceImpl implements WalletTurningService {
             userWalletDetailVo.setFexpenseAmount(expenseAmount);
             //封装提现方式
             Integer detailType = userDetail.getFdetailType();
-            if(detailType == 8){
+            if (detailType == 8) {
                 String typeId = userDetail.getFtypeId();
                 Criteria<UserAccountTransWater, Object> UserAccountTransWaterCriteria = Criteria.of(UserAccountTransWater.class);
-                    if(!StringUtils.isEmpty(typeId)){
-                        UserAccountTransWaterCriteria.andEqualTo(UserAccountTransWater::getFtransId,typeId);
-                    }
+                if (!StringUtils.isEmpty(typeId)) {
+                    UserAccountTransWaterCriteria.andEqualTo(UserAccountTransWater::getFtransId, typeId);
+                }
                 Result<UserAccountTransWater> userAccountTransWater = userAccountTransWaterApi.queryOneByCriteria(UserAccountTransWaterCriteria);
                 userWalletDetailVo.setWithdrawType(userAccountTransWater.getData().getFwithdrawType());
             }
             return userWalletDetailVo;
-                }).collect(Collectors.toList());
-        //List<UserWalletDetailVo> list = holder.convert(result.getData(),UserWalletDetailVo.class);
-        return pageUtils.convert(totalResult.getData(),list,UserWalletDetailVo.class,userWalletDetailDto);
+        }).collect(Collectors.toList());
+        return pageUtils.convert(totalResult.getData(), list, UserWalletDetailVo.class, userWalletDetailDto);
     }
 
 
     public UserWalletDetailTotalVo queryWalletTotal(UserWalletQueryDto userWalletQueryDto) {
-        if(userWalletQueryDto.getFuid() == null){
+        if (userWalletQueryDto.getFuid() == null) {
             throw new BizException(MallExceptionCode.NO_USER);
         }
         Criteria<UserDetail, Object> criteria = Criteria.of(UserDetail.class)
-                .andBetween(UserDetail::getFmodifyTime,userWalletQueryDto.getStartTime(),userWalletQueryDto.getEndTime())
-                .andEqualTo(UserDetail::getFuid,userWalletQueryDto.getFuid())
-                .andLeft().andNotEqualTo(UserDetail::getFdetailType,6)
-                .andNotEqualTo(UserDetail::getFdetailType,7)
-                .andNotEqualTo(UserDetail::getFdetailType,9)
-                .andNotEqualTo(UserDetail::getFdetailType,14)
+                .andBetween(UserDetail::getFmodifyTime, userWalletQueryDto.getStartTime(), userWalletQueryDto.getEndTime())
+                .andEqualTo(UserDetail::getFuid, userWalletQueryDto.getFuid())
+                .andLeft().andNotEqualTo(UserDetail::getFdetailType, 6)
+                .andNotEqualTo(UserDetail::getFdetailType, 7)
+                .andNotEqualTo(UserDetail::getFdetailType, 9)
+                .andNotEqualTo(UserDetail::getFdetailType, 14)
                 .addRight().sortDesc(UserDetail::getFmodifyTime);
         Result<List<UserDetail>> result = userDetailApi.queryByCriteria(criteria.fields(
                 UserDetail::getFexpenseAmount
-                ,UserDetail::getFincomeAmount
+                , UserDetail::getFincomeAmount
         ));
         if (!result.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        if(CollectionUtils.isEmpty(result.getData())){
+        if (CollectionUtils.isEmpty(result.getData())) {
             return null;
         }
         Long incomeAmountTotal = 0L;
         Long expenseAmountTotal = 0L;
-        for (UserDetail userDetail:result.getData()) {
+        for (UserDetail userDetail : result.getData()) {
             Long incomeAmount = userDetail.getFincomeAmount();
             Long expenseAmount = userDetail.getFexpenseAmount();
             incomeAmountTotal += incomeAmount;

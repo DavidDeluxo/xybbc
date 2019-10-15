@@ -1,14 +1,11 @@
 package com.xingyun.bbc.mall.service;
 
-import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mall.model.dto.CategoryDto;
+
 import com.xingyun.bbc.mall.model.dto.UserWalletDetailDto;
-import com.xingyun.bbc.mall.model.vo.IndexSkuGoodsVo;
-import com.xingyun.bbc.mall.model.vo.PageConfigVo;
+
 import com.xingyun.bbc.mall.model.vo.PageVo;
 import com.xingyun.bbc.mall.model.vo.UserWalletDetailVo;
 
-import java.util.List;
 
 /**
  * @author lll
@@ -19,6 +16,13 @@ import java.util.List;
 public interface WalletTurningService {
 
 
-
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 查询钱包收支明细列表
+     * @Param: [userWalletDetailDto]
+     * @return: PageVo<UserWalletDetailVo>
+     * @date 2019/9/20 13:49
+     */
     PageVo<UserWalletDetailVo> queryWalletTurningList(UserWalletDetailDto userWalletDetailDto);
 }

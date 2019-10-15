@@ -4,29 +4,29 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.util.Date;
 
 /**
  * 用户交易明细表
+ *
  * @author:admin
  */
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 @Data
-public class UserWalletDetailDto extends PageDto{
+public class UserWalletDetailDto extends PageDto {
 
 
-    /** 用户ID */
+    /**
+     * 用户ID
+     */
     @ApiModelProperty("用户ID")
     private Long fuid;
 
 
-
-    /** 0:收入,1:支出 */
+    /**
+     * 0:收入,1:支出
+     */
     @ApiModelProperty("0:收入,1:支出")
     private Integer queryType;
 
 
-
-
-	
 }

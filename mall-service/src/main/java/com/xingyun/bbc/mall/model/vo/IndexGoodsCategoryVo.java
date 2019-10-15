@@ -19,5 +19,4 @@ public class IndexGoodsCategoryVo {
     private String fcategoryDesc;
 
 
-
 }
