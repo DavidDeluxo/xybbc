@@ -477,7 +477,7 @@ public class IndexServiceImpl implements IndexService {
         if (!goodsResultAll.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
-        if (!org.springframework.util.CollectionUtils.isEmpty(goodsResultAll.getData())) {
+        if (CollectionUtils.isNotEmpty(goodsResultAll.getData())) {
             List<Goods> goodsListAll = goodsResultAll.getData();
             List<Long> categoryListFiltered = goodsListAll.stream().map(Goods::getFcategoryId1).distinct().collect(Collectors.toList());
             Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(
