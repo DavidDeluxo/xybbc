@@ -102,8 +102,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             Result<GoodsSku> skuPic = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
                     .andEqualTo(GoodsSku::getFskuId, fskuId)
                     .fields(GoodsSku::getFskuThumbImage));
-            if (StringUtils.isNotBlank(skuPic.getData().getFskuThumbImage())) {
-                result.add(skuPic.getData().getFskuThumbImage());
+            if (null != skuPic.getData()) {
+                if (StringUtils.isNotBlank(skuPic.getData().getFskuThumbImage())) {
+                    result.add(skuPic.getData().getFskuThumbImage());
+                }
             }
         }
         //查询spu图片
