@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
@@ -367,11 +368,11 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                             freightDto.setFregionId(defautDelivery.getFdeliveryCityId());
                             freightDto.setFbatchId(fskuBatch.getFsupplierSkuBatchId());
                             freightDto.setFbuyNum(goodsDetailDto.getFnum());
+                            logger.info("查詢運費入參{}" , JSON.toJSONString(freightDto));
                             Result<BigDecimal> bigDecimalResult = freightApi.queryFreight(freightDto);
-                            if (!bigDecimalResult.isSuccess()) {
-                                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+                            if (bigDecimalResult.isSuccess() && null != bigDecimalResult.getData()) {
+                                freightPrice = bigDecimalResult.getData().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP);
                             }
-                            freightPrice = bigDecimalResult.getData().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP);
                         }
                         priceResult.setFdeliveryAddr(defautDelivery.getFdeliveryAddr() == null ? "" : defautDelivery.getFdeliveryAddr());
                         priceResult.setFdeliveryProvinceName(defautDelivery.getFdeliveryProvinceName() == null ? "" : defautDelivery.getFdeliveryProvinceName());
