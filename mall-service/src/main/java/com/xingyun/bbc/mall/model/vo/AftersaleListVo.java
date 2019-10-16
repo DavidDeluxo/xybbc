@@ -37,6 +37,6 @@ public class AftersaleListVo implements Serializable {
     @ApiModelProperty(value = "售后申请数量")
     private Integer faftersaleNum;
 
-    @ApiModelProperty(value = "售后状态1待客服审核 2待采购审核 3待仓库审核 4待财务审核 5已拒绝 6待退货 7待退款 8已成功 9已撤销")
+    @ApiModelProperty(value = "售后状态，1待客审、2待采审、3待商审、4待财审、6待退货、7待退款、8已成功 9已撤销、10客服拒绝、11采购拒绝、12供应商拒绝、13财务拒绝、14采购拒绝收货、15逾期回寄")
     private Integer faftersaleStatus;
 }
