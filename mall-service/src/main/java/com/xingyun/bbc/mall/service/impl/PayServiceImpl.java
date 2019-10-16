@@ -245,7 +245,7 @@ public class PayServiceImpl implements PayService {
 		if (ThirdPayUtil.PAY_SCENE_RECHARGE.equals(payScene)) {//充值
 			flag = rechargeService.newUpdateAfterRechargeSuccess(thirdPayInfo);
 			if (flag > 0) {
-				logger.info("------------------第三方支付回调充值返回成功："+thirdPayInfo);
+				logger.info("------------------第三方支付回调充值返回成功："+thirdPayUtil.thirdPayNotifySuccess(response));
 				return Result.success();
 			}else{
 				logger.info("------------------第三方支付回调充值返回失败："+thirdPayInfo);
@@ -263,9 +263,15 @@ public class PayServiceImpl implements PayService {
 			logger.info("------------------第三方支付回调请求订单中心参数：forderId="+payDto.getForderPaymentId()+",forderThirdpayType="+payDto.getForderThirdpayType()
 				+",payAmount="+payDto.getPayAmount()+",payTime="+payDto.getPayName()+",thirdTradeNo="+payDto.getThirdTradeNo()+",payAccount="+payDto.getPayAccount()
 				+",payName="+payDto.getPayName());
-			Result<ThirdPayVo> x=orderPayApi.thirdPay(payDto);
-			logger.info("------------------第三方支付回调请求订单中心返回："+x.getData().getCode());
-			return result;
+			Result<ThirdPayVo> thirdPay=orderPayApi.thirdPay(payDto);
+			logger.info("------------------第三方支付回调请求订单中心返回："+thirdPay.getData().getCode());
+			
+			if("200".equals(thirdPay.getData().getCode().toString()))//支付成功
+			{
+				logger.info("------------------第三方支付回调请求订单中心返回："+thirdPayUtil.thirdPayNotifySuccess(response));
+			}
+			
+			return thirdPay;
 		}
 		return Result.failure(MallExceptionCode.THIRD_PAY_NOTIFY_FAIL);
 	
