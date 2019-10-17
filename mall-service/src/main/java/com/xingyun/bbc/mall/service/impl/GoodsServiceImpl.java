@@ -193,14 +193,17 @@ public class GoodsServiceImpl implements GoodsService {
                 goodIds = goodsResult.getData().stream().map(Goods::getFgoodsId).collect(Collectors.toList());
             }
             // 品牌sku商品总数
-            Result<Integer> goodsCountResult = goodsSkuApi.countByCriteria(Criteria.of(GoodsSku.class)
-                    .andIn(GoodsSku::getFgoodsId, goodIds)
-                    .andEqualTo(GoodsSku::getFskuStatus, 1)
-                    .andEqualTo(GoodsSku::getFisDelete, 0));
-            if (!goodsCountResult.isSuccess()) {
-                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            brandPageVo.setFgoodsTotalCount(0);
+            if(CollectionUtils.isNotEmpty(goodIds)){
+                Result<Integer> goodsCountResult = goodsSkuApi.countByCriteria(Criteria.of(GoodsSku.class)
+                        .andIn(GoodsSku::getFgoodsId, goodIds)
+                        .andEqualTo(GoodsSku::getFskuStatus, 1)
+                        .andEqualTo(GoodsSku::getFisDelete, 0));
+                if (!goodsCountResult.isSuccess()) {
+                    throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+                }
+                brandPageVo.setFgoodsTotalCount(goodsCountResult.getData());
             }
-            brandPageVo.setFgoodsTotalCount(goodsCountResult.getData());
         }
         return Result.success(brandPageVo);
     }
