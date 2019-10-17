@@ -8,6 +8,7 @@ import com.xingyun.bbc.mall.base.utils.MD5Util;
 import com.xingyun.bbc.mall.base.utils.PriceUtil;
 import com.xingyun.bbc.mall.base.utils.ThirdPayUtil;
 import com.xingyun.bbc.mall.base.utils.ThirdPayUtilFactory;
+import com.xingyun.bbc.mall.base.utils.TimeAddUtil;
 import com.xingyun.bbc.mall.base.utils.WeixinPayUtil;
 import com.xingyun.bbc.mall.common.constans.PayConstants;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
@@ -24,13 +25,15 @@ import com.xingyun.bbc.pay.api.PayChannelApi;
 import com.xingyun.bbc.pay.model.dto.ThirdPayDto;
 import com.xingyun.bbc.pay.model.dto.ThirdPayResponseDto;
 import com.xingyun.bbc.pay.model.vo.PayInfoVo;
-
 import io.seata.spring.annotation.GlobalTransactional;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.google.common.base.Strings;
+import com.xingyun.bbc.core.operate.api.OrderConfigApi;
+import com.xingyun.bbc.core.operate.po.OrderConfig;
 import com.xingyun.bbc.core.order.api.OrderPaymentApi;
 import com.xingyun.bbc.core.order.po.OrderPayment;
+import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserAccountApi;
 import com.xingyun.bbc.core.user.api.UserAccountTransApi;
 import com.xingyun.bbc.core.user.api.UserAccountTransWaterApi;
@@ -43,11 +46,10 @@ import com.xingyun.bbc.core.utils.Result;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -67,6 +69,8 @@ public class PayServiceImpl implements PayService {
 
 
 	private static Logger logger = LoggerFactory.getLogger(PayServiceImpl.class);
+	
+	private static final Long DEFAULT_LOCK_TIME = 2l*60l;
 
 	@Autowired
 	private PayChannelApi payApi;
@@ -88,6 +92,9 @@ public class PayServiceImpl implements PayService {
 	
 	@Autowired
 	private UserAccountTransWaterApi userAccountTransWaterApi;
+	
+	@Autowired
+	private OrderConfigApi orderConfigApi;
     
     @Autowired
     private DozerHolder dozerHolder;
@@ -238,7 +245,7 @@ public class PayServiceImpl implements PayService {
 		if (ThirdPayUtil.PAY_SCENE_RECHARGE.equals(payScene)) {//充值
 			flag = rechargeService.newUpdateAfterRechargeSuccess(thirdPayInfo);
 			if (flag > 0) {
-				logger.info("------------------第三方支付回调充值返回成功："+thirdPayInfo);
+				logger.info("------------------第三方支付回调充值返回成功："+thirdPayUtil.thirdPayNotifySuccess(response));
 				return Result.success();
 			}else{
 				logger.info("------------------第三方支付回调充值返回失败："+thirdPayInfo);
@@ -256,9 +263,15 @@ public class PayServiceImpl implements PayService {
 			logger.info("------------------第三方支付回调请求订单中心参数：forderId="+payDto.getForderPaymentId()+",forderThirdpayType="+payDto.getForderThirdpayType()
 				+",payAmount="+payDto.getPayAmount()+",payTime="+payDto.getPayName()+",thirdTradeNo="+payDto.getThirdTradeNo()+",payAccount="+payDto.getPayAccount()
 				+",payName="+payDto.getPayName());
-			Result<ThirdPayVo> x=orderPayApi.thirdPay(payDto);
-			logger.info("------------------第三方支付回调请求订单中心返回："+x.getData().getCode());
-			return result;
+			Result<ThirdPayVo> thirdPay=orderPayApi.thirdPay(payDto);
+			logger.info("------------------第三方支付回调请求订单中心返回："+thirdPay.getData().getCode());
+			
+			if("200".equals(thirdPay.getData().getCode().toString())||"1030".equals(thirdPay.getData().getCode().toString()))// 200:处理成功,1030:订单已支付
+			{
+				logger.info("------------------第三方支付回调请求订单中心返回："+thirdPayUtil.thirdPayNotifySuccess(response));
+			}
+			
+			return thirdPay;
 		}
 		return Result.failure(MallExceptionCode.THIRD_PAY_NOTIFY_FAIL);
 	
@@ -449,11 +462,19 @@ public class PayServiceImpl implements PayService {
 				logger.info("支付订单号查询返回结果为空！ 订单号：" + dto.getForderId());
 				return Result.failure(MallExceptionCode.ORDER_NOT_EXIST);
 			}
-			Calendar cal = Calendar.getInstance();
-			Date d1 = orderPayment.getFcreateTime();
-			cal.setTime(d1);
-			cal.add(Calendar.MINUTE, 30);
-			lockTime= cal.getTime();
+			
+			
+			Long fminute = DEFAULT_LOCK_TIME;
+			
+			Criteria<OrderConfig, Object> orderConfigCriteria = Criteria.of(OrderConfig.class);
+			orderConfigCriteria.andEqualTo(OrderConfig::getForderConfigType, 0);// 0待支付订单限时支付
+			List<OrderConfig> orderConfigResult = orderConfigApi.queryByCriteria(orderConfigCriteria).getData();
+		        if(orderConfigResult.get(0)!=null)
+		        {
+		        	fminute=orderConfigResult.get(0).getFminute();
+		        }
+			
+		    lockTime = TimeAddUtil.addMinute(orderPayment.getFcreateTime(),fminute.intValue());
 			//orderFuid = String.valueOf(orderPayment.getFuid());
 			orderTotalAmount = orderPayment.getFtotalOrderAmount();
 			fbalancePayAmount=orderPayment.getFbalancePayAmount();

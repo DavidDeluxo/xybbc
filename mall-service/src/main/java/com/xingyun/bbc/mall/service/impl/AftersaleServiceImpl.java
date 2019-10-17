@@ -268,7 +268,11 @@ public class AftersaleServiceImpl implements AftersaleService {
         if (!aftersaleBackResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        AftersaleBackVo aftersaleBackVo = mapper.map(aftersaleBackResult.getData(), AftersaleBackVo.class);
+        AftersaleBackVo aftersaleBackVo = new AftersaleBackVo();
+        if (null == aftersaleBackResult.getData()) {
+            return Result.success(aftersaleBackVo);
+        }
+        aftersaleBackVo = mapper.map(aftersaleBackResult.getData(), AftersaleBackVo.class);
         //获取物流公司名称
         Result<ShippingCompany> shippingCompanyResult = shippingCompanyApi.queryOneByCriteria(Criteria.of(ShippingCompany.class)
                 .andEqualTo(ShippingCompany::getFshippingCompanyId, aftersaleBackVo.getFlogisticsCompanyId())

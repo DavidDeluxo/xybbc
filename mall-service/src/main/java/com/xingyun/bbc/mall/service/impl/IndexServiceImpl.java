@@ -93,7 +93,14 @@ public class IndexServiceImpl implements IndexService {
     @Autowired
     private PageUtils pageUtils;
 
-
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 查询首页配置
+     * @Param: [fposition]
+     * @return: Result<List < PageConfigVo>>
+     * @date 2019/9/20 13:49
+     */
     @Override
     public Result<List<PageConfigVo>> getConfig(Integer position) {
         List<PageConfigVo> pageConfigRedisResultList = this.selectPageConfigRedisList(position);
@@ -166,17 +173,17 @@ public class IndexServiceImpl implements IndexService {
             if (CollectionUtils.isNotEmpty(result)) {
                 List<PageConfig> pageConfigs = holder.convert(result, PageConfig.class);
                 List<PageConfigVo> pageConfigVos = holder.convert(pageConfigs, PageConfigVo.class);
-                pageTempList = pageConfigVos.stream().filter(index ->{
-                    if(index.getFisDelete() != null){
+                pageTempList = pageConfigVos.stream().filter(index -> {
+                    if (index.getFisDelete() != null) {
                         boolean a = index.getFisDelete() == 0;
                         boolean b = index.getFposition() == position;
-                        boolean c= a && b;
+                        boolean c = a && b;
                         return c;
-                    }else{
+                    } else {
                         boolean b = index.getFposition() == position;
                         return b;
                     }
-                   } ).collect(Collectors.toList());
+                }).collect(Collectors.toList());
                 if (position == 0 || position == 1) {
                     Collections.sort(pageTempList, new Comparator<PageConfigVo>() {
                         @Override
@@ -224,7 +231,14 @@ public class IndexServiceImpl implements IndexService {
         return null;
     }
 
-
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 查询供应商账户
+     * @Param: [supplierAccountQueryDto]
+     * @return: PageVo<SupplierAccountVo>
+     * @date 2019/9/20 13:49
+     */
     @Override
     public PageVo<IndexSkuGoodsVo> queryGoodsByCategoryId1(CategoryDto categoryDto) {
         //第一步，查询一级类目下所有所有商品包含的sku
@@ -337,7 +351,7 @@ public class IndexServiceImpl implements IndexService {
                         throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
                     }
                     //如果没有配置sku会员类型折扣则返回批次价格,有则返回会员类型价格
-                    if (CollectionUtils.isEmpty(skuUserDiscountResult.getData())){
+                    if (CollectionUtils.isEmpty(skuUserDiscountResult.getData())) {
                         List<GoodsSkuBatchPrice> salePriceList = new ArrayList<>();
                         for (SkuBatch skuBatch : skuBatchs.getData()) {
                             String supplierSkuBatchId = skuBatch.getFsupplierSkuBatchId();
@@ -448,6 +462,14 @@ public class IndexServiceImpl implements IndexService {
         return pageUtils.convert(totalResult.getData(), list, IndexSkuGoodsVo.class, categoryDto);
     }
 
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 查询商品一级类目列表
+     * @Param:
+     * @return: Result<List < GoodsCategoryVo>>
+     * @date 2019/9/20 13:49
+     */
     @Override
     public Result<List<GoodsCategoryVo>> queryGoodsCategoryList() {
         List<GoodsCategoryVo> categoryVoList = new LinkedList<>();
@@ -455,7 +477,7 @@ public class IndexServiceImpl implements IndexService {
         if (!goodsResultAll.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
-        if (!org.springframework.util.CollectionUtils.isEmpty(goodsResultAll.getData())) {
+        if (CollectionUtils.isNotEmpty(goodsResultAll.getData())) {
             List<Goods> goodsListAll = goodsResultAll.getData();
             List<Long> categoryListFiltered = goodsListAll.stream().map(Goods::getFcategoryId1).distinct().collect(Collectors.toList());
             Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(
@@ -481,7 +503,14 @@ public class IndexServiceImpl implements IndexService {
         return Result.success(categoryVoList);
     }
 
-
+    /**
+     * @author fxj
+     * @version V1.0
+     * @Description: 引导页启动页查询
+     * @Param: [ftype]
+     * @return: Result<List < GuidePageVo>>
+     * @date 2019/9/20 13:49
+     */
     @Override
     public Result<List<GuidePageVo>> selectGuidePageVos(Integer ftype) {
         try {

@@ -19,31 +19,31 @@ public class UserDeliveryAddDto implements Serializable{
 
     /** 省份ID */
     @ApiModelProperty("省份ID")
-    @NotNull
+    @NotNull(message = "省份不能为空")
     private Long fdeliveryProvinceId;
 
     /** 省份名称 */
     @ApiModelProperty("省份名称")
-    @NotNull
+    @NotNull(message = "省份名称不能为空")
     private String fdeliveryProvinceName;
 
     /** 市ID */
     @ApiModelProperty("市ID")
-    @NotNull
+    @NotNull(message = "市不能为空")
     private Long fdeliveryCityId;
 
     /** 市名称 */
     @ApiModelProperty("市名称")
-    @NotNull
+    @NotNull(message = "市名称不能为空")
     private String fdeliveryCityName;
 
     /** 区/镇ID */
     @ApiModelProperty("区/镇ID")
-    @NotNull
+    @NotNull(message = "区/镇不能为空")
     private Long fdeliveryAreaId;
 
     /** 区/镇名称 */
-    @NotNull
+    @NotNull(message = "区/镇名称不能为空")
     @ApiModelProperty("区/镇名称")
     private String fdeliveryAreaName;
 
@@ -53,17 +53,17 @@ public class UserDeliveryAddDto implements Serializable{
 
     /** 手机号码 */
     @ApiModelProperty("手机号码")
-    @NotNull
+    @NotNull(message = "手机号码不能为空")
     private String fdeliveryMobile;
 
     /** 姓名 */
     @ApiModelProperty("姓名")
-    @NotNull
+    @NotNull(message = "姓名不能为空")
     private String fdeliveryName;
 
     /** 详细地址 */
     @ApiModelProperty("详细地址")
-    @NotNull
+    @NotNull(message = "详细地址不能为空")
     private String fdeliveryAddr;
 
     /** 身份证号码 */

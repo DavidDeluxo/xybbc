@@ -57,60 +57,75 @@ public class UserAddressServiceImpl implements UserAddressService {
     @Autowired
     private PageUtils pageUtils;
 
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 查询用户收货地址列表
+     * @Param: [userDeliveryDto]
+     * @return: PageVo<UserDeliveryVo>
+     * @date 2019/9/20 13:49
+     */
     @Override
     public PageVo<UserDeliveryVo> getUserAddress(UserDeliveryDto userDeliveryDto) {
         Criteria<UserDelivery, Object> criteria = Criteria.of(UserDelivery.class);
-        if(!StringUtils.isEmpty(userDeliveryDto.getFuid())){
-            criteria.andEqualTo(UserDelivery::getFuid,userDeliveryDto.getFuid())
-                    .andEqualTo(UserDelivery::getFisDelete,0).sortDesc(UserDelivery::getFmodifyTime);
-            }
-        Result<Integer>  totalResult = userDeliveryApi.countByCriteria(criteria);
-        if(!totalResult.isSuccess()){
+        if (!StringUtils.isEmpty(userDeliveryDto.getFuid())) {
+            criteria.andEqualTo(UserDelivery::getFuid, userDeliveryDto.getFuid())
+                    .andEqualTo(UserDelivery::getFisDelete, 0).sortDesc(UserDelivery::getFmodifyTime);
+        }
+        Result<Integer> totalResult = userDeliveryApi.countByCriteria(criteria);
+        if (!totalResult.isSuccess()) {
             logger.info("查询收货地址信息失败");
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        if(0 == totalResult.getData() || Objects.isNull(totalResult.getData())){
-            return new  PageVo<>(0, userDeliveryDto.getCurrentPage(), userDeliveryDto.getPageSize(), Lists.newArrayList());
+        if (0 == totalResult.getData() || Objects.isNull(totalResult.getData())) {
+            return new PageVo<>(0, userDeliveryDto.getCurrentPage(), userDeliveryDto.getPageSize(), Lists.newArrayList());
         }
         Result<List<UserDelivery>> userDeliveryList = userDeliveryApi.queryByCriteria(criteria);
         if (!userDeliveryList.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        if(CollectionUtils.isEmpty(userDeliveryList.getData())){
-            return new  PageVo<>(0, userDeliveryDto.getCurrentPage(), userDeliveryDto.getPageSize(), Lists.newArrayList());
+        if (CollectionUtils.isEmpty(userDeliveryList.getData())) {
+            return new PageVo<>(0, userDeliveryDto.getCurrentPage(), userDeliveryDto.getPageSize(), Lists.newArrayList());
         }
-        List<UserDeliveryVo> userDeliveryVoList = dozerHolder.convert(userDeliveryList.getData(),UserDeliveryVo.class);
+        List<UserDeliveryVo> userDeliveryVoList = dozerHolder.convert(userDeliveryList.getData(), UserDeliveryVo.class);
         return pageUtils.convert(totalResult.getData(), userDeliveryVoList, UserDeliveryVo.class, userDeliveryDto);
-        }
-
-
-      public Result<List<UserDeliveryVo>> getUserAddressList(UserDeliveryDto userDeliveryDto) {
-        Criteria<UserDelivery, Object> criteria = Criteria.of(UserDelivery.class);
-        if(!StringUtils.isEmpty(userDeliveryDto.getFuid())){
-            criteria.andEqualTo(UserDelivery::getFuid,userDeliveryDto.getFuid()).andEqualTo(UserDelivery::getFisDelete,0);
-        }
-          Result<List<UserDelivery>> userDeliveryList = userDeliveryApi.queryByCriteria(criteria.page(userDeliveryDto.getCurrentPage(), userDeliveryDto.getPageSize()));
-          if (!userDeliveryList.isSuccess()) {
-              throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
-          }
-        List<UserDeliveryVo> userDeliveryVoList = dozerHolder.convert(userDeliveryList.getData(),UserDeliveryVo.class);
-        return Result.success(userDeliveryVoList);
     }
 
 
+    public Result<List<UserDeliveryVo>> getUserAddressList(UserDeliveryDto userDeliveryDto) {
+        Criteria<UserDelivery, Object> criteria = Criteria.of(UserDelivery.class);
+        if (!StringUtils.isEmpty(userDeliveryDto.getFuid())) {
+            criteria.andEqualTo(UserDelivery::getFuid, userDeliveryDto.getFuid()).andEqualTo(UserDelivery::getFisDelete, 0);
+        }
+        Result<List<UserDelivery>> userDeliveryList = userDeliveryApi.queryByCriteria(criteria.page(userDeliveryDto.getCurrentPage(), userDeliveryDto.getPageSize()));
+        if (!userDeliveryList.isSuccess()) {
+            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+        }
+        List<UserDeliveryVo> userDeliveryVoList = dozerHolder.convert(userDeliveryList.getData(), UserDeliveryVo.class);
+        return Result.success(userDeliveryVoList);
+    }
+
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 新增用户收货地址
+     * @Param: [userDeliveryDto]
+     * @return: Result
+     * @date 2019/9/20 13:49
+     */
     @Override
     public Result addUserAddress(UserDeliveryAddDto userDeliveryDto) {
         Integer isDefualt = userDeliveryDto.getFisDefualt();
         UserDeliveryDto userDelivery = new UserDeliveryDto();
         userDelivery.setFuid(userDeliveryDto.getFuid());
-        if(!StringUtils.isEmpty(isDefualt)){
-            if(isDefualt == 1){
-                List<UserDeliveryVo> userDeliveryVoList= this.getUserAddressList(userDelivery).getData();
+        if (!StringUtils.isEmpty(isDefualt)) {
+            if (isDefualt == 1) {
+                List<UserDeliveryVo> userDeliveryVoList = this.getUserAddressList(userDelivery).getData();
                 UserDelivery update = new UserDelivery();
-                if(CollectionUtils.isNotEmpty(userDeliveryVoList)){
-                    for (UserDeliveryVo userDeliveryVo:userDeliveryVoList) {
+                if (CollectionUtils.isNotEmpty(userDeliveryVoList)) {
+                    for (UserDeliveryVo userDeliveryVo : userDeliveryVoList) {
                         Integer defualt = userDeliveryVo.getFisDefualt();
-                        if(defualt == 1){
+                        if (defualt == 1) {
                             update.setFdeliveryUserId(userDeliveryVo.getFdeliveryUserId());
                             update.setFisDefualt(0);
                             Result<Integer> result = userDeliveryApi.updateNotNull(update);
@@ -122,7 +137,7 @@ public class UserAddressServiceImpl implements UserAddressService {
                 }
             }
         }
-        UserDelivery user= dozerMapper.map(userDeliveryDto, UserDelivery.class);
+        UserDelivery user = dozerMapper.map(userDeliveryDto, UserDelivery.class);
         Result<Integer> result = userDeliveryApi.create(user);
         if (!result.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
@@ -130,18 +145,26 @@ public class UserAddressServiceImpl implements UserAddressService {
         return Result.success();
     }
 
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 编辑用户收货地址
+     * @Param: [userDeliveryDto]
+     * @return: Result
+     * @date 2019/9/20 13:49
+     */
     @Override
     public Result modifyUserAddress(UserDeliveryUpdateDto userDeliveryDto) {
         Integer isDefualt = userDeliveryDto.getFisDefualt();
         UserDeliveryDto userDelivery = new UserDeliveryDto();
         userDelivery.setFuid(userDeliveryDto.getFuid());
-        if(!StringUtils.isEmpty(isDefualt)){
-            if(isDefualt == 1){
-                List<UserDeliveryVo> userDeliveryVoList= this.getUserAddressList(userDelivery).getData();
+        if (!StringUtils.isEmpty(isDefualt)) {
+            if (isDefualt == 1) {
+                List<UserDeliveryVo> userDeliveryVoList = this.getUserAddressList(userDelivery).getData();
                 UserDelivery update = new UserDelivery();
-                for (UserDeliveryVo userDeliveryVo:userDeliveryVoList) {
+                for (UserDeliveryVo userDeliveryVo : userDeliveryVoList) {
                     Integer defualt = userDeliveryVo.getFisDefualt();
-                    if(defualt == 1){
+                    if (defualt == 1) {
                         update.setFdeliveryUserId(userDeliveryVo.getFdeliveryUserId());
                         update.setFisDefualt(0);
                         Result<Integer> result = userDeliveryApi.updateNotNull(update);
@@ -159,11 +182,19 @@ public class UserAddressServiceImpl implements UserAddressService {
         return Result.success();
     }
 
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 删除用户收货地址
+     * @Param: [userDeliveryDto]
+     * @return: Result
+     * @date 2019/9/20 13:49
+     */
     @Override
     public Result deleteUserAddress(UserDeliveryDeleteDto userDeliveryDto) {
-        if(!StringUtils.isEmpty(userDeliveryDto.getFdeliveryUserIds())){
+        if (!StringUtils.isEmpty(userDeliveryDto.getFdeliveryUserIds())) {
             String[] fuidsStr = userDeliveryDto.getFdeliveryUserIds().split(",");
-            Integer[] fuids = (Integer[]) ConvertUtils.convert(fuidsStr,Integer.class);
+            Integer[] fuids = (Integer[]) ConvertUtils.convert(fuidsStr, Integer.class);
             List<Integer> fuidList = Arrays.asList(fuids);
             UserDelivery userDelivery = new UserDelivery();
             for (Integer item : fuidList) {
@@ -176,16 +207,23 @@ public class UserAddressServiceImpl implements UserAddressService {
             }
         }
         return Result.success();
-        }
+    }
 
-
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 收件地址查询区域列表
+     * @Param: [cityRegionDto]
+     * @return: Result<List < CityRegionVo>>
+     * @date 2019/9/20 13:49
+     */
     @Override
     public Result<List<CityRegionVo>> getCityRegionLis(CityRegionDto cityRegionDto) {
         Criteria<CityRegion, Object> criteria = Criteria.of(CityRegion.class);
-        if (null != cityRegionDto.getFRegionType()){
+        if (null != cityRegionDto.getFRegionType()) {
             criteria.andEqualTo(CityRegion::getFregionType, cityRegionDto.getFRegionType());
         }
-        if (null != cityRegionDto.getFpRegionId()){
+        if (null != cityRegionDto.getFpRegionId()) {
             criteria.andEqualTo(CityRegion::getFpRegionId, cityRegionDto.getFpRegionId());
         }
         criteria.fields(CityRegion::getFregionId, CityRegion::getFcrName);

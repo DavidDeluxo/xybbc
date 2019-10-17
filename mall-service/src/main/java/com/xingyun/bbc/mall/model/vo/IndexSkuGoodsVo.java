@@ -3,7 +3,7 @@ package com.xingyun.bbc.mall.model.vo;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-import javax.persistence.Column;
+
 import java.math.BigDecimal;
 
 /**
@@ -13,15 +13,15 @@ import java.math.BigDecimal;
 public class IndexSkuGoodsVo {
 
 
-    /** sku名称 */
+    /**
+     * sku名称
+     */
     @ApiModelProperty("sku名称")
     private String fskuName;
 
-   /* @ApiModelProperty("缩略图地址")
-    private String fimgUrl;*/
-
-
-    /** sku主图 */
+    /**
+     * sku主图
+     */
     @ApiModelProperty("sku主图")
     private String fskuThumbImage;
 
@@ -29,7 +29,7 @@ public class IndexSkuGoodsVo {
     @ApiModelProperty("价格")
     private BigDecimal fbatchSellPrice;
 
-     @ApiModelProperty("销量")
+    @ApiModelProperty("销量")
     private Long fsellNum;
 
     @ApiModelProperty("skuId")
@@ -38,17 +38,17 @@ public class IndexSkuGoodsVo {
     @ApiModelProperty("goodsId")
     private Long fgoodsId;
 
-    /** 关联批次号 */
+    /**
+     * 关联批次号
+     */
     @ApiModelProperty("关联批次号")
     private String fsupplierSkuBatchId;
 
-    /** 关联包装规格Id */
+    /**
+     * 关联包装规格Id
+     */
     @ApiModelProperty("关联包装规格Id")
     private Long fbatchPackageId;
 
-
-
-   /* @ApiModelProperty("销量")
-    private String fsellNum;*/
 
 }

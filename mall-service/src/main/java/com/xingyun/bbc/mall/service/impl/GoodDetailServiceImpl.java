@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
@@ -102,8 +103,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             Result<GoodsSku> skuPic = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
                     .andEqualTo(GoodsSku::getFskuId, fskuId)
                     .fields(GoodsSku::getFskuThumbImage));
-            if (StringUtils.isNotBlank(skuPic.getData().getFskuThumbImage())) {
-                result.add(skuPic.getData().getFskuThumbImage());
+            if (null != skuPic.getData()) {
+                if (StringUtils.isNotBlank(skuPic.getData().getFskuThumbImage())) {
+                    result.add(skuPic.getData().getFskuThumbImage());
+                }
             }
         }
         //查询spu图片
@@ -125,8 +128,11 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         //获取商品spu基本信息
         Result<Goods> goodsBasic = goodsApi.queryById(fgoodsId);
         if (!goodsBasic.isSuccess()) {
-            logger.info("商品spu id {}获取商品基本信息失败", fgoodsId);
+            logger.info("商品spu id {}获取商品基本信息调用远程服务失败", fgoodsId);
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (null == goodsBasic.getData()) {
+            return Result.success(null);
         }
         GoodsVo goodsVo = dozerMapper.map(goodsBasic.getData(), GoodsVo.class);
 
@@ -362,11 +368,11 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                             freightDto.setFregionId(defautDelivery.getFdeliveryCityId());
                             freightDto.setFbatchId(fskuBatch.getFsupplierSkuBatchId());
                             freightDto.setFbuyNum(goodsDetailDto.getFnum());
+                            logger.info("查詢運費入參{}" , JSON.toJSONString(freightDto));
                             Result<BigDecimal> bigDecimalResult = freightApi.queryFreight(freightDto);
-                            if (!bigDecimalResult.isSuccess()) {
-                                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+                            if (bigDecimalResult.isSuccess() && null != bigDecimalResult.getData()) {
+                                freightPrice = bigDecimalResult.getData().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP);
                             }
-                            freightPrice = bigDecimalResult.getData().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP);
                         }
                         priceResult.setFdeliveryAddr(defautDelivery.getFdeliveryAddr() == null ? "" : defautDelivery.getFdeliveryAddr());
                         priceResult.setFdeliveryProvinceName(defautDelivery.getFdeliveryProvinceName() == null ? "" : defautDelivery.getFdeliveryProvinceName());
@@ -440,41 +446,52 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     //获取批次的库存和销量
     private GoodStockSellVo getBatchStockSell(GoodsDetailDto goodsDetailDto) {
-        SkuBatch stockSellResult = skuBatchApi.queryOneByCriteria(Criteria.of(SkuBatch.class)
+        GoodStockSellVo result = new GoodStockSellVo();
+        result.setFsellNum(0l);
+        result.setFstockRemianNum(0l);
+        Result<SkuBatch> stockSell = skuBatchApi.queryOneByCriteria(Criteria.of(SkuBatch.class)
                 .andEqualTo(SkuBatch::getFsupplierSkuBatchId, goodsDetailDto.getFsupplierSkuBatchId())
-                .fields(SkuBatch::getFsellNum, SkuBatch::getFstockRemianNum)).getData();
-        GoodStockSellVo goodStockSellVo = new GoodStockSellVo();
-        if (null == stockSellResult) {
+                .fields(SkuBatch::getFsellNum, SkuBatch::getFstockRemianNum));
+        if (!stockSell.isSuccess()) {
             logger.info("商品fsupplierSkuBatchId {}获取该批次库存和销量失败", goodsDetailDto.getFsupplierSkuBatchId());
-            throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        if (null != stockSellResult.getFsellNum()) {
-            goodStockSellVo.setFsellNum(stockSellResult.getFsellNum());
+        SkuBatch stockSellResult = stockSell.getData();
+        if (null != stockSellResult) {
+            if (null != stockSellResult.getFsellNum()) {
+                result.setFsellNum(stockSellResult.getFsellNum());
+            }
+            if (null != stockSellResult.getFstockRemianNum()) {
+                result.setFstockRemianNum(stockSellResult.getFstockRemianNum());
+            }
         }
-        if (null != stockSellResult.getFstockRemianNum()) {
-            goodStockSellVo.setFstockRemianNum(stockSellResult.getFstockRemianNum());
-        }
-        return goodStockSellVo;
+        return result;
     }
 
     //获取sku的库存和销量
     private GoodStockSellVo getSkuStockSell(GoodsDetailDto goodsDetailDto) {
-        List<SkuBatch> skuStockSellResult = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
-                .andEqualTo(SkuBatch::getFskuId, goodsDetailDto.getFskuId())
-                .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
-                .fields(SkuBatch::getFsupplierSkuBatchId)).getData();
         GoodStockSellVo result = new GoodStockSellVo();
         result.setFsellNum(0l);
         result.setFstockRemianNum(0l);
-        for (SkuBatch skuBatch : skuStockSellResult) {
-            GoodsDetailDto param = new GoodsDetailDto();
-            param.setFsupplierSkuBatchId(skuBatch.getFsupplierSkuBatchId());
-            GoodStockSellVo batchStockSell = this.getBatchStockSell(param);
-            if (null != batchStockSell.getFsellNum()) {
-                result.setFsellNum(result.getFsellNum() + batchStockSell.getFsellNum());
-            }
-            if (null != batchStockSell.getFstockRemianNum()) {
-                result.setFstockRemianNum(result.getFstockRemianNum() + batchStockSell.getFstockRemianNum());
+        Result<List<SkuBatch>> skuStockSell = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
+                .andEqualTo(SkuBatch::getFskuId, goodsDetailDto.getFskuId())
+                .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
+                .fields(SkuBatch::getFsupplierSkuBatchId));
+        if (!skuStockSell.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        List<SkuBatch> skuStockSellResult = skuStockSell.getData();
+        if (!CollectionUtils.isEmpty(skuStockSellResult)) {
+            for (SkuBatch skuBatch : skuStockSellResult) {
+                GoodsDetailDto param = new GoodsDetailDto();
+                param.setFsupplierSkuBatchId(skuBatch.getFsupplierSkuBatchId());
+                GoodStockSellVo batchStockSell = this.getBatchStockSell(param);
+                if (null != batchStockSell.getFsellNum()) {
+                    result.setFsellNum(result.getFsellNum() + batchStockSell.getFsellNum());
+                }
+                if (null != batchStockSell.getFstockRemianNum()) {
+                    result.setFstockRemianNum(result.getFstockRemianNum() + batchStockSell.getFstockRemianNum());
+                }
             }
         }
         return result;
@@ -482,23 +499,29 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     //获取spu的库存和销量
     private GoodStockSellVo getSpuStockSell(GoodsDetailDto goodsDetailDto) {
-        List<GoodsSku> spuStockSellResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
-                .andEqualTo(GoodsSku::getFgoodsId, goodsDetailDto.getFgoodsId())
-                .andEqualTo(GoodsSku::getFskuStatus, GoodsSkuEnums.Status.OnShelves.getValue())
-                .andEqualTo(GoodsSku::getFisDelete, "0")
-                .fields(GoodsSku::getFskuId)).getData();
         GoodStockSellVo result = new GoodStockSellVo();
         result.setFsellNum(0l);
         result.setFstockRemianNum(0l);
-        for (GoodsSku goodsSku : spuStockSellResult) {
-            GoodsDetailDto param = new GoodsDetailDto();
-            param.setFskuId(goodsSku.getFskuId());
-            GoodStockSellVo batchStockSell = this.getSkuStockSell(param);
-            if (null != batchStockSell.getFsellNum()) {
-                result.setFsellNum(result.getFsellNum() + batchStockSell.getFsellNum());
-            }
-            if (null != batchStockSell.getFstockRemianNum()) {
-                result.setFstockRemianNum(result.getFstockRemianNum() + batchStockSell.getFstockRemianNum());
+        Result<List<GoodsSku>> spuStockSell = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
+                .andEqualTo(GoodsSku::getFgoodsId, goodsDetailDto.getFgoodsId())
+                .andEqualTo(GoodsSku::getFskuStatus, GoodsSkuEnums.Status.OnShelves.getValue())
+                .andEqualTo(GoodsSku::getFisDelete, "0")
+                .fields(GoodsSku::getFskuId));
+        if (!spuStockSell.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        List<GoodsSku> spuStockSellResult = spuStockSell.getData();
+        if (!CollectionUtils.isEmpty(spuStockSellResult)) {
+            for (GoodsSku goodsSku : spuStockSellResult) {
+                GoodsDetailDto param = new GoodsDetailDto();
+                param.setFskuId(goodsSku.getFskuId());
+                GoodStockSellVo batchStockSell = this.getSkuStockSell(param);
+                if (null != batchStockSell.getFsellNum()) {
+                    result.setFsellNum(result.getFsellNum() + batchStockSell.getFsellNum());
+                }
+                if (null != batchStockSell.getFstockRemianNum()) {
+                    result.setFstockRemianNum(result.getFstockRemianNum() + batchStockSell.getFstockRemianNum());
+                }
             }
         }
         return result;
@@ -573,30 +596,35 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         GoodsPriceVo priceVo = new GoodsPriceVo();
         priceVo.setPriceStart(BigDecimal.ZERO);
         priceVo.setPriceEnd(BigDecimal.ZERO);
-        List<SkuBatchPackage> batchResult = skuBatchPackageApi.queryByCriteria(Criteria.of(SkuBatchPackage.class)
+        Result<List<SkuBatchPackage>> batch = skuBatchPackageApi.queryByCriteria(Criteria.of(SkuBatchPackage.class)
                 .andEqualTo(SkuBatchPackage::getFsupplierSkuBatchId, goodsDetailDto.getFsupplierSkuBatchId())
-                .fields(SkuBatchPackage::getFbatchPackageId)).getData();
-
-        for (int i = 0; i < batchResult.size(); i++) {
-            GoodsDetailDto param = new GoodsDetailDto();
-            param.setFuid(goodsDetailDto.getFuid());
-            param.setFskuId(goodsDetailDto.getFskuId());
-            param.setFbatchPackageId(batchResult.get(i).getFbatchPackageId());
-            Long packagePrice = this.getPackagePrice(param);
-            if (i == 0) {
-                if (null != packagePrice) {
-                    priceVo.setPriceStart(new BigDecimal(packagePrice));
-                    priceVo.setPriceEnd(new BigDecimal(packagePrice));
-                }
-            } else {
-                if (null != packagePrice) {
-                    if (packagePrice < priceVo.getPriceStart().longValue()) {
+                .fields(SkuBatchPackage::getFbatchPackageId));
+        if (!batch.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        List<SkuBatchPackage> batchResult = batch.getData();
+        if (!CollectionUtils.isEmpty(batchResult)) {
+            for (int i = 0; i < batchResult.size(); i++) {
+                GoodsDetailDto param = new GoodsDetailDto();
+                param.setFuid(goodsDetailDto.getFuid());
+                param.setFskuId(goodsDetailDto.getFskuId());
+                param.setFbatchPackageId(batchResult.get(i).getFbatchPackageId());
+                Long packagePrice = this.getPackagePrice(param);
+                if (i == 0) {
+                    if (null != packagePrice) {
                         priceVo.setPriceStart(new BigDecimal(packagePrice));
-                    }
-                }
-                if (null != packagePrice) {
-                    if (packagePrice > priceVo.getPriceEnd().longValue()) {
                         priceVo.setPriceEnd(new BigDecimal(packagePrice));
+                    }
+                } else {
+                    if (null != packagePrice) {
+                        if (packagePrice < priceVo.getPriceStart().longValue()) {
+                            priceVo.setPriceStart(new BigDecimal(packagePrice));
+                        }
+                    }
+                    if (null != packagePrice) {
+                        if (packagePrice > priceVo.getPriceEnd().longValue()) {
+                            priceVo.setPriceEnd(new BigDecimal(packagePrice));
+                        }
                     }
                 }
             }
@@ -609,33 +637,38 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         GoodsPriceVo priceVo = new GoodsPriceVo();
         priceVo.setPriceStart(BigDecimal.ZERO);
         priceVo.setPriceEnd(BigDecimal.ZERO);
-        List<SkuBatch> skuBatcheResult = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
+        Result<List<SkuBatch>> skuBatche = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
                 .andEqualTo(SkuBatch::getFskuId, goodsDetailDto.getFskuId())
                 .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
-                .fields(SkuBatch::getFsupplierSkuBatchId)).getData();
-
-        for (int i = 0; i < skuBatcheResult.size(); i++) {
-            GoodsDetailDto param = new GoodsDetailDto();
-            param.setFuid(goodsDetailDto.getFuid());
-            param.setFskuId(goodsDetailDto.getFskuId());
-            param.setFsupplierSkuBatchId(skuBatcheResult.get(i).getFsupplierSkuBatchId());
-            GoodsPriceVo batchPrice = this.getBatchPrice(param);
-            if (i == 0) {
-                if (null != batchPrice.getPriceStart()) {
-                    priceVo.setPriceStart(batchPrice.getPriceStart());
-                }
-                if (null != batchPrice.getPriceEnd()) {
-                    priceVo.setPriceEnd(batchPrice.getPriceEnd());
-                }
-            } else {
-                if (null != batchPrice.getPriceStart()) {
-                    if (batchPrice.getPriceStart().longValue() < priceVo.getPriceStart().longValue()) {
+                .fields(SkuBatch::getFsupplierSkuBatchId));
+        if (!skuBatche.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        List<SkuBatch> skuBatcheResult = skuBatche.getData();
+        if (!CollectionUtils.isEmpty(skuBatcheResult)) {
+            for (int i = 0; i < skuBatcheResult.size(); i++) {
+                GoodsDetailDto param = new GoodsDetailDto();
+                param.setFuid(goodsDetailDto.getFuid());
+                param.setFskuId(goodsDetailDto.getFskuId());
+                param.setFsupplierSkuBatchId(skuBatcheResult.get(i).getFsupplierSkuBatchId());
+                GoodsPriceVo batchPrice = this.getBatchPrice(param);
+                if (i == 0) {
+                    if (null != batchPrice.getPriceStart()) {
                         priceVo.setPriceStart(batchPrice.getPriceStart());
                     }
-                }
-                if (null != batchPrice.getPriceEnd()) {
-                    if (batchPrice.getPriceEnd().longValue() > priceVo.getPriceEnd().longValue()) {
+                    if (null != batchPrice.getPriceEnd()) {
                         priceVo.setPriceEnd(batchPrice.getPriceEnd());
+                    }
+                } else {
+                    if (null != batchPrice.getPriceStart()) {
+                        if (batchPrice.getPriceStart().longValue() < priceVo.getPriceStart().longValue()) {
+                            priceVo.setPriceStart(batchPrice.getPriceStart());
+                        }
+                    }
+                    if (null != batchPrice.getPriceEnd()) {
+                        if (batchPrice.getPriceEnd().longValue() > priceVo.getPriceEnd().longValue()) {
+                            priceVo.setPriceEnd(batchPrice.getPriceEnd());
+                        }
                     }
                 }
             }
@@ -648,32 +681,38 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         GoodsPriceVo priceVo = new GoodsPriceVo();
         priceVo.setPriceStart(BigDecimal.ZERO);
         priceVo.setPriceEnd(BigDecimal.ZERO);
-        List<GoodsSku> skuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
+        Result<List<GoodsSku>> listResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
                 .andEqualTo(GoodsSku::getFgoodsId, goodsDetailDto.getFgoodsId())
                 .andEqualTo(GoodsSku::getFskuStatus, GoodsSkuEnums.Status.OnShelves.getValue())
                 .andEqualTo(GoodsSku::getFisDelete, "0")
-                .fields(GoodsSku::getFskuId)).getData();
-        for (int i = 0; i < skuResult.size(); i++) {
-            GoodsDetailDto param = new GoodsDetailDto();
-            param.setFuid(goodsDetailDto.getFuid());
-            param.setFskuId(skuResult.get(i).getFskuId());
-            GoodsPriceVo skuPrice = this.getSkuPrice(param);
-            if (i == 0) {
-                if (null != skuPrice.getPriceStart()) {
-                    priceVo.setPriceStart(skuPrice.getPriceStart());
-                }
-                if (null != skuPrice.getPriceEnd()) {
-                    priceVo.setPriceEnd(skuPrice.getPriceEnd());
-                }
-            } else {
-                if (null != skuPrice.getPriceStart()) {
-                    if (skuPrice.getPriceStart().longValue() < priceVo.getPriceStart().longValue()) {
+                .fields(GoodsSku::getFskuId));
+        if (!listResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        List<GoodsSku> skuResult = listResult.getData();
+        if (!CollectionUtils.isEmpty(skuResult)) {
+            for (int i = 0; i < skuResult.size(); i++) {
+                GoodsDetailDto param = new GoodsDetailDto();
+                param.setFuid(goodsDetailDto.getFuid());
+                param.setFskuId(skuResult.get(i).getFskuId());
+                GoodsPriceVo skuPrice = this.getSkuPrice(param);
+                if (i == 0) {
+                    if (null != skuPrice.getPriceStart()) {
                         priceVo.setPriceStart(skuPrice.getPriceStart());
                     }
-                }
-                if (null != skuPrice.getPriceEnd()) {
-                    if (skuPrice.getPriceEnd().longValue() > priceVo.getPriceEnd().longValue()) {
+                    if (null != skuPrice.getPriceEnd()) {
                         priceVo.setPriceEnd(skuPrice.getPriceEnd());
+                    }
+                } else {
+                    if (null != skuPrice.getPriceStart()) {
+                        if (skuPrice.getPriceStart().longValue() < priceVo.getPriceStart().longValue()) {
+                            priceVo.setPriceStart(skuPrice.getPriceStart());
+                        }
+                    }
+                    if (null != skuPrice.getPriceEnd()) {
+                        if (skuPrice.getPriceEnd().longValue() > priceVo.getPriceEnd().longValue()) {
+                            priceVo.setPriceEnd(skuPrice.getPriceEnd());
+                        }
                     }
                 }
             }

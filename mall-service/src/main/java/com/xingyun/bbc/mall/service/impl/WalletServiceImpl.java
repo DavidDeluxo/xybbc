@@ -418,6 +418,7 @@ public class WalletServiceImpl implements WalletService {
             userAccountTrans.setFtransActualAmount(transActualAmount.longValue());
             userAccountTrans.setFtransPoundage(feeAmount.longValue());
             userAccountTrans.setFaccountHolder(withdrawDto.getName());
+            userAccountTrans.setFtransMethod(2);
 
             // 支付宝
             if (withdrawDto.getWay() == 1) {
