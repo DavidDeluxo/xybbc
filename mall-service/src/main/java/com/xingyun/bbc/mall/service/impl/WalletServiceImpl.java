@@ -430,7 +430,7 @@ public class WalletServiceImpl implements WalletService {
             //银行卡
             }else if (withdrawDto.getWay() == 2){
                 userAccountTrans.setFrechargeType(4);
-                userAccountTrans.setFtransStatus(1);
+                userAccountTrans.setFtransStatus(2);
                 userAccountTrans.setFwithdrawType(2);
                 userAccountTrans.setFwithdrawBank(withdrawDto.getBankName());
                 userAccountTrans.setFwithdrawAccount(withdrawDto.getCardNumber());
