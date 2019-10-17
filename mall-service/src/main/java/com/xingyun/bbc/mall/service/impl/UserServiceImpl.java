@@ -157,12 +157,12 @@ public class UserServiceImpl implements UserService {
                 return Result.failure(MallResultStatus.USER_SEND_SMS_FAILD);
             }
         }
-        if(xyRedisManager.get(dto.getIpAddress()) != null){
-            String ipNum = String.valueOf(xyRedisManager.get(dto.getIpAddress()));
-            if(Integer.valueOf(ipNum) > 20){
-                return Result.failure(MallResultStatus.USER_SEND_SMS_FAILD);
-            }
-        }
+//        if(xyRedisManager.get(dto.getIpAddress()) != null){
+//            String ipNum = String.valueOf(xyRedisManager.get(dto.getIpAddress()));
+//            if(Integer.valueOf(ipNum) > 20){
+//                return Result.failure(MallResultStatus.USER_SEND_SMS_FAILD);
+//            }
+//        }
         UserSecurityDto userSecurityDto = new UserSecurityDto();
         userSecurityDto.setFmobile(dto.getFmobile());
         userSecurityDto.setImei(dto.getImei());
@@ -246,12 +246,12 @@ public class UserServiceImpl implements UserService {
             xyRedisManager.set(dto.getImei(),1,secondsLeftToday);
         }
         //IP当天短信发送次数增加
-        if(xyRedisManager.get(dto.getIpAddress()) != null){
-            String ipNum = String.valueOf(xyRedisManager.get(dto.getIpAddress()));
-            xyRedisManager.set(dto.getIpAddress(),Integer.valueOf(ipNum)+1,secondsLeftToday);
-        }else{
-            xyRedisManager.set(dto.getIpAddress(),1,secondsLeftToday);
-        }
+//        if(xyRedisManager.get(dto.getIpAddress()) != null){
+//            String ipNum = String.valueOf(xyRedisManager.get(dto.getIpAddress()));
+//            xyRedisManager.set(dto.getIpAddress(),Integer.valueOf(ipNum)+1,secondsLeftToday);
+//        }else{
+//            xyRedisManager.set(dto.getIpAddress(),1,secondsLeftToday);
+//        }
 
     }
 
@@ -752,12 +752,12 @@ public class UserServiceImpl implements UserService {
                 code =  MallResultStatus.USER_SEND_SMS_FAILD.getCode();
             }
         }
-        if(xyRedisManager.get(dto.getIpAddress()) != null){
-            String ipNum = String.valueOf(xyRedisManager.get(dto.getIpAddress()));
-            if(Integer.valueOf(ipNum) > 20){
-                code =  MallResultStatus.USER_SEND_SMS_FAILD.getCode();
-            }
-        }
+//        if(xyRedisManager.get(dto.getIpAddress()) != null){
+//            String ipNum = String.valueOf(xyRedisManager.get(dto.getIpAddress()));
+//            if(Integer.valueOf(ipNum) > 20){
+//                code =  MallResultStatus.USER_SEND_SMS_FAILD.getCode();
+//            }
+//        }
         map.put("code",code);
         return map;
     }
