@@ -722,14 +722,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     //获取是否支持平台会员折扣 0 取 GoodsSkuBatchPrice 1 取 SkuBatchUserPrice
     private Integer getIsUserDiscount(Long skuId) {
-        Integer result = 0;
         Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
-                .andEqualTo(GoodsSku::getFgoodsId, skuId)
+                .andEqualTo(GoodsSku::getFskuId, skuId)
                 .fields(GoodsSku::getFisUserTypeDiscount));
-        if (goodsSkuResult.isSuccess() && null != goodsSkuResult.getData()) {
-            result = goodsSkuResult.getData().getFisUserTypeDiscount();
-        }
-        return result;
+        return goodsSkuResult.getData().getFisUserTypeDiscount();
     }
 
 //    @Override
