@@ -61,14 +61,14 @@ public class GoodsDetailController {
         Long xyid = Long.parseLong(request.getHeader("xyid"));
         goodsDetailDto.setFuid(xyid);
 //      goodsDetailDto.setFuid(1l);
-        logger.info("获取价格 ", JSON.toJSONString(goodsDetailDto));
+        logger.info("获取价格 {}", JSON.toJSONString(goodsDetailDto));
         return goodDetailService.getGoodPrice(goodsDetailDto);
     }
 
     @ApiOperation(value = "获取库存和销量", httpMethod = "POST")
     @PostMapping("/via/getGoodStockSell")
     public Result<GoodStockSellVo> getGoodStockSell(@RequestBody GoodsDetailDto goodsDetailDto){
-        logger.info("获取库存和销量 ", JSON.toJSONString(goodsDetailDto));
+        logger.info("获取库存和销量 {}", JSON.toJSONString(goodsDetailDto));
         return goodDetailService.getGoodStockSell(goodsDetailDto);
     }
 
