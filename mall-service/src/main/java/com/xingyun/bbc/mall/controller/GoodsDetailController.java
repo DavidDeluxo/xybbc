@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mall.controller;
 
 
+import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.model.dto.GoodsDetailDto;
 import com.xingyun.bbc.mall.model.vo.*;
@@ -29,24 +30,28 @@ public class GoodsDetailController {
     @ApiOperation(value = "获取商品主图", httpMethod = "GET")
     @GetMapping("/via/getGoodDetailPic")
     public Result<List<String>> getGoodDetailPic(@RequestParam Long fgoodsId, @RequestParam (required = false) Long fskuId){
+        logger.info("获取商品主图入参 fgoodsId {} fskuId {}", fgoodsId, fskuId);
         return goodDetailService.getGoodDetailPic(fgoodsId, fskuId);
     }
 
     @ApiOperation(value = "获取商品基本信息", httpMethod = "GET")
     @GetMapping("/via/getGoodDetailBasic")
     public Result<GoodsVo> getGoodDetailBasic(@RequestParam Long fgoodsId, @RequestParam (required = false) Long fskuId){
+        logger.info("获取商品基本信息 fgoodsId {} fskuId {}", fgoodsId, fskuId);
         return goodDetailService.getGoodDetailBasic(fgoodsId, fskuId);
     }
 
     @ApiOperation(value = "获取商品属性", httpMethod = "GET")
     @GetMapping("/via/getGoodsAttribute")
     public Result<Map<String, List<GoodsAttributeVo>>> getGoodsAttribute(@RequestParam Long fgoodsId){
+        logger.info("获取商品属性 fgoodsId {} ", fgoodsId);
         return goodDetailService.getGoodsAttribute(fgoodsId);
     }
 
     @ApiOperation(value = "获取商品各种规格", httpMethod = "GET")
     @GetMapping("/via/getGoodsSpecifi")
     public Result<GoodspecificationVo> getGoodsSpecifi(@RequestParam Long fgoodsId){
+        logger.info("获取商品规格 fgoodsId {} ", fgoodsId);
         return goodDetailService.getGoodsSpecifi(fgoodsId);
     }
 
@@ -56,12 +61,14 @@ public class GoodsDetailController {
         Long xyid = Long.parseLong(request.getHeader("xyid"));
         goodsDetailDto.setFuid(xyid);
 //      goodsDetailDto.setFuid(1l);
+        logger.info("获取价格 ", JSON.toJSONString(goodsDetailDto));
         return goodDetailService.getGoodPrice(goodsDetailDto);
     }
 
     @ApiOperation(value = "获取库存和销量", httpMethod = "POST")
     @PostMapping("/via/getGoodStockSell")
     public Result<GoodStockSellVo> getGoodStockSell(@RequestBody GoodsDetailDto goodsDetailDto){
+        logger.info("获取库存和销量 ", JSON.toJSONString(goodsDetailDto));
         return goodDetailService.getGoodStockSell(goodsDetailDto);
     }
 
