@@ -30,7 +30,6 @@ import com.xingyun.bbc.mall.model.vo.WalletAmountVo;
 import com.xingyun.bbc.mall.model.vo.WithdrawRateVo;
 import com.xingyun.bbc.mall.service.WalletService;
 import com.xingyun.bbc.pay.api.AliPayApi;
-import com.xingyun.bbc.pay.model.dto.TransferDto;
 import io.seata.spring.annotation.GlobalTransactional;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -81,6 +80,10 @@ public class WalletServiceImpl implements WalletService {
     private AliPayApi aliPayApi;
     @Autowired
     private XybbcLock xybbcLock;
+
+    private static final BigDecimal HUNDRED = new BigDecimal("100");
+
+    private static final BigDecimal ONE_MILLION = new BigDecimal("1000000");
 
     @Override
     public WalletAmountVo queryAmount(Long uid) {
@@ -334,10 +337,12 @@ public class WalletServiceImpl implements WalletService {
         return uid;
     }
 
+
     private List<WithdrawRateVo> toWithdrawRateVos(List<UserWithdrawRate> userRate) {
         return userRate.stream().map(rate ->
                 new WithdrawRateVo()
-                        .setFrate(new BigDecimal(rate.getFrate()).divide(new BigDecimal(10000)))
+                        //取 除一百万乘100
+                        .setFrate((new BigDecimal(rate.getFrate()).divide(ONE_MILLION)).multiply(HUNDRED).setScale(6, BigDecimal.ROUND_HALF_UP))
                         .setMinimumAmount(PriceUtil.toYuan(rate.getMinimumAmount()))
                         .setFwithdrawType(rate.getFwithdrawType())
         ).collect(Collectors.toList());
@@ -385,7 +390,7 @@ public class WalletServiceImpl implements WalletService {
                 poundagePercent = withdrawRates.stream().findFirst().get().getFrate().floatValue();
             }
             //计算手续费
-            feeRate = (new BigDecimal(poundagePercent).divide(new BigDecimal(10000)));
+            feeRate = (new BigDecimal(poundagePercent).divide(ONE_MILLION).setScale(6,BigDecimal.ROUND_HALF_UP));
             return this;
         }
     }
@@ -413,8 +418,8 @@ public class WalletServiceImpl implements WalletService {
             userAccountTrans.setFtransTypes(2);//提现
             userAccountTrans.setFtransReason("提现申请");
             userAccountTrans.setFtransAmount(transAmount.longValue());
-            feeAmount = (transAmount.multiply((withdrawRate.getFeeRate().multiply(new BigDecimal(10000)))));
-            transActualAmount = transAmount.subtract(feeAmount);
+            feeAmount = ((transAmount.multiply(withdrawRate.getFeeRate())).setScale(6,BigDecimal.ROUND_HALF_UP));
+            transActualAmount = transAmount.subtract(feeAmount).setScale(6, BigDecimal.ROUND_HALF_UP);
             userAccountTrans.setFtransActualAmount(transActualAmount.longValue());
             userAccountTrans.setFtransPoundage(feeAmount.longValue());
             userAccountTrans.setFaccountHolder(withdrawDto.getName());
@@ -430,7 +435,7 @@ public class WalletServiceImpl implements WalletService {
             //银行卡
             }else if (withdrawDto.getWay() == 2){
                 userAccountTrans.setFrechargeType(4);
-                userAccountTrans.setFtransStatus(1);
+                userAccountTrans.setFtransStatus(2);
                 userAccountTrans.setFwithdrawType(2);
                 userAccountTrans.setFwithdrawBank(withdrawDto.getBankName());
                 userAccountTrans.setFwithdrawAccount(withdrawDto.getCardNumber());

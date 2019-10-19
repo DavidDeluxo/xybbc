@@ -221,7 +221,7 @@ public class IndexServiceImpl implements IndexService {
         }
         Result<List<Goods>> goodsResult = goodsApi.queryByCriteria(goodsCriteria.fields(Goods::getFgoodsId));
         if (!goodsResult.isSuccess()) {
-            logger.info("查询商品贸易类型信息失败");
+            logger.info("查询商品信息失败");
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
         if (!CollectionUtils.isEmpty(goodsResult.getData())) {
@@ -473,7 +473,9 @@ public class IndexServiceImpl implements IndexService {
     @Override
     public Result<List<GoodsCategoryVo>> queryGoodsCategoryList() {
         List<GoodsCategoryVo> categoryVoList = new LinkedList<>();
-        Result<List<Goods>> goodsResultAll = goodsApi.queryAll();
+        Criteria<Goods, Object> goodsCriteria = Criteria.of(Goods.class).andEqualTo(Goods::getFisDelete, 0);
+        Result<List<Goods>> goodsResultAll = goodsApi.queryByCriteria(goodsCriteria.fields(Goods::getFcategoryId1));
+        //Result<List<Goods>> goodsResultAll = goodsApi.queryAll();
         if (!goodsResultAll.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
@@ -482,6 +484,7 @@ public class IndexServiceImpl implements IndexService {
             List<Long> categoryListFiltered = goodsListAll.stream().map(Goods::getFcategoryId1).distinct().collect(Collectors.toList());
             Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(
                     Criteria.of(GoodsCategory.class)
+                            .fields(GoodsCategory::getFcategoryName,GoodsCategory::getFcategoryId,GoodsCategory::getFcategoryDesc)
                             .andIn(GoodsCategory::getFcategoryId, categoryListFiltered)
                             .sortDesc(GoodsCategory::getFmodifyTime)
                             .andEqualTo(GoodsCategory::getFisDelete, 0)
