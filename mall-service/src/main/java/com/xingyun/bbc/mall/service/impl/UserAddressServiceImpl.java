@@ -18,6 +18,7 @@ import com.xingyun.bbc.mall.model.vo.PageVo;
 import com.xingyun.bbc.mall.model.vo.UserDeliveryVo;
 import com.xingyun.bbc.mall.service.UserAddressService;
 
+import io.seata.spring.annotation.GlobalTransactional;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.dozer.Mapper;
@@ -191,6 +192,7 @@ public class UserAddressServiceImpl implements UserAddressService {
      * @date 2019/9/20 13:49
      */
     @Override
+    @GlobalTransactional
     public Result deleteUserAddress(UserDeliveryDeleteDto userDeliveryDto) {
         if (!StringUtils.isEmpty(userDeliveryDto.getFdeliveryUserIds())) {
             String[] fuidsStr = userDeliveryDto.getFdeliveryUserIds().split(",");
