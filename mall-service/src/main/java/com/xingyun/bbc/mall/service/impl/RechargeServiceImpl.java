@@ -95,10 +95,13 @@ public class RechargeServiceImpl implements RechargeService{
 			Result<Integer> flagTransWater = transWaterApi.create(accountTransWater);
 			Long fuid = transInfo.getFuid();
 			UserAccount account = accountApi.queryById(fuid).getData();
+			long frecharge=account.getFrecharge();
 			long balance = account.getFbalance();
 			long creditBalance = account.getFcreditBalance();
 			long newBalance = thirdPayAmount+balance;
+			long newFrecharge =thirdPayAmount+frecharge;
 			account.setFbalance(newBalance);
+			account.setFrecharge(newFrecharge);
 			String remark = "自动充值，金额(分)：" + thirdPayAmount;
 			account.setFoperateRemark(remark);
 			Result<Integer> flagAccount = accountApi.updateNotNull(account);

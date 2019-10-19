@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.UserUtil;
 import com.xingyun.bbc.order.api.CartApi;
@@ -11,6 +12,7 @@ import com.xingyun.bbc.order.model.vo.PageVo;
 import com.xingyun.bbc.order.model.vo.cart.CartsVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +29,7 @@ import javax.validation.Valid;
 @RestController
 @RequestMapping("/cart")
 @Validated
+@Slf4j
 public class CartController {
 
     @Autowired
@@ -36,6 +39,7 @@ public class CartController {
     @PostMapping("/addCart")
     public Result<Boolean> addCart(@RequestBody @Valid AddCartDto addCartDto, HttpServletRequest request) {
         Long fuid = UserUtil.uid(request);
+        log.info("|接口:|添加购物车|请求参数:{}|", JSON.toJSONString(addCartDto));
         return cartApi.addCart(addCartDto.setFuid(fuid));
     }
 
@@ -44,6 +48,7 @@ public class CartController {
     @PostMapping("/queryCart")
     public Result<PageVo<CartsVo>> queryCart(@RequestBody @Valid QueryCartDto queryCartDto, HttpServletRequest request) {
         Long fuid = UserUtil.uid(request);
+        log.info("|接口:|查询购物车|请求参数:{}|", JSON.toJSONString(queryCartDto));
         return cartApi.queryCart(queryCartDto.setFuid(fuid));
     }
 
