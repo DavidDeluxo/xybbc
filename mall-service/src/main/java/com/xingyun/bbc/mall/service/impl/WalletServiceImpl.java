@@ -83,7 +83,7 @@ public class WalletServiceImpl implements WalletService {
 
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
-    private static final BigDecimal ONE_MILLION = new BigDecimal("1000000");
+    private static final BigDecimal TEN_THOUSAND = new BigDecimal("10000");
 
     @Override
     public WalletAmountVo queryAmount(Long uid) {
@@ -342,7 +342,7 @@ public class WalletServiceImpl implements WalletService {
         return userRate.stream().map(rate ->
                 new WithdrawRateVo()
                         //取 除一百万乘100
-                        .setFrate((new BigDecimal(rate.getFrate()).divide(ONE_MILLION)).multiply(HUNDRED).setScale(6, BigDecimal.ROUND_HALF_UP))
+                        .setFrate((new BigDecimal(rate.getFrate()).divide(TEN_THOUSAND)).multiply(HUNDRED).setScale(6, BigDecimal.ROUND_HALF_UP))
                         .setMinimumAmount(PriceUtil.toYuan(rate.getMinimumAmount()))
                         .setFwithdrawType(rate.getFwithdrawType())
         ).collect(Collectors.toList());
@@ -390,7 +390,7 @@ public class WalletServiceImpl implements WalletService {
                 poundagePercent = withdrawRates.stream().findFirst().get().getFrate().floatValue();
             }
             //计算手续费
-            feeRate = (new BigDecimal(poundagePercent).divide(ONE_MILLION).setScale(6,BigDecimal.ROUND_HALF_UP));
+            feeRate = (new BigDecimal(poundagePercent).divide(TEN_THOUSAND).setScale(6,BigDecimal.ROUND_HALF_UP));
             return this;
         }
     }
