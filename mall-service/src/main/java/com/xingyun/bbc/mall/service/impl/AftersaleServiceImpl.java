@@ -292,7 +292,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         if (!CollectionUtils.isEmpty(picResult.getData())) {
             StringBuffer sf = new StringBuffer();
             for (OrderAftersalePic pic : picResult.getData()) {
-                sf.append(pic).append(",");
+                sf.append(pic.getFaftersalePic()).append(",");
             }
             picUrl = sf.toString();
         }
