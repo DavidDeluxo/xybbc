@@ -93,12 +93,15 @@ public class IndexServiceImpl implements IndexService {
     @Autowired
     private PageUtils pageUtils;
 
+    @Autowired
+    private DozerHolder dozerHolder;
+
     /**
      * @author lll
      * @version V1.0
      * @Description: 查询首页配置
      * @Param: [fposition]
-     * @return: Result<List < PageConfigVo>>
+     * @return: Result<List               <               PageConfigVo>>
      * @date 2019/9/20 13:49
      */
     @Override
@@ -234,7 +237,7 @@ public class IndexServiceImpl implements IndexService {
     /**
      * @author lll
      * @version V1.0
-     * @Description: 查询供应商账户
+     * @Description: 查询首页楼层商品
      * @Param: [supplierAccountQueryDto]
      * @return: PageVo<SupplierAccountVo>
      * @date 2019/9/20 13:49
@@ -467,41 +470,25 @@ public class IndexServiceImpl implements IndexService {
      * @version V1.0
      * @Description: 查询商品一级类目列表
      * @Param:
-     * @return: Result<List < GoodsCategoryVo>>
+     * @return: Result<List<GoodsCategoryVo>>
      * @date 2019/9/20 13:49
      */
     @Override
     public Result<List<GoodsCategoryVo>> queryGoodsCategoryList() {
-        List<GoodsCategoryVo> categoryVoList = new LinkedList<>();
-        Criteria<Goods, Object> goodsCriteria = Criteria.of(Goods.class).andEqualTo(Goods::getFisDelete, 0);
-        Result<List<Goods>> goodsResultAll = goodsApi.queryByCriteria(goodsCriteria.fields(Goods::getFcategoryId1));
-        //Result<List<Goods>> goodsResultAll = goodsApi.queryAll();
-        if (!goodsResultAll.isSuccess()) {
+
+        Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(
+                Criteria.of(GoodsCategory.class)
+                        .fields(GoodsCategory::getFcategoryName, GoodsCategory::getFcategoryId, GoodsCategory::getFcategoryDesc)
+                        .sortDesc(GoodsCategory::getFmodifyTime)
+                        .andEqualTo(GoodsCategory::getFparentCategoryId, 0)
+                        .andEqualTo(GoodsCategory::getFisDelete, 0)
+                        .andEqualTo(GoodsCategory::getFisDisplay, 1));
+        if (!categoryListResultAll.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
-        if (CollectionUtils.isNotEmpty(goodsResultAll.getData())) {
-            List<Goods> goodsListAll = goodsResultAll.getData();
-            List<Long> categoryListFiltered = goodsListAll.stream().map(Goods::getFcategoryId1).distinct().collect(Collectors.toList());
-            Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(
-                    Criteria.of(GoodsCategory.class)
-                            .fields(GoodsCategory::getFcategoryName,GoodsCategory::getFcategoryId,GoodsCategory::getFcategoryDesc)
-                            .andIn(GoodsCategory::getFcategoryId, categoryListFiltered)
-                            .sortDesc(GoodsCategory::getFmodifyTime)
-                            .andEqualTo(GoodsCategory::getFisDelete, 0)
-                            .andEqualTo(GoodsCategory::getFisDisplay, 1));
-            if (!categoryListResultAll.isSuccess()) {
-                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
-            }
-            if (!org.springframework.util.CollectionUtils.isEmpty(categoryListResultAll.getData())) {
-                for (GoodsCategory category : categoryListResultAll.getData()) {
-                    GoodsCategoryVo categoryVo = new GoodsCategoryVo();
-                    categoryVo.setFcategoryId(category.getFcategoryId());
-                    categoryVo.setFcategoryName(category.getFcategoryName());
-                    categoryVo.setFcategoryDesc(category.getFcategoryDesc());
-                    categoryVoList.add(categoryVo);
-                }
-
-            }
+        List<GoodsCategoryVo> categoryVoList = new LinkedList<>();
+        if (CollectionUtils.isNotEmpty(categoryListResultAll.getData())) {
+            categoryVoList = dozerHolder.convert(categoryListResultAll.getData(), GoodsCategoryVo.class);
         }
         return Result.success(categoryVoList);
     }
@@ -511,7 +498,7 @@ public class IndexServiceImpl implements IndexService {
      * @version V1.0
      * @Description: 引导页启动页查询
      * @Param: [ftype]
-     * @return: Result<List < GuidePageVo>>
+     * @return: Result<List<GuidePageVo>>
      * @date 2019/9/20 13:49
      */
     @Override

@@ -60,7 +60,7 @@ public class UserAddressController {
 
     @ApiOperation(value = "删除用户收货地址", httpMethod = "POST")
     @PostMapping("/deleteUserAddress")
-    public Result deleteUserAddress(@RequestBody UserDeliveryDeleteDto userDeliveryDto, HttpServletRequest request) {
+    public Result deleteUserAddress(@RequestBody @Validated UserDeliveryDeleteDto userDeliveryDto, HttpServletRequest request) {
         return userAddressService.deleteUserAddress(userDeliveryDto);
     }
 

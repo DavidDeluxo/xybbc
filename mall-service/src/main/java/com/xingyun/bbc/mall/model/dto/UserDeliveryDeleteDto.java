@@ -3,6 +3,7 @@ package com.xingyun.bbc.mall.model.dto;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
@@ -15,5 +16,6 @@ public class UserDeliveryDeleteDto implements Serializable{
 
     /** 用户收货地址IDS */
     @ApiModelProperty("用户IDS,批量删除需要用，拼接成字符串")
+    @NotNull
     private String fdeliveryUserIds;
 }
