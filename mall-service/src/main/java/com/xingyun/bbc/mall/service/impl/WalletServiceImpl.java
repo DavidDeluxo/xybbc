@@ -419,7 +419,7 @@ public class WalletServiceImpl implements WalletService {
             userAccountTrans.setFtransReason("提现申请");
             userAccountTrans.setFtransAmount(transAmount.longValue());
             feeAmount = (transAmount.multiply(withdrawRate.getFeeRate()));
-            userAccountTrans.setFtransPoundage(feeAmount.longValue());
+            userAccountTrans.setFtransPoundage(PriceUtil.toPenny(feeAmount.longValue()).longValue());
             transActualAmount = transAmount.subtract(feeAmount).setScale(6, BigDecimal.ROUND_HALF_UP);
             userAccountTrans.setFtransActualAmount(transActualAmount.longValue());
 
