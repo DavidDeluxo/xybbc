@@ -211,30 +211,6 @@ public class IndexServiceImpl implements IndexService {
 
 
     /**
-     * 查询goodsIds
-     *
-     * @param fcategoryId1
-     * @return List<Long>
-     */
-    private List<Long> queryGoodIds(Integer fcategoryId1) {
-        //查询某一个一级类目下的所有商品
-        Criteria<Goods, Object> goodsCriteria = Criteria.of(Goods.class).andEqualTo(Goods::getFisDelete, 0);
-        if (null != fcategoryId1) {
-            goodsCriteria.andEqualTo(Goods::getFcategoryId1, fcategoryId1);
-        }
-        Result<List<Goods>> goodsResult = goodsApi.queryByCriteria(goodsCriteria.fields(Goods::getFgoodsId));
-        if (!goodsResult.isSuccess()) {
-            logger.info("查询商品信息失败");
-            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
-        }
-        if (!CollectionUtils.isEmpty(goodsResult.getData())) {
-            List<Long> collect = goodsResult.getData().stream().map(goods -> goods.getFgoodsId()).collect(Collectors.toList());
-            return collect;
-        }
-        return null;
-    }
-
-    /**
      * @author lll
      * @version V1.0
      * @Description: 查询首页楼层商品
@@ -244,31 +220,10 @@ public class IndexServiceImpl implements IndexService {
      */
     @Override
     public PageVo<IndexSkuGoodsVo> queryGoodsByCategoryId1(CategoryDto categoryDto) {
-        //第一步，查询一级类目下所有所有商品包含的sku
+        //第一步，查询一级类目下所有所有未删除且状态为已上架的sku
         Criteria<GoodsSku, Object> criteria = Criteria.of(GoodsSku.class)
                 .andEqualTo(GoodsSku::getFisDelete, 0)
                 .andEqualTo(GoodsSku::getFskuStatus, 1);
-        List<Long> goodsIds = new ArrayList<>();
-        if (categoryDto.getFcategoryId1() != null) {
-            //查询一级类目下所有商品
-            goodsIds = this.queryGoodIds(Math.toIntExact(categoryDto.getFcategoryId1()));
-            if (CollectionUtils.isEmpty(goodsIds)) {
-                return new PageVo<>(0, categoryDto.getCurrentPage(), categoryDto.getPageSize(), Lists.newArrayList());
-            }
-        }
-        if (!CollectionUtils.isEmpty(goodsIds)) {
-            //关联sku基本信息表
-            criteria.andIn(GoodsSku::getFgoodsId, goodsIds);
-        }
-        // 统计次数
-        Result<Integer> totalResult = goodsSkuApi.countByCriteria(criteria);
-        if (!totalResult.isSuccess()) {
-            logger.info("统计首页商品数量信息失败");
-            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        }
-        if (0 == totalResult.getData() || Objects.isNull(totalResult.getData())) {
-            return new PageVo<>(0, categoryDto.getCurrentPage(), categoryDto.getPageSize(), Lists.newArrayList());
-        }
         //查询sku基表信息
         Result<List<GoodsSku>> result = goodsSkuApi.queryByCriteria(
                 criteria.fields(
@@ -284,7 +239,15 @@ public class IndexServiceImpl implements IndexService {
         if (CollectionUtils.isEmpty(result.getData())) {
             return new PageVo<>(0, categoryDto.getCurrentPage(), categoryDto.getPageSize(), Lists.newArrayList());
         }
-
+        // 统计次数
+        Result<Integer> totalResult = goodsSkuApi.countByCriteria(criteria);
+        if (!totalResult.isSuccess()) {
+            logger.info("统计首页商品数量信息失败");
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (0 == totalResult.getData() || Objects.isNull(totalResult.getData())) {
+            return new PageVo<>(0, categoryDto.getCurrentPage(), categoryDto.getPageSize(), Lists.newArrayList());
+        }
         //第二步，封装sku中的缩略图，历史销量，最低价格
         List<IndexSkuGoodsVo> indexSkuGoodsVoList = result.getData().stream().map(goodsSku -> {
             IndexSkuGoodsVo indexSkuGoodsVo = dozerMapper.map(goodsSku, IndexSkuGoodsVo.class);
@@ -296,7 +259,6 @@ public class IndexServiceImpl implements IndexService {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
             if (CollectionUtils.isEmpty(skuBatchList.getData())) {
-                //throw new BizException(MallExceptionCode.SKU_BATCH_IS_NONE);
                 return null;
             }
             Criteria<SkuBatch, Object> batchCriteria = Criteria.of(SkuBatch.class)
@@ -307,7 +269,6 @@ public class IndexServiceImpl implements IndexService {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
             if (CollectionUtils.isEmpty(skuBatchs.getData())) {
-                //throw new BizException(MallExceptionCode.SKU_BATCH_IS_NONE);
                 return null;
             }
             //循环遍历该sku对应的批次集合
@@ -316,16 +277,6 @@ public class IndexServiceImpl implements IndexService {
                 fsellNum += skuBatch.getFsellNum();
             }
             indexSkuGoodsVo.setFsellNum(fsellNum);
-
-      /*      //销量过万，则保留小数量后一位，四舍五入
-            if(fsellNum > 10000){
-                BigDecimal sellNum = new BigDecimal(fsellNum)
-                        .divide(PageConfigContants.BIG_DECIMAL_10000, 1, BigDecimal.ROUND_HALF_UP);
-                indexSkuGoodsVo.setFsellNum(String.valueOf(sellNum));
-            }else {
-                indexSkuGoodsVo.setFsellNum(String.valueOf(fsellNum)+"w");
-            }*/
-
             //封装价格：1.未登录情况下不展示价格：2.根据sku是否支持平台会员类型折扣分两种情况：
             // 一，支持，则在t_bbc_sku_batch_user_price取值；二，不支持，则在t_bbc_goods_sku_batch_price取值
             //不同批次不同规格价格不同，取其中最低价展示
