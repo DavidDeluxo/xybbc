@@ -62,10 +62,16 @@ public class RechargeServiceImpl implements RechargeService{
     private DozerHolder dozerHolder;
 	
     
+	/**
+	 * @author jianghui
+	 * @version V1.0
+	 * @Description: 第三方支付回调成功，写入充值到余额
+	 * @date 2019/8/20 13:49
+	 */
     @Override
 	@GlobalTransactional
 	public int newUpdateAfterRechargeSuccess(PayInfoVo thirdPayInfo) {
-		int rechargeSuccessStatus = 3;
+		int rechargeSuccessStatus = 3;//充值成功状态
 		int thirdPayType = Integer.parseInt(thirdPayInfo.getThirdPayType());
 		String forderId = thirdPayInfo.getForderId();
 		long thirdPayAmount = Long.parseLong(thirdPayInfo.getPayAmount());
@@ -130,7 +136,7 @@ public class RechargeServiceImpl implements RechargeService{
     
     
 
-	
+	//废弃方法
 	@Override
 	@GlobalTransactional
 	public int updateAfterRechargeSuccess(Map<String, String> thirdPayInfo) {
@@ -198,7 +204,7 @@ public class RechargeServiceImpl implements RechargeService{
 		}
 	}
 	
-	
+	//第三方支付类型转换成t_bbc_user_account_trans表frecharge_type类型
 	private int thirdPayTypeToTransThirdPayType(int thirdPayType){
 		if (thirdPayType == OrderPayEnum.ALI_PAY.getValue()) {
 			return UserAccountTransThdPayTypeEnum.ALIPAY_RECHARGE.getValue();
@@ -207,7 +213,7 @@ public class RechargeServiceImpl implements RechargeService{
 		} 
 		return -1;
 	}
-	
+	//第三方支付类型转换成t_bbc_user_detail表fdetail_type类型
 	private int thirdPayTypeToUserDetailType(int thirdPayType) {
 		if (thirdPayType == OrderPayEnum.ALI_PAY.getValue()) {
 			return UserDetailTypeEnum.ALI_RECHARGE.getValue();
@@ -218,7 +224,7 @@ public class RechargeServiceImpl implements RechargeService{
 	}
 	
 
-	
+	//是否都成功状态
 	private boolean checkAllModifySuccess( Integer... flags) {
 		for (Integer flag : flags) {
 			if (flag==0) {

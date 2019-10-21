@@ -105,6 +105,12 @@ public class PayServiceImpl implements PayService {
     private RechargeService rechargeService;
 	
 	
+	/**
+	 * @author jianghui
+	 * @version V1.0
+	 * @Description: 余额支付，混合支付
+	 * @date 2019/8/20 13:49
+	 */
 	@Override
 	public Result<?> balancePay(BalancePayDto dto, HttpServletRequest request) {
 		
@@ -172,7 +178,12 @@ public class PayServiceImpl implements PayService {
 	}
 	
 	
-
+	/**
+	 * @author jianghui
+	 * @version V1.0
+	 * @Description: 生成第三方支付链接
+	 * @date 2019/8/20 13:49
+	 */
 	@Override
 	public Result<?> createThirdPayUrl(ThirdPayDto dto,HttpServletRequest request) {
 		String appVersion= request.getHeader("appVersion");
@@ -186,6 +197,13 @@ public class PayServiceImpl implements PayService {
 		return payApi.createThirdPayUrl(dto);
 	}
 	
+
+	/**
+	 * @author jianghui
+	 * @version V1.0
+	 * @Description: 生成第三方支付二维码
+	 * @date 2019/8/20 13:49
+	 */
 	@Override
 	public Result<?> createThirdPayCode(ThirdPayDto dto,HttpServletRequest request) {
 	
@@ -198,6 +216,12 @@ public class PayServiceImpl implements PayService {
 		return payApi.createThirdPayCode(dto);
 	}
 	
+	/**
+	 * @author jianghui
+	 * @version V1.0
+	 * @Description: 支付回调
+	 * @date 2019/8/20 13:49
+	 */
 	@Override
 	public Result<?> newThirdPayResponse(@PathVariable String urlSuffix, HttpServletRequest request, HttpServletResponse response) {	
 		logger.info("第三方支付回调url："+request.getRequestURL()+"?"+request.getQueryString());
@@ -250,6 +274,7 @@ public class PayServiceImpl implements PayService {
 			}else{
 				logger.info("------------------第三方支付回调充值返回失败："+thirdPayInfo);
 			}
+			
 		} else 
 			if (ThirdPayUtil.PAY_SCENE_ORDER.equals(payScene)) { //订单
 			PayDto payDto=new PayDto();
@@ -277,7 +302,7 @@ public class PayServiceImpl implements PayService {
 	
 	}
 	
-	
+	//废弃方法
 	@Override
 	public Result<?> thirdPayResponse(@PathVariable String urlSuffix, HttpServletRequest request, HttpServletResponse response) {	
 		logger.info("第三方支付回调url："+request.getRequestURL()+"?"+request.getQueryString());
@@ -335,7 +360,12 @@ public class PayServiceImpl implements PayService {
 		return Result.failure(MallExceptionCode.THIRD_PAY_NOTIFY_FAIL);
 	}
 	
-	
+	/**
+	 * @author jianghui
+	 * @version V1.0
+	 * @Description: 线下汇款支付
+	 * @date 2019/8/20 13:49
+	 */
 	@Override
 	@GlobalTransactional
 	public Result<?> addBalance(RemittancetRechargeDto dto) {
@@ -546,7 +576,7 @@ public class PayServiceImpl implements PayService {
 			return extraParams;
 		}
 
-		
+		// 从HttpServletRequest获取参数并转换成json字符串
 		public static String readReqStr(HttpServletRequest request){
 	        BufferedReader reader = null;
 	        StringBuilder sb = new StringBuilder();
