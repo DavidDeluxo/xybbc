@@ -61,9 +61,6 @@ public class IndexServiceImpl implements IndexService {
     private XyRedisManager xyRedisManager;
 
     @Autowired
-    private GoodsApi goodsApi;
-
-    @Autowired
     GoodsCategoryApi goodsCategoryApi;
 
     @Autowired
@@ -101,7 +98,7 @@ public class IndexServiceImpl implements IndexService {
      * @version V1.0
      * @Description: 查询首页配置
      * @Param: [fposition]
-     * @return: Result<List               <               PageConfigVo>>
+     * @return: Result<List               <PageConfigVo>>
      * @date 2019/9/20 13:49
      */
     @Override

@@ -84,7 +84,9 @@ public class IndexController {
     public Result<PageVo<IndexSkuGoodsVo>> queryGoodsByCategoryId1(CategoryDto categoryDto, HttpServletRequest request) {
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
         categoryDto.setIsLogin(infoVo.getIsLogin());
-        categoryDto.setFuid(Long.valueOf(infoVo.getFuid()));
+        if(infoVo.getFuid() != null){
+            categoryDto.setFuid(Long.valueOf(infoVo.getFuid()));
+        }
         return Result.success(indexService.queryGoodsByCategoryId1(categoryDto));
     }
 }
