@@ -5,6 +5,8 @@ import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
 import com.xingyun.bbc.core.operate.po.CityRegion;
+import com.xingyun.bbc.core.order.api.RegularListApi;
+import com.xingyun.bbc.core.order.po.RegularList;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.sku.api.*;
 import com.xingyun.bbc.core.sku.enums.GoodsSkuEnums;
@@ -19,6 +21,7 @@ import com.xingyun.bbc.core.user.po.UserDelivery;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.common.constans.MallConstants;
+import com.xingyun.bbc.mall.common.enums.MallResultStatus;
 import com.xingyun.bbc.mall.model.dto.GoodsDetailDto;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.GoodDetailService;
@@ -88,6 +91,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     @Autowired
     private FreightApi freightApi;
+
+    @Autowired
+    private RegularListApi regularListApi;
 
     @Autowired
     private Mapper dozerMapper;
@@ -204,7 +210,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 .andEqualTo(GoodsSku::getFisDelete, "0")
                 .fields(GoodsSku::getFskuId, GoodsSku::getFskuCode, GoodsSku::getFskuSpecValue));
         List<GoodsSkuVo> skuRes = dozerHolder.convert(goodsSkuResult.getData(), GoodsSkuVo.class);
-
         //批次效期
         List<GoodsSkuBatchVo> batchRes = new ArrayList<>();
         //包装规格
@@ -216,6 +221,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             Result<List<SkuBatch>> skuBatchResult = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
                     .andEqualTo(SkuBatch::getFskuId, skuVo.getFskuId())
                     .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
+                    .andEqualTo(SkuBatch::getFbatchPutwaySort, 1)//只用取上架排序为1的
                     .fields(SkuBatch::getFqualityEndDate, SkuBatch::getFsupplierSkuBatchId));
             List<GoodsSkuBatchVo> batchVert = dozerHolder.convert(skuBatchResult.getData(), GoodsSkuBatchVo.class);
             batchRes.addAll(batchVert);
@@ -363,16 +369,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     if (null != defautDelivery) {
                         //使用默认地址计算运费
                         if (null != goodsDetailDto.getFnum()) {
-                            FreightDto freightDto = new FreightDto();
-                            freightDto.setFfreightId(fskuBatch.getFfreightId());
-                            freightDto.setFregionId(defautDelivery.getFdeliveryCityId());
-                            freightDto.setFbatchId(fskuBatch.getFsupplierSkuBatchId());
-                            freightDto.setFbuyNum(goodsDetailDto.getFnum());
-                            logger.info("查詢運費入參{}" , JSON.toJSONString(freightDto));
-                            Result<BigDecimal> bigDecimalResult = freightApi.queryFreight(freightDto);
-                            if (bigDecimalResult.isSuccess() && null != bigDecimalResult.getData()) {
-                                freightPrice = bigDecimalResult.getData().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP);
-                            }
+                           // (Long fbatchPackageId, Long ffreightId, Long fdeliveryCityId, String fsupplierSkuBatchId, Long fnum)
+                            freightPrice = this.getFreight(goodsDetailDto.getFbatchPackageId(), fskuBatch.getFfreightId(),
+                                    defautDelivery.getFdeliveryCityId(),fskuBatch.getFsupplierSkuBatchId(), goodsDetailDto.getFnum());
                         }
                         priceResult.setFdeliveryAddr(defautDelivery.getFdeliveryAddr() == null ? "" : defautDelivery.getFdeliveryAddr());
                         priceResult.setFdeliveryProvinceName(defautDelivery.getFdeliveryProvinceName() == null ? "" : defautDelivery.getFdeliveryProvinceName());
@@ -382,15 +381,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 } else {
                     //使用前端传参计算运费
                     if (null != goodsDetailDto.getFdeliveryCityId() && null != goodsDetailDto.getFnum()) {
-                        FreightDto freightDto = new FreightDto();
-                        freightDto.setFfreightId(fskuBatch.getFfreightId());
-                        freightDto.setFregionId(goodsDetailDto.getFdeliveryCityId());
-                        freightDto.setFbatchId(fskuBatch.getFsupplierSkuBatchId());
-                        freightDto.setFbuyNum(goodsDetailDto.getFnum());
-                        Result<BigDecimal> bigDecimalResult = freightApi.queryFreight(freightDto);
-                        if (null != bigDecimalResult.getData()) {
-                            freightPrice = bigDecimalResult.getData().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP);
-                        }
+                        freightPrice = this.getFreight(goodsDetailDto.getFbatchPackageId(), fskuBatch.getFfreightId(),
+                                goodsDetailDto.getFdeliveryCityId(),fskuBatch.getFsupplierSkuBatchId(), goodsDetailDto.getFnum());
                     }
                 }
             }
@@ -423,6 +415,30 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             priceResult.setDealUnitPrice(dealUnitPrice);
         }
         return Result.success(priceResult);
+    }
+
+    private BigDecimal getFreight(Long fbatchPackageId, Long ffreightId, Long fdeliveryCityId, String fsupplierSkuBatchId, Long fnum) {
+        BigDecimal freightPrice = BigDecimal.ZERO;
+        //查询相应规格的件装数
+        Result<SkuBatchPackage> skuBatchPackageResult = skuBatchPackageApi.queryOneByCriteria(Criteria.of(SkuBatchPackage.class)
+                .andEqualTo(SkuBatchPackage::getFbatchPackageId, fbatchPackageId)
+                .fields(SkuBatchPackage::getFbatchPackageNum));
+        if (!skuBatchPackageResult.isSuccess()) {
+            logger.info("批次包装规格fbatchPackageId {}获取包装规格值失败", fbatchPackageId);
+            throw new BizException(MallResultStatus.BATCH_PACKAGE_NUM_NOT_EXIST);
+        }
+        Long fbatchPackageNum = skuBatchPackageResult.getData().getFbatchPackageNum();
+        FreightDto freightDto = new FreightDto();
+        freightDto.setFfreightId(ffreightId);
+        freightDto.setFregionId(fdeliveryCityId);
+        freightDto.setFbatchId(fsupplierSkuBatchId);
+        freightDto.setFbuyNum(fnum*fbatchPackageNum);
+        logger.info("商品详情--查询运费入参{}", JSON.toJSONString(freightDto));
+        Result<BigDecimal> bigDecimalResult = freightApi.queryFreight(freightDto);
+        if (bigDecimalResult.isSuccess() && null != bigDecimalResult.getData()) {
+            freightPrice = bigDecimalResult.getData().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP);
+        }
+        return freightPrice;
     }
 
     @Override
@@ -728,7 +744,21 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         return goodsSkuResult.getData().getFisUserTypeDiscount();
     }
 
-//    @Override
+    @Override
+    public Result<Integer> getIsRegular(Long fgoodsId, Long fuid) {
+        //是否已经加入常购清单 1是 0否
+        Integer fisRegular = 0;
+        //查询是否已经加入常购清单
+        Result<Integer> isRegularResult = regularListApi.countByCriteria(Criteria.of(RegularList.class)
+                .andEqualTo(RegularList::getFgoodsId, fgoodsId)
+                .andEqualTo(RegularList::getFuid, fuid));
+        if (isRegularResult.isSuccess() && isRegularResult.getData() > 0) {
+            fisRegular = 1;
+        }
+        return Result.success(fisRegular);
+    }
+
+    //    @Override
 //    public Result<List<GoodsSkuBatchVo>> getSkuBatchSpecifi(Long fskuId) {
 //        Result<List<SkuBatch>> skuBatchResult = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
 //                .andEqualTo(SkuBatch::getFskuId, fskuId)

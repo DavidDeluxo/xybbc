@@ -2,7 +2,6 @@ package com.xingyun.bbc.mall.service;
 
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.model.dto.GoodsDetailDto;
-import com.xingyun.bbc.mall.model.dto.UserDeliveryDto;
 import com.xingyun.bbc.mall.model.vo.*;
 
 import java.util.List;
@@ -33,6 +32,9 @@ public interface GoodDetailService {
 
     //获取库存和销量
     Result<GoodStockSellVo> getGoodStockSell(GoodsDetailDto goodsDetailDto);
+
+    //查询是否已经加入常购清单
+    Result<Integer> getIsRegular(Long fgoodsId, Long fuid);
 
 
 
