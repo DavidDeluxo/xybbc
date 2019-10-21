@@ -13,6 +13,7 @@ import com.xingyun.bbc.core.query.Criteria;
 
 import com.xingyun.bbc.core.sku.api.*;
 import com.xingyun.bbc.core.sku.po.*;
+import com.xingyun.bbc.core.supplier.po.SupplierSku;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
@@ -249,19 +250,36 @@ public class IndexServiceImpl implements IndexService {
         if (0 == totalResult.getData() || Objects.isNull(totalResult.getData())) {
             return new PageVo<>(0, categoryDto.getCurrentPage(), categoryDto.getPageSize(), Lists.newArrayList());
         }
+        //取出skuid结果集
+        List<Long> skuIdList = new ArrayList<>(result.getData().stream().map(GoodsSku::getFskuId).collect(Collectors.toList()));
+        //查询批次表用来封装销量
+        Criteria<SkuBatch, Object> skuBatchCriteria = Criteria.of(SkuBatch.class)
+                .andIn(SkuBatch::getFskuId, skuIdList);
+        Result<List<SkuBatch>> skuBatchList = skuBatchApi.queryByCriteria(skuBatchCriteria);
+        if (!skuBatchList.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
         //第二步，封装sku历史销量，最低价格
         List<IndexSkuGoodsVo> indexSkuGoodsVoList = result.getData().stream().map(goodsSku -> {
             IndexSkuGoodsVo indexSkuGoodsVo = dozerMapper.map(goodsSku, IndexSkuGoodsVo.class);
             //1-------封装历史销量
-            Criteria<SkuBatch, Object> skuBatchCriteria = Criteria.of(SkuBatch.class)
-                    .andEqualTo(SkuBatch::getFskuId, goodsSku.getFskuId());
-            Result<List<SkuBatch>> skuBatchList = skuBatchApi.queryByCriteria(skuBatchCriteria);
-            if (!skuBatchList.isSuccess()) {
-                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-            }
-            if (CollectionUtils.isEmpty(skuBatchList.getData())) {
-                return null;
-            }
+            skuBatchList.getData().forEach(skuBatch -> {
+                if(skuBatch.getFskuId().toString().equals(goodsSku.getFskuId().toString())){
+                    List<Long> supplierIdList = skuBatchList.getData().stream().filter(s->s.getFskuId().equals(goodsSku.getFskuId()))
+                            .map(SkuBatch::getFsellNum).collect(Collectors.toList());
+                    if(CollectionUtils.isEmpty(supplierIdList)){
+                        return ;
+                    }else {
+                        //循环遍历累加得到历史销量
+                        Long fsellNum = 0L;
+                        for (Long sellNum:supplierIdList) {
+                            fsellNum += sellNum;
+                        }
+                        indexSkuGoodsVo.setFsellNum(fsellNum);
+                    }
+                }
+            });
+            //查询批次表此时批次状态为已上架用来封装价格
             Criteria<SkuBatch, Object> batchCriteria = Criteria.of(SkuBatch.class)
                     .andEqualTo(SkuBatch::getFskuId, goodsSku.getFskuId())
                     .andEqualTo(SkuBatch::getFbatchStatus, 2);
@@ -272,12 +290,6 @@ public class IndexServiceImpl implements IndexService {
             if (CollectionUtils.isEmpty(skuBatchs.getData())) {
                 return null;
             }
-            //循环遍历该sku对应的批次集合
-            Long fsellNum = 0L;
-            for (SkuBatch skuBatch : skuBatchList.getData()) {
-                fsellNum += skuBatch.getFsellNum();
-            }
-            indexSkuGoodsVo.setFsellNum(fsellNum);
             //封装价格：1.未登录情况下不展示价格：2.根据sku是否支持平台会员类型折扣分两种情况：
             // 一，支持，则在t_bbc_sku_batch_user_price取值；二，不支持，则在t_bbc_goods_sku_batch_price取值
             //不同批次不同规格价格不同，取其中最低价展示
