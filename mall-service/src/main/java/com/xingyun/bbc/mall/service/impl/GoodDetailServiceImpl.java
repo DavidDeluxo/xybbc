@@ -21,7 +21,7 @@ import com.xingyun.bbc.core.user.po.UserDelivery;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.common.constans.MallConstants;
-import com.xingyun.bbc.mall.common.enums.MallResultStatus;
+import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.GoodsDetailDto;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.GoodDetailService;
@@ -425,7 +425,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 .fields(SkuBatchPackage::getFbatchPackageNum));
         if (!skuBatchPackageResult.isSuccess()) {
             logger.info("批次包装规格fbatchPackageId {}获取包装规格值失败", fbatchPackageId);
-            throw new BizException(MallResultStatus.BATCH_PACKAGE_NUM_NOT_EXIST);
+            throw new BizException(MallExceptionCode.BATCH_PACKAGE_NUM_NOT_EXIST);
         }
         Long fbatchPackageNum = skuBatchPackageResult.getData().getFbatchPackageNum();
         FreightDto freightDto = new FreightDto();
