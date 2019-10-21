@@ -420,7 +420,7 @@ public class WalletServiceImpl implements WalletService {
             userAccountTrans.setFtransAmount(transAmount.longValue());
             feeAmount = (transAmount.multiply(withdrawRate.getFeeRate()));
             userAccountTrans.setFtransPoundage(PriceUtil.toPenny(feeAmount.longValue()).longValue());
-            transActualAmount = transAmount.subtract(feeAmount).setScale(6, BigDecimal.ROUND_HALF_UP);
+            transActualAmount = (transAmount.subtract(new BigDecimal(userAccountTrans.getFtransPoundage())));
             userAccountTrans.setFtransActualAmount(transActualAmount.longValue());
 
             userAccountTrans.setFaccountHolder(withdrawDto.getName());
