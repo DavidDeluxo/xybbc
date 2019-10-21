@@ -252,7 +252,7 @@ public class IndexServiceImpl implements IndexService {
         if (0 == totalResult.getData() || Objects.isNull(totalResult.getData())) {
             return new PageVo<>(0, categoryDto.getCurrentPage(), categoryDto.getPageSize(), Lists.newArrayList());
         }
-        //第二步，封装sku中的缩略图，历史销量，最低价格
+        //第二步，封装sku历史销量，最低价格
         List<IndexSkuGoodsVo> indexSkuGoodsVoList = result.getData().stream().map(goodsSku -> {
             IndexSkuGoodsVo indexSkuGoodsVo = dozerMapper.map(goodsSku, IndexSkuGoodsVo.class);
             //1-------封装历史销量
