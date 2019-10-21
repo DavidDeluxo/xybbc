@@ -1,5 +1,7 @@
 package com.xingyun.bbc.mall.model.vo;
 
+import java.math.BigDecimal;
+
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 @Data
@@ -9,6 +11,9 @@ public class OrderResultVo {
 
     @ApiModelProperty("余额支付状态：1还需要第三方支付，2支付成功")
     private Integer order_status;
+    
+    @ApiModelProperty("余额")
+    private BigDecimal balance;
 
     @ApiModelProperty("消息")
     private String msg;

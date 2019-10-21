@@ -46,6 +46,7 @@ import com.xingyun.bbc.core.utils.Result;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -158,8 +159,10 @@ public class PayServiceImpl implements PayService {
 		//余额不足支付 此时为混合支付
 		if(unPayAmount > fbalance){
 			orderResultVo.setOrder_status(1); //还需要第三方支付状态
+			orderResultVo.setBalance(BigDecimal.ZERO);
 		}else{
 			orderResultVo.setOrder_status(2); //余额足够
+			orderResultVo.setBalance(PriceUtil.toYuan(fbalance-unPayAmount));
 		}
 		
 		if(code.getData().getCode()==200)
