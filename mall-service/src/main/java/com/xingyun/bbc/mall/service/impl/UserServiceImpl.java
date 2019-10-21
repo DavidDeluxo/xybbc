@@ -520,6 +520,13 @@ public class UserServiceImpl implements UserService {
         Result<User> userResult = userApi.queryOneByCriteria(userCriteria);
         if(userResult.getData() != null){
             userVo = dozerHolder.convert(userResult.getData(),UserVo.class);
+            //判断fnickname是否为空字符串，若为空字符串则表示用户还没修改过用户名，用户是否可修改：0否，1是
+            if(userVo.getFnickname().equals("")){
+                userVo.setFunameIsModify(1);
+            }else{
+                userVo.setFunameIsModify(0);
+
+            }
             userVo.setFnickname(userVo.getFuname());
             if(userResult.getData().getFwithdrawPasswd().equals("")){
                 userVo.setFwithdrawPasswdStatus(0);
@@ -539,13 +546,13 @@ public class UserServiceImpl implements UserService {
         Criteria<User, Object> userCriteria = Criteria.of(User.class);
         userCriteria.andEqualTo(User::getFisDelete,"0")
                 .andEqualTo(User::getFuid,dto.getFuid())
-                .fields(User::getFuname);
+                .fields(User::getFuname,User::getFnickname);
         Result<User> userResult = userApi.queryOneByCriteria(userCriteria);
         if(userResult.getData() == null){
-            Result.failure(MallResultStatus.ACCOUNT_NOT_EXIST);
+            return Result.failure(MallResultStatus.ACCOUNT_NOT_EXIST);
         }
-        if(!userResult.getData().getFuname().equals("")){
-            Result.failure(MallResultStatus.USER_NICKNAME_EXIST);
+        if(!userResult.getData().getFnickname().equals("")){
+            return Result.failure(MallResultStatus.USER_NICKNAME_EXIST);
         }
         //查询是否重名
         Criteria<User, Object> userObjectCriteria = Criteria.of(User.class);
@@ -553,7 +560,7 @@ public class UserServiceImpl implements UserService {
                 .andEqualTo(User::getFuname,dto.getFnickname());
         Result<Integer> result = userApi.countByCriteria(userObjectCriteria);
         if(result.getData() != 0){
-            Result.failure(MallResultStatus.REGISTER_NAME_EXIST);
+            return Result.failure(MallResultStatus.REGISTER_NAME_EXIST);
         }
         User user = new User();
         user.setFnickname(dto.getFnickname());
