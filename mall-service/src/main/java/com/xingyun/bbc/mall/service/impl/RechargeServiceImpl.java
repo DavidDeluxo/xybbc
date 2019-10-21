@@ -120,7 +120,7 @@ public class RechargeServiceImpl implements RechargeService{
 			detail.setFuid(fuid);
 			detail.setFtypeId(forderId);
 			detail.setFincomeAmount(thirdPayAmount);
-			detail.setFbalance(newBalance);
+			detail.setFbalance(newBalance+account.getFfreezeWithdraw());
 			detail.setFcreditBalance(creditBalance);
 			detail.setFremark(remark);
 			Result<Integer> flagUserDetail = detailApi.create(detail);

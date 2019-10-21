@@ -127,7 +127,7 @@ public class PayServiceImpl implements PayService {
 		if (checkEntity != null) {
 			return checkEntity;
 		}
-		/////////////////
+
 		Long totalAmount=null;//订单总金额
 		Long unPayAmount=null;//未支付金额
 		OrderPayment orderPayment=orderPaymentApi.queryById(dto.getForderId()).getData();
