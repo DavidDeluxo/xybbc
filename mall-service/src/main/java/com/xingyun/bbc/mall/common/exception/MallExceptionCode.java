@@ -36,6 +36,7 @@ public class MallExceptionCode implements IResultStatus {
     public static final MallExceptionCode NO_BATCH_PRICE = new MallExceptionCode("6668", "没有SKU批次类型售价");
     public static final MallExceptionCode WITHDRAW_PROCESSING = new MallExceptionCode("6670", "您的操作太频繁啦,每次提现需间隔5分钟");
     public static final MallExceptionCode NO_USER_ID = new MallExceptionCode("6671", "未传用户id");
+    public static final MallExceptionCode NO_USER_CATEGORY_ID = new MallExceptionCode("6672", "未传一级类目ID");
 
     /**
      * 

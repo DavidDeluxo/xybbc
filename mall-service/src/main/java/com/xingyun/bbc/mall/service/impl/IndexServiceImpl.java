@@ -221,8 +221,12 @@ public class IndexServiceImpl implements IndexService {
     @Override
     public PageVo<IndexSkuGoodsVo> queryGoodsByCategoryId1(CategoryDto categoryDto) {
         //第一步，查询一级类目下所有所有未删除且状态为已上架的sku
+        if(categoryDto.getFcategoryId1() == null ){
+            throw new BizException(MallExceptionCode.NO_USER_CATEGORY_ID);
+        }
         Criteria<GoodsSku, Object> criteria = Criteria.of(GoodsSku.class)
                 .andEqualTo(GoodsSku::getFisDelete, 0)
+                .andEqualTo(GoodsSku::getFcategoryId1,categoryDto.getFcategoryId1())
                 .andEqualTo(GoodsSku::getFskuStatus, 1);
         //查询sku基表信息
         Result<List<GoodsSku>> result = goodsSkuApi.queryByCriteria(
@@ -426,7 +430,6 @@ public class IndexServiceImpl implements IndexService {
      */
     @Override
     public Result<List<GoodsCategoryVo>> queryGoodsCategoryList() {
-
         Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(
                 Criteria.of(GoodsCategory.class)
                         .fields(GoodsCategory::getFcategoryName, GoodsCategory::getFcategoryId, GoodsCategory::getFcategoryDesc)
