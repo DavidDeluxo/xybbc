@@ -87,6 +87,9 @@ public class UserServiceImpl implements UserService {
         if(userResult.getData() == null){
             return Result.failure(MallResultStatus.LOGIN_FAILURE);
         }
+        if(userResult.getData().getFfreezeStatus() != 1){
+            return Result.failure(MallResultStatus.ACCOUNT_FREEZE);
+        }
         UserLoginVo userLoginVo = createToken(userResult.getData());
         return Result.success(userLoginVo);
     }
