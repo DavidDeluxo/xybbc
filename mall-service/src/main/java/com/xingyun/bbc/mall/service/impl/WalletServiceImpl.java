@@ -341,8 +341,8 @@ public class WalletServiceImpl implements WalletService {
     private List<WithdrawRateVo> toWithdrawRateVos(List<UserWithdrawRate> userRate) {
         return userRate.stream().map(rate ->
                 new WithdrawRateVo()
-                        //取 除一百万乘100
-                        .setFrate((new BigDecimal(rate.getFrate()).divide(TEN_THOUSAND)).multiply(HUNDRED).setScale(6, BigDecimal.ROUND_HALF_UP))
+                        //取 除一万乘100
+                        .setFrate((new BigDecimal(rate.getFrate()).divide(TEN_THOUSAND)).multiply(HUNDRED))
                         .setMinimumAmount(PriceUtil.toYuan(rate.getMinimumAmount()))
                         .setFwithdrawType(rate.getFwithdrawType())
         ).collect(Collectors.toList());
@@ -384,13 +384,13 @@ public class WalletServiceImpl implements WalletService {
 
         public WithdrawRate get() {
             // 提现费率，若不存在则默认为0
-            float poundagePercent = 0f;
+            BigDecimal poundagePercent = BigDecimal.ZERO;
             List<WithdrawRateVo> withdrawRates = WalletServiceImpl.this.queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(way));
             if (!CollectionUtils.isEmpty(withdrawRates)) {
-                poundagePercent = withdrawRates.stream().findFirst().get().getFrate().floatValue();
+                poundagePercent = withdrawRates.stream().findFirst().get().getFrate();
             }
             //计算手续费
-            feeRate = (new BigDecimal(poundagePercent).divide(TEN_THOUSAND).setScale(6,BigDecimal.ROUND_HALF_UP));
+            feeRate = (poundagePercent.divide(TEN_THOUSAND));
             return this;
         }
     }
@@ -418,10 +418,11 @@ public class WalletServiceImpl implements WalletService {
             userAccountTrans.setFtransTypes(2);//提现
             userAccountTrans.setFtransReason("提现申请");
             userAccountTrans.setFtransAmount(transAmount.longValue());
-            feeAmount = ((transAmount.multiply(withdrawRate.getFeeRate())).setScale(6,BigDecimal.ROUND_HALF_UP));
+            feeAmount = (transAmount.multiply(withdrawRate.getFeeRate()));
+            userAccountTrans.setFtransPoundage(feeAmount.longValue());
             transActualAmount = transAmount.subtract(feeAmount).setScale(6, BigDecimal.ROUND_HALF_UP);
             userAccountTrans.setFtransActualAmount(transActualAmount.longValue());
-            userAccountTrans.setFtransPoundage(feeAmount.longValue());
+
             userAccountTrans.setFaccountHolder(withdrawDto.getName());
             userAccountTrans.setFtransMethod(2);
 
