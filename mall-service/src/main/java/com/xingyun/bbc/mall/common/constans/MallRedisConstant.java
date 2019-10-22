@@ -10,4 +10,6 @@ public interface MallRedisConstant {
     String KEY_PREFIX = "xybbc_mall_service:";
 
     String ADD_USER_WITHDRAW_LOCK = KEY_PREFIX + "add_user_withdraw_lock";
+
+    String GOODS_CATEGORIES_CACHE = KEY_PREFIX + "goods_categories_cache";
 }
