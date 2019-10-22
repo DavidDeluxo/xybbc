@@ -46,6 +46,7 @@ import com.xingyun.bbc.core.utils.Result;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -105,6 +106,12 @@ public class PayServiceImpl implements PayService {
     private RechargeService rechargeService;
 	
 	
+	/**
+	 * @author jianghui
+	 * @version V1.0
+	 * @Description: 余额支付，混合支付
+	 * @date 2019/8/20 13:49
+	 */
 	@Override
 	public Result<?> balancePay(BalancePayDto dto, HttpServletRequest request) {
 		
@@ -121,7 +128,7 @@ public class PayServiceImpl implements PayService {
 		if (checkEntity != null) {
 			return checkEntity;
 		}
-		/////////////////
+
 		Long totalAmount=null;//订单总金额
 		Long unPayAmount=null;//未支付金额
 		OrderPayment orderPayment=orderPaymentApi.queryById(dto.getForderId()).getData();
@@ -152,8 +159,10 @@ public class PayServiceImpl implements PayService {
 		//余额不足支付 此时为混合支付
 		if(unPayAmount > fbalance){
 			orderResultVo.setOrder_status(1); //还需要第三方支付状态
+			orderResultVo.setBalance(BigDecimal.ZERO);
 		}else{
 			orderResultVo.setOrder_status(2); //余额足够
+			orderResultVo.setBalance(PriceUtil.toYuan(fbalance-unPayAmount));
 		}
 		
 		if(code.getData().getCode()==200)
@@ -172,7 +181,12 @@ public class PayServiceImpl implements PayService {
 	}
 	
 	
-
+	/**
+	 * @author jianghui
+	 * @version V1.0
+	 * @Description: 生成第三方支付链接
+	 * @date 2019/8/20 13:49
+	 */
 	@Override
 	public Result<?> createThirdPayUrl(ThirdPayDto dto,HttpServletRequest request) {
 		String appVersion= request.getHeader("appVersion");
@@ -186,6 +200,13 @@ public class PayServiceImpl implements PayService {
 		return payApi.createThirdPayUrl(dto);
 	}
 	
+
+	/**
+	 * @author jianghui
+	 * @version V1.0
+	 * @Description: 生成第三方支付二维码
+	 * @date 2019/8/20 13:49
+	 */
 	@Override
 	public Result<?> createThirdPayCode(ThirdPayDto dto,HttpServletRequest request) {
 	
@@ -198,6 +219,12 @@ public class PayServiceImpl implements PayService {
 		return payApi.createThirdPayCode(dto);
 	}
 	
+	/**
+	 * @author jianghui
+	 * @version V1.0
+	 * @Description: 支付回调
+	 * @date 2019/8/20 13:49
+	 */
 	@Override
 	public Result<?> newThirdPayResponse(@PathVariable String urlSuffix, HttpServletRequest request, HttpServletResponse response) {	
 		logger.info("第三方支付回调url："+request.getRequestURL()+"?"+request.getQueryString());
@@ -250,6 +277,7 @@ public class PayServiceImpl implements PayService {
 			}else{
 				logger.info("------------------第三方支付回调充值返回失败："+thirdPayInfo);
 			}
+			
 		} else 
 			if (ThirdPayUtil.PAY_SCENE_ORDER.equals(payScene)) { //订单
 			PayDto payDto=new PayDto();
@@ -277,7 +305,7 @@ public class PayServiceImpl implements PayService {
 	
 	}
 	
-	
+	//废弃方法
 	@Override
 	public Result<?> thirdPayResponse(@PathVariable String urlSuffix, HttpServletRequest request, HttpServletResponse response) {	
 		logger.info("第三方支付回调url："+request.getRequestURL()+"?"+request.getQueryString());
@@ -335,7 +363,12 @@ public class PayServiceImpl implements PayService {
 		return Result.failure(MallExceptionCode.THIRD_PAY_NOTIFY_FAIL);
 	}
 	
-	
+	/**
+	 * @author jianghui
+	 * @version V1.0
+	 * @Description: 线下汇款支付
+	 * @date 2019/8/20 13:49
+	 */
 	@Override
 	@GlobalTransactional
 	public Result<?> addBalance(RemittancetRechargeDto dto) {
@@ -546,7 +579,7 @@ public class PayServiceImpl implements PayService {
 			return extraParams;
 		}
 
-		
+		// 从HttpServletRequest获取参数并转换成json字符串
 		public static String readReqStr(HttpServletRequest request){
 	        BufferedReader reader = null;
 	        StringBuilder sb = new StringBuilder();

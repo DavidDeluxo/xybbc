@@ -58,10 +58,6 @@ public class UserDeliveryDto extends PageDto{
     @ApiModelProperty("详细地址")
     private String fdeliveryAddr;
 
- /*   *//** 地址邮编 *//*
-    @ApiModelProperty("地址邮编")
-    private String fdeliveryPostcode;*/
-
     /** 身份证号码 */
     @ApiModelProperty("身份证号码")
     private String fdeliveryCardid;
@@ -73,18 +69,6 @@ public class UserDeliveryDto extends PageDto{
     /** 身份证反面 */
     @ApiModelProperty("身份证反面")
     private String fdeliveryCardUrlBack;
-
-/*    *//** 是否删除(0 否 1是) *//*
-    @ApiModelProperty("是否删除(0 否 1是)")
-    private Integer fisDelete;
-
-    *//** 创建时间 *//*
-    @ApiModelProperty("创建时间")
-    private Date fcreateTime;
-
-    *//** 更新时间 *//*
-    @ApiModelProperty(" 更新时间")
-    private Date fmodifyTime;*/
 
     /** 用户收货地址IDS */
     @ApiModelProperty("用户IDS")

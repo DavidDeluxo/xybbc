@@ -13,6 +13,9 @@ public class UserVo {
     @ApiModelProperty("用户姓名")
     private String funame;
 
+    @ApiModelProperty("用户是否可修改：0否，1是")
+    private Integer funameIsModify;
+
     @ApiModelProperty("用户昵称")
     private String fnickname;
 

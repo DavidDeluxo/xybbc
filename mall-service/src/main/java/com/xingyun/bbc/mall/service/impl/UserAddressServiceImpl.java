@@ -12,6 +12,7 @@ import com.xingyun.bbc.core.user.po.UserDelivery;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.PageUtils;
+import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.*;
 import com.xingyun.bbc.mall.model.vo.CityRegionVo;
 import com.xingyun.bbc.mall.model.vo.PageVo;
@@ -68,6 +69,10 @@ public class UserAddressServiceImpl implements UserAddressService {
      */
     @Override
     public PageVo<UserDeliveryVo> getUserAddress(UserDeliveryDto userDeliveryDto) {
+        //校验用户id
+        if(userDeliveryDto.getFuid() == null){
+          throw new BizException(MallExceptionCode.NO_USER_ID);
+        }
         Criteria<UserDelivery, Object> criteria = Criteria.of(UserDelivery.class);
         if (!StringUtils.isEmpty(userDeliveryDto.getFuid())) {
             criteria.andEqualTo(UserDelivery::getFuid, userDeliveryDto.getFuid())
@@ -116,6 +121,10 @@ public class UserAddressServiceImpl implements UserAddressService {
      */
     @Override
     public Result addUserAddress(UserDeliveryAddDto userDeliveryDto) {
+        //校验用户id
+        if(userDeliveryDto.getFuid() == null){
+            throw new BizException(MallExceptionCode.NO_USER_ID);
+        }
         Integer isDefualt = userDeliveryDto.getFisDefualt();
         UserDeliveryDto userDelivery = new UserDeliveryDto();
         userDelivery.setFuid(userDeliveryDto.getFuid());
@@ -156,6 +165,10 @@ public class UserAddressServiceImpl implements UserAddressService {
      */
     @Override
     public Result modifyUserAddress(UserDeliveryUpdateDto userDeliveryDto) {
+        //校验用户id
+        if(userDeliveryDto.getFuid() == null){
+            throw new BizException(MallExceptionCode.NO_USER_ID);
+        }
         Integer isDefualt = userDeliveryDto.getFisDefualt();
         UserDeliveryDto userDelivery = new UserDeliveryDto();
         userDelivery.setFuid(userDeliveryDto.getFuid());

@@ -4,6 +4,7 @@ package com.xingyun.bbc.mall.controller;
 import com.xingyun.bbc.common.jwt.XyUserJwtManager;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
+import com.xingyun.bbc.mall.base.utils.JwtParser;
 import com.xingyun.bbc.mall.model.dto.*;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.CategoryService;
@@ -52,9 +53,7 @@ public class IndexController {
     private DozerHolder holder;
 
     @Autowired
-    private XyUserJwtManager userJwtManager;
-
-    private static final String ACCESS_TOKEN = "accessToken";
+    JwtParser jwtParser;
 
     @ApiImplicitParams({@ApiImplicitParam(paramType = "query", dataType = "Integer", name = "fposition", value = "导航栏位置(0Banner配置 1ICON配置 2专题位配置", required = false)})
     @ApiOperation(value = "查询首页配置", httpMethod = "POST")
@@ -83,24 +82,11 @@ public class IndexController {
     @ApiOperation(value = "查询一级类目下所有sku列表---不校验登录")
     @PostMapping("/via/queryGoodsByCategoryId1")
     public Result<PageVo<IndexSkuGoodsVo>> queryGoodsByCategoryId1(CategoryDto categoryDto, HttpServletRequest request) {
-        this.getTokenInfo(categoryDto, request);
+        TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
+        categoryDto.setIsLogin(infoVo.getIsLogin());
+        if(infoVo.getFuid() != null){
+            categoryDto.setFuid(Long.valueOf(infoVo.getFuid()));
+        }
         return Result.success(indexService.queryGoodsByCategoryId1(categoryDto));
     }
-
-
-    private void getTokenInfo(CategoryDto dto, HttpServletRequest request) {
-        if (StringUtils.isNotEmpty(request.getHeader(ACCESS_TOKEN))) {
-            String token = request.getHeader(ACCESS_TOKEN);
-            Claims claims = userJwtManager.parseJwt(token);
-            if (claims == null) {
-                dto.setIsLogin(false);
-                return;
-            }
-            String id = claims.getId();
-            dto.setIsLogin(true);
-            dto.setFuid(Long.valueOf(Integer.parseInt(id)));
-        }
-    }
-
-
 }

@@ -72,6 +72,14 @@ public class GoodsDetailController {
         return goodDetailService.getGoodStockSell(goodsDetailDto);
     }
 
+    @ApiOperation(value = "获取是否加入常购清单", httpMethod = "GET")
+    @GetMapping("/getIsRegular")
+    public Result<Integer> getIsRegular(@RequestParam Long fgoodsId, HttpServletRequest request){
+        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        logger.info("获取是否加入常购清单 fgoodsId {} fuid {}", fgoodsId, xyid);
+        return goodDetailService.getIsRegular(fgoodsId, xyid);
+    }
+
 //    @ApiOperation(value = "获取sku批次有效期", httpMethod = "GET")
 //    @GetMapping("/getSkuBatchSpecifi")
 //    public Result<List<GoodsSkuBatchVo>> getSkuBatchSpecifi(@RequestParam Long fskuId){

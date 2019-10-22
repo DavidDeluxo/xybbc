@@ -13,6 +13,7 @@ import com.xingyun.bbc.core.query.Criteria;
 
 import com.xingyun.bbc.core.sku.api.*;
 import com.xingyun.bbc.core.sku.po.*;
+import com.xingyun.bbc.core.supplier.po.SupplierSku;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
@@ -61,9 +62,6 @@ public class IndexServiceImpl implements IndexService {
     private XyRedisManager xyRedisManager;
 
     @Autowired
-    private GoodsApi goodsApi;
-
-    @Autowired
     GoodsCategoryApi goodsCategoryApi;
 
     @Autowired
@@ -93,12 +91,15 @@ public class IndexServiceImpl implements IndexService {
     @Autowired
     private PageUtils pageUtils;
 
+    @Autowired
+    private DozerHolder dozerHolder;
+
     /**
      * @author lll
      * @version V1.0
      * @Description: 查询首页配置
      * @Param: [fposition]
-     * @return: Result<List < PageConfigVo>>
+     * @return: Result<List               <PageConfigVo>>
      * @date 2019/9/20 13:49
      */
     @Override
@@ -208,64 +209,23 @@ public class IndexServiceImpl implements IndexService {
 
 
     /**
-     * 查询goodsIds
-     *
-     * @param fcategoryId1
-     * @return List<Long>
-     */
-    private List<Long> queryGoodIds(Integer fcategoryId1) {
-        //查询某一个一级类目下的所有商品
-        Criteria<Goods, Object> goodsCriteria = Criteria.of(Goods.class).andEqualTo(Goods::getFisDelete, 0);
-        if (null != fcategoryId1) {
-            goodsCriteria.andEqualTo(Goods::getFcategoryId1, fcategoryId1);
-        }
-        Result<List<Goods>> goodsResult = goodsApi.queryByCriteria(goodsCriteria.fields(Goods::getFgoodsId));
-        if (!goodsResult.isSuccess()) {
-            logger.info("查询商品信息失败");
-            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
-        }
-        if (!CollectionUtils.isEmpty(goodsResult.getData())) {
-            List<Long> collect = goodsResult.getData().stream().map(goods -> goods.getFgoodsId()).collect(Collectors.toList());
-            return collect;
-        }
-        return null;
-    }
-
-    /**
      * @author lll
      * @version V1.0
-     * @Description: 查询供应商账户
+     * @Description: 查询首页楼层商品
      * @Param: [supplierAccountQueryDto]
      * @return: PageVo<SupplierAccountVo>
      * @date 2019/9/20 13:49
      */
     @Override
     public PageVo<IndexSkuGoodsVo> queryGoodsByCategoryId1(CategoryDto categoryDto) {
-        //第一步，查询一级类目下所有所有商品包含的sku
+        //第一步，查询一级类目下所有所有未删除且状态为已上架的sku
+        if(categoryDto.getFcategoryId1() == null ){
+            throw new BizException(MallExceptionCode.NO_USER_CATEGORY_ID);
+        }
         Criteria<GoodsSku, Object> criteria = Criteria.of(GoodsSku.class)
                 .andEqualTo(GoodsSku::getFisDelete, 0)
+                .andEqualTo(GoodsSku::getFcategoryId1,categoryDto.getFcategoryId1())
                 .andEqualTo(GoodsSku::getFskuStatus, 1);
-        List<Long> goodsIds = new ArrayList<>();
-        if (categoryDto.getFcategoryId1() != null) {
-            //查询一级类目下所有商品
-            goodsIds = this.queryGoodIds(Math.toIntExact(categoryDto.getFcategoryId1()));
-            if (CollectionUtils.isEmpty(goodsIds)) {
-                return new PageVo<>(0, categoryDto.getCurrentPage(), categoryDto.getPageSize(), Lists.newArrayList());
-            }
-        }
-        if (!CollectionUtils.isEmpty(goodsIds)) {
-            //关联sku基本信息表
-            criteria.andIn(GoodsSku::getFgoodsId, goodsIds);
-        }
-        // 统计次数
-        Result<Integer> totalResult = goodsSkuApi.countByCriteria(criteria);
-        if (!totalResult.isSuccess()) {
-            logger.info("统计首页商品数量信息失败");
-            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        }
-        if (0 == totalResult.getData() || Objects.isNull(totalResult.getData())) {
-            return new PageVo<>(0, categoryDto.getCurrentPage(), categoryDto.getPageSize(), Lists.newArrayList());
-        }
         //查询sku基表信息
         Result<List<GoodsSku>> result = goodsSkuApi.queryByCriteria(
                 criteria.fields(
@@ -281,21 +241,45 @@ public class IndexServiceImpl implements IndexService {
         if (CollectionUtils.isEmpty(result.getData())) {
             return new PageVo<>(0, categoryDto.getCurrentPage(), categoryDto.getPageSize(), Lists.newArrayList());
         }
-
-        //第二步，封装sku中的缩略图，历史销量，最低价格
+        // 统计次数
+        Result<Integer> totalResult = goodsSkuApi.countByCriteria(criteria);
+        if (!totalResult.isSuccess()) {
+            logger.info("统计首页商品数量信息失败");
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (0 == totalResult.getData() || Objects.isNull(totalResult.getData())) {
+            return new PageVo<>(0, categoryDto.getCurrentPage(), categoryDto.getPageSize(), Lists.newArrayList());
+        }
+        //取出skuid结果集
+        List<Long> skuIdList = new ArrayList<>(result.getData().stream().map(GoodsSku::getFskuId).collect(Collectors.toList()));
+        //查询批次表用来封装销量
+        Criteria<SkuBatch, Object> skuBatchCriteria = Criteria.of(SkuBatch.class)
+                .andIn(SkuBatch::getFskuId, skuIdList);
+        Result<List<SkuBatch>> skuBatchList = skuBatchApi.queryByCriteria(skuBatchCriteria);
+        if (!skuBatchList.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        //第二步，封装sku历史销量，最低价格
         List<IndexSkuGoodsVo> indexSkuGoodsVoList = result.getData().stream().map(goodsSku -> {
             IndexSkuGoodsVo indexSkuGoodsVo = dozerMapper.map(goodsSku, IndexSkuGoodsVo.class);
             //1-------封装历史销量
-            Criteria<SkuBatch, Object> skuBatchCriteria = Criteria.of(SkuBatch.class)
-                    .andEqualTo(SkuBatch::getFskuId, goodsSku.getFskuId());
-            Result<List<SkuBatch>> skuBatchList = skuBatchApi.queryByCriteria(skuBatchCriteria);
-            if (!skuBatchList.isSuccess()) {
-                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-            }
-            if (CollectionUtils.isEmpty(skuBatchList.getData())) {
-                //throw new BizException(MallExceptionCode.SKU_BATCH_IS_NONE);
-                return null;
-            }
+            skuBatchList.getData().forEach(skuBatch -> {
+                if(skuBatch.getFskuId().toString().equals(goodsSku.getFskuId().toString())){
+                    List<Long> supplierIdList = skuBatchList.getData().stream().filter(s->s.getFskuId().equals(goodsSku.getFskuId()))
+                            .map(SkuBatch::getFsellNum).collect(Collectors.toList());
+                    if(CollectionUtils.isEmpty(supplierIdList)){
+                        return ;
+                    }else {
+                        //循环遍历累加得到历史销量
+                        Long fsellNum = 0L;
+                        for (Long sellNum:supplierIdList) {
+                            fsellNum += sellNum;
+                        }
+                        indexSkuGoodsVo.setFsellNum(fsellNum);
+                    }
+                }
+            });
+            //查询批次表此时批次状态为已上架用来封装价格
             Criteria<SkuBatch, Object> batchCriteria = Criteria.of(SkuBatch.class)
                     .andEqualTo(SkuBatch::getFskuId, goodsSku.getFskuId())
                     .andEqualTo(SkuBatch::getFbatchStatus, 2);
@@ -304,25 +288,8 @@ public class IndexServiceImpl implements IndexService {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
             if (CollectionUtils.isEmpty(skuBatchs.getData())) {
-                //throw new BizException(MallExceptionCode.SKU_BATCH_IS_NONE);
                 return null;
             }
-            //循环遍历该sku对应的批次集合
-            Long fsellNum = 0L;
-            for (SkuBatch skuBatch : skuBatchList.getData()) {
-                fsellNum += skuBatch.getFsellNum();
-            }
-            indexSkuGoodsVo.setFsellNum(fsellNum);
-
-      /*      //销量过万，则保留小数量后一位，四舍五入
-            if(fsellNum > 10000){
-                BigDecimal sellNum = new BigDecimal(fsellNum)
-                        .divide(PageConfigContants.BIG_DECIMAL_10000, 1, BigDecimal.ROUND_HALF_UP);
-                indexSkuGoodsVo.setFsellNum(String.valueOf(sellNum));
-            }else {
-                indexSkuGoodsVo.setFsellNum(String.valueOf(fsellNum)+"w");
-            }*/
-
             //封装价格：1.未登录情况下不展示价格：2.根据sku是否支持平台会员类型折扣分两种情况：
             // 一，支持，则在t_bbc_sku_batch_user_price取值；二，不支持，则在t_bbc_goods_sku_batch_price取值
             //不同批次不同规格价格不同，取其中最低价展示
@@ -467,41 +434,24 @@ public class IndexServiceImpl implements IndexService {
      * @version V1.0
      * @Description: 查询商品一级类目列表
      * @Param:
-     * @return: Result<List < GoodsCategoryVo>>
+     * @return: Result<List<GoodsCategoryVo>>
      * @date 2019/9/20 13:49
      */
     @Override
     public Result<List<GoodsCategoryVo>> queryGoodsCategoryList() {
-        List<GoodsCategoryVo> categoryVoList = new LinkedList<>();
-        Criteria<Goods, Object> goodsCriteria = Criteria.of(Goods.class).andEqualTo(Goods::getFisDelete, 0);
-        Result<List<Goods>> goodsResultAll = goodsApi.queryByCriteria(goodsCriteria.fields(Goods::getFcategoryId1));
-        //Result<List<Goods>> goodsResultAll = goodsApi.queryAll();
-        if (!goodsResultAll.isSuccess()) {
+        Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(
+                Criteria.of(GoodsCategory.class)
+                        .fields(GoodsCategory::getFcategoryName, GoodsCategory::getFcategoryId, GoodsCategory::getFcategoryDesc)
+                        .sortDesc(GoodsCategory::getFmodifyTime)
+                        .andEqualTo(GoodsCategory::getFparentCategoryId, 0)
+                        .andEqualTo(GoodsCategory::getFisDelete, 0)
+                        .andEqualTo(GoodsCategory::getFisDisplay, 1));
+        if (!categoryListResultAll.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
-        if (CollectionUtils.isNotEmpty(goodsResultAll.getData())) {
-            List<Goods> goodsListAll = goodsResultAll.getData();
-            List<Long> categoryListFiltered = goodsListAll.stream().map(Goods::getFcategoryId1).distinct().collect(Collectors.toList());
-            Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(
-                    Criteria.of(GoodsCategory.class)
-                            .fields(GoodsCategory::getFcategoryName,GoodsCategory::getFcategoryId,GoodsCategory::getFcategoryDesc)
-                            .andIn(GoodsCategory::getFcategoryId, categoryListFiltered)
-                            .sortDesc(GoodsCategory::getFmodifyTime)
-                            .andEqualTo(GoodsCategory::getFisDelete, 0)
-                            .andEqualTo(GoodsCategory::getFisDisplay, 1));
-            if (!categoryListResultAll.isSuccess()) {
-                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
-            }
-            if (!org.springframework.util.CollectionUtils.isEmpty(categoryListResultAll.getData())) {
-                for (GoodsCategory category : categoryListResultAll.getData()) {
-                    GoodsCategoryVo categoryVo = new GoodsCategoryVo();
-                    categoryVo.setFcategoryId(category.getFcategoryId());
-                    categoryVo.setFcategoryName(category.getFcategoryName());
-                    categoryVo.setFcategoryDesc(category.getFcategoryDesc());
-                    categoryVoList.add(categoryVo);
-                }
-
-            }
+        List<GoodsCategoryVo> categoryVoList = new LinkedList<>();
+        if (CollectionUtils.isNotEmpty(categoryListResultAll.getData())) {
+            categoryVoList = dozerHolder.convert(categoryListResultAll.getData(), GoodsCategoryVo.class);
         }
         return Result.success(categoryVoList);
     }
@@ -511,7 +461,7 @@ public class IndexServiceImpl implements IndexService {
      * @version V1.0
      * @Description: 引导页启动页查询
      * @Param: [ftype]
-     * @return: Result<List < GuidePageVo>>
+     * @return: Result<List<GuidePageVo>>
      * @date 2019/9/20 13:49
      */
     @Override
