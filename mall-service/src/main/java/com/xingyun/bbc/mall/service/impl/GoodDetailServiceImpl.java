@@ -352,38 +352,34 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     .andEqualTo(SkuBatch::getFsupplierSkuBatchId, goodsDetailDto.getFsupplierSkuBatchId())
                     .fields(SkuBatch::getFbatchPriceType, SkuBatch::getFfreightId, SkuBatch::getFsupplierSkuBatchId)).getData();
             Integer fbatchPriceType = fskuBatch.getFbatchPriceType();
-            //运费
+            //运费不管价格类型
             BigDecimal freightPrice = BigDecimal.ZERO;
-            if (new Integer(3).equals(fbatchPriceType) || new Integer(4).equals(fbatchPriceType)) {
-
-                // 判断是默认地址还是前端选中的地址
-                if (null == goodsDetailDto.getFdeliveryCityId()) {
-                    UserDelivery defautDelivery = userDeliveryApi.queryOneByCriteria(Criteria.of(UserDelivery.class)
-                            .andEqualTo(UserDelivery::getFuid, goodsDetailDto.getFuid())
-                            .andEqualTo(UserDelivery::getFisDefualt, 1)
-                            .andEqualTo(UserDelivery::getFisDelete, 0)
-                            .fields(UserDelivery::getFuid, UserDelivery::getFdeliveryAddr,
-                                    UserDelivery::getFdeliveryProvinceId, UserDelivery::getFdeliveryProvinceName,
-                                    UserDelivery::getFdeliveryCityId, UserDelivery::getFdeliveryCityName,
-                                    UserDelivery::getFdeliveryAreaId, UserDelivery::getFdeliveryAreaName)).getData();
-                    if (null != defautDelivery) {
-                        //使用默认地址计算运费
-                        if (null != goodsDetailDto.getFnum()) {
-                           // (Long fbatchPackageId, Long ffreightId, Long fdeliveryCityId, String fsupplierSkuBatchId, Long fnum)
-                            freightPrice = this.getFreight(goodsDetailDto.getFbatchPackageId(), fskuBatch.getFfreightId(),
-                                    defautDelivery.getFdeliveryCityId(),fskuBatch.getFsupplierSkuBatchId(), goodsDetailDto.getFnum());
-                        }
-                        priceResult.setFdeliveryAddr(defautDelivery.getFdeliveryAddr() == null ? "" : defautDelivery.getFdeliveryAddr());
-                        priceResult.setFdeliveryProvinceName(defautDelivery.getFdeliveryProvinceName() == null ? "" : defautDelivery.getFdeliveryProvinceName());
-                        priceResult.setFdeliveryCityName(defautDelivery.getFdeliveryCityName() == null ? "" : defautDelivery.getFdeliveryCityName());
-                        priceResult.setFdeliveryAreaName(defautDelivery.getFdeliveryAreaName() == null ? "" : defautDelivery.getFdeliveryAreaName());
-                    }
-                } else {
-                    //使用前端传参计算运费
-                    if (null != goodsDetailDto.getFdeliveryCityId() && null != goodsDetailDto.getFnum()) {
+            // 判断是默认地址还是前端选中的地址
+            if (null == goodsDetailDto.getFdeliveryCityId()) {
+                UserDelivery defautDelivery = userDeliveryApi.queryOneByCriteria(Criteria.of(UserDelivery.class)
+                        .andEqualTo(UserDelivery::getFuid, goodsDetailDto.getFuid())
+                        .andEqualTo(UserDelivery::getFisDefualt, 1)
+                        .andEqualTo(UserDelivery::getFisDelete, 0)
+                        .fields(UserDelivery::getFuid, UserDelivery::getFdeliveryAddr,
+                                UserDelivery::getFdeliveryProvinceId, UserDelivery::getFdeliveryProvinceName,
+                                UserDelivery::getFdeliveryCityId, UserDelivery::getFdeliveryCityName,
+                                UserDelivery::getFdeliveryAreaId, UserDelivery::getFdeliveryAreaName)).getData();
+                if (null != defautDelivery) {
+                    //使用默认地址计算运费
+                    if (null != goodsDetailDto.getFnum()) {
                         freightPrice = this.getFreight(goodsDetailDto.getFbatchPackageId(), fskuBatch.getFfreightId(),
-                                goodsDetailDto.getFdeliveryCityId(),fskuBatch.getFsupplierSkuBatchId(), goodsDetailDto.getFnum());
+                                defautDelivery.getFdeliveryCityId(), fskuBatch.getFsupplierSkuBatchId(), goodsDetailDto.getFnum());
                     }
+                    priceResult.setFdeliveryAddr(defautDelivery.getFdeliveryAddr() == null ? "" : defautDelivery.getFdeliveryAddr());
+                    priceResult.setFdeliveryProvinceName(defautDelivery.getFdeliveryProvinceName() == null ? "" : defautDelivery.getFdeliveryProvinceName());
+                    priceResult.setFdeliveryCityName(defautDelivery.getFdeliveryCityName() == null ? "" : defautDelivery.getFdeliveryCityName());
+                    priceResult.setFdeliveryAreaName(defautDelivery.getFdeliveryAreaName() == null ? "" : defautDelivery.getFdeliveryAreaName());
+                }
+            } else {
+                //使用前端传参计算运费
+                if (null != goodsDetailDto.getFdeliveryCityId() && null != goodsDetailDto.getFnum()) {
+                    freightPrice = this.getFreight(goodsDetailDto.getFbatchPackageId(), fskuBatch.getFfreightId(),
+                            goodsDetailDto.getFdeliveryCityId(), fskuBatch.getFsupplierSkuBatchId(), goodsDetailDto.getFnum());
                 }
             }
 
@@ -391,7 +387,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             Long fskuTaxRate = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
                     .andEqualTo(GoodsSku::getFskuId, goodsDetailDto.getFskuId())
                     .fields(GoodsSku::getFskuTaxRate)).getData().getFskuTaxRate();
-
             //(原始价*购买数量)
             BigDecimal orgPrice = priceResult.getPriceStart().multiply(new BigDecimal(goodsDetailDto.getFnum()));
             //税费 = (原始价*购买数量 + 运费) * 税率
