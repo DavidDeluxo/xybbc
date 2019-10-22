@@ -41,7 +41,7 @@ public class CategoryController {
     @GetMapping("/queryGoodsCategoryList")
     public Result<List<GoodsCategoryVo>> queryGoodsCategoryList(HttpServletRequest request){
         log.info("查询商品一级类目列表: "+Thread.currentThread() .getStackTrace()[1].getMethodName());
-        return categoryService.queryGoodsCategoryList();
+        return categoryService.queryGoodsCategoryListNew();
     }
 
 }
