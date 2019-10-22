@@ -13,4 +13,13 @@ public interface CategoryService {
     Result<List<GoodsCategoryVo>> queryCategoryTree();
 
     Result<List<GoodsCategoryVo>> queryGoodsCategoryList();
+
+    Result<List<GoodsCategoryVo>> queryGoodsCategoryListNew();
+
+    /**
+     * 查询一级类目和热门推荐
+     * @return
+     */
+    Result<List<GoodsCategoryVo>> queryCategoryLevelOne();
+
 }
