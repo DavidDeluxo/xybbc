@@ -122,6 +122,7 @@ public class RechargeServiceImpl implements RechargeService{
 			detail.setFincomeAmount(thirdPayAmount);
 			detail.setFbalance(newBalance+account.getFfreezeWithdraw());
 			detail.setFcreditBalance(creditBalance);
+			detail.setFaccountDate(new Date());
 			detail.setFremark(remark);
 			Result<Integer> flagUserDetail = detailApi.create(detail);
 			if (!this.checkAllModifySuccess(flagTrans.getData(), flagTransWater.getData(), flagAccount.getData(), flagAccountWater.getData(), flagUserDetail.getData())) {
@@ -189,9 +190,7 @@ public class RechargeServiceImpl implements RechargeService{
 			detail.setFincomeAmount(thirdPayAmount.longValue());
 			detail.setFbalance(newBalance);
 			detail.setFcreditBalance(creditBalance);
-			detail.setExt1("1");
-			detail.setExt2("2");
-			detail.setExt3("3");
+			detail.setFaccountDate(new Date());
 			detail.setFremark(remark);
 			Result<Integer> flagUserDetail = detailApi.create(detail);
 			if (!this.checkAllModifySuccess(flagTrans.getData(), flagTransWater.getData(), flagAccount.getData(), flagAccountWater.getData(), flagUserDetail.getData())) {

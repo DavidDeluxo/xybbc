@@ -292,7 +292,8 @@ public class PayServiceImpl implements PayService {
 				+",payAmount="+payDto.getPayAmount()+",payTime="+payDto.getPayName()+",thirdTradeNo="+payDto.getThirdTradeNo()+",payAccount="+payDto.getPayAccount()
 				+",payName="+payDto.getPayName());
 			Result<ThirdPayVo> thirdPay=orderPayApi.thirdPay(payDto);
-			logger.info("------------------第三方支付回调请求订单中心返回："+thirdPay.getData().getCode());
+			logger.info("------------------第三方支付回调请求订单中心返回：forderId="+payDto.getForderPaymentId()+",状态码:"+thirdPay.getData().getCode()+
+					"(200:处理成功,1032:第三方支付失败,1030:订单已支付,1031:订单已过期)");
 			
 			if("200".equals(thirdPay.getData().getCode().toString())||"1030".equals(thirdPay.getData().getCode().toString()))// 200:处理成功,1030:订单已支付
 			{
