@@ -39,6 +39,10 @@ public class SearchItemDto {
     @EsMark(policy = BuildPolicy.MULTI_OR_MUST, field = "fcategory_id3")
     private List<Integer> fcategoryId;
 
+    @ApiModelProperty(value = "一级类目id", hidden = true)
+    @EsMark(policy = BuildPolicy.MULTI_OR_MUST, field = "fcategory_id1")
+    private List<Integer> fcategoryIdL1;
+
     @ApiModelProperty("贸易类型id")
     @EsMark(policy = BuildPolicy.MULTI_OR_MUST, field = "ftrade_id")
     private List<Integer> ftradeId;
