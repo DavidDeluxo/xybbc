@@ -1,31 +1,6 @@
 package com.xingyun.bbc.mall.service.impl;
 
 
-import com.xingyun.bbc.mall.base.utils.DecodeUtil;
-import com.xingyun.bbc.mall.base.utils.DozerHolder;
-import com.xingyun.bbc.mall.base.utils.EncryptUtils;
-import com.xingyun.bbc.mall.base.utils.MD5Util;
-import com.xingyun.bbc.mall.base.utils.PriceUtil;
-import com.xingyun.bbc.mall.base.utils.ThirdPayUtil;
-import com.xingyun.bbc.mall.base.utils.ThirdPayUtilFactory;
-import com.xingyun.bbc.mall.base.utils.TimeAddUtil;
-import com.xingyun.bbc.mall.base.utils.WeixinPayUtil;
-import com.xingyun.bbc.mall.common.constans.PayConstants;
-import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
-import com.xingyun.bbc.mall.model.dto.BalancePayDto;
-import com.xingyun.bbc.mall.model.dto.RemittancetRechargeDto;
-import com.xingyun.bbc.mall.model.vo.OrderResultVo;
-import com.xingyun.bbc.mall.service.PayService;
-import com.xingyun.bbc.mall.service.RechargeService;
-import com.xingyun.bbc.order.api.OrderPayApi;
-import com.xingyun.bbc.order.model.dto.order.PayDto;
-import com.xingyun.bbc.order.model.vo.pay.BalancePayVo;
-import com.xingyun.bbc.order.model.vo.pay.ThirdPayVo;
-import com.xingyun.bbc.pay.api.PayChannelApi;
-import com.xingyun.bbc.pay.model.dto.ThirdPayDto;
-import com.xingyun.bbc.pay.model.dto.ThirdPayResponseDto;
-import com.xingyun.bbc.pay.model.vo.PayInfoVo;
-import io.seata.spring.annotation.GlobalTransactional;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.google.common.base.Strings;
@@ -43,6 +18,31 @@ import com.xingyun.bbc.core.user.po.UserAccount;
 import com.xingyun.bbc.core.user.po.UserAccountTrans;
 import com.xingyun.bbc.core.user.po.UserAccountTransWater;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mall.base.utils.*;
+import com.xingyun.bbc.mall.common.constans.PayConstants;
+import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
+import com.xingyun.bbc.mall.model.dto.BalancePayDto;
+import com.xingyun.bbc.mall.model.dto.RemittancetRechargeDto;
+import com.xingyun.bbc.mall.model.vo.OrderResultVo;
+import com.xingyun.bbc.mall.service.PayService;
+import com.xingyun.bbc.mall.service.RechargeService;
+import com.xingyun.bbc.order.api.OrderPayApi;
+import com.xingyun.bbc.order.model.dto.order.PayDto;
+import com.xingyun.bbc.order.model.vo.pay.BalancePayVo;
+import com.xingyun.bbc.order.model.vo.pay.ThirdPayVo;
+import com.xingyun.bbc.pay.api.PayChannelApi;
+import com.xingyun.bbc.pay.model.dto.ThirdPayDto;
+import com.xingyun.bbc.pay.model.dto.ThirdPayResponseDto;
+import com.xingyun.bbc.pay.model.vo.PayInfoVo;
+import io.seata.spring.annotation.GlobalTransactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -51,13 +51,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
 
 /**
  * @author jianghui
@@ -473,11 +466,11 @@ public class PayServiceImpl implements PayService {
 			return Result.failure(MallExceptionCode.ORDER_NOT_EXIST);
 		}
 		// String和Integer直接比较不会为true
-//		String fuid = request.getHeader("xyid");
-//		if (!fuid.equals(String.valueOf(userAccountTrans.getFuid()))) {
-//			logger.info("充值订单用户id和订单用户不匹配");
-//			return Result.failure(MallExceptionCode.ORDER_NOT_MATCHING);
-//		}
+		String fuid = request.getHeader("xyid");
+		if (!fuid.equals(String.valueOf(userAccountTrans.getFuid()))) {
+			logger.info("充值订单用户id和订单用户不匹配");
+			return Result.failure(MallExceptionCode.ORDER_NOT_MATCHING);
+		}
 		dto.setPayAmount(PriceUtil.toYuan(userAccountTrans.getFtransAmount()).toString());
 		return null;
 	}
@@ -485,12 +478,10 @@ public class PayServiceImpl implements PayService {
 	// 校验订单是否能支付
 	private Result<?> checkOrderIsEnablePay(ThirdPayDto dto) {
 		Date lockTime = null; // 订单超时时间
-		//String orderFuid = null; // 订单用户
 		Long orderTotalAmount = null; // 订单总金额
 		Long fbalancePayAmount = null; // 订单已付金额
 		int orderStatus = -1; // 订单状态
 		int thirdTradeStatus = -1; // 第三方支付状态
-		//Date orderCreateTime = null; // 订单超时时间，有些第三方支付需要
 		OrderPayment orderPayment = orderPaymentApi.queryById(dto.getForderId()).getData();
 			if (orderPayment == null) {
 				logger.info("支付订单号查询返回结果为空！ 订单号：" + dto.getForderId());
@@ -498,38 +489,40 @@ public class PayServiceImpl implements PayService {
 			}
 			
 			
-			Long fminute = DEFAULT_LOCK_TIME;
+			Long fminute = 0l;
 			
 			Criteria<OrderConfig, Object> orderConfigCriteria = Criteria.of(OrderConfig.class);
 			orderConfigCriteria.andEqualTo(OrderConfig::getForderConfigType, 0);// 0待支付订单限时支付
-			List<OrderConfig> orderConfigResult = orderConfigApi.queryByCriteria(orderConfigCriteria).getData();
-		        if(orderConfigResult.get(0)!=null)
-		        {
-		        	fminute=orderConfigResult.get(0).getFminute();
-		        }
+			orderConfigCriteria.andEqualTo(OrderConfig::getFstatus,0);
+			orderConfigCriteria.fields(OrderConfig::getForderConfigType,OrderConfig::getFminute);
+			Result<List<OrderConfig>>  orderConfigResult = orderConfigApi.queryByCriteria(orderConfigCriteria);
+			if(!orderConfigResult.isSuccess()){
+				fminute =  DEFAULT_LOCK_TIME;
+			}else {
+				List<OrderConfig> orderConfigList = orderConfigResult.getData();
+				if (orderConfigList.size() > 0) {
+					fminute = orderConfigList.get(0).getFminute();
+				}else{
+					fminute = DEFAULT_LOCK_TIME;
+				}
+			}
 			
 		    lockTime = TimeAddUtil.addMinute(orderPayment.getFcreateTime(),fminute.intValue());
-			//orderFuid = String.valueOf(orderPayment.getFuid());
 			orderTotalAmount = orderPayment.getFtotalOrderAmount();
 			fbalancePayAmount=orderPayment.getFbalancePayAmount();
 			orderStatus = orderPayment.getForderStatus();
 			thirdTradeStatus = orderPayment.getFthirdTradeStatus();
-			//orderCreateTime = orderPayment.getFcreateTime();
 		
-//		if (!fuid.equals(orderFuid)) {
-//			logger.info("订单与用户不匹配！用户：" + fuid + "，订单号：" + forderId + "，订单fuid：" + orderFuid);
-//			return Result.failure(MallExceptionCode.ORDER_NOT_MATCHING);
-//		}
-//		if (lockTime.compareTo(new Date()) < 0) {
-//			logger.info("订单已过期！用户："  + "，订单号：" + dto.getForderId());
-//			return Result.failure(MallExceptionCode.ORDER_AS_CANCELLED);
-//		}
+		if (lockTime.compareTo(new Date()) < 0) {
+			logger.info("订单已过期！"  + "订单号：" + dto.getForderId());
+			return Result.failure(MallExceptionCode.ORDER_IS_OVERDUE);
+		}
 		if (orderStatus == 5 || thirdTradeStatus == 2) {
-			logger.info("订单已完成！用户："  + "，订单号：" + dto.getForderId());
+			logger.info("订单已完成！"  + "订单号：" + dto.getForderId());
 			return Result.failure(MallExceptionCode.ORDER_AS_CANCELLED);
 		}
 		if (orderStatus == 3) {
-			logger.info("订单已取消！用户："  + "，订单号：" + dto.getForderId());
+			logger.info("订单已取消！"  + "订单号：" + dto.getForderId());
 			return Result.failure(MallExceptionCode.ORDER_IS_COMPLETION);
 		}
 		

@@ -53,6 +53,7 @@ public class MallExceptionCode implements IResultStatus {
     public static final MallExceptionCode REMITTANCE_PAY_FAIL =new MallExceptionCode("7783", "线下汇款充值失败");
     public static final MallExceptionCode BALANCE_NOT_ENOUGH =new MallExceptionCode("7784", "用户余额为0,请充值!");
     public static final MallExceptionCode FREEZE_WITHDRAW =new MallExceptionCode("7785", "用户账户信息有误，请联系客服!");
+    public static final MallExceptionCode ORDER_IS_OVERDUE = new MallExceptionCode("7786", "订单已过期");
     
     /**
      * 用户账号模块

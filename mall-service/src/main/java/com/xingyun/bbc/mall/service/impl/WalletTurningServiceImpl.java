@@ -78,12 +78,15 @@ public class WalletTurningServiceImpl implements WalletTurningService {
         if (userWalletDetailDto.getFuid() == null) {
             throw new BizException(MallExceptionCode.NO_USER);
         }
+        //过滤掉明细类型为6支付宝下单，7微信下单，9客服取消订单，14售后工单调整信用额度，18信用额度-可用余额，19信用额度下单
         Criteria<UserDetail, Object> criteria = Criteria.of(UserDetail.class)
                 .andEqualTo(UserDetail::getFuid, userWalletDetailDto.getFuid())
                 .andLeft().andNotEqualTo(UserDetail::getFdetailType, 6)
                 .andNotEqualTo(UserDetail::getFdetailType, 7)
                 .andNotEqualTo(UserDetail::getFdetailType, 9)
                 .andNotEqualTo(UserDetail::getFdetailType, 14)
+                .andNotEqualTo(UserDetail::getFdetailType, 18)
+                .andNotEqualTo(UserDetail::getFdetailType, 19)
                 .addRight().sortDesc(UserDetail::getFmodifyTime);
         if (!StringUtils.isEmpty(userWalletDetailDto.getQueryType()) && userWalletDetailDto.getQueryType() == 0) {
             criteria.andGreaterThan(UserDetail::getFincomeAmount, 0);
@@ -128,11 +131,11 @@ public class WalletTurningServiceImpl implements WalletTurningService {
             String lastDayTime = DateUtil.DateToString(lastDay, DateStyle.YYYY_MM_DD);
             String lastDayTimeStr = lastDayTime + " 23:59:59";
             Date lastTime = DateUtil.StringToDate(lastDayTimeStr);
-
             UserWalletQueryDto userWalletQueryDto = new UserWalletQueryDto();
             userWalletQueryDto.setFuid(userWalletDetailDto.getFuid());
             userWalletQueryDto.setStartTime(beginDate);
             userWalletQueryDto.setEndTime(lastTime);
+            //查询当月余额合计
             UserWalletDetailTotalVo userWalletDetailTotalVo = this.queryWalletTotal(userWalletQueryDto);
             userWalletDetailVo.setFincomeAmountTotal(userWalletDetailTotalVo.getFincomeAmountTotal());
             userWalletDetailVo.setFexpenseAmountTotal(userWalletDetailTotalVo.getFexpenseAmountTotal());
@@ -161,11 +164,19 @@ public class WalletTurningServiceImpl implements WalletTurningService {
         return pageUtils.convert(totalResult.getData(), list, UserWalletDetailVo.class, userWalletDetailDto);
     }
 
-
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 查询钱包收支当月合计
+     * @Param: [userWalletDetailDto]
+     * @return: PageVo<UserWalletDetailVo>
+     * @date 2019/9/20 13:49
+     */
     public UserWalletDetailTotalVo queryWalletTotal(UserWalletQueryDto userWalletQueryDto) {
         if (userWalletQueryDto.getFuid() == null) {
             throw new BizException(MallExceptionCode.NO_USER);
         }
+        //过滤掉明细类型为6支付宝下单，7微信下单，9客服取消订单，14售后工单调整信用额度，18信用额度-可用余额，19信用额度下单
         Criteria<UserDetail, Object> criteria = Criteria.of(UserDetail.class)
                 .andBetween(UserDetail::getFmodifyTime, userWalletQueryDto.getStartTime(), userWalletQueryDto.getEndTime())
                 .andEqualTo(UserDetail::getFuid, userWalletQueryDto.getFuid())
@@ -173,6 +184,8 @@ public class WalletTurningServiceImpl implements WalletTurningService {
                 .andNotEqualTo(UserDetail::getFdetailType, 7)
                 .andNotEqualTo(UserDetail::getFdetailType, 9)
                 .andNotEqualTo(UserDetail::getFdetailType, 14)
+                .andNotEqualTo(UserDetail::getFdetailType, 18)
+                .andNotEqualTo(UserDetail::getFdetailType, 19)
                 .addRight().sortDesc(UserDetail::getFmodifyTime);
         Result<List<UserDetail>> result = userDetailApi.queryByCriteria(criteria.fields(
                 UserDetail::getFexpenseAmount
@@ -186,12 +199,14 @@ public class WalletTurningServiceImpl implements WalletTurningService {
         }
         Long incomeAmountTotal = 0L;
         Long expenseAmountTotal = 0L;
+        //循环累加计算出当月收支合计金额
         for (UserDetail userDetail : result.getData()) {
             Long incomeAmount = userDetail.getFincomeAmount();
             Long expenseAmount = userDetail.getFexpenseAmount();
             incomeAmountTotal += incomeAmount;
             expenseAmountTotal += expenseAmount;
         }
+        //金额除以100
         BigDecimal incomeAmount = new BigDecimal(incomeAmountTotal)
                 .divide(PageConfigContants.BIG_DECIMAL_100, 2, BigDecimal.ROUND_HALF_UP);
         BigDecimal expenseAmount = new BigDecimal(expenseAmountTotal)

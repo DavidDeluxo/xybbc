@@ -78,6 +78,7 @@ public class UserAddressServiceImpl implements UserAddressService {
             criteria.andEqualTo(UserDelivery::getFuid, userDeliveryDto.getFuid())
                     .andEqualTo(UserDelivery::getFisDelete, 0).sortDesc(UserDelivery::getFmodifyTime);
         }
+        //查询总数分页
         Result<Integer> totalResult = userDeliveryApi.countByCriteria(criteria);
         if (!totalResult.isSuccess()) {
             logger.info("查询收货地址信息失败");
@@ -97,7 +98,14 @@ public class UserAddressServiceImpl implements UserAddressService {
         return pageUtils.convert(totalResult.getData(), userDeliveryVoList, UserDeliveryVo.class, userDeliveryDto);
     }
 
-
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 查询用户所有收货地址
+     * @Param: [userDeliveryDto]
+     * @return: PageVo<UserDeliveryVo>
+     * @date 2019/9/20 13:49
+     */
     public Result<List<UserDeliveryVo>> getUserAddressList(UserDeliveryDto userDeliveryDto) {
         Criteria<UserDelivery, Object> criteria = Criteria.of(UserDelivery.class);
         if (!StringUtils.isEmpty(userDeliveryDto.getFuid())) {
@@ -120,6 +128,7 @@ public class UserAddressServiceImpl implements UserAddressService {
      * @date 2019/9/20 13:49
      */
     @Override
+    @GlobalTransactional
     public Result addUserAddress(UserDeliveryAddDto userDeliveryDto) {
         //校验用户id
         if(userDeliveryDto.getFuid() == null){
@@ -128,6 +137,7 @@ public class UserAddressServiceImpl implements UserAddressService {
         Integer isDefualt = userDeliveryDto.getFisDefualt();
         UserDeliveryDto userDelivery = new UserDeliveryDto();
         userDelivery.setFuid(userDeliveryDto.getFuid());
+        //判断此次新增地址是否设置为默认地址
         if (!StringUtils.isEmpty(isDefualt)) {
             if (isDefualt == 1) {
                 List<UserDeliveryVo> userDeliveryVoList = this.getUserAddressList(userDelivery).getData();
@@ -135,6 +145,7 @@ public class UserAddressServiceImpl implements UserAddressService {
                 if (CollectionUtils.isNotEmpty(userDeliveryVoList)) {
                     for (UserDeliveryVo userDeliveryVo : userDeliveryVoList) {
                         Integer defualt = userDeliveryVo.getFisDefualt();
+                        //判断该用户是已经有默认地址，有的话则需要变更为非默认地址
                         if (defualt == 1) {
                             update.setFdeliveryUserId(userDeliveryVo.getFdeliveryUserId());
                             update.setFisDefualt(0);
@@ -164,6 +175,7 @@ public class UserAddressServiceImpl implements UserAddressService {
      * @date 2019/9/20 13:49
      */
     @Override
+    @GlobalTransactional
     public Result modifyUserAddress(UserDeliveryUpdateDto userDeliveryDto) {
         //校验用户id
         if(userDeliveryDto.getFuid() == null){
@@ -172,12 +184,14 @@ public class UserAddressServiceImpl implements UserAddressService {
         Integer isDefualt = userDeliveryDto.getFisDefualt();
         UserDeliveryDto userDelivery = new UserDeliveryDto();
         userDelivery.setFuid(userDeliveryDto.getFuid());
+        //判断此次新增地址是否设置为默认地址
         if (!StringUtils.isEmpty(isDefualt)) {
             if (isDefualt == 1) {
                 List<UserDeliveryVo> userDeliveryVoList = this.getUserAddressList(userDelivery).getData();
                 UserDelivery update = new UserDelivery();
                 for (UserDeliveryVo userDeliveryVo : userDeliveryVoList) {
                     Integer defualt = userDeliveryVo.getFisDefualt();
+                    //判断该用户是已经有默认地址，有的话则需要变更为非默认地址
                     if (defualt == 1) {
                         update.setFdeliveryUserId(userDeliveryVo.getFdeliveryUserId());
                         update.setFisDefualt(0);
@@ -212,6 +226,7 @@ public class UserAddressServiceImpl implements UserAddressService {
             Integer[] fuids = (Integer[]) ConvertUtils.convert(fuidsStr, Integer.class);
             List<Integer> fuidList = Arrays.asList(fuids);
             UserDelivery userDelivery = new UserDelivery();
+            //循环遍历批次删除
             for (Integer item : fuidList) {
                 userDelivery.setFdeliveryUserId(Long.valueOf(item));
                 userDelivery.setFisDelete(1);
