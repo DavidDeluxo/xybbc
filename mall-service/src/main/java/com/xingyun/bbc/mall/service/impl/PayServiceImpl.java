@@ -466,11 +466,11 @@ public class PayServiceImpl implements PayService {
 			return Result.failure(MallExceptionCode.ORDER_NOT_EXIST);
 		}
 		// String和Integer直接比较不会为true
-//		String fuid = request.getHeader("xyid");
-//		if (!fuid.equals(String.valueOf(userAccountTrans.getFuid()))) {
-//			logger.info("充值订单用户id和订单用户不匹配");
-//			return Result.failure(MallExceptionCode.ORDER_NOT_MATCHING);
-//		}
+		String fuid = request.getHeader("xyid");
+		if (!fuid.equals(String.valueOf(userAccountTrans.getFuid()))) {
+			logger.info("充值订单用户id和订单用户不匹配");
+			return Result.failure(MallExceptionCode.ORDER_NOT_MATCHING);
+		}
 		dto.setPayAmount(PriceUtil.toYuan(userAccountTrans.getFtransAmount()).toString());
 		return null;
 	}
@@ -478,12 +478,10 @@ public class PayServiceImpl implements PayService {
 	// 校验订单是否能支付
 	private Result<?> checkOrderIsEnablePay(ThirdPayDto dto) {
 		Date lockTime = null; // 订单超时时间
-		//String orderFuid = null; // 订单用户
 		Long orderTotalAmount = null; // 订单总金额
 		Long fbalancePayAmount = null; // 订单已付金额
 		int orderStatus = -1; // 订单状态
 		int thirdTradeStatus = -1; // 第三方支付状态
-		//Date orderCreateTime = null; // 订单超时时间，有些第三方支付需要
 		OrderPayment orderPayment = orderPaymentApi.queryById(dto.getForderId()).getData();
 			if (orderPayment == null) {
 				logger.info("支付订单号查询返回结果为空！ 订单号：" + dto.getForderId());
@@ -510,27 +508,21 @@ public class PayServiceImpl implements PayService {
 			}
 			
 		    lockTime = TimeAddUtil.addMinute(orderPayment.getFcreateTime(),fminute.intValue());
-			//orderFuid = String.valueOf(orderPayment.getFuid());
 			orderTotalAmount = orderPayment.getFtotalOrderAmount();
 			fbalancePayAmount=orderPayment.getFbalancePayAmount();
 			orderStatus = orderPayment.getForderStatus();
 			thirdTradeStatus = orderPayment.getFthirdTradeStatus();
-			//orderCreateTime = orderPayment.getFcreateTime();
 		
-//		if (!fuid.equals(orderFuid)) {
-//			logger.info("订单与用户不匹配！用户：" + fuid + "，订单号：" + forderId + "，订单fuid：" + orderFuid);
-//			return Result.failure(MallExceptionCode.ORDER_NOT_MATCHING);
-//		}
-//		if (lockTime.compareTo(new Date()) < 0) {
-//			logger.info("订单已过期！用户："  + "，订单号：" + dto.getForderId());
-//			return Result.failure(MallExceptionCode.ORDER_AS_CANCELLED);
-//		}
+		if (lockTime.compareTo(new Date()) < 0) {
+			logger.info("订单已过期！"  + "订单号：" + dto.getForderId());
+			return Result.failure(MallExceptionCode.ORDER_IS_OVERDUE);
+		}
 		if (orderStatus == 5 || thirdTradeStatus == 2) {
-			logger.info("订单已完成！用户："  + "，订单号：" + dto.getForderId());
+			logger.info("订单已完成！"  + "订单号：" + dto.getForderId());
 			return Result.failure(MallExceptionCode.ORDER_AS_CANCELLED);
 		}
 		if (orderStatus == 3) {
-			logger.info("订单已取消！用户："  + "，订单号：" + dto.getForderId());
+			logger.info("订单已取消！"  + "订单号：" + dto.getForderId());
 			return Result.failure(MallExceptionCode.ORDER_IS_COMPLETION);
 		}
 		
