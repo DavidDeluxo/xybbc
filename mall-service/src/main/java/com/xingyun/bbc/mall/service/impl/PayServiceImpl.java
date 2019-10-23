@@ -504,6 +504,8 @@ public class PayServiceImpl implements PayService {
 				List<OrderConfig> orderConfigList = orderConfigResult.getData();
 				if (orderConfigList.size() > 0) {
 					fminute = orderConfigList.get(0).getFminute();
+				}else{
+					fminute = DEFAULT_LOCK_TIME;
 				}
 			}
 			
