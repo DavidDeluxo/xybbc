@@ -31,7 +31,7 @@ public interface IndexService {
      * @return: PageVo<SupplierAccountVo>
      * @date 2019/9/20 13:49
      */
-    PageVo<IndexSkuGoodsVo> queryGoodsByCategoryId1(CategoryDto categoryDto);
+   SearchItemListVo<SearchItemVo> queryGoodsByCategoryId1(SearchItemDto searchItemDto);
 
     /**
      * @author lll

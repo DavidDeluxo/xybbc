@@ -8,6 +8,7 @@ import com.xingyun.bbc.mall.base.utils.JwtParser;
 import com.xingyun.bbc.mall.model.dto.*;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.CategoryService;
+import com.xingyun.bbc.mall.service.GoodsService;
 import com.xingyun.bbc.mall.service.IndexService;
 import io.jsonwebtoken.Claims;
 import io.swagger.annotations.Api;
@@ -18,6 +19,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +50,10 @@ public class IndexController {
 
     @Autowired
     CategoryService categoryService;
+
+
+    @Autowired
+    GoodsService goodsService;
 
     @Resource
     private DozerHolder holder;
@@ -81,12 +87,15 @@ public class IndexController {
 
     @ApiOperation(value = "查询一级类目下所有sku列表---不校验登录")
     @PostMapping("/via/queryGoodsByCategoryId1")
-    public Result<PageVo<IndexSkuGoodsVo>> queryGoodsByCategoryId1(CategoryDto categoryDto, HttpServletRequest request) {
+    public Result<SearchItemListVo<SearchItemVo>> queryGoodsByCategoryId1(@RequestBody SearchItemDto dto, HttpServletRequest request) {
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
-        categoryDto.setIsLogin(infoVo.getIsLogin());
-        if(infoVo.getFuid() != null){
-            categoryDto.setFuid(Long.valueOf(infoVo.getFuid()));
+        dto.setIsLogin(infoVo.getIsLogin());
+        dto.setFuid(infoVo.getFuid());
+        Result<SearchItemListVo<SearchItemVo>> result = goodsService.searchSkuList(dto);
+        if(CollectionUtils.isEmpty(result.getData().getList())){
+            return Result.success(indexService.queryGoodsByCategoryId1(dto));
+        }else{
+            return result;
         }
-        return Result.success(indexService.queryGoodsByCategoryId1(categoryDto));
     }
 }
