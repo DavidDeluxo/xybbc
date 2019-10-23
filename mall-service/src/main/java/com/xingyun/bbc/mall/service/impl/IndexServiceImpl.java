@@ -112,7 +112,9 @@ public class IndexServiceImpl implements IndexService {
         if (CollectionUtils.isEmpty(pageConfigRedisResultList)) {
             Criteria<PageConfig, Object> pageConfigCriteria = Criteria.of(PageConfig.class);
             pageConfigCriteria.andEqualTo(PageConfig::getFposition, position);
-            pageConfigCriteria.andEqualTo(PageConfig::getFisDelete, 0);//查询未删除的
+            //查询未删除的
+            pageConfigCriteria.andEqualTo(PageConfig::getFisDelete, 0);
+            //位置为0和1的用字段sortValue进行排序
             if (position == 0 || position == 1) {
                 pageConfigCriteria.sort(PageConfig::getFsortValue);
             } else {
@@ -124,7 +126,7 @@ public class IndexServiceImpl implements IndexService {
             }
             List<PageConfig> pageConfigs = pageConfigResult.getData();
             pageConfigRedisResultList = holder.convert(pageConfigs, PageConfigVo.class);
-            //return Result.success(pageConfigRedisResultList);
+            //位置为2的数据用展现时间过滤筛选
             if (position == 2) {
                 List<PageConfigVo> pageConfigVos = new ArrayList<>();
                 for (PageConfigVo pageConfigVo : pageConfigRedisResultList) {
@@ -167,17 +169,27 @@ public class IndexServiceImpl implements IndexService {
         }
     }
 
-
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 先从redis查询首页配置
+     * @Param: [fposition]
+     * @return: Result<List                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               <                                                                                                                               PageConfigVo>>
+     * @date 2019/9/20 13:49
+     */
     private List<PageConfigVo> selectPageConfigRedisList(int position) {
         try {
             logger.info("查询redisKey,position:{}", position);
             List<PageConfigVo> pageTempList = Lists.newArrayList();
+            //获取key
             String redisKey = PageConfigContants.PAGE_CONFIG;
             List<Object> result = xyRedisManager.hValues(redisKey);
             if (CollectionUtils.isNotEmpty(result)) {
+                //对象转换
                 List<PageConfig> pageConfigs = holder.convert(result, PageConfig.class);
                 List<PageConfigVo> pageConfigVos = holder.convert(pageConfigs, PageConfigVo.class);
                 pageTempList = pageConfigVos.stream().filter(index -> {
+                    //用位置和是否删除过滤
                     if (index.getFisDelete() != null) {
                         boolean a = index.getFisDelete() == 0;
                         boolean b = index.getFposition() == position;
