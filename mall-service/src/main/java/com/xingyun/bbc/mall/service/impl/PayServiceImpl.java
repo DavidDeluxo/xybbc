@@ -1,31 +1,6 @@
 package com.xingyun.bbc.mall.service.impl;
 
 
-import com.xingyun.bbc.mall.base.utils.DecodeUtil;
-import com.xingyun.bbc.mall.base.utils.DozerHolder;
-import com.xingyun.bbc.mall.base.utils.EncryptUtils;
-import com.xingyun.bbc.mall.base.utils.MD5Util;
-import com.xingyun.bbc.mall.base.utils.PriceUtil;
-import com.xingyun.bbc.mall.base.utils.ThirdPayUtil;
-import com.xingyun.bbc.mall.base.utils.ThirdPayUtilFactory;
-import com.xingyun.bbc.mall.base.utils.TimeAddUtil;
-import com.xingyun.bbc.mall.base.utils.WeixinPayUtil;
-import com.xingyun.bbc.mall.common.constans.PayConstants;
-import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
-import com.xingyun.bbc.mall.model.dto.BalancePayDto;
-import com.xingyun.bbc.mall.model.dto.RemittancetRechargeDto;
-import com.xingyun.bbc.mall.model.vo.OrderResultVo;
-import com.xingyun.bbc.mall.service.PayService;
-import com.xingyun.bbc.mall.service.RechargeService;
-import com.xingyun.bbc.order.api.OrderPayApi;
-import com.xingyun.bbc.order.model.dto.order.PayDto;
-import com.xingyun.bbc.order.model.vo.pay.BalancePayVo;
-import com.xingyun.bbc.order.model.vo.pay.ThirdPayVo;
-import com.xingyun.bbc.pay.api.PayChannelApi;
-import com.xingyun.bbc.pay.model.dto.ThirdPayDto;
-import com.xingyun.bbc.pay.model.dto.ThirdPayResponseDto;
-import com.xingyun.bbc.pay.model.vo.PayInfoVo;
-import io.seata.spring.annotation.GlobalTransactional;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.google.common.base.Strings;
@@ -43,6 +18,31 @@ import com.xingyun.bbc.core.user.po.UserAccount;
 import com.xingyun.bbc.core.user.po.UserAccountTrans;
 import com.xingyun.bbc.core.user.po.UserAccountTransWater;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mall.base.utils.*;
+import com.xingyun.bbc.mall.common.constans.PayConstants;
+import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
+import com.xingyun.bbc.mall.model.dto.BalancePayDto;
+import com.xingyun.bbc.mall.model.dto.RemittancetRechargeDto;
+import com.xingyun.bbc.mall.model.vo.OrderResultVo;
+import com.xingyun.bbc.mall.service.PayService;
+import com.xingyun.bbc.mall.service.RechargeService;
+import com.xingyun.bbc.order.api.OrderPayApi;
+import com.xingyun.bbc.order.model.dto.order.PayDto;
+import com.xingyun.bbc.order.model.vo.pay.BalancePayVo;
+import com.xingyun.bbc.order.model.vo.pay.ThirdPayVo;
+import com.xingyun.bbc.pay.api.PayChannelApi;
+import com.xingyun.bbc.pay.model.dto.ThirdPayDto;
+import com.xingyun.bbc.pay.model.dto.ThirdPayResponseDto;
+import com.xingyun.bbc.pay.model.vo.PayInfoVo;
+import io.seata.spring.annotation.GlobalTransactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -51,13 +51,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
 
 /**
  * @author jianghui
@@ -498,15 +491,23 @@ public class PayServiceImpl implements PayService {
 			}
 			
 			
-			Long fminute = DEFAULT_LOCK_TIME;
+			Long fminute = 0l;
 			
 			Criteria<OrderConfig, Object> orderConfigCriteria = Criteria.of(OrderConfig.class);
 			orderConfigCriteria.andEqualTo(OrderConfig::getForderConfigType, 0);// 0待支付订单限时支付
-			List<OrderConfig> orderConfigResult = orderConfigApi.queryByCriteria(orderConfigCriteria).getData();
-		        if(orderConfigResult.get(0)!=null)
-		        {
-		        	fminute=orderConfigResult.get(0).getFminute();
-		        }
+			orderConfigCriteria.andEqualTo(OrderConfig::getFstatus,0);
+			orderConfigCriteria.fields(OrderConfig::getForderConfigType,OrderConfig::getFminute);
+			Result<List<OrderConfig>>  orderConfigResult = orderConfigApi.queryByCriteria(orderConfigCriteria);
+			if(!orderConfigResult.isSuccess()){
+				fminute =  DEFAULT_LOCK_TIME;
+			}else {
+				List<OrderConfig> orderConfigList = orderConfigResult.getData();
+				if (orderConfigList.size() > 0) {
+					fminute = orderConfigList.get(0).getFminute();
+				}else{
+					fminute = DEFAULT_LOCK_TIME;
+				}
+			}
 			
 		    lockTime = TimeAddUtil.addMinute(orderPayment.getFcreateTime(),fminute.intValue());
 			//orderFuid = String.valueOf(orderPayment.getFuid());
