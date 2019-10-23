@@ -491,17 +491,21 @@ public class PayServiceImpl implements PayService {
 			}
 			
 			
-			Long fminute = DEFAULT_LOCK_TIME;
+			Long fminute = 0l;
 			
 			Criteria<OrderConfig, Object> orderConfigCriteria = Criteria.of(OrderConfig.class);
 			orderConfigCriteria.andEqualTo(OrderConfig::getForderConfigType, 0);// 0待支付订单限时支付
 			orderConfigCriteria.andEqualTo(OrderConfig::getFstatus,0);
 			orderConfigCriteria.fields(OrderConfig::getForderConfigType,OrderConfig::getFminute);
-			List<OrderConfig> orderConfigResult = orderConfigApi.queryByCriteria(orderConfigCriteria).getData();
-		        if(orderConfigResult.get(0)!=null)
-		        {
-		        	fminute=orderConfigResult.get(0).getFminute();
-		        }
+			Result<List<OrderConfig>>  orderConfigResult = orderConfigApi.queryByCriteria(orderConfigCriteria);
+			if(!orderConfigResult.isSuccess()){
+				fminute =  DEFAULT_LOCK_TIME;
+			}else {
+				List<OrderConfig> orderConfigList = orderConfigResult.getData();
+				if (orderConfigList.size() > 0) {
+					fminute = orderConfigList.get(0).getFminute();
+				}
+			}
 			
 		    lockTime = TimeAddUtil.addMinute(orderPayment.getFcreateTime(),fminute.intValue());
 			//orderFuid = String.valueOf(orderPayment.getFuid());
