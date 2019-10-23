@@ -28,6 +28,9 @@ public class GoodsPriceVo implements Serializable {
     @ApiModelProperty(value = "折合单价")
     private BigDecimal dealUnitPrice;
 
+    @ApiModelProperty(value = "商品实际单价")
+    private BigDecimal realPrice;
+
     @ApiModelProperty("省份名称")
     private String fdeliveryProvinceName;
 

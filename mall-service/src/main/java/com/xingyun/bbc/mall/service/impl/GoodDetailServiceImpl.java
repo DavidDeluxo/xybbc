@@ -20,6 +20,7 @@ import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.user.po.UserDelivery;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
+import com.xingyun.bbc.mall.base.utils.PriceUtil;
 import com.xingyun.bbc.mall.common.constans.MallConstants;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.GoodsDetailDto;
@@ -325,27 +326,29 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         GoodsPriceVo priceResult = new GoodsPriceVo();
         //到规格
         if (null != goodsDetailDto.getFbatchPackageId()) {
-            priceResult.setPriceStart(new BigDecimal(this.getPackagePrice(goodsDetailDto)).divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP));
+            Long packagePrice = this.getPackagePrice(goodsDetailDto);
+            priceResult.setRealPrice(PriceUtil.toYuan(new BigDecimal(packagePrice)));
+            priceResult.setPriceStart(PriceUtil.toYuan(new BigDecimal(packagePrice)));
         }
         //到批次
         if (null != goodsDetailDto.getFsupplierSkuBatchId() && null == goodsDetailDto.getFbatchPackageId()) {
             GoodsPriceVo batchPrice = this.getBatchPrice(goodsDetailDto);
-            priceResult.setPriceStart(batchPrice.getPriceStart().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP));
-            priceResult.setPriceEnd(batchPrice.getPriceEnd().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP));
+            priceResult.setPriceStart(PriceUtil.toYuan(batchPrice.getPriceStart()));
+            priceResult.setPriceEnd(PriceUtil.toYuan(batchPrice.getPriceEnd()));
         }
         //到sku
         if (null != goodsDetailDto.getFskuId() && null == goodsDetailDto.getFsupplierSkuBatchId() && null == goodsDetailDto.getFbatchPackageId()) {
             GoodsPriceVo skuPrice = this.getSkuPrice(goodsDetailDto);
-            priceResult.setPriceStart(skuPrice.getPriceStart().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP));
-            priceResult.setPriceEnd(skuPrice.getPriceEnd().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP));
+            priceResult.setPriceStart(PriceUtil.toYuan(skuPrice.getPriceStart()));
+            priceResult.setPriceEnd(PriceUtil.toYuan(skuPrice.getPriceEnd()));
         }
         //到spu
         if (null != goodsDetailDto.getFgoodsId() && null == goodsDetailDto.getFskuId() && null == goodsDetailDto.getFsupplierSkuBatchId() && null == goodsDetailDto.getFbatchPackageId()) {
             GoodsPriceVo skuPrice = this.getSpuPrice(goodsDetailDto);
-            priceResult.setPriceStart(skuPrice.getPriceStart().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP));
-            priceResult.setPriceEnd(skuPrice.getPriceEnd().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP));
+            priceResult.setPriceStart(PriceUtil.toYuan(skuPrice.getPriceStart()));
+            priceResult.setPriceEnd(PriceUtil.toYuan(skuPrice.getPriceEnd()));
         }
-        //起始区间价 只有是单一价格才计算运费、税费、折合单价
+        //起始区间价 只有是单一价格PriceStart才计算运费、税费、折合单价
         if (null == priceResult.getPriceEnd()) {
             //查询批次价格类型 1.含邮含税 2.含邮不含税 3.不含邮含税 4.不含邮不含税
             SkuBatch fskuBatch = skuBatchApi.queryOneByCriteria(Criteria.of(SkuBatch.class)
