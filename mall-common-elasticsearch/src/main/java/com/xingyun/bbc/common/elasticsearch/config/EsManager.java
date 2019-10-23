@@ -17,15 +17,12 @@ import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.Aggregation;
-import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.nested.Nested;
-import org.elasticsearch.search.aggregations.bucket.nested.ParsedNested;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -254,46 +251,15 @@ public class EsManager {
     }
 
     /**
-     * 递归提取聚合信息
+     * 提取聚合信息
      *
      * @param aggregations
      * @return
      */
     private Map<String, Object> getAggregationMap(Aggregations aggregations) {
-        Map<String, Object> resultMap = new HashMap<>();
-        if(aggregations.getAsMap() == null){
-            return resultMap;
-        }
-        Map<String, Aggregation> aggMap = aggregations.getAsMap();
-
-        aggMap.forEach((key, value) -> {
-            if(value instanceof Terms){
-                Terms terms = (Terms) value;
-                Collection<? extends Bucket> buckets = terms.getBuckets();
-                List<Map<String, Object>> bucketLists = new LinkedList<>();
-                for (Bucket bucket : buckets) {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put(AGGREGATION_KEY_NAME, bucket.getKey());
-                    Aggregations subAggs = bucket.getAggregations();
-                    Map<String, Object> subAggregationMap = this.getAggregationMap(subAggs);
-                    if(MapUtils.isNotEmpty(subAggregationMap)){
-                        map.put(SUBAGGREGATION_NAME, subAggregationMap);
-                    }
-                    bucketLists.add(map);
-                }
-                resultMap.put(key, bucketLists);
-
-            }else if(value instanceof Nested){
-                Nested nested = (Nested) value;
-                Aggregations aggs = nested.getAggregations();
-                Map<String, Object> subAggregationMap = this.getAggregationMap(aggs);
-                List<Map<String, Object>> bucketLists = new LinkedList<>();
-                bucketLists.add(subAggregationMap);
-                resultMap.put(nested.getName(), bucketLists);
-            }
-        });
-        return resultMap;
+        return EsAggregations.getAggregationMap(aggregations);
     }
+
 
     public Map<String, Object> queryWithAggregation(EsCriteria criteria) throws Exception {
         return this.queryWithAggregation(criteria, true);
