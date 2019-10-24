@@ -35,7 +35,8 @@ public enum MallResultStatus implements IResultStatus {
     REEZE_WITHDRAW_ERROR("2016","提现冻结金额小于0"),
     WITHDRAW_ACCOUNT_EMPTY("2019","支付宝账号或银行卡号为空"),
     USER_NOT_EXIST("2020", "用户不存在"),
-    WITHDRAW_LES_MIN_AMOUNT("2028", "不得小于最低提现金额")
+    WITHDRAW_LES_MIN_AMOUNT("2028", "不得小于最低提现金额"),
+    LESS_THAN_ONE_RMB("2029", "最低提现金额不得小于1元"),
     ;
     private String code;
     private String msg;

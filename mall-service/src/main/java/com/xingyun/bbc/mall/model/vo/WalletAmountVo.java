@@ -22,4 +22,7 @@ public class WalletAmountVo {
 
     @ApiModelProperty("待收益金额")
     private BigDecimal waitIncome = new BigDecimal("0.00");
+
+    @ApiModelProperty("提现中的金额")
+    private BigDecimal withdrawalAmount = new BigDecimal("0.00");
 }
