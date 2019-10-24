@@ -20,6 +20,7 @@ public class SearchItemDto {
         this.fuserTypeId = "1";
         this.fskuStatus = 1;
         this.isLogin = false;
+        this.fisDeleted = 0;
         fuid = 1;
     }
 
@@ -98,4 +99,8 @@ public class SearchItemDto {
 
     @ApiModelProperty(value = "用户是否登录", hidden = true)
     private Boolean isLogin;
+
+    @EsMark(policy = BuildPolicy.MUST, field = "fis_delete")
+    @ApiModelProperty(value = "是否删除", hidden = true)
+    private Integer fisDeleted;
 }
