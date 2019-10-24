@@ -42,9 +42,7 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.validation.Valid;
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.xingyun.bbc.mall.common.enums.OrderPayMent.OrderPayStatusEnum.*;
@@ -97,6 +95,7 @@ public class WalletServiceImpl implements WalletService {
         if (null == account) return amountVo;
 
         amountVo.setBalance(PriceUtil.toYuan(account.getFbalance()));
+        amountVo.setWithdrawalAmount(PriceUtil.toYuan(account.getFfreezeWithdraw()));
 
         Criteria<OrderPayment, Object> op = Criteria.of(OrderPayment.class);
 
@@ -123,10 +122,9 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     public List<WithdrawRateVo> queryWithdrawRate(WithdrawRateDto rateDto) {
+        Date today = new Date();
 
         if (null != rateDto && null != rateDto.getFwithdrawType()) {
-
-            Date today = new Date();
 
             Criteria<UserWithdrawRate, Object> rateQuery = Criteria.of(UserWithdrawRate.class);
 
@@ -139,17 +137,20 @@ public class WalletServiceImpl implements WalletService {
 
             if (!userRateRes.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
 
-            if (CollectionUtils.isEmpty(userRateRes.getData()))
-                throw new BizException(MallResultStatus.USER_WITHDRAW_RATE_NOT_CONFIG);
+            if (CollectionUtils.isEmpty(userRateRes.getData())) return Lists.newArrayList();
 
             return this.toWithdrawRateVos(userRateRes.getData());
         }
 
-        Result<List<UserWithdrawRate>> result = userWithdrawRateApi.queryAll();
+        Result<List<UserWithdrawRate>> result = userWithdrawRateApi.queryByCriteria(
+                Criteria.of(UserWithdrawRate.class)
+                .andLessThanOrEqualTo(UserWithdrawRate::getFeffectiveDate, today)
+                .andEqualTo(UserWithdrawRate::getFstate, 1)
+                .andGreaterThanOrEqualTo(UserWithdrawRate::getFinvalidDate, today));
+
         if (!result.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
 
-        if (CollectionUtils.isEmpty(result.getData()))
-            throw new BizException(MallResultStatus.USER_WITHDRAW_RATE_NOT_CONFIG);
+        if (CollectionUtils.isEmpty(result.getData())) return Lists.newArrayList();
 
         return this.toWithdrawRateVos(result.getData());
     }
@@ -328,9 +329,18 @@ public class WalletServiceImpl implements WalletService {
             throw new BizException(MallResultStatus.ACCOUNT_BALANCE_INSUFFICIENT);
         }
 
-        WithdrawRateVo withdrawRate = this.queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(withdrawDto.getWay())).stream().findFirst().get();
+        WithdrawRateVo withdrawRate = this.queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(withdrawDto.getWay())).stream().findFirst().orElse(null);
 
-        if (PriceUtil.toPenny(withdrawRate.getMinimumAmount()).compareTo(withdrawDto.getWithdrawAmount())>0){
+        //提现费率未配置则提现金额不得低于1元
+        if (Objects.isNull(withdrawRate)) {
+
+            if (withdrawDto.getWithdrawAmount().compareTo(new BigDecimal("100"))<0){
+                throw new BizException(MallResultStatus.LESS_THAN_ONE_RMB);
+            }
+
+        //提现费率配置则提现金额不得低于配置金额
+        }else if(PriceUtil.toPenny(withdrawRate.getMinimumAmount()).compareTo(withdrawDto.getWithdrawAmount())>0){
+
             throw new BizException(MallResultStatus.WITHDRAW_LES_MIN_AMOUNT);
         }
 
