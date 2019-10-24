@@ -3,6 +3,7 @@ package com.xingyun.bbc.mall.service.impl;
 
 import com.xingyun.bbc.common.elasticsearch.config.EsCriteria;
 import com.xingyun.bbc.common.elasticsearch.config.EsManager;
+import com.xingyun.bbc.common.elasticsearch.config.EsBeanUtil;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.PageConfigApi;
@@ -37,9 +38,6 @@ import org.elasticsearch.search.aggregations.BucketOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
@@ -54,15 +52,10 @@ import java.util.stream.Collectors;
 public class GoodsServiceImpl implements GoodsService {
 
     private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
-    private static final String PRICE_TYPE_PREFIX = "price_type_";
     private static final String PRICE_TYPE_PREFIX_CAMEL = "priceType";
 
     private static final String PRICE_TYPE_SUFFIX = ".min_price";
     private static Pattern humpPattern = Pattern.compile("[A-Z0-9]");
-
-    private static final Pattern ID_PATTERN = Pattern.compile(".*Id");
-    private static final Pattern NAME_PATTERN = Pattern.compile(".*Name");
-    private static final Pattern SUB_PAIR_LIST_PATTERN = Pattern.compile(".*SubPairList");
 
     @Autowired
     EsManager esManager;
@@ -95,22 +88,23 @@ public class GoodsServiceImpl implements GoodsService {
             Map<String, Object> aggregationMap = (Map<String, Object>) resultMap.get("aggregationMap");
             //品牌
             List<Map<String, Object>> barndAggs = (List<Map<String, Object>>) aggregationMap.get("fbrand_id");
-            List<BrandFilterVo> brandFilterVoList = getNameIdPairs(BrandFilterVo.class, barndAggs, null);
+            List<BrandFilterVo> brandFilterVoList = EsBeanUtil.getValueObjectList(BrandFilterVo.class, barndAggs);
             filterVo.setBrandList(brandFilterVoList);
 
             //原产地
             List<Map<String, Object>> originAggs = (List<Map<String, Object>>) aggregationMap.get("forigin_id");
-            List<OriginFilterVo> originFilterVoList = getNameIdPairs(OriginFilterVo.class, originAggs, null);
+            List<OriginFilterVo> originFilterVoList = EsBeanUtil.getValueObjectList(OriginFilterVo.class, originAggs);
+
             filterVo.setOriginList(originFilterVoList);
 
             //贸易类型
             List<Map<String, Object>> tradeAggs = (List<Map<String, Object>>) aggregationMap.get("ftrade_id");
-            List<TradeFilterVo> tradeFilterVoList = getNameIdPairs(TradeFilterVo.class, tradeAggs, null);
+            List<TradeFilterVo> tradeFilterVoList = EsBeanUtil.getValueObjectList(TradeFilterVo.class, tradeAggs);
             filterVo.setTradeList(tradeFilterVoList);
 
             //商品分类
             List<Map<String, Object>> categoryAggs = (List<Map<String, Object>>) aggregationMap.get("fcategory_id3");
-            List<CategoryFilterVo> categoryFilterList = getNameIdPairs(CategoryFilterVo.class, categoryAggs, null);
+            List<CategoryFilterVo> categoryFilterList = EsBeanUtil.getValueObjectList(CategoryFilterVo.class, categoryAggs);
 
             //商品属性
             List<Map<String, Object>> attributeAggs = (List<Map<String, Object>>) aggregationMap.get("attribute");
@@ -132,7 +126,6 @@ public class GoodsServiceImpl implements GoodsService {
                         categoryFilterVo.setFcreateTime(category.getFcreateTime());
                     }
                 }
-//                Collections.sort(categoryFilterList);
             }
             filterVo.setCategoryList(categoryFilterList);
             Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
@@ -189,12 +182,12 @@ public class GoodsServiceImpl implements GoodsService {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
             List<Long> goodIds = new LinkedList<>();
-            if(CollectionUtils.isNotEmpty(goodsResult.getData())){
+            if (CollectionUtils.isNotEmpty(goodsResult.getData())) {
                 goodIds = goodsResult.getData().stream().map(Goods::getFgoodsId).collect(Collectors.toList());
             }
             // 品牌sku商品总数
             brandPageVo.setFgoodsTotalCount(0);
-            if(CollectionUtils.isNotEmpty(goodIds)){
+            if (CollectionUtils.isNotEmpty(goodIds)) {
                 Result<Integer> goodsCountResult = goodsSkuApi.countByCriteria(Criteria.of(GoodsSku.class)
                         .andIn(GoodsSku::getFgoodsId, goodIds)
                         .andEqualTo(GoodsSku::getFskuStatus, 1)
@@ -263,7 +256,7 @@ public class GoodsServiceImpl implements GoodsService {
                 }
 
                 String priceName = this.getUserPriceType(searchItemDto);
-                ;
+
                 if (map.get(priceName) != null) {
                     Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
                     if (priceMap.get("min_price") != null) {
@@ -346,85 +339,10 @@ public class GoodsServiceImpl implements GoodsService {
             return resultList;
         }
         List<Map<String, Object>> aggList = (List<Map<String, Object>>) attributeAggs.get(0).get("attribute_id");
-        resultList = getNameIdPairs(GoodsAttributeFilterVo.class, aggList, GoodsAttributeItemFilterVo.class);
-
+        resultList = EsBeanUtil.getValueObjectList(GoodsAttributeFilterVo.class, aggList);
         return resultList;
     }
 
-
-    private <T, U> List<T> getNameIdPairs(Class<T> clazz, List<Map<String, Object>> aggregationList, Class<U> clazz2) {
-        Field id_field = null;
-        Field name_field = null;
-        Field sub_pair_list_field = null;
-        Field[] fields = clazz.getDeclaredFields();
-        for (Field field : fields) {
-            String fieldName = field.getName();
-            if (id_field == null && ID_PATTERN.matcher(fieldName).matches()) {
-                id_field = field;
-            }
-            if (name_field == null && NAME_PATTERN.matcher(fieldName).matches()) {
-                name_field = field;
-            }
-            if (sub_pair_list_field == null && SUB_PAIR_LIST_PATTERN.matcher(fieldName).matches()) {
-                ParameterizedType pType = (ParameterizedType) field.getGenericType();
-                Type actualType = pType.getActualTypeArguments()[0];
-                if (actualType.getTypeName().equals(clazz2.getTypeName())) {
-                    sub_pair_list_field = field;
-                }
-            }
-        }
-
-        if (id_field == null) {
-            throw new RuntimeException("没有找到id属性");
-        }
-        if (name_field == null) {
-            throw new RuntimeException("没有找到名称属性");
-        }
-        id_field.setAccessible(true);
-        name_field.setAccessible(true);
-        List<T> resultList = new LinkedList<>();
-        if (CollectionUtils.isEmpty(aggregationList)) {
-            return resultList;
-        }
-        try {
-            for (Map<String, Object> idMap : aggregationList) {
-                Object valueObject = clazz.newInstance();
-                Object idValue = idMap.get(EsManager.AGGREGATION_KEY_NAME);
-                if (idMap != null) {
-                    if (!id_field.getType().equals(Integer.class)) {
-                        throw new IllegalArgumentException();
-                    }
-                    id_field.set(valueObject, Integer.parseInt(String.valueOf(idValue)));
-                    Map<String, Object> nameMap = (Map<String, Object>) idMap.get(EsManager.SUBAGGREGATION_NAME);
-                    if (MapUtils.isNotEmpty(nameMap)) {
-                        Object[] nameMapValues = nameMap.values().toArray();
-                        List<Map<String, Object>> nameList = (List<Map<String, Object>>) nameMapValues[0];
-                        if (CollectionUtils.isNotEmpty(nameList)) {
-                            Object nameValue = nameList.get(0).get(EsManager.AGGREGATION_KEY_NAME);
-                            if (!name_field.getType().equals(String.class)) {
-                                throw new IllegalArgumentException();
-                            }
-                            name_field.set(valueObject, String.valueOf(nameValue));
-
-                            Map<String, Object> subAggMap = (Map<String, Object>) nameList.get(0).get(EsManager.SUBAGGREGATION_NAME);
-                            if (MapUtils.isNotEmpty(subAggMap) && clazz2 != null && sub_pair_list_field != null) {
-                                Object[] subAggArray = subAggMap.values().toArray();
-                                List<Map<String, Object>> subAggList = (List<Map<String, Object>>) subAggArray[0];
-                                List<U> subPairList = this.getNameIdPairs(clazz2, subAggList, null);
-                                sub_pair_list_field.setAccessible(true);
-                                sub_pair_list_field.set(valueObject, subPairList);
-                            }
-                        }
-                    }
-                }
-                resultList.add((T) valueObject);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("内部调用错误");
-        }
-        return resultList;
-    }
 
     /**
      * 价格条件
