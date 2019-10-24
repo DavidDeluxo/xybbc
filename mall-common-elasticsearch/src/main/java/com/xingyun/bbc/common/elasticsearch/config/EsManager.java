@@ -200,6 +200,13 @@ public class EsManager {
     }
 
 
+    /**
+     * 加入打分脚本查询
+     * @param criteria
+     * @param script
+     * @param mode
+     * @return
+     */
     public Map<String, Object> functionQueryForResponse(EsCriteria criteria, String script, CombineFunction mode) {
         if(StringUtils.isEmpty(script)){
             throw new IllegalArgumentException("打分脚本不能为空");
