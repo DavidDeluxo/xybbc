@@ -494,15 +494,20 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         if (!skuStockSell.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
+        Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
+                .andEqualTo(GoodsSku::getFskuId, goodsDetailDto.getFskuId()).fields(GoodsSku::getFsellNum));
+        if (!goodsSkuResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (null != goodsSkuResult.getData()) {
+            result.setFsellNum(goodsSkuResult.getData().getFsellNum());
+        }
         List<SkuBatch> skuStockSellResult = skuStockSell.getData();
         if (!CollectionUtils.isEmpty(skuStockSellResult)) {
             for (SkuBatch skuBatch : skuStockSellResult) {
                 GoodsDetailDto param = new GoodsDetailDto();
                 param.setFsupplierSkuBatchId(skuBatch.getFsupplierSkuBatchId());
                 GoodStockSellVo batchStockSell = this.getBatchStockSell(param);
-                if (null != batchStockSell.getFsellNum()) {
-                    result.setFsellNum(result.getFsellNum() + batchStockSell.getFsellNum());
-                }
                 if (null != batchStockSell.getFstockRemianNum()) {
                     result.setFstockRemianNum(result.getFstockRemianNum() + batchStockSell.getFstockRemianNum());
                 }
