@@ -415,9 +415,11 @@ public class UserServiceImpl implements UserService {
 //                if(userVerifyVo.getFpaltformId() != null){
 //                    userVerifyVo.setFpaltformName(VerifyPlatform.getMessageByCode(userVerifyVo.getFpaltformId().intValue()));
 //                }
-                if(result.getData().getFplatform() != null){
-                    userVerifyVo.setFpaltformName(result.getData().getFplatform());
-                    userVerifyVo.setFpaltformId(VerifyEnums.platform.findByMsg(result.getData().getFplatform()).getCode().longValue());
+                if(result.getData().getFplatform() != null && !result.getData().getFplatform().equals("")){
+                    if(VerifyEnums.platform.findByMsg(result.getData().getFplatform()).getCode() != null){
+                        userVerifyVo.setFpaltformId(VerifyEnums.platform.findByMsg(result.getData().getFplatform()).getCode().longValue());
+                        userVerifyVo.setFpaltformName(result.getData().getFplatform());
+                    }
                 }
                 if(userResult.getData().getFoperateType() == UserVerifyEnums.Type.WeiMerchantBuy.getValue()){
                     //微商名称同步运营后台取值
