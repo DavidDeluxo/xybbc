@@ -274,7 +274,7 @@ public class UserServiceImpl implements UserService {
             return Result.failure(MallResultStatus.SMS_AUTH_NUM_ERROR);
         }
         String authNum = String.valueOf(xyRedisManager.get(dto.getAuthNumKey())) ;
-        if(Strings.isNullOrEmpty(authNum) || !authNum.equals(authNum)){
+        if(Strings.isNullOrEmpty(authNum) || !dto.getAuthNum().equals(authNum)){
             return Result.failure(MallResultStatus.SMS_AUTH_NUM_ERROR);
         }
         return Result.success();
@@ -630,7 +630,7 @@ public class UserServiceImpl implements UserService {
             return Result.failure(MallResultStatus.SMS_AUTH_NUM_ERROR);
         }
         String authNum = String.valueOf(xyRedisManager.get(dto.getAuthNumKey())) ;
-        if(Strings.isNullOrEmpty(authNum) || !authNum.equals(authNum)){
+        if(Strings.isNullOrEmpty(authNum) || !dto.getAuthNum().equals(authNum)){
             return Result.failure(MallResultStatus.SMS_AUTH_NUM_ERROR);
         }
         return Result.success();
@@ -918,7 +918,7 @@ public class UserServiceImpl implements UserService {
             return false;
         }
         String authNum = String.valueOf(xyRedisManager.get(authNumKey)) ;
-        if(Strings.isNullOrEmpty(authNum) || !authNum.equals(authNum)){
+        if(Strings.isNullOrEmpty(authNum) || !pauthNum.equals(authNum)){
             return false;
         }
         return true;
