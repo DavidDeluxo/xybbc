@@ -257,7 +257,7 @@ public class GoodsServiceImpl implements GoodsService {
 
                 String priceName = this.getUserPriceType(searchItemDto);
 
-                if (map.get(priceName) != null) {
+                if (map.get(priceName) != null && searchItemDto.getIsLogin()) {
                     Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
                     if (priceMap.get("min_price") != null) {
                         BigDecimal min_price_penny = new BigDecimal(String.valueOf(priceMap.get("min_price")));
