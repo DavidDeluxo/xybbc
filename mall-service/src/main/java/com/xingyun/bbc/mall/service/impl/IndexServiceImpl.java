@@ -102,7 +102,7 @@ public class IndexServiceImpl implements IndexService {
      * @version V1.0
      * @Description: 查询首页配置
      * @Param: [fposition]
-     * @return: Result<List                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               <                                                                                                                               PageConfigVo>>
+     * @return: Result<List                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               <                                                                                                                                                                                                                                                               PageConfigVo>>
      * @date 2019/9/20 13:49
      */
     @Override
@@ -127,54 +127,52 @@ public class IndexServiceImpl implements IndexService {
             List<PageConfig> pageConfigs = pageConfigResult.getData();
             pageConfigRedisResultList = holder.convert(pageConfigs, PageConfigVo.class);
             //位置为2的数据用展现时间过滤筛选
-            if (position == 2) {
-                List<PageConfigVo> pageConfigVos = new ArrayList<>();
-                for (PageConfigVo pageConfigVo : pageConfigRedisResultList) {
-                    Integer viewType = pageConfigVo.getFviewType();
-                    Date currentTime = new Date();
-                    Date startTime = pageConfigVo.getFperiodStartTime();
-                    Date endTime = pageConfigVo.getFpeiodEndTime();
-                    if (viewType == 0) {
-                        pageConfigVos.add(pageConfigVo);
-                    } else {
-                        if (startTime.getTime() <= currentTime.getTime() && endTime.getTime() >= currentTime.getTime()) {
-                            pageConfigVos.add(pageConfigVo);
-                        }
-                    }
-                }
-                return Result.success(pageConfigVos);
-            } else {
-                return Result.success(pageConfigRedisResultList);
-            }
+            return this.getByTime(pageConfigRedisResultList, position);
         } else {
-            if (position == 2) {
-                List<PageConfigVo> pageConfigVos = new ArrayList<>();
-                for (PageConfigVo pageConfigVo : pageConfigRedisResultList) {
-                    Integer viewType = pageConfigVo.getFviewType();
-                    Date currentTime = new Date();
-                    Date startTime = pageConfigVo.getFperiodStartTime();
-                    Date endTime = pageConfigVo.getFpeiodEndTime();
-                    if (viewType == 0) {
-                        pageConfigVos.add(pageConfigVo);
-                    } else {
-                        if (startTime.getTime() <= currentTime.getTime() && endTime.getTime() >= currentTime.getTime()) {
-                            pageConfigVos.add(pageConfigVo);
-                        }
-                    }
-                }
-                return Result.success(pageConfigVos);
-            } else {
-                return Result.success(pageConfigRedisResultList);
-            }
+            return this.getByTime(pageConfigRedisResultList, position);
         }
     }
 
     /**
      * @author lll
      * @version V1.0
+     * @Description: 首页配置数据通过展现时间筛选
+     * @Param: [fposition]
+     * @return: Result<List                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               <                                                                                                                                                                                                                                                               PageConfigVo>>
+     * @date 2019/9/20 13:49
+     */
+    private Result<List<PageConfigVo>> getByTime(List<PageConfigVo> pageConfigRedisResultList, Integer position) {
+        //首页配置位置是2的数据根据展现时间进行过滤
+        if (position == 2) {
+            List<PageConfigVo> pageConfigVos = new ArrayList<>();
+            for (PageConfigVo pageConfigVo : pageConfigRedisResultList) {
+                Integer viewType = pageConfigVo.getFviewType();
+                Date currentTime = new Date();
+                Date startTime = pageConfigVo.getFperiodStartTime();
+                Date endTime = pageConfigVo.getFpeiodEndTime();
+                //展示类型是长期时不用筛选
+                if (viewType == 0) {
+                    pageConfigVos.add(pageConfigVo);
+                } else {
+                    //展示类型是固定周期时不用筛选
+                    if (startTime.getTime() <= currentTime.getTime() && endTime.getTime() >= currentTime.getTime()) {
+                        pageConfigVos.add(pageConfigVo);
+                    }
+                }
+            }
+            return Result.success(pageConfigVos);
+        } else {
+            return Result.success(pageConfigRedisResultList);
+        }
+    }
+
+
+    /**
+     * @author lll
+     * @version V1.0
      * @Description: 先从redis查询首页配置
      * @Param: [fposition]
-     * @return: Result<List                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               <                                                                                                                               PageConfigVo>>
+     * @return: Result<List                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               <                                                                                                                                                                                                                                                               PageConfigVo>>
      * @date 2019/9/20 13:49
      */
     private List<PageConfigVo> selectPageConfigRedisList(int position) {
@@ -234,7 +232,7 @@ public class IndexServiceImpl implements IndexService {
     @Override
     public SearchItemListVo<SearchItemVo> queryGoodsByCategoryId1(SearchItemDto searchItemDto) {
         //兼容搜索那边接口做分页处理
-        CategoryDto categoryDto =  new CategoryDto();
+        CategoryDto categoryDto = new CategoryDto();
         categoryDto.setFuid(Long.valueOf(searchItemDto.getFuid()));
         categoryDto.setCurrentPage(searchItemDto.getPageIndex());
         categoryDto.setFcategoryId1(searchItemDto.getFcategoryIdL1().get(0));
@@ -337,35 +335,11 @@ public class IndexServiceImpl implements IndexService {
                     }
                     //没有配置sku会员类型折扣则返回批次价格
                     if (CollectionUtils.isEmpty(skuUserDiscountResult.getData())) {
-                        List<GoodsSkuBatchPrice> salePriceList = new ArrayList<>();
                         List<SkuBatch> skuBatchIdList = skuBatchs.getData().stream().filter(s -> s.getFskuId().equals(goodsSku.getFskuId()))
                                 .collect(Collectors.toList());
                         if (CollectionUtils.isNotEmpty(skuBatchIdList)) {
-                            for (SkuBatch skuBatch : skuBatchIdList) {
-                                Criteria<GoodsSkuBatchPrice, Object> goodsSkuBatchPriceCriteria = Criteria.of(GoodsSkuBatchPrice.class);
-                                goodsSkuBatchPriceCriteria.andEqualTo(GoodsSkuBatchPrice::getFsupplierSkuBatchId, skuBatch.getFsupplierSkuBatchId());
-                                Result<List<GoodsSkuBatchPrice>> goodsSkuBatchPriceList = goodsSkuBatchPriceApi.queryByCriteria(goodsSkuBatchPriceCriteria
-                                        .fields(GoodsSkuBatchPrice::getFsupplierSkuBatchId, GoodsSkuBatchPrice::getFbatchPackageId, GoodsSkuBatchPrice::getFbatchSellPrice));
-                                if (!goodsSkuBatchPriceList.isSuccess()) {
-                                    throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-                                }
-                                if (CollectionUtils.isEmpty(goodsSkuBatchPriceList.getData())) {
-                                    throw new BizException(MallExceptionCode.NO_BATCH_PRICE);
-                                }
-                                //取同一批次中不同规格中的最小价格
-                                GoodsSkuBatchPrice min = goodsSkuBatchPriceList.getData().stream().min(Comparator.comparing(GoodsSkuBatchPrice::getFbatchSellPrice)).get();
-                                salePriceList.add(min);
-                            }
-                            //取不同批次的最小价格
-                            GoodsSkuBatchPrice fbatchSellPrice = salePriceList.stream().min(Comparator.comparing(GoodsSkuBatchPrice::getFbatchSellPrice)).get();
-                            //封装关联批次号
-                            //indexSkuGoodsVo.setFsupplierSkuBatchId(fbatchSellPrice.getFsupplierSkuBatchId());
-                            //封装关联包装规格Id
-                            //indexSkuGoodsVo.setFbatchPackageId(fbatchSellPrice.getFbatchPackageId());
-                            //-----------封装价格
-                            BigDecimal sellPrice = new BigDecimal(fbatchSellPrice.getFbatchSellPrice())
-                                    .divide(PageConfigContants.BIG_DECIMAL_100, 2, BigDecimal.ROUND_HALF_UP);
-                            searchItemVo.setFbatchSellPrice(sellPrice);
+                            //封装最小价格
+                            this.getMinPrice(skuBatchIdList,searchItemVo);
                         }
                         //有会员折扣配置取会员折扣价
                     } else {
@@ -405,35 +379,11 @@ public class IndexServiceImpl implements IndexService {
                     }
                 } else {
                     //2.不支持会员类型折扣情况下取批次价格
-                    List<GoodsSkuBatchPrice> salePriceList = new ArrayList<>();
                     List<SkuBatch> skuBatchIdList = skuBatchs.getData().stream().filter(s -> s.getFskuId().equals(goodsSku.getFskuId()))
                             .collect(Collectors.toList());
                     if (CollectionUtils.isNotEmpty(skuBatchIdList)) {
-                        for (SkuBatch skuBatch : skuBatchIdList) {
-                            Criteria<GoodsSkuBatchPrice, Object> goodsSkuBatchPriceCriteria = Criteria.of(GoodsSkuBatchPrice.class);
-                            goodsSkuBatchPriceCriteria.andEqualTo(GoodsSkuBatchPrice::getFsupplierSkuBatchId, skuBatch.getFsupplierSkuBatchId());
-                            Result<List<GoodsSkuBatchPrice>> goodsSkuBatchPriceList = goodsSkuBatchPriceApi.queryByCriteria(goodsSkuBatchPriceCriteria
-                                    .fields(GoodsSkuBatchPrice::getFsupplierSkuBatchId, GoodsSkuBatchPrice::getFbatchPackageId, GoodsSkuBatchPrice::getFbatchSellPrice));
-                            if (!goodsSkuBatchPriceList.isSuccess()) {
-                                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-                            }
-                            if (CollectionUtils.isEmpty(goodsSkuBatchPriceList.getData())) {
-                                throw new BizException(MallExceptionCode.NO_BATCH_PRICE);
-                            }
-                            //取同一批次中不同规格中的最小价格
-                            GoodsSkuBatchPrice min = goodsSkuBatchPriceList.getData().stream().min(Comparator.comparing(GoodsSkuBatchPrice::getFbatchSellPrice)).get();
-                            salePriceList.add(min);
-                        }
-                        //取不同批次的最小价格
-                        GoodsSkuBatchPrice fbatchSellPrice = salePriceList.stream().min(Comparator.comparing(GoodsSkuBatchPrice::getFbatchSellPrice)).get();
-                        //封装关联批次号
-                        //indexSkuGoodsVo.setFsupplierSkuBatchId(fbatchSellPrice.getFsupplierSkuBatchId());
-                        //封装关联包装规格Id
-                        //indexSkuGoodsVo.setFbatchPackageId(fbatchSellPrice.getFbatchPackageId());
-                        //-----------封装价格
-                        BigDecimal sellPrice = new BigDecimal(fbatchSellPrice.getFbatchSellPrice())
-                                .divide(PageConfigContants.BIG_DECIMAL_100, 2, BigDecimal.ROUND_HALF_UP);
-                        searchItemVo.setFbatchSellPrice(sellPrice);
+                        //封装最小价格
+                     this.getMinPrice(skuBatchIdList,searchItemVo);
                     }
                 }
             }
@@ -461,8 +411,45 @@ public class IndexServiceImpl implements IndexService {
         pageVo.setCurrentPage(searchItemDto.getPageIndex());
         pageVo.setTotalCount(totalResult.getData());
         pageVo.setList(list);
-       // return pageUtils.convert(totalResult.getData(), list, SearchItemVo.class,categoryDto );
+        // return pageUtils.convert(totalResult.getData(), list, SearchItemVo.class,categoryDto );
         return pageVo;
+    }
+
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description:  获取最小价格
+     * @Param: searchItemVo
+     * @return: void                                                                                                                                                                                                                                                               <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
+     * @date 2019/9/20 13:49
+     */
+    private void getMinPrice( List<SkuBatch> skuBatchIdList,SearchItemVo searchItemVo){
+        List<GoodsSkuBatchPrice> salePriceList = new ArrayList<>();
+        for (SkuBatch skuBatch : skuBatchIdList) {
+            Criteria<GoodsSkuBatchPrice, Object> goodsSkuBatchPriceCriteria = Criteria.of(GoodsSkuBatchPrice.class);
+            goodsSkuBatchPriceCriteria.andEqualTo(GoodsSkuBatchPrice::getFsupplierSkuBatchId, skuBatch.getFsupplierSkuBatchId());
+            Result<List<GoodsSkuBatchPrice>> goodsSkuBatchPriceList = goodsSkuBatchPriceApi.queryByCriteria(goodsSkuBatchPriceCriteria
+                    .fields(GoodsSkuBatchPrice::getFsupplierSkuBatchId, GoodsSkuBatchPrice::getFbatchPackageId, GoodsSkuBatchPrice::getFbatchSellPrice));
+            if (!goodsSkuBatchPriceList.isSuccess()) {
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            }
+            if (CollectionUtils.isEmpty(goodsSkuBatchPriceList.getData())) {
+                throw new BizException(MallExceptionCode.NO_BATCH_PRICE);
+            }
+            //取同一批次中不同规格中的最小价格
+            GoodsSkuBatchPrice min = goodsSkuBatchPriceList.getData().stream().min(Comparator.comparing(GoodsSkuBatchPrice::getFbatchSellPrice)).get();
+            salePriceList.add(min);
+        }
+        //取不同批次的最小价格
+        GoodsSkuBatchPrice fbatchSellPrice = salePriceList.stream().min(Comparator.comparing(GoodsSkuBatchPrice::getFbatchSellPrice)).get();
+        //封装关联批次号
+        //indexSkuGoodsVo.setFsupplierSkuBatchId(fbatchSellPrice.getFsupplierSkuBatchId());
+        //封装关联包装规格Id
+        //indexSkuGoodsVo.setFbatchPackageId(fbatchSellPrice.getFbatchPackageId());
+        //-----------封装价格
+        BigDecimal sellPrice = new BigDecimal(fbatchSellPrice.getFbatchSellPrice())
+                .divide(PageConfigContants.BIG_DECIMAL_100, 2, BigDecimal.ROUND_HALF_UP);
+        searchItemVo.setFbatchSellPrice(sellPrice);
     }
 
     /**
@@ -470,7 +457,7 @@ public class IndexServiceImpl implements IndexService {
      * @version V1.0
      * @Description: 查询商品一级类目列表
      * @Param:
-     * @return: Result<List                                                                                                                               <                                                                                                                               GoodsCategoryVo>>
+     * @return: Result<List                                                                                                                                                                                                                                                               <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/9/20 13:49
      */
     @Override
@@ -497,7 +484,7 @@ public class IndexServiceImpl implements IndexService {
      * @version V1.0
      * @Description: 引导页启动页查询
      * @Param: [ftype]
-     * @return: Result<List                                                                                                                               <                                                                                                                               GuidePageVo>>
+     * @return: Result<List                                                                                                                                                                                                                                                               <                                                                                                                                                                                                                                                               GuidePageVo>>
      * @date 2019/9/20 13:49
      */
     @Override
