@@ -448,7 +448,7 @@ public class WalletServiceImpl implements WalletService {
                 userAccountTrans.setFrechargeType(4);
                 userAccountTrans.setFtransStatus(2);
                 userAccountTrans.setFwithdrawType(2);
-                userAccountTrans.setFwithdrawBank(withdrawDto.getBankCode());
+                userAccountTrans.setFwithdrawBank(withdrawDto.getBankName());
                 userAccountTrans.setFwithdrawAccount(withdrawDto.getCardNumber());
             }
 
