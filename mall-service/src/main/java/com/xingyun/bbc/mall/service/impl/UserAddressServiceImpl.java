@@ -1,6 +1,8 @@
 package com.xingyun.bbc.mall.service.impl;
 
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
@@ -11,14 +13,15 @@ import com.xingyun.bbc.core.user.api.UserDeliveryApi;
 import com.xingyun.bbc.core.user.po.UserDelivery;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
+import com.xingyun.bbc.mall.base.utils.FileUtil;
 import com.xingyun.bbc.mall.base.utils.PageUtils;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.*;
+import com.xingyun.bbc.mall.model.vo.AddressFileInfoVo;
 import com.xingyun.bbc.mall.model.vo.CityRegionVo;
 import com.xingyun.bbc.mall.model.vo.PageVo;
 import com.xingyun.bbc.mall.model.vo.UserDeliveryVo;
 import com.xingyun.bbc.mall.service.UserAddressService;
-
 import io.seata.spring.annotation.GlobalTransactional;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -26,11 +29,13 @@ import org.dozer.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -58,6 +63,12 @@ public class UserAddressServiceImpl implements UserAddressService {
 
     @Autowired
     private PageUtils pageUtils;
+
+    @Value("${commonfile.addressFile.fileUrl}")
+    private String url;
+
+    @Value("${commonfile.addressFile.fileName}")
+    private String fileName;
 
     /**
      * @author lll
@@ -265,5 +276,22 @@ public class UserAddressServiceImpl implements UserAddressService {
         return Result.success(listResult);
     }
 
+    @Override
+    public AddressFileInfoVo getAddressFileInfo(){
+        AddressFileInfoVo info = new AddressFileInfoVo();
+        info.setFileAddress(url);
+        info.setFileName(fileName);
+        String jsonString = FileUtil.getRemoteFile(url);
+        if(!StringUtils.isEmpty(jsonString)){
+            List<JSONObject> objectList = JSONArray.parseArray(jsonString, JSONObject.class);
+            for (Map<String, Object> objectMap : objectList){
+                if(objectMap.get("version") != null){
+                    info.setFileVersion(String.valueOf(objectMap.get("version")));
+                    break;
+                }
+            }
+        }
+        return info;
+    }
 
 }
