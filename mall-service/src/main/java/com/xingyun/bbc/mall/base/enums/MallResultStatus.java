@@ -37,6 +37,9 @@ public enum MallResultStatus implements IResultStatus {
     USER_NOT_EXIST("2020", "用户不存在"),
     WITHDRAW_LES_MIN_AMOUNT("2028", "不得小于最低提现金额"),
     LESS_THAN_ONE_RMB("2029", "最低提现金额不得小于1元"),
+    MOBLIE_CANNOT_BE_USED_AS_UNAME("2030", "手机号不能做用户名，请重新设置"),
+    ILLEGAL_CHARACTER("2031", "用户名中不能含有@，请重新设置"),
+    NO_SPECIAL_SYMBOLS("2032", "用户名中不能含有符号，请重新设置"),
     ;
     private String code;
     private String msg;
