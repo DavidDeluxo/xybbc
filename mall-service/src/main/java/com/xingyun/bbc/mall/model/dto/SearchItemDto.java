@@ -33,7 +33,7 @@ public class SearchItemDto {
     private Integer pageIndex;
 
     @ApiModelProperty("关键词")
-    @EsMark(policy = BuildPolicy.MATCH_TEXT, field = "fsku_name,fsku_name.pinyin")
+    @EsMark(policy = BuildPolicy.MATCH_TEXT, field = "fsku_name")
     private String searchFullText;
 
     @ApiModelProperty("三级类目id")
