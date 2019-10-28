@@ -233,7 +233,9 @@ public class IndexServiceImpl implements IndexService {
     public SearchItemListVo<SearchItemVo> queryGoodsByCategoryId1(SearchItemDto searchItemDto) {
         //兼容搜索那边接口做分页处理
         CategoryDto categoryDto = new CategoryDto();
-        categoryDto.setFuid(Long.valueOf(searchItemDto.getFuid()));
+        if(searchItemDto.getFuid() != null){
+            categoryDto.setFuid(Long.valueOf(searchItemDto.getFuid()));
+        }
         categoryDto.setCurrentPage(searchItemDto.getPageIndex());
         categoryDto.setFcategoryId1(searchItemDto.getFcategoryIdL1().get(0));
         // 初始化PageVo

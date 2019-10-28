@@ -40,6 +40,10 @@ public class SearchItemDto {
     @EsMark(policy = BuildPolicy.MULTI_OR_MUST, field = "fcategory_id3")
     private List<Integer> fcategoryId;
 
+    @ApiModelProperty(value = "二级类目id")
+    @EsMark(policy = BuildPolicy.MULTI_OR_MUST, field = "fcategory_id2")
+    private List<Integer> fcategoryIdL2;
+
     @ApiModelProperty(value = "一级类目id")
     @EsMark(policy = BuildPolicy.MULTI_OR_MUST, field = "fcategory_id1")
     private List<Integer> fcategoryIdL1;
@@ -103,4 +107,13 @@ public class SearchItemDto {
     @EsMark(policy = BuildPolicy.MUST, field = "fis_delete")
     @ApiModelProperty(value = "是否删除", hidden = true)
     private Integer fisDeleted;
+
+
+    //----------------------------------------------
+    //   banner icon 专题位 配置分类id时使用, 用来区分分类id等级
+    @ApiModelProperty(value = "通用类目id")
+    private List<Integer> fUnicategoryIds;
+
+    @ApiModelProperty(value = "类目等级")
+    private Integer fcateogryLevel;
 }
