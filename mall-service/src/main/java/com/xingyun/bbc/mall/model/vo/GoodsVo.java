@@ -34,6 +34,9 @@ public class GoodsVo implements Serializable {
     @ApiModelProperty(value = "商品贸易类型Id")
     private Long ftradeId;
 
+    @ApiModelProperty(value = "国旗图标")
+    private String fcountryIcon;
+
     @ApiModelProperty(value = "商品贸易类型名称")
     private String ftradeType;
 

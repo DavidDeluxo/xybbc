@@ -120,7 +120,8 @@ public class RechargeServiceImpl implements RechargeService{
 			detail.setFuid(fuid);
 			detail.setFtypeId(forderId);
 			detail.setFincomeAmount(thirdPayAmount);
-			detail.setFbalance(newBalance+account.getFfreezeWithdraw());
+			//余额=充值后余额+提现冻结金额+支付冻结金额
+			detail.setFbalance(newBalance+account.getFfreezeWithdraw()+account.getFfreezePay());
 			detail.setFcreditBalance(creditBalance);
 			detail.setFaccountDate(new Date());
 			detail.setFremark(remark);

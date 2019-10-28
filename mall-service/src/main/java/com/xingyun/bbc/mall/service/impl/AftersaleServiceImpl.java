@@ -145,8 +145,8 @@ public class AftersaleServiceImpl implements AftersaleService {
         Long faftersaleTotalAmount = aftersaleAdjustResult.getData().getFaftersaleTotalAmount();
         aftersaleDetailVo.setFaftersaleTotalAmount(new BigDecimal(faftersaleTotalAmount).divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP));
 
-        //售后状态1待客服审核 2待采购审核 3待仓库审核 4待财务审核 5已拒绝 6待退货 7待退款 8已成功 9已撤销
-        //售后类型 1 退款 2 退款退货 退货类型获取回寄信息
+        //售后状态faftersale_status 1待客审、2待采审、3待商审、4待财审、6待退货、7待退款、8已成功 9已撤销、10客服拒绝、11采购拒绝、12供应商拒绝、13财务拒绝、14采购拒绝收货、15逾期回寄
+        //售后类型faftersale_type 1 退款 2 退款退货 退货类型获取回寄信息
         if (OrderAftersaleType.RETURN_MONEY_AND_GOODS.getCode().equals(aftersaleDetailVo.getFaftersaleType())) {
 
             //售后状态是 6 待退货展示回寄物流信息和回寄倒计时

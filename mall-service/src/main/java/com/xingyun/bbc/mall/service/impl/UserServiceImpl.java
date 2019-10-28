@@ -274,7 +274,7 @@ public class UserServiceImpl implements UserService {
             return Result.failure(MallResultStatus.SMS_AUTH_NUM_ERROR);
         }
         String authNum = String.valueOf(xyRedisManager.get(dto.getAuthNumKey())) ;
-        if(Strings.isNullOrEmpty(authNum) || !authNum.equals(authNum)){
+        if(Strings.isNullOrEmpty(authNum) || !dto.getAuthNum().equals(authNum)){
             return Result.failure(MallResultStatus.SMS_AUTH_NUM_ERROR);
         }
         return Result.success();
@@ -415,9 +415,11 @@ public class UserServiceImpl implements UserService {
 //                if(userVerifyVo.getFpaltformId() != null){
 //                    userVerifyVo.setFpaltformName(VerifyPlatform.getMessageByCode(userVerifyVo.getFpaltformId().intValue()));
 //                }
-                if(result.getData().getFplatform() != null){
-                    userVerifyVo.setFpaltformName(result.getData().getFplatform());
-                    userVerifyVo.setFpaltformId(VerifyEnums.platform.findByMsg(result.getData().getFplatform()).getCode().longValue());
+                if(result.getData().getFplatform() != null && !result.getData().getFplatform().equals("")){
+                    if(VerifyEnums.platform.findByMsg(result.getData().getFplatform()).getCode() != null){
+                        userVerifyVo.setFpaltformId(VerifyEnums.platform.findByMsg(result.getData().getFplatform()).getCode().longValue());
+                        userVerifyVo.setFpaltformName(result.getData().getFplatform());
+                    }
                 }
                 if(userResult.getData().getFoperateType() == UserVerifyEnums.Type.WeiMerchantBuy.getValue()){
                     //微商名称同步运营后台取值
@@ -630,7 +632,7 @@ public class UserServiceImpl implements UserService {
             return Result.failure(MallResultStatus.SMS_AUTH_NUM_ERROR);
         }
         String authNum = String.valueOf(xyRedisManager.get(dto.getAuthNumKey())) ;
-        if(Strings.isNullOrEmpty(authNum) || !authNum.equals(authNum)){
+        if(Strings.isNullOrEmpty(authNum) || !dto.getAuthNum().equals(authNum)){
             return Result.failure(MallResultStatus.SMS_AUTH_NUM_ERROR);
         }
         return Result.success();
@@ -918,7 +920,7 @@ public class UserServiceImpl implements UserService {
             return false;
         }
         String authNum = String.valueOf(xyRedisManager.get(authNumKey)) ;
-        if(Strings.isNullOrEmpty(authNum) || !authNum.equals(authNum)){
+        if(Strings.isNullOrEmpty(authNum) || !pauthNum.equals(authNum)){
             return false;
         }
         return true;

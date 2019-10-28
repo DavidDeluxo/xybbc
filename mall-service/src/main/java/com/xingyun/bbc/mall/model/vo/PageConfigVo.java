@@ -4,6 +4,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 
+import javax.persistence.Column;
 import java.util.Date;
 
 /**
@@ -84,4 +85,8 @@ public class PageConfigVo {
      */
     @ApiModelProperty(value = "是否删除 0未删除 1已删除")
     private Integer fisDelete;
+
+    /**分类级别:1 一级分类  2 二级分类  3 三级分类**/
+    @ApiModelProperty(value = "分类级别:1 一级分类  2 二级分类  3 三级分类")
+    private Integer fcategoryLevel;
 }

@@ -4,7 +4,9 @@ import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
+import com.xingyun.bbc.core.operate.api.CountryApi;
 import com.xingyun.bbc.core.operate.po.CityRegion;
+import com.xingyun.bbc.core.operate.po.Country;
 import com.xingyun.bbc.core.order.api.RegularListApi;
 import com.xingyun.bbc.core.order.po.RegularList;
 import com.xingyun.bbc.core.query.Criteria;
@@ -62,6 +64,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     @Autowired
     private GoodsBrandApi goodsBrandApi;
+
+    @Autowired
+    private CountryApi countryApi;
 
     @Autowired
     private GoodsThumbImageApi goodsThumbImageApi;
@@ -166,15 +171,22 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             }
         }
 
-        //获取品牌名称
+        //获取品牌名称和国旗icon
         goodsVo.setFbrandName("");
+        goodsVo.setFcountryIcon("");
         if (null != goodsVo.getFbrandId()) {
             GoodsBrand goodsBrand = goodsBrandApi.queryOneByCriteria(Criteria.of(GoodsBrand.class)
                     .andEqualTo(GoodsBrand::getFbrandId, goodsVo.getFbrandId())
-                    .fields(GoodsBrand::getFbrandName, GoodsBrand::getFbrandLogo)).getData();
-            if (null != goodsBrand && null != goodsBrand.getFbrandName()) {
+                    .fields(GoodsBrand::getFbrandName, GoodsBrand::getFbrandLogo, GoodsBrand::getFcountryName)).getData();
+            if (null != goodsBrand) {
                 goodsVo.setFbrandName(goodsBrand.getFbrandName());
                 goodsVo.setFbrandLogo(goodsBrand.getFbrandLogo() == null ? "" : goodsBrand.getFbrandLogo());
+                Country country = countryApi.queryOneByCriteria(Criteria.of(Country.class)
+                        .andEqualTo(Country::getFcountryName, goodsBrand.getFcountryName())
+                        .fields(Country::getFcountryIcon)).getData();
+                if (null != country) {
+                    goodsVo.setFcountryIcon(country.getFcountryIcon());
+                }
             }
         }
 
@@ -494,15 +506,20 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         if (!skuStockSell.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
+        Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
+                .andEqualTo(GoodsSku::getFskuId, goodsDetailDto.getFskuId()).fields(GoodsSku::getFsellNum));
+        if (!goodsSkuResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (null != goodsSkuResult.getData()) {
+            result.setFsellNum(goodsSkuResult.getData().getFsellNum());
+        }
         List<SkuBatch> skuStockSellResult = skuStockSell.getData();
         if (!CollectionUtils.isEmpty(skuStockSellResult)) {
             for (SkuBatch skuBatch : skuStockSellResult) {
                 GoodsDetailDto param = new GoodsDetailDto();
                 param.setFsupplierSkuBatchId(skuBatch.getFsupplierSkuBatchId());
                 GoodStockSellVo batchStockSell = this.getBatchStockSell(param);
-                if (null != batchStockSell.getFsellNum()) {
-                    result.setFsellNum(result.getFsellNum() + batchStockSell.getFsellNum());
-                }
                 if (null != batchStockSell.getFstockRemianNum()) {
                     result.setFstockRemianNum(result.getFstockRemianNum() + batchStockSell.getFstockRemianNum());
                 }
