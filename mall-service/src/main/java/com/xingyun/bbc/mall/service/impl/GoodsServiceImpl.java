@@ -1,9 +1,9 @@
 package com.xingyun.bbc.mall.service.impl;
 
 
+import com.xingyun.bbc.common.elasticsearch.config.EsBeanUtil;
 import com.xingyun.bbc.common.elasticsearch.config.EsCriteria;
 import com.xingyun.bbc.common.elasticsearch.config.EsManager;
-import com.xingyun.bbc.common.elasticsearch.config.EsBeanUtil;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.PageConfigApi;
@@ -80,6 +80,7 @@ public class GoodsServiceImpl implements GoodsService {
     public Result<SearchFilterVo> searchSkuFilter(SearchItemDto searchItemDto) {
 
         SearchFilterVo filterVo = new SearchFilterVo();
+        this.setCategoryCondition(searchItemDto);
         EsCriteria criteria = EsCriteria.build(searchItemDto);
         this.setSearchCondition(searchItemDto, criteria);
         this.setAggregation(criteria);
@@ -134,6 +135,23 @@ public class GoodsServiceImpl implements GoodsService {
             }
         }
         return Result.success(filterVo);
+    }
+
+    private void setCategoryCondition(SearchItemDto searchItemDto){
+        // 商品类目条件
+        if(CollectionUtils.isNotEmpty(searchItemDto.getFUnicategoryIds())
+                && searchItemDto.getFcateogryLevel() != null){
+            Integer fcateogryLevel = searchItemDto.getFcateogryLevel();
+            if(fcateogryLevel == 1){
+                searchItemDto.setFcategoryIdL1(searchItemDto.getFUnicategoryIds());
+            }
+            if(fcateogryLevel == 2){
+                searchItemDto.setFcategoryIdL2(searchItemDto.getFUnicategoryIds());
+            }
+            if(fcateogryLevel == 3){
+                searchItemDto.setFcategoryId(searchItemDto.getFUnicategoryIds());
+            }
+        }
     }
 
 
@@ -213,7 +231,7 @@ public class GoodsServiceImpl implements GoodsService {
         pageVo.setIsLogin(searchItemDto.getIsLogin());
         pageVo.setTotalCount(0);
         pageVo.setPageSize(1);
-
+        this.setCategoryCondition(searchItemDto);
         EsCriteria criteria = EsCriteria.build(searchItemDto);
         this.setSearchCondition(searchItemDto, criteria);
 
@@ -312,6 +330,8 @@ public class GoodsServiceImpl implements GoodsService {
      * @param criteria
      */
     private void setSearchCondition(SearchItemDto searchItemDto, EsCriteria criteria) {
+
+
         // 商品属性条件
         if (CollectionUtils.isNotEmpty(searchItemDto.getFattributeItemId())) {
             String fieldname = "attributes.fclass_attribute_item_id";
