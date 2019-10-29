@@ -82,7 +82,7 @@ public class UserAddressServiceImpl implements UserAddressService {
     public PageVo<UserDeliveryVo> getUserAddress(UserDeliveryDto userDeliveryDto) {
         //校验用户id
         if (userDeliveryDto.getFuid() == null) {
-            throw new BizException(MallExceptionCode.NO_USER_ID);
+            throw new BizException(MallExceptionCode.REQUIRED_PARAM_MISSING);
         }
         //查询当前用户下未删除的的数据
         Criteria<UserDelivery, Object> criteria = Criteria.of(UserDelivery.class);
@@ -145,7 +145,7 @@ public class UserAddressServiceImpl implements UserAddressService {
     public Result addUserAddress(UserDeliveryAddDto userDeliveryDto) {
         //校验用户id
         if (userDeliveryDto.getFuid() == null) {
-            throw new BizException(MallExceptionCode.NO_USER_ID);
+            throw new BizException(MallExceptionCode.REQUIRED_PARAM_MISSING);
         }
         Integer isDefault = userDeliveryDto.getFisDefualt();
         UserDeliveryDto userDelivery = new UserDeliveryDto();
@@ -205,7 +205,7 @@ public class UserAddressServiceImpl implements UserAddressService {
     public Result modifyUserAddress(UserDeliveryUpdateDto userDeliveryDto) {
         //校验用户id
         if (userDeliveryDto.getFuid() == null) {
-            throw new BizException(MallExceptionCode.NO_USER_ID);
+            throw new BizException(MallExceptionCode.REQUIRED_PARAM_MISSING);
         }
         Integer isDefault = userDeliveryDto.getFisDefualt();
         UserDeliveryDto userDelivery = new UserDeliveryDto();
