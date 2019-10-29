@@ -28,10 +28,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
-import org.elasticsearch.index.query.DisMaxQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.RangeQueryBuilder;
-import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.BucketOrder;
@@ -140,8 +137,8 @@ public class GoodsServiceImpl implements GoodsService {
     private void setCategoryCondition(SearchItemDto searchItemDto){
         // 商品类目条件
         if(CollectionUtils.isNotEmpty(searchItemDto.getFUnicategoryIds())
-                && searchItemDto.getFcateogryLevel() != null){
-            Integer fcateogryLevel = searchItemDto.getFcateogryLevel();
+                && searchItemDto.getFcategoryLevel() != null){
+            Integer fcateogryLevel = searchItemDto.getFcategoryLevel();
             if(fcateogryLevel == 1){
                 searchItemDto.setFcategoryIdL1(searchItemDto.getFUnicategoryIds());
             }
