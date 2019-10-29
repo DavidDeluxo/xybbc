@@ -39,7 +39,7 @@ public class UserAddressController {
 
     @ApiOperation(value = "查询用户收货地址列表", httpMethod = "POST")
     @PostMapping("/getUserAddress")
-    public Result<PageVo<UserDeliveryVo>> getUserAddress(UserDeliveryDto userDeliveryDto, HttpServletRequest request) {
+    public Result<PageVo<UserDeliveryVo>> getUserAddress(@RequestBody UserDeliveryDto userDeliveryDto, HttpServletRequest request) {
         userDeliveryDto.setFuid(Long.parseLong(request.getHeader("xyid")));
         return Result.success(userAddressService.getUserAddress(userDeliveryDto));
     }
