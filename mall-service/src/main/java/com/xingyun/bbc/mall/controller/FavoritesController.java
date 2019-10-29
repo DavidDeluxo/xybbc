@@ -37,7 +37,7 @@ public class FavoritesController {
     @PostMapping("/add")
     public Result<Boolean> addFavorites(@RequestBody @Valid AddFavoritesDto favoritesDto, HttpServletRequest request) {
         long fuid = UserUtil.uid(request);
-        return favoritesApi.addFavorites(favoritesDto.setFuid(fuid));
+        return favoritesApi.addFavorites(favoritesDto.setFuid(fuid)).setMsg("加入成功");
     }
 
     @ApiOperation("常购清单列表")
@@ -57,7 +57,7 @@ public class FavoritesController {
     @PostMapping("/clear")
     public Result<Boolean> clear(@RequestBody @Valid FavoritesClearDto clearDto, HttpServletRequest request) {
         Long fuid = UserUtil.uid(request);
-        return favoritesApi.clear(clearDto.setFuid(fuid));
+        return favoritesApi.clear(clearDto.setFuid(fuid)).setMsg("已移除清单");
     }
 
     @ApiOperation("常购清单分类")

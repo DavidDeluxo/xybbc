@@ -23,6 +23,7 @@ import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.common.constans.UserConstants;
+import com.xingyun.bbc.mall.common.lock.XybbcLock;
 import com.xingyun.bbc.mall.model.dto.*;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.UserService;
@@ -49,6 +50,14 @@ import java.util.regex.Pattern;
 public class UserServiceImpl implements UserService {
     private static Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
+    /**
+     * 分布式锁前缀和过期时间
+     */
+    private static final String LOCK_PREFIX_MOBILE = "user_add_unique_mobile_";
+    private static final String LOCK_PREFIX_EMAIL = "user_add_unique_email_";
+    private static final String LOCK_PREFIX_UNAME = "user_add_unique_uname_";
+    private static final long LOCK_EXPIRING = 60;
+
     @Autowired
     private UserApi userApi;
     @Autowired
@@ -67,7 +76,8 @@ public class UserServiceImpl implements UserService {
     private XyRedisManager xyRedisManager;
     @Autowired
     private DozerHolder dozerHolder;
-
+    @Autowired
+    private XybbcLock xybbcLock;
 
 
     @Override
@@ -548,6 +558,22 @@ public class UserServiceImpl implements UserService {
         if(dto.getFnickname().equals("")){
             Result.failure(MallResultStatus.REGISTER_NAME_IS_NULL);
         }
+        //判断是否为手机号
+        //手机号校验
+        boolean mobileCheck = mobileCheck(dto.getFnickname());
+        if(mobileCheck){
+            return Result.failure(MallResultStatus.MOBLIE_CANNOT_BE_USED_AS_UNAME);
+        }
+        //不能含有@字符
+        boolean atCheck = dto.getFnickname().contains("@");
+        if(atCheck){
+            return Result.failure(MallResultStatus.ILLEGAL_CHARACTER);
+        }
+        //不能含有特殊字符
+        boolean symbolCheck = checkSymbol(dto.getFnickname());
+        if(symbolCheck){
+            return Result.failure(MallResultStatus.NO_SPECIAL_SYMBOLS);
+        }
         Criteria<User, Object> userCriteria = Criteria.of(User.class);
         userCriteria.andEqualTo(User::getFisDelete,"0")
                 .andEqualTo(User::getFuid,dto.getFuid())
@@ -559,19 +585,40 @@ public class UserServiceImpl implements UserService {
         if(!userResult.getData().getFnickname().equals("")){
             return Result.failure(MallResultStatus.USER_NICKNAME_EXIST);
         }
-        //查询是否重名
-        Criteria<User, Object> userObjectCriteria = Criteria.of(User.class);
-        userObjectCriteria.andEqualTo(User::getFisDelete,"0")
-                .andEqualTo(User::getFuname,dto.getFnickname());
-        Result<Integer> result = userApi.countByCriteria(userObjectCriteria);
-        if(result.getData() != 0){
-            return Result.failure(MallResultStatus.REGISTER_NAME_EXIST);
+        //分布式锁是否获得成功
+        boolean lockUname = false;
+        try {
+            //对唯一的字段添加分布式锁,如果锁已存在,会立刻抛异常
+            lockUname = xybbcLock.tryLock(LOCK_PREFIX_UNAME + dto.getFnickname(), "", LOCK_EXPIRING);
+            if(!lockUname){
+                return Result.failure(MallResultStatus.COMMON_UPDATE_FAIL);
+            }
+            //查询是否重名
+            Criteria<User, Object> userObjectCriteria = Criteria.of(User.class);
+            userObjectCriteria.andEqualTo(User::getFisDelete,"0")
+                    .andEqualTo(User::getFuname,dto.getFnickname());
+            Result<Integer> result = userApi.countByCriteria(userObjectCriteria);
+            if(result.getData() != 0){
+                return Result.failure(MallResultStatus.REGISTER_NAME_EXIST);
+            }
+            User user = new User();
+            user.setFnickname(dto.getFnickname());
+            user.setFuname(dto.getFnickname());
+            user.setFuid(dto.getFuid());
+            return userApi.updateNotNull(user);
+        } finally {
+            //释放分布式锁
+            if (lockUname) {
+                xybbcLock.releaseLock(LOCK_PREFIX_UNAME + dto.getFnickname(), "");
+            }
         }
-        User user = new User();
-        user.setFnickname(dto.getFnickname());
-        user.setFuname(dto.getFnickname());
-        user.setFuid(dto.getFuid());
-        return userApi.updateNotNull(user);
+    }
+
+    private boolean checkSymbol(String fnickname) {
+        String regEx = "[ _`~!@#$%^&*()+=|{}':;',\\[\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]|\n|\r|\t";
+        Pattern p = Pattern.compile(regEx);
+        Matcher m = p.matcher(fnickname);
+        return m.find();
     }
 
     @Override

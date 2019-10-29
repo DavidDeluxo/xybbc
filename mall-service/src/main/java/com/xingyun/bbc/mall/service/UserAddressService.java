@@ -2,6 +2,7 @@ package com.xingyun.bbc.mall.service;
 
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.model.dto.*;
+import com.xingyun.bbc.mall.model.vo.AddressFileInfoVo;
 import com.xingyun.bbc.mall.model.vo.CityRegionVo;
 import com.xingyun.bbc.mall.model.vo.PageVo;
 import com.xingyun.bbc.mall.model.vo.UserDeliveryVo;
@@ -64,4 +65,16 @@ public interface UserAddressService {
      * @date 2019/9/20 13:49
      */
     Result<List<CityRegionVo>> getCityRegionLis(CityRegionDto cityRegionDto);
+
+
+    /**
+     * @author kevin
+     * @version V1.0
+     * @Description: 查询省市区文件基本信息
+     * @Param:
+     * @return: Result<AddressFileInfoVo>
+     * @date 2019/10/28 14:59
+     */
+    AddressFileInfoVo getAddressFileInfo();
+
 }

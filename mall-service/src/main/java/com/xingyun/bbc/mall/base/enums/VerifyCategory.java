@@ -4,12 +4,10 @@ import lombok.Getter;
 
 @Getter
 public enum VerifyCategory {
-    SHAMPOO(1,"洗发露"),
-    ENZYMES(2,"酵素"),
-    LIVER_ROTECTING_TABLET(3,"护肝片"),
-    FOOT_CARE(4,"足部护理"),
-    MASSIVE_GAINER(5,"增肌粉"),
-    MACA(6,"玛咖"),
+    ONE(1,"母婴用品"),
+    TWO(2,"美妆个护"),
+    THREE(3,"食品保健"),
+    FOUR(4,"生活用品"),
     ;
 
     private Integer code;
