@@ -126,6 +126,7 @@ public class IndexServiceImpl implements IndexService {
             }
             Result<List<PageConfig>> pageConfigResult = pageConfigApi.queryByCriteria(pageConfigCriteria);
             if (!pageConfigResult.isSuccess()) {
+                logger.error("查询首页配置失败，首页配置具体位置{}",position);
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
             List<PageConfig> pageConfigs = pageConfigResult.getData();
@@ -268,6 +269,7 @@ public class IndexServiceImpl implements IndexService {
                         .page(categoryDto.getCurrentPage(), categoryDto.getPageSize())
         );
         if (!result.isSuccess()) {
+            logger.error("查询首页楼层商品失败 当前页{}", searchItemDto.getPageIndex());
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         if (CollectionUtils.isEmpty(result.getData())) {
@@ -276,7 +278,7 @@ public class IndexServiceImpl implements IndexService {
         // 统计次数
         Result<Integer> totalResult = goodsSkuApi.countByCriteria(criteria);
         if (!totalResult.isSuccess()) {
-            logger.info("统计首页商品数量信息失败");
+            logger.error("统计首页商品数量信息失败");
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         if (0 == totalResult.getData() || Objects.isNull(totalResult.getData())) {
@@ -290,6 +292,7 @@ public class IndexServiceImpl implements IndexService {
                 .andIn(SkuBatch::getFskuId, skuIdList);
         Result<List<SkuBatch>> skuBatchList = skuBatchApi.queryByCriteria(skuBatchCriteria.fields(SkuBatch::getFskuId, SkuBatch::getFsellNum));
         if (!skuBatchList.isSuccess()) {
+            logger.error("查询首页楼层商品批次失败 当前页码{}", searchItemDto.getPageIndex());
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         //查询批次表此时批次状态为已上架用来封装价格
@@ -298,6 +301,7 @@ public class IndexServiceImpl implements IndexService {
                 .andEqualTo(SkuBatch::getFbatchStatus, 2);
         Result<List<SkuBatch>> skuBatchs = skuBatchApi.queryByCriteria(batchCriteria);
         if (!skuBatchs.isSuccess()) {
+            logger.error("查询首页楼层商品批次失败 当前页码{}", searchItemDto.getPageIndex());
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         //第二步，封装sku历史销量，最低价格
@@ -322,6 +326,7 @@ public class IndexServiceImpl implements IndexService {
                 //登录情况下
                 Result<User> user = userApi.queryById(categoryDto.getFuid());
                 if (!user.isSuccess()) {
+                    logger.error("查询用户信息失败 用户id{}", categoryDto.getFuid());
                     throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
                 }
                 if (Objects.isNull(user.getData())) {
@@ -331,7 +336,7 @@ public class IndexServiceImpl implements IndexService {
                 Integer operateType = user.getData().getFoperateType();
                 Integer verifyStatus = user.getData().getFverifyStatus();
                 //判断sku是否支持平台会员类型折扣 0否 1是
-                //1支持会员类型折扣情况下分两种：是否配置了会员类型折扣
+                //1支持会员类型折扣情况下分两种：是否配置了会员类型折扣，认证是否通过
                 if (goodsSku.getFisUserTypeDiscount().equals(1) && verifyStatus.equals(3)) {
                     //判断sku会员类型折扣是否配置
                     Result<List<SkuUserDiscountConfig>> skuUserDiscountResult = skuUserDiscountConfigApi.queryByCriteria(Criteria.of(SkuUserDiscountConfig.class)
@@ -340,6 +345,7 @@ public class IndexServiceImpl implements IndexService {
                             .andEqualTo(SkuUserDiscountConfig::getFisDelete, 0)
                             .fields(SkuUserDiscountConfig::getFdiscountId));
                     if (!skuUserDiscountResult.isSuccess()) {
+                        logger.error("查询会员类型折扣配置失败 当前skuId{} 认证类型{}", goodsSku.getFskuId(),operateType);
                         throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
                     }
                     //没有配置sku会员类型折扣则返回批次价格
@@ -365,6 +371,7 @@ public class IndexServiceImpl implements IndexService {
                                                 SkuBatchUserPrice::getFbatchPackageId,
                                                 SkuBatchUserPrice::getFbatchSellPrice));
                                 if (!skuBatchUserPriceList.isSuccess()) {
+                                    logger.error("查询会员批次价格失败 当前supplierSkuBatchId{}", supplierSkuBatchId);
                                     throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
                                 }
                                 if (CollectionUtils.isEmpty(skuBatchUserPriceList.getData())) {
@@ -415,7 +422,7 @@ public class IndexServiceImpl implements IndexService {
             });
         }
         //限制十页200条数据
-        if (categoryDto.getCurrentPage() > 20) {
+        if (categoryDto.getCurrentPage() > 10) {
             return new SearchItemListVo<>(0, categoryDto.getCurrentPage(), categoryDto.getPageSize(), Lists.newArrayList());
         }
         pageVo.setPageSize(searchItemDto.getPageSize());
@@ -442,6 +449,7 @@ public class IndexServiceImpl implements IndexService {
             Result<List<GoodsSkuBatchPrice>> goodsSkuBatchPriceList = goodsSkuBatchPriceApi.queryByCriteria(goodsSkuBatchPriceCriteria
                     .fields(GoodsSkuBatchPrice::getFsupplierSkuBatchId, GoodsSkuBatchPrice::getFbatchPackageId, GoodsSkuBatchPrice::getFbatchSellPrice));
             if (!goodsSkuBatchPriceList.isSuccess()) {
+                logger.error("查询批次价格失败 当前supplierSkuBatchId{}", skuBatch.getFsupplierSkuBatchId());
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
             if (CollectionUtils.isEmpty(goodsSkuBatchPriceList.getData())) {
