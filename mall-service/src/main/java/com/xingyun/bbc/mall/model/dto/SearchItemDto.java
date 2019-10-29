@@ -115,5 +115,5 @@ public class SearchItemDto {
     private List<Integer> fUnicategoryIds;
 
     @ApiModelProperty(value = "类目等级")
-    private Integer fcateogryLevel;
+    private Integer fcategoryLevel;
 }

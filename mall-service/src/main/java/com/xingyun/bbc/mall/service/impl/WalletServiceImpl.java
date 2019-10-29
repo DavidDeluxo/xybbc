@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.xingyun.bbc.common.redis.XyIdGenerator;
 import com.xingyun.bbc.common.redis.order.OrderTypeEnum;
@@ -213,7 +214,7 @@ public class WalletServiceImpl implements WalletService {
 
         log.info("|生成提现订单|用户id:{}|订单号:{}|", uid, transId);
 
-        log.info("|用户id:{}|提现金额:{}|手续费:{}|", uid, PriceUtil.toYuan(transAmount), PriceUtil.toYuan(accountTrans.getFeeAmount()));
+        log.info("|用户id:{}|提现金额:{}(分)|手续费:{}(分)|", uid, transAmount, accountTrans.getUserAccountTrans().getFtransPoundage());
 
         // 申请数据插入流水表
         this.addAccountTransWater(transId);
@@ -451,7 +452,7 @@ public class WalletServiceImpl implements WalletService {
                 userAccountTrans.setFwithdrawBank(withdrawDto.getBankName());
                 userAccountTrans.setFwithdrawAccount(withdrawDto.getCardNumber());
             }
-
+            log.info("构建交易表数据userAccountTrans:{}", JSONObject.toJSONString(userAccountTrans));
             return this;
         }
     }
