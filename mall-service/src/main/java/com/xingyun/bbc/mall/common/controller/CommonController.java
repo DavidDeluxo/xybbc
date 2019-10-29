@@ -9,14 +9,14 @@ import com.xingyun.bbc.core.utils.StringUtil;
 import com.xingyun.bbc.mall.common.ensure.Ensure;
 import com.xingyun.bbc.mall.common.enums.MallResultStatus;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
-
+import com.xingyun.bbc.mall.model.vo.FileInfo;
+import com.xingyun.bbc.mall.service.UserAddressService;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -35,6 +35,8 @@ public class CommonController {
 
     @Autowired
     private FdfsApi fdfsApi;
+    @Autowired
+    private UserAddressService userAddressService;
 
     @ApiOperation("上传图片")
     @PostMapping("/uploadPic")
@@ -102,5 +104,12 @@ public class CommonController {
 
     }
 
+    @ApiOperation(value = "查询基本文件信息", httpMethod = "POST")
+    @PostMapping("/via/getFileInfo")
+    public Result<FileInfo> getAddressFileInfo(HttpServletRequest req){
+        FileInfo fileInfo = new FileInfo();
+        fileInfo.setAddressFileInfo(userAddressService.getAddressFileInfo());
+        return Result.success(fileInfo);
+    }
 
 }

@@ -70,6 +70,6 @@ public class PriceUtil {
      * @return
      */
     public static BigDecimal toPenny(BigDecimal yuan) {
-        return yuan.multiply(PRICE_UNIT).setScale(0, BigDecimal.ROUND_HALF_UP);
+        return yuan.multiply(PRICE_UNIT).setScale(2, BigDecimal.ROUND_HALF_UP);
     }
 }
