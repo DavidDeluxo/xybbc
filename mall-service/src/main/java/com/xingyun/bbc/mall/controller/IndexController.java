@@ -10,7 +10,7 @@ import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.CategoryService;
 import com.xingyun.bbc.mall.service.GoodsService;
 import com.xingyun.bbc.mall.service.IndexService;
-import io.jsonwebtoken.Claims;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -20,7 +20,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
