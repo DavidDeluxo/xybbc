@@ -24,11 +24,17 @@ public class AftersaleDetailVo  implements Serializable {
     @ApiModelProperty(value = "SKU名称")
     private String fskuName;
 
+    @ApiModelProperty(value = "发货单号")
+    private String ftransportOrderId;
+
     @ApiModelProperty(value = "SKU图片")
     private String fskuPic;
 
     @ApiModelProperty(value = "售后申请数量")
     private Integer faftersaleNum;
+
+    @ApiModelProperty(value = "售后申请数量展示")
+    private String faftersaleNumShow;
 
     @ApiModelProperty(value = "售后状态1待客服审核 2待采购审核 3待仓库审核 4待财务审核 5已拒绝 6待退货 7待退款 8已成功 9已撤销")
     private Integer faftersaleStatus;
