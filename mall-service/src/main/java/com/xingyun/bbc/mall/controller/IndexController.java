@@ -1,7 +1,8 @@
 package com.xingyun.bbc.mall.controller;
 
 
-import com.xingyun.bbc.common.jwt.XyUserJwtManager;
+import com.google.common.collect.Lists;
+
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.JwtParser;
@@ -92,10 +93,14 @@ public class IndexController {
         dto.setIsLogin(infoVo.getIsLogin());
         dto.setFuid(infoVo.getFuid());
         Result<SearchItemListVo<SearchItemVo>> result = goodsService.searchSkuList(dto);
-        if(CollectionUtils.isEmpty(result.getData().getList())){
+        if (CollectionUtils.isEmpty(result.getData().getList())) {
             return Result.success(indexService.queryGoodsByCategoryId1(dto));
-        }else{
-            return result;
+        } else {
+            if (dto.getPageIndex() > 20) {
+                return Result.success(new SearchItemListVo<>(0, dto.getPageIndex(), dto.getPageSize(), Lists.newArrayList()));
+            } else {
+                return result;
+            }
         }
     }
 }
