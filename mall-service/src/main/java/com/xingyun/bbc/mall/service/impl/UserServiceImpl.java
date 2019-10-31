@@ -86,7 +86,7 @@ public class UserServiceImpl implements UserService {
     public Result<UserLoginVo> userLogin(UserLoginDto dto) {
         String passWord = EncryptUtils.aesDecrypt(dto.getPassword());
         if(passWord == null || passWord.equals("")){
-            throw new BizException(MallResultStatus.LOGIN_FAILURE);
+            return Result.failure(MallResultStatus.LOGIN_FAILURE);
         }
         passWord = Md5Utils.toMd5(passWord);
         Criteria<User, Object> criteria = Criteria.of(User.class);
