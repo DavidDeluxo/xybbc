@@ -750,7 +750,7 @@ public class UserServiceImpl implements UserService {
         }
         User user = new User();
         user.setFmail(dto.getFmail());
-        user.setFmobileValidTime(new Date());
+        user.setFemailValidTime(new Date());
         user.setFmailIsValid(1);
         user.setFuid(result.getData().getFuid());
         return userApi.updateNotNull(user);
