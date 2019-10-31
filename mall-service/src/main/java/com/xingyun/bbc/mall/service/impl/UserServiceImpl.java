@@ -22,7 +22,9 @@ import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mall.base.utils.Md5Utils;
 import com.xingyun.bbc.mall.common.constans.UserConstants;
+import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.common.lock.XybbcLock;
 import com.xingyun.bbc.mall.model.dto.*;
 import com.xingyun.bbc.mall.model.vo.*;
@@ -86,7 +88,7 @@ public class UserServiceImpl implements UserService {
         if(passWord == null || passWord.equals("")){
             throw new BizException(MallResultStatus.LOGIN_FAILURE);
         }
-        passWord = MD5Util.MD5EncodeUtf8(passWord);
+        passWord = Md5Utils.toMd5(passWord);
         Criteria<User, Object> criteria = Criteria.of(User.class);
         criteria.andEqualTo(User::getFisDelete,"0")
                 .andEqualTo(User::getFpasswd,passWord)
@@ -291,6 +293,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @GlobalTransactional
     public Result<UserLoginVo> registerUser(UserRegisterDto dto) {
         User user = new User();
         String mobile = dto.getFmobile();
@@ -303,7 +306,7 @@ public class UserServiceImpl implements UserService {
         if(passWord == null || passWord.equals("")){
             throw new BizException(MallResultStatus.LOGIN_FAILURE);
         }
-        passWord = MD5Util.MD5EncodeUtf8(passWord);
+        passWord = Md5Utils.toMd5(passWord);
         user.setFregisterFrom(dto.getFregisterFrom());
         user.setFmobile(dto.getFmobile());
         user.setFuname(dto.getFmobile());
@@ -312,17 +315,26 @@ public class UserServiceImpl implements UserService {
         user.setFverifyStatus(1);
         user.setFlastloginTime(new Date());
         Result<Integer> result = userApi.create(user);
+        if(!result.isSuccess()){
+            throw new BizException((MallExceptionCode.SYSTEM_ERROR));
+        }
         Criteria<User, Object> criteria = Criteria.of(User.class);
         criteria.andEqualTo(User::getFmobile,dto.getFmobile())
                 .andEqualTo(User::getFpasswd,passWord)
                 .andEqualTo(User::getFisDelete,"0");
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
+        if(userResult.getData() == null){
+            throw new BizException((MallExceptionCode.SYSTEM_ERROR));
+        }
         UserAccount userAccount = new UserAccount();
         userAccount.setFuid(userResult.getData().getFuid());
         result = userAccountApi.create(userAccount);
+        if(!result.isSuccess()){
+            throw new BizException((MallExceptionCode.SYSTEM_ERROR));
+        }
         UserLoginVo userLoginVo = createToken(userResult.getData());
         if(userResult.getData() == null){
-            throw new BizException(MallResultStatus.LOGIN_FAILURE);
+            throw new BizException((MallExceptionCode.SYSTEM_ERROR));
         }
         return Result.success(userLoginVo);
     }
@@ -346,7 +358,7 @@ public class UserServiceImpl implements UserService {
         if(passWord == null || passWord.equals("")){
             throw new BizException(MallResultStatus.LOGIN_FAILURE);
         }
-        passWord = MD5Util.MD5EncodeUtf8(passWord);
+        passWord = Md5Utils.toMd5(passWord);
         user.setFpasswd(passWord);
         user.setFuid(result.getData().getFuid());
         return userApi.updateNotNull(user);
@@ -699,7 +711,7 @@ public class UserServiceImpl implements UserService {
         if(passWord == null || passWord.equals("")){
             throw new BizException(MallResultStatus.PWD_MIDIFY_FAILED);
         }
-        passWord = MD5Util.MD5EncodeUtf8(passWord);
+        passWord = Md5Utils.toMd5(passWord);
         user.setFwithdrawPasswd(passWord);
         user.setFuid(result.getData().getFuid());
         return userApi.updateNotNull(user);
@@ -719,7 +731,7 @@ public class UserServiceImpl implements UserService {
         if(passWord == null || passWord.equals("")){
             throw new BizException(MallResultStatus.PWD_MIDIFY_FAILED);
         }
-        passWord = MD5Util.MD5EncodeUtf8(passWord);
+        passWord = Md5Utils.toMd5(passWord);
         user.setFpasswd(passWord);
         user.setFuid(result.getData().getFuid());
         return userApi.updateNotNull(user);
