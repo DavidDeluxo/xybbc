@@ -313,7 +313,9 @@ public class UserServiceImpl implements UserService {
         user.setFpasswd(passWord);
         user.setFfreezeStatus(1);
         user.setFverifyStatus(1);
-        user.setFlastloginTime(new Date());
+        Date date = new Date();
+        user.setFlastloginTime(date);
+        user.setFmobileValidTime(date);
         Result<Integer> result = userApi.create(user);
         if(!result.isSuccess()){
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
@@ -748,6 +750,7 @@ public class UserServiceImpl implements UserService {
         }
         User user = new User();
         user.setFmail(dto.getFmail());
+        user.setFmobileValidTime(new Date());
         user.setFmailIsValid(1);
         user.setFuid(result.getData().getFuid());
         return userApi.updateNotNull(user);
@@ -805,6 +808,7 @@ public class UserServiceImpl implements UserService {
         }
         User user = new User();
         user.setFmobile(dto.getFmobile());
+        user.setFmobileValidTime(new Date());
         user.setFuid(dto.getFuid());
         return userApi.updateNotNull(user);
     }
