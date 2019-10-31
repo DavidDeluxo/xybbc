@@ -123,6 +123,13 @@ public class UserServiceImpl implements UserService {
         userLoginVo.setFverifyStatus(user.getFverifyStatus());
         userLoginVo.setFmobile(user.getFmobile());
         userLoginVo.setFmail(user.getFmail());
+        //判断fnickname是否为空字符串，若为空字符串则表示用户还没修改过用户名，用户是否可修改：0否，1是
+        if(userLoginVo.getFnickname().equals("")){
+            userLoginVo.setFunameIsModify(1);
+        }else{
+            userLoginVo.setFunameIsModify(0);
+
+        }
         if(user.getFwithdrawPasswd().equals("")){
             userLoginVo.setFwithdrawPasswdStatus(0);
         }else{
