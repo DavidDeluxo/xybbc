@@ -290,7 +290,7 @@ public class PayServiceImpl implements PayService {
 			
 			if("200".equals(thirdPay.getData().getCode().toString())||"1030".equals(thirdPay.getData().getCode().toString()))// 200:处理成功,1030:订单已支付
 			{
-				logger.info("------------------第三方支付回调请求订单中心返回："+thirdPayUtil.thirdPayNotifySuccess(response));
+				logger.info("------------------第三方支付回调请求订单中心返回成功"+thirdPayUtil.thirdPayNotifySuccess(response));
 			}
 			
 			return thirdPay;
