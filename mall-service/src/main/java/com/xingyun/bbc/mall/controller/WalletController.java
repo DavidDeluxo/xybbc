@@ -27,7 +27,7 @@ import java.util.List;
  * @Description:
  * @createTime: 2019-09-16 14:49
  */
-@Api("钱包")
+@Api("钱包1")
 @RestController
 @RequestMapping("/wallet")
 @Validated
