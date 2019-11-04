@@ -369,7 +369,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             Integer fbatchPriceType = fskuBatch.getFbatchPriceType();
             //运费先判断--价格类型--不含邮才计算运费
             BigDecimal freightPrice = BigDecimal.ZERO;
-            if (new Integer(3).equals(fbatchPriceType) || new Integer(4).equals(fbatchPriceType)) {
+            if (fbatchPriceType.intValue() == 3 || fbatchPriceType.intValue() == 4) {
                 // 判断是默认地址还是前端选中的地址
                 if (null == goodsDetailDto.getFdeliveryCityId()) {
                     UserDelivery defautDelivery = userDeliveryApi.queryOneByCriteria(Criteria.of(UserDelivery.class)
@@ -409,7 +409,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             //税费 = (原始价*购买数量 + 运费) * 税率
             BigDecimal taxPrice = BigDecimal.ZERO;
 
-            if (new Integer(2).equals(fbatchPriceType) || new Integer(4).equals(fbatchPriceType)) {
+            if (fbatchPriceType.intValue() == 2 || fbatchPriceType.intValue() == 4) {
                 taxPrice = orgPrice.add(freightPrice).multiply(new BigDecimal(fskuTaxRate))
                         .divide(MallConstants.TEN_THOUSAND, 2, BigDecimal.ROUND_HALF_UP);
             }
@@ -603,7 +603,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     private Long getPackagePrice(GoodsDetailDto goodsDetailDto) {
         Long price = 0l;
         //是否支持平台会员折扣
-        if (new Integer(1).equals(this.getIsUserDiscount(goodsDetailDto.getFskuId()))) {
+        if (this.getIsUserDiscount(goodsDetailDto.getFskuId()).intValue() == 1) {
             Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
                     .andEqualTo(User::getFuid, goodsDetailDto.getFuid())
                     .fields(User::getFoperateType, User::getFverifyStatus));
@@ -614,7 +614,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             if (null == userResult.getData() || !UserVerifyStatusEnum.AUTHENTICATED.getCode().equals(userResult.getData().getFverifyStatus())) {
                 return this.getGeneralPrice(goodsDetailDto.getFbatchPackageId());
             }
-
+            //用户认证类型
             Integer foperateType = userResult.getData().getFoperateType();
             Result<List<SkuUserDiscountConfig>> skuUserDiscountResult = skuUserDiscountConfigApi.queryByCriteria(Criteria.of(SkuUserDiscountConfig.class)
                     .andEqualTo(SkuUserDiscountConfig::getFskuId, goodsDetailDto.getFskuId())
