@@ -284,7 +284,7 @@ public class IndexServiceImpl implements IndexService {
         if (0 == totalResult.getData() || Objects.isNull(totalResult.getData())) {
             return new SearchItemListVo<>(0, categoryDto.getCurrentPage(), categoryDto.getPageSize(), Lists.newArrayList());
         }
-        //为避免循环查询所以先查出辅表所需阻断
+        //为避免循环查询所以先查出辅表所需字段
         //取出skuid结果集
         List<Long> skuIdList = new ArrayList<>(result.getData().stream().map(GoodsSku::getFskuId).collect(Collectors.toList()));
         //查询批次表用来封装销量
