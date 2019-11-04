@@ -454,108 +454,147 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     }
 
     @Override
-    public Result<GoodStockSellVo> getGoodStockSell(GoodsDetailDto goodsDetailDto) {
-        //获取库存和销量
+    public Result<GoodStockSellVo> getGoodStock(GoodsDetailDto goodsDetailDto) {
+        //获取库存
         GoodStockSellVo result = new GoodStockSellVo();
         //到批次
         if (null != goodsDetailDto.getFsupplierSkuBatchId()) {
-            result = this.getBatchStockSell(goodsDetailDto);
+            result = this.getBatchStock(goodsDetailDto);
         }
         //到sku
         if (null != goodsDetailDto.getFskuId() && null == goodsDetailDto.getFsupplierSkuBatchId()) {
-            result = this.getSkuStockSell(goodsDetailDto);
+            result = this.getSkuStock(goodsDetailDto);
         }
         //到spu
         if (null != goodsDetailDto.getFgoodsId() && null == goodsDetailDto.getFskuId() && null == goodsDetailDto.getFsupplierSkuBatchId()) {
-            result = this.getSpuStockSell(goodsDetailDto);
+            result = this.getSpuStock(goodsDetailDto);
         }
         return Result.success(result);
     }
 
-    //获取批次的库存和销量
-    private GoodStockSellVo getBatchStockSell(GoodsDetailDto goodsDetailDto) {
+    //获取批次的库存
+    private GoodStockSellVo getBatchStock(GoodsDetailDto goodsDetailDto) {
         GoodStockSellVo result = new GoodStockSellVo();
-        result.setFsellNum(0l);
-        result.setFstockRemianNum(0l);
-        Result<SkuBatch> stockSell = skuBatchApi.queryOneByCriteria(Criteria.of(SkuBatch.class)
+        Result<SkuBatch> batchStockSellResult = skuBatchApi.queryOneByCriteria(Criteria.of(SkuBatch.class)
                 .andEqualTo(SkuBatch::getFsupplierSkuBatchId, goodsDetailDto.getFsupplierSkuBatchId())
-                .fields(SkuBatch::getFsellNum, SkuBatch::getFstockRemianNum));
-        if (!stockSell.isSuccess()) {
-            logger.info("商品fsupplierSkuBatchId {}获取该批次库存和销量失败", goodsDetailDto.getFsupplierSkuBatchId());
+                .fields(SkuBatch::getFstockRemianNum));
+        if (!batchStockSellResult.isSuccess()) {
+            logger.info("商品fsupplierSkuBatchId {}获取该批次库存失败", goodsDetailDto.getFsupplierSkuBatchId());
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        SkuBatch stockSellResult = stockSell.getData();
-        if (null != stockSellResult) {
-            if (null != stockSellResult.getFsellNum()) {
-                result.setFsellNum(stockSellResult.getFsellNum());
-            }
-            if (null != stockSellResult.getFstockRemianNum()) {
-                result.setFstockRemianNum(stockSellResult.getFstockRemianNum());
-            }
+        SkuBatch batchStockSell = batchStockSellResult.getData();
+        if (null != batchStockSell) {
+            result.setFstockRemianNum(batchStockSell.getFstockRemianNum());
         }
         return result;
     }
 
-    //获取sku的库存和销量
-    private GoodStockSellVo getSkuStockSell(GoodsDetailDto goodsDetailDto) {
+    //获取sku的库存
+    private GoodStockSellVo getSkuStock(GoodsDetailDto goodsDetailDto) {
         GoodStockSellVo result = new GoodStockSellVo();
-        result.setFsellNum(0l);
-        result.setFstockRemianNum(0l);
-        Result<List<SkuBatch>> skuStockSell = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
+        Result<List<SkuBatch>> skuStockSellResult = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
                 .andEqualTo(SkuBatch::getFskuId, goodsDetailDto.getFskuId())
                 .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
-                .fields(SkuBatch::getFsupplierSkuBatchId));
-        if (!skuStockSell.isSuccess()) {
+                .fields(SkuBatch::getFstockRemianNum));
+        if (!skuStockSellResult.isSuccess()) {
+            logger.info("商品fskuId {}获取该sku库存失败", goodsDetailDto.getFskuId());
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
+        List<SkuBatch> skuStockSell = skuStockSellResult.getData();
+        if (!CollectionUtils.isEmpty(skuStockSell)) {
+            long sumSkuStock = skuStockSell.stream().mapToLong(SkuBatch::getFstockRemianNum).sum();
+            result.setFstockRemianNum(sumSkuStock);
+        }
+        return result;
+    }
+
+    //获取spu的库存
+    private GoodStockSellVo getSpuStock(GoodsDetailDto goodsDetailDto) {
+        GoodStockSellVo result = new GoodStockSellVo();
+        Result<List<SkuBatch>> skuStockSellResult = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
+                .andEqualTo(SkuBatch::getFgoodsId, goodsDetailDto.getFgoodsId())
+                .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
+                .fields(SkuBatch::getFstockRemianNum));
+        if (!skuStockSellResult.isSuccess()) {
+            logger.info("商品fgoodsId {}获取该spu库存失败", goodsDetailDto.getFgoodsId());
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        List<SkuBatch> skuStockSell = skuStockSellResult.getData();
+        if (!CollectionUtils.isEmpty(skuStockSell)) {
+            long sumSkuStock = skuStockSell.stream().mapToLong(SkuBatch::getFstockRemianNum).sum();
+            result.setFstockRemianNum(sumSkuStock);
+        }
+        return result;
+    }
+
+    @Override
+    public Result<GoodStockSellVo> getGoodSell(GoodsDetailDto goodsDetailDto) {
+        //获取销量
+        GoodStockSellVo result = new GoodStockSellVo();
+        //到批次
+        if (null != goodsDetailDto.getFsupplierSkuBatchId()) {
+            result = this.getBatchSell(goodsDetailDto);
+        }
+        //到sku
+        if (null != goodsDetailDto.getFskuId() && null == goodsDetailDto.getFsupplierSkuBatchId()) {
+            result = this.getSkuSell(goodsDetailDto);
+        }
+        //到spu
+        if (null != goodsDetailDto.getFgoodsId() && null == goodsDetailDto.getFskuId() && null == goodsDetailDto.getFsupplierSkuBatchId()) {
+            result = this.getSpuSell(goodsDetailDto);
+        }
+        return Result.success(result);
+    }
+
+    //获取批次的销量
+    private GoodStockSellVo getBatchSell(GoodsDetailDto goodsDetailDto) {
+        GoodStockSellVo result = new GoodStockSellVo();
+        Result<SkuBatch> batchStockSellResult = skuBatchApi.queryOneByCriteria(Criteria.of(SkuBatch.class)
+                .andEqualTo(SkuBatch::getFsupplierSkuBatchId, goodsDetailDto.getFsupplierSkuBatchId())
+                .fields(SkuBatch::getFsellNum));
+        if (!batchStockSellResult.isSuccess()) {
+            logger.info("商品fsupplierSkuBatchId {}获取该批次销量失败", goodsDetailDto.getFsupplierSkuBatchId());
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        SkuBatch batchStockSell = batchStockSellResult.getData();
+        if (null != batchStockSell) {
+            result.setFsellNum(batchStockSell.getFsellNum());
+        }
+        return result;
+    }
+
+    //获取sku的销量
+    private GoodStockSellVo getSkuSell(GoodsDetailDto goodsDetailDto) {
+        GoodStockSellVo result = new GoodStockSellVo();
         Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
-                .andEqualTo(GoodsSku::getFskuId, goodsDetailDto.getFskuId()).fields(GoodsSku::getFsellNum));
+                .andEqualTo(GoodsSku::getFskuId, goodsDetailDto.getFskuId())
+                .fields(GoodsSku::getFsellNum));
         if (!goodsSkuResult.isSuccess()) {
+            logger.info("商品fskuId {}获取该sku销量失败", goodsDetailDto.getFskuId());
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         if (null != goodsSkuResult.getData()) {
             result.setFsellNum(goodsSkuResult.getData().getFsellNum());
         }
-        List<SkuBatch> skuStockSellResult = skuStockSell.getData();
-        if (!CollectionUtils.isEmpty(skuStockSellResult)) {
-            for (SkuBatch skuBatch : skuStockSellResult) {
-                GoodsDetailDto param = new GoodsDetailDto();
-                param.setFsupplierSkuBatchId(skuBatch.getFsupplierSkuBatchId());
-                GoodStockSellVo batchStockSell = this.getBatchStockSell(param);
-                if (null != batchStockSell.getFstockRemianNum()) {
-                    result.setFstockRemianNum(result.getFstockRemianNum() + batchStockSell.getFstockRemianNum());
-                }
-            }
-        }
         return result;
     }
 
-    //获取spu的库存和销量
-    private GoodStockSellVo getSpuStockSell(GoodsDetailDto goodsDetailDto) {
+    //获取spu的销量
+    private GoodStockSellVo getSpuSell(GoodsDetailDto goodsDetailDto) {
         GoodStockSellVo result = new GoodStockSellVo();
-        result.setFsellNum(0l);
-        result.setFstockRemianNum(0l);
-        Result<List<GoodsSku>> spuStockSell = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
+        Result<List<GoodsSku>> spuStockSellResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
                 .andEqualTo(GoodsSku::getFgoodsId, goodsDetailDto.getFgoodsId())
                 .andEqualTo(GoodsSku::getFskuStatus, GoodsSkuEnums.Status.OnShelves.getValue())
                 .andEqualTo(GoodsSku::getFisDelete, "0")
-                .fields(GoodsSku::getFskuId));
-        if (!spuStockSell.isSuccess()) {
+                .fields(GoodsSku::getFsellNum));
+        if (!spuStockSellResult.isSuccess()) {
+            logger.info("商品fgoodsId {}获取该spu销量失败", goodsDetailDto.getFgoodsId());
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        List<GoodsSku> spuStockSellResult = spuStockSell.getData();
-        if (!CollectionUtils.isEmpty(spuStockSellResult)) {
-            for (GoodsSku goodsSku : spuStockSellResult) {
-                GoodsDetailDto param = new GoodsDetailDto();
-                param.setFskuId(goodsSku.getFskuId());
-                GoodStockSellVo batchStockSell = this.getSkuStockSell(param);
-                if (null != batchStockSell.getFsellNum()) {
-                    result.setFsellNum(result.getFsellNum() + batchStockSell.getFsellNum());
-                }
-                if (null != batchStockSell.getFstockRemianNum()) {
-                    result.setFstockRemianNum(result.getFstockRemianNum() + batchStockSell.getFstockRemianNum());
-                }
-            }
+        List<GoodsSku> spuStockSell = spuStockSellResult.getData();
+        if (!CollectionUtils.isEmpty(spuStockSell)) {
+            long sumSkuSellNum = spuStockSell.stream().mapToLong(GoodsSku::getFsellNum).sum();
+            result.setFsellNum(sumSkuSellNum);
         }
         return result;
     }

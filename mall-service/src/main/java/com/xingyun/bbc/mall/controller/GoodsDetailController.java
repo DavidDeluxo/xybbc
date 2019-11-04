@@ -65,11 +65,18 @@ public class GoodsDetailController {
         return goodDetailService.getGoodPrice(goodsDetailDto);
     }
 
-    @ApiOperation(value = "获取库存和销量", httpMethod = "POST")
-    @PostMapping("/via/getGoodStockSell")
-    public Result<GoodStockSellVo> getGoodStockSell(@RequestBody GoodsDetailDto goodsDetailDto){
-        logger.info("获取库存和销量 {}", JSON.toJSONString(goodsDetailDto));
-        return goodDetailService.getGoodStockSell(goodsDetailDto);
+    @ApiOperation(value = "获取库存", httpMethod = "POST")
+    @PostMapping("/via/getGoodStock")
+    public Result<GoodStockSellVo> getGoodStock(@RequestBody GoodsDetailDto goodsDetailDto){
+        logger.info("获取库存 {}", JSON.toJSONString(goodsDetailDto));
+        return goodDetailService.getGoodStock(goodsDetailDto);
+    }
+
+    @ApiOperation(value = "获取销量", httpMethod = "POST")
+    @PostMapping("/via/getGoodSell")
+    public Result<GoodStockSellVo> getGoodSell(@RequestBody GoodsDetailDto goodsDetailDto){
+        logger.info("获取销量 {}", JSON.toJSONString(goodsDetailDto));
+        return goodDetailService.getGoodSell(goodsDetailDto);
     }
 
     @ApiOperation(value = "获取是否加入常购清单", httpMethod = "GET")
