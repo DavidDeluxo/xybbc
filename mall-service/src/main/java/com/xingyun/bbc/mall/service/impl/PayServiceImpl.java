@@ -377,7 +377,9 @@ public class PayServiceImpl implements PayService {
 			{
 				UserAccountTrans water=userAccountTransApi.queryById(dto.getForderId()).getData();
 				UserAccountTransWater transWater = dozerHolder.convert(water,UserAccountTransWater.class);
-				userAccountTransWaterApi.updateNotNull(transWater);
+				transWater.setFtransStatus(2);
+				transWater.setFpayVoucher(dto.getPayVoucher());
+				userAccountTransWaterApi.create(transWater);
 			}else{
 				return Result.failure(MallExceptionCode.REMITTANCE_PAY_FAIL);
 			}
