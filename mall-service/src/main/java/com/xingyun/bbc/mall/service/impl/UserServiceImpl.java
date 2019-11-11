@@ -632,6 +632,34 @@ public class UserServiceImpl implements UserService {
         return Result.success(userVo);
     }
 
+    @Override
+    public Result<UserVo> queryPopupWindowsStatus(Long fuid) {
+        UserVo userVo = new UserVo();
+        Criteria<User, Object> userCriteria = Criteria.of(User.class);
+        userCriteria.andEqualTo(User::getFisDelete,"0")
+                .andEqualTo(User::getFuid,fuid)
+                .fields(User::getFuid,User::getFlastloginTime,User::getFuserValidTime);
+        Result<User> userResult = userApi.queryOneByCriteria(userCriteria);
+        if(userResult.getData() != null){
+            //查询用户有无未使用的认证优惠券
+            Integer couponAuthenticationNum = 0;
+            //当最近登录时间大于认证审核通过时间,就不再触发弹窗
+            userVo.setIsPopupWindows(0);
+            if(userResult.getData().getFlastloginTime().compareTo(userResult.getData().getFuserValidTime()) < 0){
+                couponAuthenticationNum = queryAuthenticationCoupon(userResult.getData().getFuid());
+                userVo.setIsPopupWindows(1);
+                //更新最近登录时间
+                User user = new User();
+                user.setFuid(userResult.getData().getFuid());
+                user.setFlastloginTime(new Date());
+                userApi.updateNotNull(user);
+            }
+            //当数量大于0,就显示发了几张认证优惠券
+            userVo.setCouponAuthenticationNum(couponAuthenticationNum);
+        }
+        return Result.success(userVo);
+    }
+
     private Integer queryAuthenticationCoupon(Long fuid) {
         Integer couponAuthenticationNum = 0;
         //查询可用注册优惠券
