@@ -1,8 +1,11 @@
 package com.xingyun.bbc.mall.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Lists;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
+import com.xingyun.bbc.core.market.api.CouponBindUserApi;
+import com.xingyun.bbc.core.market.po.CouponBindUser;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
 import com.xingyun.bbc.core.operate.api.CountryApi;
 import com.xingyun.bbc.core.operate.po.CityRegion;
@@ -23,9 +26,13 @@ import com.xingyun.bbc.core.user.po.UserDelivery;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.PriceUtil;
+import com.xingyun.bbc.mall.base.utils.RandomUtils;
 import com.xingyun.bbc.mall.common.constans.MallConstants;
+import com.xingyun.bbc.mall.common.ensure.Ensure;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
+import com.xingyun.bbc.mall.common.lock.XybbcLock;
 import com.xingyun.bbc.mall.model.dto.GoodsDetailDto;
+import com.xingyun.bbc.mall.model.dto.ReceiveCouponDto;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.GoodDetailService;
 import com.xingyun.bbc.order.api.FreightApi;
@@ -41,6 +48,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -101,11 +109,16 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     @Autowired
     private RegularListApi regularListApi;
 
+    private CouponBindUserApi couponBindUserApi;
+
     @Autowired
     private Mapper dozerMapper;
 
     @Autowired
     private DozerHolder dozerHolder;
+
+    @Autowired
+    private XybbcLock xybbcLock;
 
     @Override
     public Result<List<String>> getGoodDetailPic(Long fgoodsId, Long fskuId) {
@@ -812,6 +825,36 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             fisRegular = 1;
         }
         return Result.success(fisRegular);
+    }
+
+    public Result<Boolean> receiveCoupon(ReceiveCouponDto receiveCouponDto) {
+        Long fcouponId = receiveCouponDto.getFcouponId();
+        Long fuid = receiveCouponDto.getFuid();
+        String fcouponCode = receiveCouponDto.getFcouponCode();
+        if (null == fcouponId || null == fuid) {
+            return Result.failure(MallExceptionCode.PARAM_ERROR);
+        }
+        String lockKey = StringUtils.join(Lists.newArrayList(MallConstants.MALL_RECEIVE_COUPON, fcouponId, fuid), ":");
+        if (null != fcouponCode) {
+            lockKey = StringUtils.join(Lists.newArrayList(MallConstants.MALL_RECEIVE_COUPON, fcouponId, fuid, fcouponCode), ":");
+        }
+        String lockValue = RandomUtils.getUUID();
+        try {
+            Ensure.that(xybbcLock.tryLockTimes(lockKey, lockValue,3,5)).isTrue(MallExceptionCode.SYSTEM_BUSY_ERROR);
+            CouponBindUser couponBindUser = new CouponBindUser();
+            couponBindUser.setFcouponId(fcouponId);
+            couponBindUser.setFuid(fuid);
+            couponBindUser.setFcreateTime(new Date());
+            Result<Integer> insertBindResult = couponBindUserApi.create(couponBindUser);
+            if (!insertBindResult.isSuccess()) {
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            xybbcLock.releaseLock(lockKey, lockValue);
+        }
+        return Result.success(true);
     }
 
     //    @Override
