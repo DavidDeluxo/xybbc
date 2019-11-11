@@ -4,7 +4,6 @@ import com.google.common.base.Strings;
 import com.xingyun.bbc.common.redis.XyRedisManager;
 import com.xingyun.bbc.core.activity.api.CouponProviderApi;
 import com.xingyun.bbc.core.activity.enums.CouponScene;
-import com.xingyun.bbc.core.activity.model.dto.CouponDto;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.helper.api.EmailApi;
 import com.xingyun.bbc.core.helper.api.SMSApi;
@@ -381,11 +380,11 @@ public class UserServiceImpl implements UserService {
         if (listResult.isSuccess()) {
             couponNum = listResult.getData().size();
             for(Coupon coupon: listResult.getData()){
-                CouponDto couponDto = new CouponDto();
-                couponDto.setCouponScene(CouponScene.REGISTER);
-                couponDto.setCouponId(coupon.getFcouponId());
-                couponDto.setUserId(fuid);
-                couponProviderApi.receive(couponDto);
+//                CouponQueryDto couponDto = new CouponQueryDto();
+//                couponDto.setCouponScene(CouponScene.REGISTER);
+//                couponDto.setCouponId(coupon.getFcouponId());
+//                couponDto.setUserId(fuid);
+//                couponProviderApi.receive(couponDto);
             }
         }
         return couponNum;
@@ -614,21 +613,6 @@ public class UserServiceImpl implements UserService {
                 userVo.setFwithdrawPasswdStatus(1);
             }
         }
-        //查询用户有无未使用的认证优惠券
-        Integer couponAuthenticationNum = 0;
-        //当最近登录时间大于认证审核通过时间,就不再触发弹窗
-        userVo.setIsPopupWindows(0);
-        if(userVo.getFlastloginTime().compareTo(userVo.getFuserValidTime()) < 0){
-            couponAuthenticationNum = queryAuthenticationCoupon(userVo.getFuid());
-            userVo.setIsPopupWindows(1);
-        }
-        //当数量大于0,就显示发了几张认证优惠券
-        userVo.setCouponAuthenticationNum(couponAuthenticationNum);
-        //更新最近登录时间
-        User user = new User();
-        user.setFuid(userVo.getFuid());
-        user.setFlastloginTime(new Date());
-        userApi.updateNotNull(user);
         return Result.success(userVo);
     }
 
