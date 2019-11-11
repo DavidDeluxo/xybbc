@@ -1,7 +1,8 @@
 package com.xingyun.bbc.mall.controller;
 
 
-import com.xingyun.bbc.common.jwt.XyUserJwtManager;
+import com.google.common.collect.Lists;
+
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.JwtParser;
@@ -10,7 +11,7 @@ import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.CategoryService;
 import com.xingyun.bbc.mall.service.GoodsService;
 import com.xingyun.bbc.mall.service.IndexService;
-import io.jsonwebtoken.Claims;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -20,7 +21,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,10 +93,14 @@ public class IndexController {
         dto.setIsLogin(infoVo.getIsLogin());
         dto.setFuid(infoVo.getFuid());
         Result<SearchItemListVo<SearchItemVo>> result = goodsService.searchSkuList(dto);
-        if(CollectionUtils.isEmpty(result.getData().getList())){
+        if (CollectionUtils.isEmpty(result.getData().getList())) {
             return Result.success(indexService.queryGoodsByCategoryId1(dto));
-        }else{
-            return result;
+        } else {
+            if (dto.getPageIndex() > 20) {
+                return Result.success(new SearchItemListVo<>(0, dto.getPageIndex(), dto.getPageSize(), Lists.newArrayList()));
+            } else {
+                return result;
+            }
         }
     }
 }

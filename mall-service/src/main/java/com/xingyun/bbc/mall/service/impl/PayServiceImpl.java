@@ -290,7 +290,7 @@ public class PayServiceImpl implements PayService {
 			
 			if("200".equals(thirdPay.getData().getCode().toString())||"1030".equals(thirdPay.getData().getCode().toString()))// 200:处理成功,1030:订单已支付
 			{
-				logger.info("------------------第三方支付回调请求订单中心返回："+thirdPayUtil.thirdPayNotifySuccess(response));
+				logger.info("------------------第三方支付回调请求订单中心返回成功"+thirdPayUtil.thirdPayNotifySuccess(response));
 			}
 			
 			return thirdPay;
@@ -377,7 +377,9 @@ public class PayServiceImpl implements PayService {
 			{
 				UserAccountTrans water=userAccountTransApi.queryById(dto.getForderId()).getData();
 				UserAccountTransWater transWater = dozerHolder.convert(water,UserAccountTransWater.class);
-				userAccountTransWaterApi.updateNotNull(transWater);
+				transWater.setFtransStatus(2);
+				transWater.setFpayVoucher(dto.getPayVoucher());
+				userAccountTransWaterApi.create(transWater);
 			}else{
 				return Result.failure(MallExceptionCode.REMITTANCE_PAY_FAIL);
 			}
@@ -430,7 +432,7 @@ public class PayServiceImpl implements PayService {
 				logger.info("校验余额支付失败：未设置支付密码！订单号：" + forderId + "，用户名：" + fuid + "，余额类型：" + balanceType);
 				return Result.failure(MallExceptionCode.PAY_PWD_IS_NOT_SET);
 			}
-			if (!payPwdMd5.equals(MD5Util.MD5EncodeUtf8(inputPayPwd))) {
+			if (!payPwdMd5.equals(Md5Utils.toMd5(inputPayPwd))) {
 				logger.info("校验余额支付失败：支付密码错误！订单号：" + forderId + "，用户名：" + fuid + "，余额类型：" + balanceType);
 				return Result.failure(MallExceptionCode.WITHDRAW_PSD_WRONG);
 			}

@@ -24,6 +24,9 @@ public class UserLoginVo implements Serializable {
     @ApiModelProperty("用户昵称")
     private String fnickname;
 
+    @ApiModelProperty("用户是否可修改：0否，1是")
+    private Integer funameIsModify;
+
     @ApiModelProperty("用户头像地址")
     private String fheadpic;
 

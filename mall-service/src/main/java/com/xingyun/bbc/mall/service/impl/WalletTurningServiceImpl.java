@@ -75,28 +75,30 @@ public class WalletTurningServiceImpl implements WalletTurningService {
      */
     @Override
     public PageVo<UserWalletDetailVo> queryWalletTurningList(UserWalletDetailDto userWalletDetailDto) {
+        //校验必传参数用户id
         if (userWalletDetailDto.getFuid() == null) {
-            throw new BizException(MallExceptionCode.NO_USER);
+            throw new BizException(MallExceptionCode.REQUIRED_PARAM_MISSING);
         }
         //过滤掉明细类型为6支付宝下单，7微信下单，9客服取消订单，14售后工单调整信用额度，18信用额度-可用余额，19信用额度下单
         Criteria<UserDetail, Object> criteria = Criteria.of(UserDetail.class)
                 .andEqualTo(UserDetail::getFuid, userWalletDetailDto.getFuid())
                 .andLeft().andNotEqualTo(UserDetail::getFdetailType, 6)
                 .andNotEqualTo(UserDetail::getFdetailType, 7)
-                .andNotEqualTo(UserDetail::getFdetailType, 9)
                 .andNotEqualTo(UserDetail::getFdetailType, 14)
                 .andNotEqualTo(UserDetail::getFdetailType, 18)
                 .andNotEqualTo(UserDetail::getFdetailType, 19)
                 .addRight().sortDesc(UserDetail::getFmodifyTime);
+        //查询收入
         if (!StringUtils.isEmpty(userWalletDetailDto.getQueryType()) && userWalletDetailDto.getQueryType() == 0) {
             criteria.andGreaterThan(UserDetail::getFincomeAmount, 0);
         }
+        //查询支出
         if (!StringUtils.isEmpty(userWalletDetailDto.getQueryType()) && userWalletDetailDto.getQueryType() == 1) {
             criteria.andGreaterThan(UserDetail::getFexpenseAmount, 0);
         }
+        //查询总数用于分页
         Result<Integer> totalResult = userDetailApi.countByCriteria(criteria);
         if (!totalResult.isSuccess()) {
-            logger.info("统计我的钱包收支明细数量信息失败");
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         if (0 == totalResult.getData() || Objects.isNull(totalResult.getData())) {
@@ -112,11 +114,13 @@ public class WalletTurningServiceImpl implements WalletTurningService {
                 , UserDetail::getFmodifyTime
         ).page(userWalletDetailDto.getCurrentPage(), userWalletDetailDto.getPageSize()));
         if (!result.isSuccess()) {
+            logger.error("统计我的钱包收支明细数量信息失败 当前页码{}",userWalletDetailDto.getCurrentPage());
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         if (CollectionUtils.isEmpty(result.getData())) {
             return new PageVo<>(0, userWalletDetailDto.getCurrentPage(), userWalletDetailDto.getPageSize(), Lists.newArrayList());
         }
+        //遍历数据进行当月收支合计数据填充
         List<UserWalletDetailVo> list = result.getData().stream().map(userDetail -> {
             UserWalletDetailVo userWalletDetailVo = dozerMapper.map(userDetail, UserWalletDetailVo.class);
             Date modifyTime = userWalletDetailVo.getFmodifyTime();
@@ -131,14 +135,18 @@ public class WalletTurningServiceImpl implements WalletTurningService {
             String lastDayTime = DateUtil.DateToString(lastDay, DateStyle.YYYY_MM_DD);
             String lastDayTimeStr = lastDayTime + " 23:59:59";
             Date lastTime = DateUtil.StringToDate(lastDayTimeStr);
+            //封装查询参数起始日期和用户身份
             UserWalletQueryDto userWalletQueryDto = new UserWalletQueryDto();
             userWalletQueryDto.setFuid(userWalletDetailDto.getFuid());
             userWalletQueryDto.setStartTime(beginDate);
             userWalletQueryDto.setEndTime(lastTime);
-            //查询当月余额合计
+            //查询当月收支合计
             UserWalletDetailTotalVo userWalletDetailTotalVo = this.queryWalletTotal(userWalletQueryDto);
+            //填充当月收入合计
             userWalletDetailVo.setFincomeAmountTotal(userWalletDetailTotalVo.getFincomeAmountTotal());
+            //填充当月支出合计
             userWalletDetailVo.setFexpenseAmountTotal(userWalletDetailTotalVo.getFexpenseAmountTotal());
+            //金额统一除以100
             BigDecimal balance = userWalletDetailVo.getFbalance()
                     .divide(PageConfigContants.BIG_DECIMAL_100, 2, BigDecimal.ROUND_HALF_UP);
             userWalletDetailVo.setFbalance(balance);
@@ -150,13 +158,19 @@ public class WalletTurningServiceImpl implements WalletTurningService {
             userWalletDetailVo.setFexpenseAmount(expenseAmount);
             //封装提现方式
             Integer detailType = userDetail.getFdetailType();
+            //当数据类型为8：余额提现时需要判断提现方式
             if (detailType == 8) {
                 String typeId = userDetail.getFtypeId();
                 Criteria<UserAccountTransWater, Object> UserAccountTransWaterCriteria = Criteria.of(UserAccountTransWater.class);
                 if (!StringUtils.isEmpty(typeId)) {
                     UserAccountTransWaterCriteria.andEqualTo(UserAccountTransWater::getFtransId, typeId);
                 }
+                //通过单号查询提现方式
                 Result<UserAccountTransWater> userAccountTransWater = userAccountTransWaterApi.queryOneByCriteria(UserAccountTransWaterCriteria);
+                if (!userAccountTransWater.isSuccess()) {
+                    logger.error("通过单号查询提现方式失败 当前单号{}",typeId);
+                    throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+                }
                 userWalletDetailVo.setWithdrawType(userAccountTransWater.getData().getFwithdrawType());
             }
             return userWalletDetailVo;
@@ -182,7 +196,6 @@ public class WalletTurningServiceImpl implements WalletTurningService {
                 .andEqualTo(UserDetail::getFuid, userWalletQueryDto.getFuid())
                 .andLeft().andNotEqualTo(UserDetail::getFdetailType, 6)
                 .andNotEqualTo(UserDetail::getFdetailType, 7)
-                .andNotEqualTo(UserDetail::getFdetailType, 9)
                 .andNotEqualTo(UserDetail::getFdetailType, 14)
                 .andNotEqualTo(UserDetail::getFdetailType, 18)
                 .andNotEqualTo(UserDetail::getFdetailType, 19)
@@ -192,10 +205,8 @@ public class WalletTurningServiceImpl implements WalletTurningService {
                 , UserDetail::getFincomeAmount
         ));
         if (!result.isSuccess()) {
+            logger.error("查询用户收支明细失败 当月起始日期{} 截止日期{}",userWalletQueryDto.getStartTime(),userWalletQueryDto.getEndTime());
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        }
-        if (CollectionUtils.isEmpty(result.getData())) {
-            return null;
         }
         Long incomeAmountTotal = 0L;
         Long expenseAmountTotal = 0L;
@@ -212,7 +223,9 @@ public class WalletTurningServiceImpl implements WalletTurningService {
         BigDecimal expenseAmount = new BigDecimal(expenseAmountTotal)
                 .divide(PageConfigContants.BIG_DECIMAL_100, 2, BigDecimal.ROUND_HALF_UP);
         UserWalletDetailTotalVo userWalletDetailTotalVo = new UserWalletDetailTotalVo();
+        //封装当月收入合计
         userWalletDetailTotalVo.setFincomeAmountTotal(incomeAmount);
+        //封装当月支出合计
         userWalletDetailTotalVo.setFexpenseAmountTotal(expenseAmount);
         return userWalletDetailTotalVo;
     }
