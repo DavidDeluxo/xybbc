@@ -52,7 +52,6 @@ public class SearchItemDto {
     @EsMark(policy = BuildPolicy.MULTI_OR_MUST, field = "ftrade_id")
     private List<Integer> ftradeId;
 
-    @NotNull(message = "品牌id不可为空")
     @ApiModelProperty("品牌id")
     @EsMark(policy = BuildPolicy.MULTI_OR_MUST, field = "fbrand_id")
     private List<Integer> fbrandId;
