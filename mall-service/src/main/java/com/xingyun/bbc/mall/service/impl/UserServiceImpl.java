@@ -2,7 +2,6 @@ package com.xingyun.bbc.mall.service.impl;
 
 import com.google.common.base.Strings;
 import com.xingyun.bbc.common.redis.XyRedisManager;
-import com.xingyun.bbc.core.activity.api.CouponProviderApi;
 import com.xingyun.bbc.core.activity.enums.CouponScene;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.helper.api.EmailApi;
@@ -75,8 +74,6 @@ public class UserServiceImpl implements UserService {
     private CityRegionApi cityRegionApi;
     @Autowired
     private CouponApi couponApi;
-    @Autowired
-    private CouponProviderApi couponProviderApi;
     @Autowired
     private CouponReceiveApi couponReceiveApi;
     @Autowired
@@ -374,8 +371,8 @@ public class UserServiceImpl implements UserService {
         //查询可用注册优惠券
         Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)
                 .andEqualTo(Coupon::getFcouponStatus,2)
-                .andEqualTo(Coupon::getFreleaseType,3)
-                .andNotEqualTo(Coupon::getFsurplusReceiveQty,0);
+                .andEqualTo(Coupon::getFreleaseType,3);
+//                .andNotEqualTo(Coupon::getFsurplusReceiveQty,0);
         Result<List<Coupon>> listResult = couponApi.queryByCriteria(couponCriteria);
         if (listResult.isSuccess()) {
             couponNum = listResult.getData().size();
