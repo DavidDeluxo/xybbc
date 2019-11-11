@@ -1,7 +1,7 @@
 package com.xingyun.bbc.mall.model.dto;
 
-import com.xingyun.bbc.common.elasticsearch.config.autobuild.BuildPolicy;
-import com.xingyun.bbc.common.elasticsearch.config.autobuild.EsMark;
+import com.xingyun.bbc.search.criteria.BuildPolicy;
+import com.xingyun.bbc.search.criteria.EsMark;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -107,6 +107,10 @@ public class SearchItemDto {
     @EsMark(policy = BuildPolicy.MUST, field = "fis_delete")
     @ApiModelProperty(value = "是否删除", hidden = true)
     private Integer fisDeleted;
+
+    @EsMark(policy = BuildPolicy.MULTI_OR_MUST, field = "fsku_id")
+    @ApiModelProperty(value = "sku_id", hidden = true)
+    private List<Integer> fskuIds;
 
 
     //----------------------------------------------
