@@ -2,10 +2,19 @@ package com.xingyun.bbc.mall.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
+import com.xingyun.bbc.core.activity.api.CouponProviderApi;
+import com.xingyun.bbc.core.activity.enums.CouponScene;
+import com.xingyun.bbc.core.activity.model.dto.CouponReleaseDto;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
+import com.xingyun.bbc.core.market.api.CouponApi;
 import com.xingyun.bbc.core.market.api.CouponBindUserApi;
+import com.xingyun.bbc.core.market.api.CouponReceiveApi;
+import com.xingyun.bbc.core.market.enums.CouponReleaseTypeEnum;
+import com.xingyun.bbc.core.market.enums.CouponStatusEnum;
+import com.xingyun.bbc.core.market.po.Coupon;
 import com.xingyun.bbc.core.market.po.CouponBindUser;
+import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
 import com.xingyun.bbc.core.operate.api.CountryApi;
 import com.xingyun.bbc.core.operate.po.CityRegion;
@@ -37,6 +46,7 @@ import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.GoodDetailService;
 import com.xingyun.bbc.order.api.FreightApi;
 import com.xingyun.bbc.order.model.dto.freight.FreightDto;
+import io.seata.spring.annotation.GlobalTransactional;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.dozer.Mapper;
@@ -109,7 +119,17 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     @Autowired
     private RegularListApi regularListApi;
 
+    @Autowired
+    private CouponApi couponApi;
+
+    @Autowired
+    private CouponReceiveApi couponReceiveApi;
+
+    @Autowired
     private CouponBindUserApi couponBindUserApi;
+
+    @Autowired
+    private CouponProviderApi couponProviderApi;
 
     @Autowired
     private Mapper dozerMapper;
@@ -827,6 +847,45 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         return Result.success(fisRegular);
     }
 
+    @Override
+    public Result<Boolean> addReceiveCoupon(Long fcouponId, Long fuid) {
+        if (null == fcouponId || null == fuid) {
+            return Result.failure(MallExceptionCode.PARAM_ERROR);
+        }
+        Date now = new Date();
+        //查询优惠券--状态（已发布）--类型（页面领取）--剩余数量--有效期结束时间--发放结束时间
+        Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
+                .andEqualTo(Coupon::getFcouponId, fcouponId)
+                .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
+                .andEqualTo(Coupon::getFreleaseType, CouponReleaseTypeEnum.PAGE_RECEIVE)
+                .andGreaterThan(Coupon::getFsurplusReleaseQty, 0)
+                .andLessThan(Coupon::getFvalidityEnd, now)
+                .andLessThan(Coupon::getFreleaseTimeEnd, now)
+                .fields(Coupon::getFperLimit));
+        if (!couponResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (null == couponResult.getData()) {
+            Result.failure(MallExceptionCode.COUPON_IS_INVALID);
+        }
+        //查询已经领到的券张数
+        Result<Integer> countResult = couponReceiveApi.countByCriteria(Criteria.of(CouponReceive.class)
+                .andEqualTo(CouponReceive::getFuid, fuid)
+                .andEqualTo(CouponReceive::getFcouponId, fcouponId));
+        if (!couponResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (countResult.getData().equals(couponResult.getData().getFperLimit())) {
+            Result.failure(MallExceptionCode.COUPON_IS_MAX);
+        }
+        ReceiveCouponDto receiveCouponDto = new ReceiveCouponDto();
+        receiveCouponDto.setFuid(fuid);
+        receiveCouponDto.setFcouponId(fcouponId);
+        Result<Boolean> booleanResult = this.receiveCoupon(receiveCouponDto);
+        return Result.success(booleanResult.getData());
+    }
+
+    @GlobalTransactional
     public Result<Boolean> receiveCoupon(ReceiveCouponDto receiveCouponDto) {
         Long fcouponId = receiveCouponDto.getFcouponId();
         Long fuid = receiveCouponDto.getFuid();
@@ -840,6 +899,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         }
         String lockValue = RandomUtils.getUUID();
         try {
+            //绑定用户和优惠券关系
             Ensure.that(xybbcLock.tryLockTimes(lockKey, lockValue,3,5)).isTrue(MallExceptionCode.SYSTEM_BUSY_ERROR);
             CouponBindUser couponBindUser = new CouponBindUser();
             couponBindUser.setFcouponId(fcouponId);
@@ -847,6 +907,23 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             couponBindUser.setFcreateTime(new Date());
             Result<Integer> insertBindResult = couponBindUserApi.create(couponBindUser);
             if (!insertBindResult.isSuccess()) {
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            }
+            //更新优惠券发放数量
+            CouponReleaseDto couponReleaseDto = new CouponReleaseDto();
+            couponReleaseDto.setCouponScene(CouponScene.PAGE_RECEIVE);
+            couponReleaseDto.setCouponId(fcouponId);
+            couponReleaseDto.setUserId(fuid);
+            couponReleaseDto.setCouponCode(fcouponCode);
+            couponReleaseDto.setAlreadyReceived(true);
+            couponReleaseDto.setDeltaValue(1);
+            Result updateReleaseResult = couponProviderApi.updateReleaseQty(couponReleaseDto);
+            if (!updateReleaseResult.isSuccess()) {
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            }
+            //调用领券服务
+            Result receiveReceive = couponProviderApi.receive(couponReleaseDto);
+            if (!receiveReceive.isSuccess()) {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
         } catch (Exception e) {
