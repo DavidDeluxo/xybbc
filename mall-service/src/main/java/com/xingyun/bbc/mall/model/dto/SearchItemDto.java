@@ -108,6 +108,10 @@ public class SearchItemDto {
     @ApiModelProperty(value = "是否删除", hidden = true)
     private Integer fisDeleted;
 
+    @EsMark(policy = BuildPolicy.MULTI_OR_MUST, field = "fsku_id")
+    @ApiModelProperty(value = "sku_id", hidden = true)
+    private List<Integer> fskuIds;
+
 
     //----------------------------------------------
     //   banner icon 专题位 配置分类id时使用, 用来区分分类id等级
