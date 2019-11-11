@@ -2,9 +2,7 @@ package com.xingyun.bbc.mall.service.impl;
 
 import com.google.common.base.Strings;
 import com.xingyun.bbc.common.redis.XyRedisManager;
-import com.xingyun.bbc.core.activity.api.CouponProviderApi;
 import com.xingyun.bbc.core.activity.enums.CouponScene;
-import com.xingyun.bbc.core.activity.model.dto.CouponDto;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.helper.api.EmailApi;
 import com.xingyun.bbc.core.helper.api.SMSApi;
@@ -76,8 +74,6 @@ public class UserServiceImpl implements UserService {
     private CityRegionApi cityRegionApi;
     @Autowired
     private CouponApi couponApi;
-    @Autowired
-    private CouponProviderApi couponProviderApi;
     @Autowired
     private CouponReceiveApi couponReceiveApi;
     @Autowired
@@ -375,17 +371,17 @@ public class UserServiceImpl implements UserService {
         //查询可用注册优惠券
         Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)
                 .andEqualTo(Coupon::getFcouponStatus,2)
-                .andEqualTo(Coupon::getFreleaseType,3)
-                .andNotEqualTo(Coupon::getFsurplusReceiveQty,0);
+                .andEqualTo(Coupon::getFreleaseType,3);
+//                .andNotEqualTo(Coupon::getFsurplusReceiveQty,0);
         Result<List<Coupon>> listResult = couponApi.queryByCriteria(couponCriteria);
         if (listResult.isSuccess()) {
             couponNum = listResult.getData().size();
             for(Coupon coupon: listResult.getData()){
-                CouponDto couponDto = new CouponDto();
-                couponDto.setCouponScene(CouponScene.REGISTER);
-                couponDto.setCouponId(coupon.getFcouponId());
-                couponDto.setUserId(fuid);
-                couponProviderApi.receive(couponDto);
+//                CouponQueryDto couponDto = new CouponQueryDto();
+//                couponDto.setCouponScene(CouponScene.REGISTER);
+//                couponDto.setCouponId(coupon.getFcouponId());
+//                couponDto.setUserId(fuid);
+//                couponProviderApi.receive(couponDto);
             }
         }
         return couponNum;
@@ -614,21 +610,34 @@ public class UserServiceImpl implements UserService {
                 userVo.setFwithdrawPasswdStatus(1);
             }
         }
-        //查询用户有无未使用的认证优惠券
-        Integer couponAuthenticationNum = 0;
-        //当最近登录时间大于认证审核通过时间,就不再触发弹窗
-        userVo.setIsPopupWindows(0);
-        if(userVo.getFlastloginTime().compareTo(userVo.getFuserValidTime()) < 0){
-            couponAuthenticationNum = queryAuthenticationCoupon(userVo.getFuid());
-            userVo.setIsPopupWindows(1);
+        return Result.success(userVo);
+    }
+
+    @Override
+    public Result<UserVo> queryPopupWindowsStatus(Long fuid) {
+        UserVo userVo = new UserVo();
+        Criteria<User, Object> userCriteria = Criteria.of(User.class);
+        userCriteria.andEqualTo(User::getFisDelete,"0")
+                .andEqualTo(User::getFuid,fuid)
+                .fields(User::getFuid,User::getFlastloginTime,User::getFuserValidTime);
+        Result<User> userResult = userApi.queryOneByCriteria(userCriteria);
+        if(userResult.getData() != null){
+            //查询用户有无未使用的认证优惠券
+            Integer couponAuthenticationNum = 0;
+            //当最近登录时间大于认证审核通过时间,就不再触发弹窗
+            userVo.setIsPopupWindows(0);
+            if(userResult.getData().getFlastloginTime().compareTo(userResult.getData().getFuserValidTime()) < 0){
+                couponAuthenticationNum = queryAuthenticationCoupon(userResult.getData().getFuid());
+                userVo.setIsPopupWindows(1);
+                //更新最近登录时间
+                User user = new User();
+                user.setFuid(userResult.getData().getFuid());
+                user.setFlastloginTime(new Date());
+                userApi.updateNotNull(user);
+            }
+            //当数量大于0,就显示发了几张认证优惠券
+            userVo.setCouponAuthenticationNum(couponAuthenticationNum);
         }
-        //当数量大于0,就显示发了几张认证优惠券
-        userVo.setCouponAuthenticationNum(couponAuthenticationNum);
-        //更新最近登录时间
-        User user = new User();
-        user.setFuid(userVo.getFuid());
-        user.setFlastloginTime(new Date());
-        userApi.updateNotNull(user);
         return Result.success(userVo);
     }
 

@@ -110,7 +110,7 @@ public class SearchItemDto {
 
     @EsMark(policy = BuildPolicy.MULTI_OR_MUST, field = "fsku_id")
     @ApiModelProperty(value = "sku_id", hidden = true)
-    private List<Integer> fskuIds;
+    private List<Long> fskuIds;
 
 
     //----------------------------------------------
