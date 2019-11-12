@@ -87,6 +87,14 @@ public class GoodsDetailController {
         return goodDetailService.getIsRegular(fgoodsId, xyid);
     }
 
+    @ApiOperation(value = "商品详情领取优惠券", httpMethod = "GET")
+    @GetMapping("/addReceiveCoupon")
+    public Result<Boolean> addReceiveCoupon(@RequestParam Long fcouponId, HttpServletRequest request){
+        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        logger.info("商品详情领取优惠券 fcouponId {} fuid {}", fcouponId, xyid);
+        return goodDetailService.addReceiveCoupon(fcouponId, xyid);
+    }
+
 //    @ApiOperation(value = "获取sku批次有效期", httpMethod = "GET")
 //    @GetMapping("/getSkuBatchSpecifi")
 //    public Result<List<GoodsSkuBatchVo>> getSkuBatchSpecifi(@RequestParam Long fskuId){

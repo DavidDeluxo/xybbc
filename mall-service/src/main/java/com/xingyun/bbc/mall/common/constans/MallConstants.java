@@ -11,4 +11,6 @@ public interface MallConstants {
     BigDecimal ONE_HUNDRED = new BigDecimal("100");
     BigDecimal ONE_THOUSAND = new BigDecimal("1000");
     BigDecimal TEN_THOUSAND = new BigDecimal("10000");
+
+    public static final String MALL_RECEIVE_COUPON = "mall_receive_coupon_lock";
 }
