@@ -88,5 +88,5 @@ public class PageConfigVo {
 
     /**分类级别:1 一级分类  2 二级分类  3 三级分类**/
     @ApiModelProperty(value = "分类级别:1 一级分类  2 二级分类  3 三级分类")
-    private Integer fcategoryLevel;
+        private Integer fcategoryLevel;
 }

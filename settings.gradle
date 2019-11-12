@@ -9,4 +9,3 @@
 
 rootProject.name = 'xybbc-mall-service'
 include 'mall-service'
-include 'mall-common-elasticsearch'

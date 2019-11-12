@@ -1,9 +1,6 @@
 package com.xingyun.bbc.mall.service.impl;
 
 
-import com.xingyun.bbc.common.elasticsearch.config.EsBeanUtil;
-import com.xingyun.bbc.common.elasticsearch.config.EsCriteria;
-import com.xingyun.bbc.common.elasticsearch.config.EsManager;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.PageConfigApi;
@@ -22,6 +19,9 @@ import com.xingyun.bbc.mall.model.dto.SearchItemDto;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.GoodsService;
 import com.xingyun.bbc.mall.service.SearchRecordService;
+import com.xingyun.bbc.search.api.MallSkuSearchApi;
+import com.xingyun.bbc.search.criteria.EsBeanUtil;
+import com.xingyun.bbc.search.criteria.EsCriteria;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -55,8 +55,6 @@ public class GoodsServiceImpl implements GoodsService {
     private static Pattern humpPattern = Pattern.compile("[A-Z0-9]");
 
     @Autowired
-    EsManager esManager;
-    @Autowired
     GoodsCategoryApi goodsCategoryApi;
     @Autowired
     GoodsBrandApi goodsBrandApi;
@@ -72,6 +70,8 @@ public class GoodsServiceImpl implements GoodsService {
     UserApi userApi;
     @Autowired
     GoodsApi goodsApi;
+    @Autowired
+    MallSkuSearchApi mallSkuSearchApi;
 
     @Override
     public Result<SearchFilterVo> searchSkuFilter(SearchItemDto searchItemDto) {
@@ -81,60 +81,66 @@ public class GoodsServiceImpl implements GoodsService {
         EsCriteria criteria = EsCriteria.build(searchItemDto);
         this.setSearchCondition(searchItemDto, criteria);
         this.setAggregation(criteria);
-        Map<String, Object> resultMap = esManager.queryWithAggregation(criteria, true);
-        if (resultMap.get("aggregationMap") != null) {
-            Map<String, Object> aggregationMap = (Map<String, Object>) resultMap.get("aggregationMap");
-            //品牌
-            List<Map<String, Object>> barndAggs = (List<Map<String, Object>>) aggregationMap.get("fbrand_id");
-            List<BrandFilterVo> brandFilterVoList = EsBeanUtil.getValueObjectList(BrandFilterVo.class, barndAggs);
-            filterVo.setBrandList(brandFilterVoList);
+        Result<Map<String, Object>> searchResult = mallSkuSearchApi.queryWithAggregationSource(criteria, true);
+        if(searchResult.isSuccess() && MapUtils.isNotEmpty(searchResult.getData())){
+            Map<String, Object> resultMap = searchResult.getData();
+            if (resultMap.get("aggregationMap") != null) {
+                Map<String, Object> aggregationMap = (Map<String, Object>) resultMap.get("aggregationMap");
+                //品牌
+                List<Map<String, Object>> barndAggs = (List<Map<String, Object>>) aggregationMap.get("fbrand_id");
+                List<BrandFilterVo> brandFilterVoList = EsBeanUtil.getValueObjectList(BrandFilterVo.class, barndAggs);
+                filterVo.setBrandList(brandFilterVoList);
 
-            //原产地
-            List<Map<String, Object>> originAggs = (List<Map<String, Object>>) aggregationMap.get("forigin_id");
-            List<OriginFilterVo> originFilterVoList = EsBeanUtil.getValueObjectList(OriginFilterVo.class, originAggs);
+                //原产地
+                List<Map<String, Object>> originAggs = (List<Map<String, Object>>) aggregationMap.get("forigin_id");
+                List<OriginFilterVo> originFilterVoList = EsBeanUtil.getValueObjectList(OriginFilterVo.class, originAggs);
 
-            filterVo.setOriginList(originFilterVoList);
+                filterVo.setOriginList(originFilterVoList);
 
-            //贸易类型
-            List<Map<String, Object>> tradeAggs = (List<Map<String, Object>>) aggregationMap.get("ftrade_id");
-            List<TradeFilterVo> tradeFilterVoList = EsBeanUtil.getValueObjectList(TradeFilterVo.class, tradeAggs);
-            filterVo.setTradeList(tradeFilterVoList);
+                //贸易类型
+                List<Map<String, Object>> tradeAggs = (List<Map<String, Object>>) aggregationMap.get("ftrade_id");
+                List<TradeFilterVo> tradeFilterVoList = EsBeanUtil.getValueObjectList(TradeFilterVo.class, tradeAggs);
+                filterVo.setTradeList(tradeFilterVoList);
 
-            //商品分类
-            List<Map<String, Object>> categoryAggs = (List<Map<String, Object>>) aggregationMap.get("fcategory_id3");
-            List<CategoryFilterVo> categoryFilterList = EsBeanUtil.getValueObjectList(CategoryFilterVo.class, categoryAggs);
+                //商品分类
+                List<Map<String, Object>> categoryAggs = (List<Map<String, Object>>) aggregationMap.get("fcategory_id3");
+                List<CategoryFilterVo> categoryFilterList = EsBeanUtil.getValueObjectList(CategoryFilterVo.class, categoryAggs);
 
-            //商品属性
-            List<Map<String, Object>> attributeAggs = (List<Map<String, Object>>) aggregationMap.get("attribute");
-            List<GoodsAttributeFilterVo> attributeFilterList = this.getGoodAttributeList(attributeAggs);
-            filterVo.setAttributeFilterList(attributeFilterList);
+                //商品属性
+                List<Map<String, Object>> attributeAggs = (List<Map<String, Object>>) aggregationMap.get("attribute");
+                List<GoodsAttributeFilterVo> attributeFilterList = this.getGoodAttributeList(attributeAggs);
+                filterVo.setAttributeFilterList(attributeFilterList);
 
-            Result<List<GoodsCategory>> categoryResult = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class));
-            if (!categoryResult.isSuccess()) {
-                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
-            }
-            if (CollectionUtils.isNotEmpty(categoryResult.getData())) {
-                Map<Long, List<GoodsCategory>> categoryMap = categoryResult.getData().stream().collect(Collectors.groupingBy(GoodsCategory::getFcategoryId, Collectors.toList()));
-                for (CategoryFilterVo categoryFilterVo : categoryFilterList) {
-                    Integer fcategoryId = categoryFilterVo.getFcategoryId();
-                    List<GoodsCategory> categoryList = categoryMap.get(Long.parseLong(String.valueOf(fcategoryId)));
-                    if (CollectionUtils.isNotEmpty(categoryList)) {
-                        GoodsCategory category = categoryList.get(0);
-                        categoryFilterVo.setFcategorySort(category.getFcategorySort());
-                        categoryFilterVo.setFcreateTime(category.getFcreateTime());
+                Result<List<GoodsCategory>> categoryResult = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class));
+                if (!categoryResult.isSuccess()) {
+                    throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+                }
+                if (CollectionUtils.isNotEmpty(categoryResult.getData())) {
+                    Map<Long, List<GoodsCategory>> categoryMap = categoryResult.getData().stream().collect(Collectors.groupingBy(GoodsCategory::getFcategoryId, Collectors.toList()));
+                    for (CategoryFilterVo categoryFilterVo : categoryFilterList) {
+                        Integer fcategoryId = categoryFilterVo.getFcategoryId();
+                        List<GoodsCategory> categoryList = categoryMap.get(Long.parseLong(String.valueOf(fcategoryId)));
+                        if (CollectionUtils.isNotEmpty(categoryList)) {
+                            GoodsCategory category = categoryList.get(0);
+                            categoryFilterVo.setFcategorySort(category.getFcategorySort());
+                            categoryFilterVo.setFcreateTime(category.getFcreateTime());
+                        }
                     }
                 }
-            }
-            filterVo.setCategoryList(categoryFilterList);
-            Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
-            if (MapUtils.isNotEmpty(baseInfoMap) && baseInfoMap.get("totalHits") != null) {
-                filterVo.setTotalCount(Integer.parseInt(String.valueOf(baseInfoMap.get("totalHits"))));
+                filterVo.setCategoryList(categoryFilterList);
+                Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
+                if (MapUtils.isNotEmpty(baseInfoMap) && baseInfoMap.get("totalHits") != null) {
+                    filterVo.setTotalCount(Integer.parseInt(String.valueOf(baseInfoMap.get("totalHits"))));
+                }
             }
         }
         return Result.success(filterVo);
     }
 
     private void setCategoryCondition(SearchItemDto searchItemDto){
+
+
+
         // 商品类目条件
         if(CollectionUtils.isNotEmpty(searchItemDto.getFUnicategoryIds())
                 && searchItemDto.getFcategoryLevel() != null){
@@ -216,13 +222,11 @@ public class GoodsServiceImpl implements GoodsService {
         return Result.success(brandPageVo);
     }
 
-
     @Override
     public Result<SearchItemListVo<SearchItemVo>> searchSkuList(SearchItemDto searchItemDto) {
         if (!StringUtils.isEmpty(searchItemDto.getSearchFullText())) {
             searchRecordService.insertSearchRecordAsync(searchItemDto.getSearchFullText(), searchItemDto.getFuid());
         }
-
         // 初始化PageVo
         SearchItemListVo<SearchItemVo> pageVo = new SearchItemListVo<>();
         pageVo.setIsLogin(searchItemDto.getIsLogin());
@@ -231,66 +235,66 @@ public class GoodsServiceImpl implements GoodsService {
         this.setCategoryCondition(searchItemDto);
         EsCriteria criteria = EsCriteria.build(searchItemDto);
         this.setSearchCondition(searchItemDto, criteria);
-
         String soldAmountScript = "1-Math.pow(doc['fsell_total'].value + 1, -1)";
-        Map<String, Object> resultMap = esManager.functionQueryForResponse(criteria, soldAmountScript, CombineFunction.SUM);
-        List<Map<String, Object>> resultList = (List<Map<String, Object>>) resultMap.get("resultList");
-
-        List<SearchItemVo> voList = new LinkedList<>();
-        pageVo.setList(voList);
-        Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
-        if (!CollectionUtils.isEmpty(resultList)) {
-            for (Map<String, Object> map : resultList) {
-                SearchItemVo vo = new SearchItemVo();
-                if (map.get("fskuId") != null) {
-                    vo.setFskuId(Integer.parseInt(String.valueOf(map.get("fskuId"))));
-                }
-                if (map.get("fskuName") != null) {
-                    vo.setFskuName(String.valueOf(map.get("fskuName")));
-                }
-                if (map.get("ftradeId") != null) {
-                    vo.setFtradedId(Integer.parseInt(String.valueOf(map.get("ftradeId"))));
-                }
-                if (map.get("ftradeName") != null) {
-                    vo.setFtradeName(String.valueOf(map.get("ftradeName")));
-                }
-                if (map.get("fsellTotal") != null) {
-                    vo.setFsellNum(Long.parseLong(String.valueOf(map.get("fsellTotal"))));
-                }
-                if (map.get("fskuThumbImage") != null) {
-                    vo.setFimgUrl(String.valueOf(map.get("fskuThumbImage")));
-                }
-                if (map.get("fgoodsId") != null) {
-                    vo.setFgoodsId(Integer.parseInt(String.valueOf(map.get("fgoodsId"))));
-                }
-                if (map.get("fskuStatus") != null) {
-                    vo.setFskuStatus(Integer.parseInt(String.valueOf(map.get("fskuStatus"))));
-                }
-                if (map.get("flabelId") != null) {
-                    vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
-                }
-
-                String priceName = this.getUserPriceType(searchItemDto);
-
-                if (map.get(priceName) != null && searchItemDto.getIsLogin()) {
-                    Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
-                    if (priceMap.get("min_price") != null) {
-                        BigDecimal min_price_penny = new BigDecimal(String.valueOf(priceMap.get("min_price")));
-                        BigDecimal min_price_yuan = min_price_penny.divide(ONE_HUNDRED).setScale(2, BigDecimal.ROUND_HALF_UP);
-                        vo.setFbatchSellPrice(min_price_yuan);
-                    } else {
-                        vo.setFbatchSellPrice(BigDecimal.ZERO);
+        criteria.setFunctionQueryScript(soldAmountScript);
+        criteria.setCombineFunction(CombineFunction.SUM);
+        Result<Map<String, Object>> searchResult = mallSkuSearchApi.functionScoreQuery(criteria);
+        if(searchResult.isSuccess() && MapUtils.isNotEmpty(searchResult.getData())){
+            Map<String, Object> resultMap = searchResult.getData();
+            List<Map<String, Object>> resultList = (List<Map<String, Object>>) resultMap.get("resultList");
+            List<SearchItemVo> voList = new LinkedList<>();
+            pageVo.setList(voList);
+            Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
+            if (!CollectionUtils.isEmpty(resultList)) {
+                for (Map<String, Object> map : resultList) {
+                    SearchItemVo vo = new SearchItemVo();
+                    if (map.get("fskuId") != null) {
+                        vo.setFskuId(Integer.parseInt(String.valueOf(map.get("fskuId"))));
                     }
+                    if (map.get("fskuName") != null) {
+                        vo.setFskuName(String.valueOf(map.get("fskuName")));
+                    }
+                    if (map.get("ftradeId") != null) {
+                        vo.setFtradedId(Integer.parseInt(String.valueOf(map.get("ftradeId"))));
+                    }
+                    if (map.get("ftradeName") != null) {
+                        vo.setFtradeName(String.valueOf(map.get("ftradeName")));
+                    }
+                    if (map.get("fsellTotal") != null) {
+                        vo.setFsellNum(Long.parseLong(String.valueOf(map.get("fsellTotal"))));
+                    }
+                    if (map.get("fskuThumbImage") != null) {
+                        vo.setFimgUrl(String.valueOf(map.get("fskuThumbImage")));
+                    }
+                    if (map.get("fgoodsId") != null) {
+                        vo.setFgoodsId(Integer.parseInt(String.valueOf(map.get("fgoodsId"))));
+                    }
+                    if (map.get("fskuStatus") != null) {
+                        vo.setFskuStatus(Integer.parseInt(String.valueOf(map.get("fskuStatus"))));
+                    }
+                    if (map.get("flabelId") != null) {
+                        vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
+                    }
+                    String priceName = this.getUserPriceType(searchItemDto);
+                    if (map.get(priceName) != null && searchItemDto.getIsLogin()) {
+                        Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
+                        if (priceMap.get("min_price") != null) {
+                            BigDecimal min_price_penny = new BigDecimal(String.valueOf(priceMap.get("min_price")));
+                            BigDecimal min_price_yuan = min_price_penny.divide(ONE_HUNDRED).setScale(2, BigDecimal.ROUND_HALF_UP);
+                            vo.setFbatchSellPrice(min_price_yuan);
+                        } else {
+                            vo.setFbatchSellPrice(BigDecimal.ZERO);
+                        }
+                    }
+                    if (map.get("fstockRemainNumTotal") != null) {
+                        vo.setFremainTotal(Integer.parseInt(String.valueOf(map.get("fstockRemainNumTotal"))));
+                    }
+                    voList.add(vo);
                 }
-
-                if (map.get("fstockRemainNumTotal") != null) {
-                    vo.setFremainTotal(Integer.parseInt(String.valueOf(map.get("fstockRemainNumTotal"))));
-                }
-                voList.add(vo);
+                pageVo.setPageSize(searchItemDto.getPageSize());
+                pageVo.setCurrentPage(searchItemDto.getPageIndex());
+                pageVo.setTotalCount(Integer.parseInt(String.valueOf(baseInfoMap.get("totalHits"))));
             }
-            pageVo.setPageSize(searchItemDto.getPageSize());
-            pageVo.setCurrentPage(searchItemDto.getPageIndex());
-            pageVo.setTotalCount(Integer.parseInt(String.valueOf(baseInfoMap.get("totalHits"))));
         }
         return Result.success(pageVo);
     }
@@ -327,8 +331,10 @@ public class GoodsServiceImpl implements GoodsService {
      * @param criteria
      */
     private void setSearchCondition(SearchItemDto searchItemDto, EsCriteria criteria) {
-
-
+        if(searchItemDto.getSearchFullText() != null){
+            MatchQueryBuilder pinyinMatch = QueryBuilders.matchQuery("fsku_name.pinyin",searchItemDto.getSearchFullText());
+            criteria.getFilterBuilder().should(pinyinMatch);
+        }
         // 商品属性条件
         if (CollectionUtils.isNotEmpty(searchItemDto.getFattributeItemId())) {
             String fieldname = "attributes.fclass_attribute_item_id";
