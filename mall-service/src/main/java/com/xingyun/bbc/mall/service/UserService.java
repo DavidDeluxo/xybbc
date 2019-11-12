@@ -50,7 +50,5 @@ public interface UserService {
     Result<UserVo> queryUserInfo(Long fuid);
 
     Result<Integer> modifiyUserNickname(UserDto dto);
-
-    Result<UserVo> queryPopupWindowsStatus(Long fuid);
 }
 

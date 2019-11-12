@@ -147,13 +147,6 @@ public class UserController {
         return userService.queryUserInfo(fuid);
     }
 
-    @ApiOperation("认证优惠券弹窗")
-    @PostMapping("/queryPopupWindowsStatus")
-    public Result<UserVo> queryPopupWindowsStatus(HttpServletRequest request){
-        Long fuid = Long.parseLong(request.getHeader("xyid"));
-        return userService.queryPopupWindowsStatus(fuid);
-    }
-
     @ApiOperation("修改用户名")
     @PostMapping("/modifiyUserNickname")
     public Result<Integer> modifiyUserNickname(@RequestBody UserDto dto, HttpServletRequest request){

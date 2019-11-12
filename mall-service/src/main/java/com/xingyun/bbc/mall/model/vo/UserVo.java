@@ -99,10 +99,4 @@ public class UserVo {
 
     @ApiModelProperty("支付密码状态 0未设置 1已设置")
     private Integer fwithdrawPasswdStatus;
-
-    @ApiModelProperty("认证领取的优惠券数量")
-    private Integer couponAuthenticationNum;
-
-    @ApiModelProperty("是否触发认证通过弹窗 0否 1是")
-    private Integer isPopupWindows;
 }

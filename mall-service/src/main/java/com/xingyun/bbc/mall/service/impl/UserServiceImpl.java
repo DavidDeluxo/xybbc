@@ -2,16 +2,9 @@ package com.xingyun.bbc.mall.service.impl;
 
 import com.google.common.base.Strings;
 import com.xingyun.bbc.common.redis.XyRedisManager;
-import com.xingyun.bbc.core.activity.api.CouponProviderApi;
-import com.xingyun.bbc.core.activity.enums.CouponScene;
-import com.xingyun.bbc.core.activity.model.dto.CouponReleaseDto;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.helper.api.EmailApi;
 import com.xingyun.bbc.core.helper.api.SMSApi;
-import com.xingyun.bbc.core.market.api.CouponApi;
-import com.xingyun.bbc.core.market.api.CouponReceiveApi;
-import com.xingyun.bbc.core.market.po.Coupon;
-import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
 import com.xingyun.bbc.core.operate.po.CityRegion;
 import com.xingyun.bbc.core.user.api.UserAccountApi;
@@ -22,15 +15,14 @@ import com.xingyun.bbc.core.user.po.UserVerify;
 import com.xingyun.bbc.mall.base.enums.*;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.EncryptUtils;
+import com.xingyun.bbc.mall.base.utils.MD5Util;
 import com.xingyun.bbc.common.jwt.XyUserJwtManager;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mall.base.utils.Md5Utils;
 import com.xingyun.bbc.mall.common.constans.UserConstants;
-import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.common.lock.XybbcLock;
 import com.xingyun.bbc.mall.model.dto.*;
 import com.xingyun.bbc.mall.model.vo.*;
@@ -75,12 +67,6 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private CityRegionApi cityRegionApi;
     @Autowired
-    private CouponApi couponApi;
-    @Autowired
-    private CouponProviderApi couponProviderApi;
-    @Autowired
-    private CouponReceiveApi couponReceiveApi;
-    @Autowired
     private SMSApi smsApi;
     @Autowired
     private EmailApi emailApi;
@@ -98,9 +84,9 @@ public class UserServiceImpl implements UserService {
     public Result<UserLoginVo> userLogin(UserLoginDto dto) {
         String passWord = EncryptUtils.aesDecrypt(dto.getPassword());
         if(passWord == null || passWord.equals("")){
-            return Result.failure(MallResultStatus.LOGIN_FAILURE);
+            throw new BizException(MallResultStatus.LOGIN_FAILURE);
         }
-        passWord = Md5Utils.toMd5(passWord);
+        passWord = MD5Util.MD5EncodeUtf8(passWord);
         Criteria<User, Object> criteria = Criteria.of(User.class);
         criteria.andEqualTo(User::getFisDelete,"0")
                 .andEqualTo(User::getFpasswd,passWord)
@@ -115,15 +101,10 @@ public class UserServiceImpl implements UserService {
             return Result.failure(MallResultStatus.ACCOUNT_FREEZE);
         }
         UserLoginVo userLoginVo = createToken(userResult.getData());
-        //更新最近登录时间
-        User user = new User();
-        user.setFuid(userLoginVo.getFuid());
-        user.setFlastloginTime(new Date());
-        userApi.updateNotNull(user);
         return Result.success(userLoginVo);
     }
 
-    //生成token信息
+      //生成token信息
     private UserLoginVo createToken(User user) {
         UserLoginVo userLoginVo = new UserLoginVo();
         long expire = UserConstants.Token.TOKEN_AUTO_LOGIN_EXPIRATION;
@@ -140,13 +121,6 @@ public class UserServiceImpl implements UserService {
         userLoginVo.setFverifyStatus(user.getFverifyStatus());
         userLoginVo.setFmobile(user.getFmobile());
         userLoginVo.setFmail(user.getFmail());
-        //判断fnickname是否为空字符串，若为空字符串则表示用户还没修改过用户名，用户是否可修改：0否，1是
-        if(userLoginVo.getFnickname().equals("")){
-            userLoginVo.setFunameIsModify(1);
-        }else{
-            userLoginVo.setFunameIsModify(0);
-
-        }
         if(user.getFwithdrawPasswd().equals("")){
             userLoginVo.setFwithdrawPasswdStatus(0);
         }else{
@@ -317,7 +291,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @GlobalTransactional
     public Result<UserLoginVo> registerUser(UserRegisterDto dto) {
         User user = new User();
         String mobile = dto.getFmobile();
@@ -330,65 +303,28 @@ public class UserServiceImpl implements UserService {
         if(passWord == null || passWord.equals("")){
             throw new BizException(MallResultStatus.LOGIN_FAILURE);
         }
-        passWord = Md5Utils.toMd5(passWord);
+        passWord = MD5Util.MD5EncodeUtf8(passWord);
         user.setFregisterFrom(dto.getFregisterFrom());
         user.setFmobile(dto.getFmobile());
         user.setFuname(dto.getFmobile());
         user.setFpasswd(passWord);
         user.setFfreezeStatus(1);
         user.setFverifyStatus(1);
-        Date date = new Date();
-        user.setFlastloginTime(date);
-        user.setFmobileValidTime(date);
+        user.setFlastloginTime(new Date());
         Result<Integer> result = userApi.create(user);
-        if(!result.isSuccess()){
-            throw new BizException((MallExceptionCode.SYSTEM_ERROR));
-        }
         Criteria<User, Object> criteria = Criteria.of(User.class);
         criteria.andEqualTo(User::getFmobile,dto.getFmobile())
                 .andEqualTo(User::getFpasswd,passWord)
                 .andEqualTo(User::getFisDelete,"0");
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
-        if(userResult.getData() == null){
-            throw new BizException((MallExceptionCode.SYSTEM_ERROR));
-        }
         UserAccount userAccount = new UserAccount();
         userAccount.setFuid(userResult.getData().getFuid());
         result = userAccountApi.create(userAccount);
-        if(!result.isSuccess()){
-            throw new BizException((MallExceptionCode.SYSTEM_ERROR));
-        }
         UserLoginVo userLoginVo = createToken(userResult.getData());
-        if(userLoginVo == null){
-            throw new BizException((MallExceptionCode.SYSTEM_ERROR));
+        if(userResult.getData() == null){
+            throw new BizException(MallResultStatus.LOGIN_FAILURE);
         }
-        //领取注册优惠券和新人邀请券
-        Integer couponNum = 0;
-        couponNum = receiveCoupon(userLoginVo.getFuid());
-        //当couponNum大于0时,前端提示"你获得+couponNum+张优惠券"
-        userLoginVo.setCouponRegisterNum(couponNum);
         return Result.success(userLoginVo);
-    }
-
-    private Integer receiveCoupon(Long fuid) {
-        Integer couponNum = 0;
-        //查询可用注册优惠券
-        Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)
-                .andEqualTo(Coupon::getFcouponStatus,2)
-                .andEqualTo(Coupon::getFreleaseType,3)
-                .andNotEqualTo(Coupon::getFsurplusReleaseQty,0);
-        Result<List<Coupon>> listResult = couponApi.queryByCriteria(couponCriteria);
-        if (listResult.isSuccess()) {
-            couponNum = listResult.getData().size();
-            for(Coupon coupon: listResult.getData()){
-                CouponReleaseDto couponDto = new CouponReleaseDto();
-                couponDto.setCouponScene(CouponScene.REGISTER);
-                couponDto.setCouponId(coupon.getFcouponId());
-                couponDto.setUserId(fuid);
-                couponProviderApi.receive(couponDto);
-            }
-        }
-        return couponNum;
     }
 
     @Override
@@ -410,7 +346,7 @@ public class UserServiceImpl implements UserService {
         if(passWord == null || passWord.equals("")){
             throw new BizException(MallResultStatus.LOGIN_FAILURE);
         }
-        passWord = Md5Utils.toMd5(passWord);
+        passWord = MD5Util.MD5EncodeUtf8(passWord);
         user.setFpasswd(passWord);
         user.setFuid(result.getData().getFuid());
         return userApi.updateNotNull(user);
@@ -595,8 +531,7 @@ public class UserServiceImpl implements UserService {
                 .fields(User::getFuid,User::getFuname,User::getFnickname
                         ,User::getFheadpic,User::getFoperateType
                         ,User::getFfreezeStatus,User::getFverifyStatus,User::getFregisterFrom
-                        ,User::getFmobile,User::getFmail,User::getFwithdrawPasswd
-                        ,User::getFlastloginTime,User::getFuserValidTime);
+                        ,User::getFmobile,User::getFmail,User::getFwithdrawPasswd);
         Result<User> userResult = userApi.queryOneByCriteria(userCriteria);
         if(userResult.getData() != null){
             userVo = dozerHolder.convert(userResult.getData(),UserVo.class);
@@ -615,60 +550,6 @@ public class UserServiceImpl implements UserService {
             }
         }
         return Result.success(userVo);
-    }
-
-    @Override
-    public Result<UserVo> queryPopupWindowsStatus(Long fuid) {
-        UserVo userVo = new UserVo();
-        Criteria<User, Object> userCriteria = Criteria.of(User.class);
-        userCriteria.andEqualTo(User::getFisDelete,"0")
-                .andEqualTo(User::getFuid,fuid)
-                .fields(User::getFuid,User::getFlastloginTime,User::getFuserValidTime);
-        Result<User> userResult = userApi.queryOneByCriteria(userCriteria);
-        if(userResult.getData() != null){
-            //查询用户有无未使用的认证优惠券
-            Integer couponAuthenticationNum = 0;
-            //当最近登录时间大于认证审核通过时间,就不再触发弹窗
-            userVo.setIsPopupWindows(0);
-            if(userResult.getData().getFlastloginTime().compareTo(userResult.getData().getFuserValidTime()) < 0){
-                couponAuthenticationNum = queryAuthenticationCoupon(userResult.getData().getFuid());
-                userVo.setIsPopupWindows(1);
-                //更新最近登录时间
-                User user = new User();
-                user.setFuid(userResult.getData().getFuid());
-                user.setFlastloginTime(new Date());
-                userApi.updateNotNull(user);
-            }
-            //当数量大于0,就显示发了几张认证优惠券
-            userVo.setCouponAuthenticationNum(couponAuthenticationNum);
-        }
-        return Result.success(userVo);
-    }
-
-    private Integer queryAuthenticationCoupon(Long fuid) {
-        Integer couponAuthenticationNum = 0;
-        //查询可用注册优惠券
-        Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)
-                .andEqualTo(Coupon::getFcouponStatus,2)
-                .andEqualTo(Coupon::getFreleaseType,CouponScene.AUTHENTICATION.getCode());
-        Result<List<Coupon>> listResult = couponApi.queryByCriteria(couponCriteria);
-        if (listResult.isSuccess()) {
-            for(Coupon coupon: listResult.getData()){
-                //查询用户是否存在当前优惠券
-                Criteria<CouponReceive, Object> couponReceiveCriteria = Criteria.of(CouponReceive.class)
-                        .andEqualTo(CouponReceive::getFcouponId,coupon.getFcouponId())
-                        .andEqualTo(CouponReceive::getFuserCouponStatus,1)
-                        .andEqualTo(CouponReceive::getFuid,fuid)
-                        .fields(CouponReceive::getFcouponId);
-                Integer couponNum = 0;
-                Result<List<CouponReceive>> result = couponReceiveApi.queryByCriteria(couponReceiveCriteria);
-                if(result.isSuccess()){
-                    couponNum = result.getData().size();
-                }
-                couponAuthenticationNum = couponAuthenticationNum + couponNum;
-            }
-        }
-        return couponAuthenticationNum;
     }
 
     @Override
@@ -818,7 +699,7 @@ public class UserServiceImpl implements UserService {
         if(passWord == null || passWord.equals("")){
             throw new BizException(MallResultStatus.PWD_MIDIFY_FAILED);
         }
-        passWord = Md5Utils.toMd5(passWord);
+        passWord = MD5Util.MD5EncodeUtf8(passWord);
         user.setFwithdrawPasswd(passWord);
         user.setFuid(result.getData().getFuid());
         return userApi.updateNotNull(user);
@@ -838,7 +719,7 @@ public class UserServiceImpl implements UserService {
         if(passWord == null || passWord.equals("")){
             throw new BizException(MallResultStatus.PWD_MIDIFY_FAILED);
         }
-        passWord = Md5Utils.toMd5(passWord);
+        passWord = MD5Util.MD5EncodeUtf8(passWord);
         user.setFpasswd(passWord);
         user.setFuid(result.getData().getFuid());
         return userApi.updateNotNull(user);
@@ -855,7 +736,6 @@ public class UserServiceImpl implements UserService {
         }
         User user = new User();
         user.setFmail(dto.getFmail());
-        user.setFemailValidTime(new Date());
         user.setFmailIsValid(1);
         user.setFuid(result.getData().getFuid());
         return userApi.updateNotNull(user);
@@ -913,7 +793,6 @@ public class UserServiceImpl implements UserService {
         }
         User user = new User();
         user.setFmobile(dto.getFmobile());
-        user.setFmobileValidTime(new Date());
         user.setFuid(dto.getFuid());
         return userApi.updateNotNull(user);
     }

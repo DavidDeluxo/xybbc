@@ -62,12 +62,6 @@ public class MallExceptionCode implements IResultStatus {
     public static final MallExceptionCode USER_FREEZE_ERROR =new MallExceptionCode("8888", "该用户已被冻结或禁用");
     public static final MallExceptionCode NULL_ERROR_WITHDRAWPSD =new MallExceptionCode("8889", "尚未设置提现密码");
 
-    /**
-     * Mall优惠券错误信息
-     */
-    public static final MallExceptionCode COUPON_IS_INVALID =new MallExceptionCode("9000", "该优惠券已经失效");
-    public static final MallExceptionCode COUPON_IS_MAX =new MallExceptionCode("9000", "该优惠券已经达到限领张数");
-
 
     private String code;
     private String msg;

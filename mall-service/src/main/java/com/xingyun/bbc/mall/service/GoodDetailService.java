@@ -30,18 +30,11 @@ public interface GoodDetailService {
     //获取价格
     Result<GoodsPriceVo> getGoodPrice(GoodsDetailDto goodsDetailDto);
 
-    //获取库存
-    Result<GoodStockSellVo> getGoodStock(GoodsDetailDto goodsDetailDto);
-
-    //获取销量
-    Result<GoodStockSellVo> getGoodSell(GoodsDetailDto goodsDetailDto);
+    //获取库存和销量
+    Result<GoodStockSellVo> getGoodStockSell(GoodsDetailDto goodsDetailDto);
 
     //查询是否已经加入常购清单
     Result<Integer> getIsRegular(Long fgoodsId, Long fuid);
-
-    //商品详情领取优惠券
-    Result<Boolean> addReceiveCoupon(Long fcouponId, Long fuid);
-
 
 
 

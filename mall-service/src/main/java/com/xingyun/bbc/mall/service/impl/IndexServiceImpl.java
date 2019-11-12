@@ -22,7 +22,6 @@ import com.xingyun.bbc.mall.base.utils.JacksonUtils;
 import com.xingyun.bbc.mall.base.utils.PageUtils;
 import com.xingyun.bbc.mall.common.constans.GuidePageContants;
 
-import com.xingyun.bbc.mall.common.constans.MallConstants;
 import com.xingyun.bbc.mall.common.constans.PageConfigContants;
 
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
@@ -33,13 +32,11 @@ import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.IndexService;
 
 import org.apache.commons.collections.CollectionUtils;
-
 import org.dozer.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 
 import javax.annotation.Resource;
@@ -99,9 +96,6 @@ public class IndexServiceImpl implements IndexService {
 
     @Autowired
     private DozerHolder dozerHolder;
-
-    @Autowired
-    private SkuBatchPackageApi skuBatchPackageApi;
 
     /**
      * @author lll
@@ -290,7 +284,7 @@ public class IndexServiceImpl implements IndexService {
         if (0 == totalResult.getData() || Objects.isNull(totalResult.getData())) {
             return new SearchItemListVo<>(0, categoryDto.getCurrentPage(), categoryDto.getPageSize(), Lists.newArrayList());
         }
-        //为避免循环查询所以先查出辅表所需字段
+        //为避免循环查询所以先查出辅表所需阻断
         //取出skuid结果集
         List<Long> skuIdList = new ArrayList<>(result.getData().stream().map(GoodsSku::getFskuId).collect(Collectors.toList()));
         //查询批次表用来封装销量
@@ -360,74 +354,41 @@ public class IndexServiceImpl implements IndexService {
                                 .collect(Collectors.toList());
                         if (CollectionUtils.isNotEmpty(skuBatchIdList)) {
                             //封装最小价格
-                            this.getMinPrice(skuBatchIdList, searchItemVo,goodsSku.getFskuTaxRate());
+                            this.getMinPrice(skuBatchIdList, searchItemVo);
                         }
                         //有会员折扣配置取会员折扣价
                     } else {
-                        List<SkuBatch> supplierSkuBatchIdList = skuBatchs.getData().stream().filter(s -> s.getFskuId().equals(goodsSku.getFskuId()))
-                                .collect(Collectors.toList());
+                        List<SkuBatchUserPrice> salePriceList = new ArrayList<>();
+                        List<String> supplierSkuBatchIdList = skuBatchs.getData().stream().filter(s -> s.getFskuId().equals(goodsSku.getFskuId()))
+                                .map(SkuBatch::getFsupplierSkuBatchId).collect(Collectors.toList());
                         if (CollectionUtils.isNotEmpty(supplierSkuBatchIdList)) {
-                            List<PackagePriceVo> salePriceList = new ArrayList<>();
-                            for (SkuBatch skuBatch : supplierSkuBatchIdList) {
-                                //获取批次价格类型
-                                Integer batchPriceType = skuBatch.getFbatchPriceType();
+                            for (String supplierSkuBatchId : supplierSkuBatchIdList) {
                                 Criteria<SkuBatchUserPrice, Object> skuBatchUserPriceCriteria = Criteria.of(SkuBatchUserPrice.class)
-                                        .andEqualTo(SkuBatchUserPrice::getFsupplierSkuBatchId, skuBatch.getFsupplierSkuBatchId())
+                                        .andEqualTo(SkuBatchUserPrice::getFsupplierSkuBatchId, supplierSkuBatchId)
                                         .andEqualTo(SkuBatchUserPrice::getFuserTypeId, operateType);
                                 Result<List<SkuBatchUserPrice>> skuBatchUserPriceList = skuBatchUserPriceApi.queryByCriteria(skuBatchUserPriceCriteria
                                         .fields(SkuBatchUserPrice::getFsupplierSkuBatchId,
                                                 SkuBatchUserPrice::getFbatchPackageId,
                                                 SkuBatchUserPrice::getFbatchSellPrice));
                                 if (!skuBatchUserPriceList.isSuccess()) {
-                                    logger.error("查询会员批次价格失败 当前supplierSkuBatchId{}", skuBatch.getFsupplierSkuBatchId());
+                                    logger.error("查询会员批次价格失败 当前supplierSkuBatchId{}", supplierSkuBatchId);
                                     throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
                                 }
                                 if (CollectionUtils.isEmpty(skuBatchUserPriceList.getData())) {
                                     throw new BizException(MallExceptionCode.NO_BATCH_USER_PRICE);
                                 }
-                                //通过包装规格id查询包装规格值,用价格除以规格值从而获得单件商品价格
-                                List<PackagePriceVo> packagePriceVoList =  new ArrayList<>();
-                                for (SkuBatchUserPrice skuBatchUserPrice :skuBatchUserPriceList.getData()) {
-                                    //获取包装规格id
-                                    Long batchPackageId = skuBatchUserPrice.getFbatchPackageId();
-                                    Result<SkuBatchPackage> skuBatchPackage = skuBatchPackageApi.queryById(batchPackageId);
-                                    if (!skuBatchPackage.isSuccess()) {
-                                        logger.error("查询批次包装规格失败 当前batchPackageId{}", batchPackageId);
-                                        throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-                                    }
-                                    if (StringUtils.isEmpty(skuBatchPackage.getData())) {
-                                        throw new BizException(MallExceptionCode.NO_BATCH_PRICE);
-                                    }
-                                    //获取包装规格值
-                                    Long batchPackageNum = skuBatchPackage.getData().getFbatchPackageNum();
-                                    //获取单件装价格（单件装价格 = 价格 / 包装规格值）
-                                    BigDecimal batchSellPrice = BigDecimal.valueOf(skuBatchUserPrice.getFbatchSellPrice());
-                                    BigDecimal onePackagePrice = batchSellPrice.divide(new BigDecimal(batchPackageNum),6,BigDecimal.ROUND_HALF_UP);
-                                    //判断批次价格类型是否是2.含邮不含税或者4.不含邮不含税，是的话需要加上税费
-                                    if(batchPriceType.equals(2) || batchPriceType.equals(4)){
-                                        //税费=价格*税率
-                                        BigDecimal tax = batchSellPrice.multiply(new BigDecimal(goodsSku.getFskuTaxRate()))
-                                                .divide(MallConstants.TEN_THOUSAND);
-                                        onePackagePrice = (batchSellPrice.add(tax)).divide(new BigDecimal(batchPackageNum),6,BigDecimal.ROUND_HALF_UP);
-                                    }
-                                    //获取单件价格
-                                    PackagePriceVo packagePriceVo = new PackagePriceVo();
-                                    packagePriceVo.setFbatchSellPrice(onePackagePrice);
-                                    packagePriceVoList.add(packagePriceVo);
-                                    //skuBatchUserPrice.setFbatchSellPrice(Long.valueOf(String.valueOf(onePackagePrice)));
-                                }
-                                //取同一批次不同规格中的最小价格
-                                PackagePriceVo min = packagePriceVoList.stream().min(Comparator.comparing(PackagePriceVo::getFbatchSellPrice)).get();
+                                //取不同规格中的最小价格
+                                SkuBatchUserPrice min = skuBatchUserPriceList.getData().stream().min(Comparator.comparing(SkuBatchUserPrice::getFbatchSellPrice)).get();
                                 salePriceList.add(min);
                             }
                             //取不同批次的最小价格
-                            PackagePriceVo fbatchSellPrice = salePriceList.stream().min(Comparator.comparing(PackagePriceVo::getFbatchSellPrice)).get();
+                            SkuBatchUserPrice fbatchSellPrice = salePriceList.stream().min(Comparator.comparing(SkuBatchUserPrice::getFbatchSellPrice)).get();
                             //封装关联批次号
                             //indexSkuGoodsVo.setFsupplierSkuBatchId(fbatchSellPrice.getFsupplierSkuBatchId());
                             //封装关联包装规格Id
                             //indexSkuGoodsVo.setFbatchPackageId(fbatchSellPrice.getFbatchPackageId());
                             //--------封装价格
-                            BigDecimal sellPrice = fbatchSellPrice.getFbatchSellPrice()
+                            BigDecimal sellPrice = new BigDecimal(fbatchSellPrice.getFbatchSellPrice())
                                     .divide(PageConfigContants.BIG_DECIMAL_100, 2, BigDecimal.ROUND_HALF_UP);
                             searchItemVo.setFbatchSellPrice(sellPrice);
                         }
@@ -438,7 +399,7 @@ public class IndexServiceImpl implements IndexService {
                             .collect(Collectors.toList());
                     if (CollectionUtils.isNotEmpty(skuBatchIdList)) {
                         //封装最小价格
-                        this.getMinPrice(skuBatchIdList, searchItemVo,goodsSku.getFskuTaxRate());
+                        this.getMinPrice(skuBatchIdList, searchItemVo);
                     }
                 }
             }
@@ -477,14 +438,12 @@ public class IndexServiceImpl implements IndexService {
      * @version V1.0
      * @Description: 获取最小价格
      * @Param: searchItemVo
-     * @return: void                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
+     * @return: void                                                                                                                                                                                                                                                               <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/9/20 13:49
      */
-    private void getMinPrice(List<SkuBatch> skuBatchIdList, SearchItemVo searchItemVo,Long skuTaxRate) {
-        List<PackagePriceVo> salePriceList = new ArrayList<>();
+    private void getMinPrice(List<SkuBatch> skuBatchIdList, SearchItemVo searchItemVo) {
+        List<GoodsSkuBatchPrice> salePriceList = new ArrayList<>();
         for (SkuBatch skuBatch : skuBatchIdList) {
-            //获取批次价格类型
-            Integer batchPriceType = skuBatch.getFbatchPriceType();
             Criteria<GoodsSkuBatchPrice, Object> goodsSkuBatchPriceCriteria = Criteria.of(GoodsSkuBatchPrice.class);
             goodsSkuBatchPriceCriteria.andEqualTo(GoodsSkuBatchPrice::getFsupplierSkuBatchId, skuBatch.getFsupplierSkuBatchId());
             Result<List<GoodsSkuBatchPrice>> goodsSkuBatchPriceList = goodsSkuBatchPriceApi.queryByCriteria(goodsSkuBatchPriceCriteria
@@ -496,53 +455,21 @@ public class IndexServiceImpl implements IndexService {
             if (CollectionUtils.isEmpty(goodsSkuBatchPriceList.getData())) {
                 throw new BizException(MallExceptionCode.NO_BATCH_PRICE);
             }
-            //通过包装规格id查询包装规格值,用价格除以规格值从而获得单件商品价格
-           List<PackagePriceVo> packagePriceVoList =  new ArrayList<>();
-            for (GoodsSkuBatchPrice goodsSkuBatchPrice :goodsSkuBatchPriceList.getData()) {
-                //获取包装规格id
-                Long batchPackageId = goodsSkuBatchPrice.getFbatchPackageId();
-                Result<SkuBatchPackage> skuBatchPackage = skuBatchPackageApi.queryById(batchPackageId);
-                if (!skuBatchPackage.isSuccess()) {
-                    logger.error("查询批次包装规格失败 当前batchPackageId{}", batchPackageId);
-                    throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-                }
-                if (StringUtils.isEmpty(skuBatchPackage.getData())) {
-                    throw new BizException(MallExceptionCode.NO_BATCH_PRICE);
-                }
-                //获取包装规格值
-                Long batchPackageNum = skuBatchPackage.getData().getFbatchPackageNum();
-                //获取单件装价格（单件装价格 = 价格 / 包装规格值）
-                BigDecimal batchSellPrice = BigDecimal.valueOf(goodsSkuBatchPrice.getFbatchSellPrice());
-                BigDecimal onePackagePrice = batchSellPrice.divide(new BigDecimal(batchPackageNum),6,BigDecimal.ROUND_HALF_UP);
-                //判断批次价格类型是否是2.含邮不含税或者4.不含邮不含税，是的话需要加上税费
-                if(batchPriceType.equals(2) || batchPriceType.equals(4)){
-                    //税费=价格*税率
-                    BigDecimal tax = batchSellPrice.multiply(new BigDecimal(skuTaxRate))
-                            .divide(MallConstants.TEN_THOUSAND);
-                    onePackagePrice = (batchSellPrice.add(tax)).divide(new BigDecimal(batchPackageNum),6,BigDecimal.ROUND_HALF_UP);
-                }
-                //获取单件价格
-                PackagePriceVo packagePriceVo = new PackagePriceVo();
-                packagePriceVo.setFbatchSellPrice(onePackagePrice);
-                packagePriceVoList.add(packagePriceVo);
-                //goodsSkuBatchPrice.setFbatchSellPrice(onePackagePrice.longValue());
-            }
             //取同一批次中不同规格中的最小价格
-            PackagePriceVo min = packagePriceVoList.stream().min(Comparator.comparing(PackagePriceVo::getFbatchSellPrice)).get();
+            GoodsSkuBatchPrice min = goodsSkuBatchPriceList.getData().stream().min(Comparator.comparing(GoodsSkuBatchPrice::getFbatchSellPrice)).get();
             salePriceList.add(min);
         }
         //取不同批次的最小价格
-        PackagePriceVo fbatchSellPrice = salePriceList.stream().min(Comparator.comparing(PackagePriceVo::getFbatchSellPrice)).get();
+        GoodsSkuBatchPrice fbatchSellPrice = salePriceList.stream().min(Comparator.comparing(GoodsSkuBatchPrice::getFbatchSellPrice)).get();
         //封装关联批次号
         //indexSkuGoodsVo.setFsupplierSkuBatchId(fbatchSellPrice.getFsupplierSkuBatchId());
         //封装关联包装规格Id
         //indexSkuGoodsVo.setFbatchPackageId(fbatchSellPrice.getFbatchPackageId());
         //-----------封装价格
-        BigDecimal sellPrice = fbatchSellPrice.getFbatchSellPrice()
+        BigDecimal sellPrice = new BigDecimal(fbatchSellPrice.getFbatchSellPrice())
                 .divide(PageConfigContants.BIG_DECIMAL_100, 2, BigDecimal.ROUND_HALF_UP);
         searchItemVo.setFbatchSellPrice(sellPrice);
     }
-
 
     /**
      * @author lll
@@ -558,7 +485,7 @@ public class IndexServiceImpl implements IndexService {
                 //查询未删除的，可显示的数据
                 Criteria.of(GoodsCategory.class)
                         .fields(GoodsCategory::getFcategoryName, GoodsCategory::getFcategoryId, GoodsCategory::getFcategoryDesc)
-                        .sortDesc(GoodsCategory::getFcategorySort)
+                        .sortDesc(GoodsCategory::getFmodifyTime)
                         .andEqualTo(GoodsCategory::getFparentCategoryId, 0)
                         .andEqualTo(GoodsCategory::getFisDelete, 0)
                         .andEqualTo(GoodsCategory::getFisDisplay, 1));

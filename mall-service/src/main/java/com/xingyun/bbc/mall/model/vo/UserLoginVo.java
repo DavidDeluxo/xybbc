@@ -24,9 +24,6 @@ public class UserLoginVo implements Serializable {
     @ApiModelProperty("用户昵称")
     private String fnickname;
 
-    @ApiModelProperty("用户是否可修改：0否，1是")
-    private Integer funameIsModify;
-
     @ApiModelProperty("用户头像地址")
     private String fheadpic;
 
@@ -63,6 +60,4 @@ public class UserLoginVo implements Serializable {
     @ApiModelProperty("邮箱")
     private String fmail;
 
-    @ApiModelProperty("注册领取的优惠券数量")
-    private Integer couponRegisterNum;
 }
