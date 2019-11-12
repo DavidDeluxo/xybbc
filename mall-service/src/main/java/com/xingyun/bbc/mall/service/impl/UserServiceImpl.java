@@ -9,8 +9,10 @@ import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.helper.api.EmailApi;
 import com.xingyun.bbc.core.helper.api.SMSApi;
 import com.xingyun.bbc.core.market.api.CouponApi;
+import com.xingyun.bbc.core.market.api.CouponBindUserApi;
 import com.xingyun.bbc.core.market.api.CouponReceiveApi;
 import com.xingyun.bbc.core.market.po.Coupon;
+import com.xingyun.bbc.core.market.po.CouponBindUser;
 import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
 import com.xingyun.bbc.core.operate.po.CityRegion;
@@ -80,6 +82,8 @@ public class UserServiceImpl implements UserService {
     private CouponProviderApi couponProviderApi;
     @Autowired
     private CouponReceiveApi couponReceiveApi;
+    @Autowired
+    private CouponBindUserApi couponBindUserApi;
     @Autowired
     private SMSApi smsApi;
     @Autowired
@@ -389,6 +393,73 @@ public class UserServiceImpl implements UserService {
             }
         }
         return couponNum;
+    }
+
+    @Override
+    public Result couponLinkReceive(CouponLinkDto dto) {
+        if(dto.getCouponLink() == null){
+            return Result.failure(MallExceptionCode.COUPON_LINK_INEXUSTENCE);
+        }
+        Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)
+                .andEqualTo(Coupon::getFcouponLink, dto.getCouponLink())
+                .andNotEqualTo(Coupon::getFcouponStatus,1)
+                .fields(Coupon::getFcouponId, Coupon::getFperLimit,Coupon::getFsurplusReleaseQty
+                        ,Coupon::getFcouponStatus);
+        Result<Coupon> couponResult = couponApi.queryOneByCriteria(couponCriteria);
+        if(!couponResult.isSuccess()){
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if(couponResult.getData() == null){
+            //优惠券链接不存在
+            return Result.failure(MallExceptionCode.COUPON_LINK_INEXUSTENCE);
+        }
+        //优惠券状态 1待发布、2已发布、3已过期、4已结束、5已作废
+        Integer couponStatus = couponResult.getData().getFcouponStatus();
+        if(!couponStatus.equals(2)){
+            return Result.failure(MallExceptionCode.COUPON_IS_INVALID);
+        }
+        //剩余发放数量
+        Integer surplusReleaseQty = couponResult.getData().getFsurplusReleaseQty();
+        if(surplusReleaseQty.equals(0)){
+            return Result.failure(MallExceptionCode.COUPON_IS_PAID_OUT);
+        }
+        //每人限领
+        Integer perLimit = couponResult.getData().getFperLimit();
+        Long couponId = couponResult.getData().getFcouponId();
+        if(!perLimit.equals(0)){
+            //查询用户领取数量 = 待发放+已发放
+            Criteria<CouponBindUser, Object> couponBindUserCriteria = Criteria.of(CouponBindUser.class)
+                    .andEqualTo(CouponBindUser::getFuid,dto.getFuid())
+                    .andEqualTo(CouponBindUser::getFcouponId,couponId);
+            Result<Integer> integerResult = couponBindUserApi.countByCriteria(couponBindUserCriteria);
+            if(!integerResult.isSuccess()){
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            }
+            Integer StayOutNum = 0;
+            if(integerResult.getData() != null){
+                StayOutNum = integerResult.getData();
+            }
+            if(StayOutNum >= perLimit){
+                //返回已领取
+                return Result.failure(MallExceptionCode.COUPON_IS_MAX);
+            }
+            Criteria<CouponReceive, Object> couponReceiveCriteria = Criteria.of(CouponReceive.class)
+                    .andEqualTo(CouponReceive::getFuid,dto.getFuid())
+                    .andEqualTo(CouponReceive::getFcouponId,couponId);
+            Result<Integer> integerResult1 = couponReceiveApi.countByCriteria(couponReceiveCriteria);
+            if(!integerResult1.isSuccess()){
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            }
+            Integer couponNum = 0;
+            if(integerResult1.getData() != null){
+                couponNum = integerResult1.getData();
+            }
+            if(couponNum + StayOutNum >= perLimit){
+                //返回已领取
+                return Result.failure(MallExceptionCode.COUPON_IS_MAX);
+            }
+        }
+        return Result.success();
     }
 
     @Override

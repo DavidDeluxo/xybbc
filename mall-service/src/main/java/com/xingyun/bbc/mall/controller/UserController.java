@@ -3,6 +3,7 @@ package com.xingyun.bbc.mall.controller;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.model.dto.*;
 import com.xingyun.bbc.mall.model.vo.*;
+import com.xingyun.bbc.mall.service.GoodDetailService;
 import com.xingyun.bbc.mall.service.UserService;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,8 @@ import java.util.List;
 public class UserController {
     @Autowired
     private UserService userService;
+    @Autowired
+    private GoodDetailService goodDetailService;
 
     @ApiOperation("登陆")
     @PostMapping("/via/userLogin")
@@ -159,5 +162,12 @@ public class UserController {
     public Result<Integer> modifiyUserNickname(@RequestBody UserDto dto, HttpServletRequest request){
         dto.setFuid(Long.parseLong(request.getHeader("xyid")));
         return userService.modifiyUserNickname(dto);
+    }
+
+    @ApiOperation("H5链接登录后领取优惠券")
+    @PostMapping("/couponLinkReceive")
+    public Result couponLinkReceive(@RequestBody CouponLinkDto dto, HttpServletRequest request){
+        dto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        return userService.couponLinkReceive(dto);
     }
 }
