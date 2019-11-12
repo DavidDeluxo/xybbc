@@ -88,7 +88,7 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
             String categoryIdJson = sc.getFcategoryId();
 
             //解析多级分类
-            if (StringUtil.isNotBlank(categoryIdJson)) {
+            if (StringUtil.isNotBlank(categoryIdJson) && categoryIdJson.contains("[")) {
                 this.addCategoryIds(categoryIdL1, categoryIdL2, categoryIdL3, categoryIdJson);
             }
 
@@ -96,19 +96,28 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
 
         });
 
-        if (categoryIdL1.size() > 0) dto.setFcategoryIdL1((List<Integer>) categoryIdL1);
+        if (categoryIdL1.size() > 0) dto.setFcategoryIdL1(toList(categoryIdL1));
 
-        if (categoryIdL2.size() > 0) dto.setFcategoryIdL2((List<Integer>) categoryIdL2);
+        if (categoryIdL2.size() > 0) dto.setFcategoryIdL2(toList(categoryIdL2));
 
-        if (categoryIdL3.size() > 0) dto.setFcategoryId((List<Integer>) categoryIdL3);
+        if (categoryIdL3.size() > 0) dto.setFcategoryId(toList(categoryIdL3));
 
-        if (brandId.size() > 0) dto.setFbrandId((List<Integer>) brandId);
+        if (brandId.size() > 0) dto.setFbrandId(toList(brandId));
 
-        if (labelId.size() > 0) dto.setFlabelId((List<Integer>) labelId);
+        if (labelId.size() > 0) dto.setFlabelId(toList(labelId));
 
-        if (tradeId.size() > 0) dto.setFtradeId((List<Integer>) tradeId);
+        if (tradeId.size() > 0) dto.setFtradeId(toList(tradeId));
 
         return goodsService.searchSkuList(dto);
+    }
+
+    private List<Integer> toList(Set<Integer> set) {
+        if (CollectionUtils.isEmpty(set)) return Lists.newArrayList();
+
+        List<Integer> list = new ArrayList<Integer>(set.size());
+        set.forEach(s -> list.add(s));
+
+        return list;
     }
 
     private void addTypes(Set<Integer> brandId, Set<Integer> labelId, Set<Integer> tradeId, CouponApplicableSkuCondition sc) {
@@ -116,15 +125,15 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
         String flabelId = sc.getFlabelId();
         String ftradeCode = sc.getFtradeCode();
 
-        if (StringUtil.isNotBlank(fbrandId)) {
+        if (StringUtil.isNotBlank(fbrandId) && fbrandId.contains("[")) {
             JSONArray brands = JSON.parseArray(fbrandId);
             brands.forEach(b -> brandId.add((Integer) b));
         }
-        if (StringUtil.isNotBlank(flabelId)) {
+        if (StringUtil.isNotBlank(flabelId) && flabelId.contains("[")) {
             JSONArray labelIds = JSON.parseArray(flabelId);
             labelIds.forEach(b -> labelId.add((Integer) b));
         }
-        if (StringUtil.isNotBlank(ftradeCode)) {
+        if (StringUtil.isNotBlank(ftradeCode) && ftradeCode.contains("[")) {
             JSONArray tradeCodes = JSON.parseArray(ftradeCode);
             tradeCodes.forEach(b -> tradeId.add((Integer) b));
         }
