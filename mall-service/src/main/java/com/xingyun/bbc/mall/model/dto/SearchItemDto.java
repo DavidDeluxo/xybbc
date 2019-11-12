@@ -1,12 +1,12 @@
 package com.xingyun.bbc.mall.model.dto;
 
-import com.xingyun.bbc.search.criteria.BuildPolicy;
-import com.xingyun.bbc.search.criteria.EsMark;
+
+import com.xingyun.bbc.common.elasticsearch.config.autobuild.BuildPolicy;
+import com.xingyun.bbc.common.elasticsearch.config.autobuild.EsMark;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.List;
 
