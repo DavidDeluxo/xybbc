@@ -160,4 +160,11 @@ public class UserController {
         dto.setFuid(Long.parseLong(request.getHeader("xyid")));
         return userService.modifiyUserNickname(dto);
     }
+
+    @ApiOperation("H5链接登录后领取优惠券")
+    @PostMapping("/couponLinkReceive")
+    public Result couponLinkReceive(@RequestBody CouponLinkDto dto, HttpServletRequest request){
+        dto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        return userService.couponLinkReceive(dto);
+    }
 }

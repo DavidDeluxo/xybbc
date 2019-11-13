@@ -52,5 +52,7 @@ public interface UserService {
     Result<Integer> modifiyUserNickname(UserDto dto);
 
     Result<UserVo> queryPopupWindowsStatus(Long fuid);
+
+    Result couponLinkReceive(CouponLinkDto dto);
 }
 
