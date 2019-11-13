@@ -2,9 +2,11 @@ package com.xingyun.bbc.mall.controller;
 
 
 
+import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.core.utils.Result;
 
 import com.xingyun.bbc.mall.model.dto.ReceiveCouponDto;
+import com.xingyun.bbc.mall.model.vo.CouponCenterVo;
 import com.xingyun.bbc.mall.service.GoodDetailService;
 import com.xingyun.bbc.mall.service.ReceiveCenterService;
 import io.swagger.annotations.Api;
@@ -17,7 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.POST;
+
+import java.util.List;
 
 
 @Api("领券中心")
@@ -25,7 +28,7 @@ import javax.ws.rs.POST;
 @RequestMapping("/receiveCenter")
 public class ReceiveCenterController {
 
-    public static final Logger logger = LoggerFactory.getLogger(GoodsDetailController.class);
+    public static final Logger logger = LoggerFactory.getLogger(ReceiveCenterController.class);
 
     @Autowired
     GoodDetailService goodDetailService;
@@ -61,9 +64,24 @@ public class ReceiveCenterController {
     @PostMapping("/receiveCodeCoupon")
     public Result<Boolean> receiveCodeCoupon(@RequestBody ReceiveCouponDto receiveCouponDto, HttpServletRequest request){
         Long xyid = Long.parseLong(request.getHeader("xyid"));
-        logger.info("券码兑换优惠券 fcouponCode {} fcouponCode {}", receiveCouponDto.getFcouponCode(), xyid);
+        logger.info("券码兑换优惠券 fcouponCode {} fuid {}", receiveCouponDto.getFcouponCode(), xyid);
         return receiveCenterService.receiveCodeCoupon(receiveCouponDto.getFcouponCode(), xyid);
     }
 
-
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 查询领券中心优惠券
+     * @Param: receiveCouponDto
+     * @return: List<CouponCenterVo>                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
+     * @date 2019/11/12 13:49
+     */
+    @ApiOperation(value = "券码兑换优惠券", httpMethod = "Post")
+    @PostMapping("/getCoupon")
+    public Result<List<CouponCenterVo>> getCoupon(HttpServletRequest request,CouponQueryDto couponQueryDto){
+        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        couponQueryDto.setUserId(xyid);
+        logger.info("券码兑换优惠券 fuid {}",  xyid);
+        return receiveCenterService.getCoupon(couponQueryDto);
+    }
 }
