@@ -69,6 +69,7 @@ public class MallExceptionCode implements IResultStatus {
     public static final MallExceptionCode COUPON_IS_MAX =new MallExceptionCode("9001", "该优惠券已领取过");
     public static final MallExceptionCode COUPON_LINK_INEXUSTENCE =new MallExceptionCode("9002", "优惠券链接已失效");
     public static final MallExceptionCode COUPON_IS_PAID_OUT =new MallExceptionCode("9003", "优惠券已发放完");
+    public static final MallExceptionCode COUPON_IS_NOT_EXIST =new MallExceptionCode("9004", "优惠券不存在");
 
 
     private String code;
