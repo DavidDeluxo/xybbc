@@ -3,6 +3,7 @@ package com.xingyun.bbc.mall.controller;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.JwtParser;
 import com.xingyun.bbc.mall.model.dto.CouponGoodsDto;
+import com.xingyun.bbc.mall.model.vo.SearchFilterVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemListVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemVo;
 import com.xingyun.bbc.mall.model.vo.TokenInfoVo;
@@ -44,4 +45,14 @@ public class CouponGoodsController {
         dto.setFuid(infoVo.getFuid());
         return couponGoodsService.queryGoodsList(dto);
     }
+
+    @ApiOperation("查询筛选信息")
+    @PostMapping("/goodsSearchFilter")
+    public Result<SearchFilterVo> goodsSearchFilter(@RequestBody @Valid CouponGoodsDto dto, HttpServletRequest request){
+        TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
+        dto.setIsLogin(infoVo.getIsLogin());
+        dto.setFuid(infoVo.getFuid());
+        return couponGoodsService.querySkuFilter(dto);
+    }
+
 }

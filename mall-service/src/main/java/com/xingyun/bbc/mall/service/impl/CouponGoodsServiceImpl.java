@@ -16,6 +16,7 @@ import com.xingyun.bbc.core.utils.StringUtil;
 import com.xingyun.bbc.mall.common.ensure.Ensure;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.CouponGoodsDto;
+import com.xingyun.bbc.mall.model.vo.SearchFilterVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemListVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemVo;
 import com.xingyun.bbc.mall.service.CouponGoodsService;
@@ -48,28 +49,20 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
     @Override
     public Result<SearchItemListVo<SearchItemVo>> queryGoodsList(CouponGoodsDto dto) {
 
-        Result<Coupon> couponResult = couponApi.queryById(dto.getCouponId());
-        Ensure.that(couponResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
+        CouponSkuCondition couponSkuCondition = new CouponSkuCondition(dto).invoke();
 
-        SearchItemListVo<SearchItemVo> listVo = new SearchItemListVo<>(0, dto.getPageIndex(), dto.getPageSize(), Lists.newArrayList());
+        if (couponSkuCondition.is()) return Result.success(this.getInitListVo(dto));
 
-        if (Objects.isNull(couponResult.getData())) return Result.success(listVo);
-
-        Result<List<CouponApplicableSku>> skuListRes = couponApplicableSkuApi.queryByCriteria(Criteria.of(CouponApplicableSku.class).andEqualTo(CouponApplicableSku::getFcouponId, dto.getCouponId()));
-        Ensure.that(skuListRes.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
-
-        //skuId
-        if (!CollectionUtils.isEmpty(skuListRes.getData())) {
-            dto.setFskuIds(skuListRes.getData().stream().map(CouponApplicableSku::getFskuId).collect(Collectors.toList()));
-        }
-
-        Result<List<CouponApplicableSkuCondition>> skuConRes = couponApplicableSkuConditionApi.queryByCriteria(Criteria.of(CouponApplicableSkuCondition.class).andEqualTo(CouponApplicableSkuCondition::getFcouponId, dto.getCouponId()));
-        Ensure.that(skuConRes.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
-
-        List<CouponApplicableSkuCondition> skuConResData = skuConRes.getData();
+        List<CouponApplicableSkuCondition> skuConResData = couponSkuCondition.getSkuConResData();
 
         if (CollectionUtils.isEmpty(skuConResData)) return goodsService.searchSkuList(dto);
 
+        this.buildCategory(dto, skuConResData);
+
+        return goodsService.searchSkuList(dto);
+    }
+
+    private void buildCategory(CouponGoodsDto dto, List<CouponApplicableSkuCondition> skuConResData) {
         //一级分类
         Set<Integer> categoryIdL1 = new HashSet<>();
         //二级分类
@@ -107,8 +100,36 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
         if (labelId.size() > 0) dto.setFlabelId(toList(labelId));
 
         if (tradeId.size() > 0) dto.setFtradeId(toList(tradeId));
+    }
 
-        return goodsService.searchSkuList(dto);
+    @Override
+    public Result<SearchFilterVo> querySkuFilter(CouponGoodsDto dto) {
+        CouponSkuCondition couponSkuCondition = new CouponSkuCondition(dto).invoke();
+
+        if (couponSkuCondition.is()) return Result.success(this.getInitSearchFilterVo());
+
+        List<CouponApplicableSkuCondition> skuConResData = couponSkuCondition.getSkuConResData();
+
+        if (CollectionUtils.isEmpty(skuConResData)) return goodsService.searchSkuFilter(dto);
+
+        this.buildCategory(dto, skuConResData);
+
+        return goodsService.searchSkuFilter(dto);
+    }
+
+    private SearchFilterVo getInitSearchFilterVo() {
+        SearchFilterVo vo = new SearchFilterVo();
+        vo.setTotalCount(0);
+        vo.setAttributeFilterList(Lists.newArrayList());
+        vo.setBrandList(Lists.newArrayList());
+        vo.setCategoryList(Lists.newArrayList());
+        vo.setOriginList(Lists.newArrayList());
+        vo.setTradeList(Lists.newArrayList());
+        return vo;
+    }
+
+    public SearchItemListVo<SearchItemVo> getInitListVo(CouponGoodsDto dto) {
+        return new SearchItemListVo<>(0, dto.getPageIndex(), dto.getPageSize(), Lists.newArrayList());
     }
 
     private List<Integer> toList(Set<Integer> set) {
@@ -167,4 +188,46 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
     }
 
 
+    private class CouponSkuCondition {
+        private boolean myResult;
+        private CouponGoodsDto dto;
+        private List<CouponApplicableSkuCondition> skuConResData;
+
+        public CouponSkuCondition(CouponGoodsDto dto) {
+            this.dto = dto;
+        }
+
+        boolean is() {
+            return myResult;
+        }
+
+        public List<CouponApplicableSkuCondition> getSkuConResData() {
+            return skuConResData;
+        }
+
+        public CouponSkuCondition invoke() {
+            Result<Coupon> couponResult = couponApi.queryById(dto.getCouponId());
+            Ensure.that(couponResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
+
+            if (Objects.isNull(couponResult.getData())) {
+                myResult = true;
+                return this;
+            }
+
+            Result<List<CouponApplicableSku>> skuListRes = couponApplicableSkuApi.queryByCriteria(Criteria.of(CouponApplicableSku.class).andEqualTo(CouponApplicableSku::getFcouponId, dto.getCouponId()));
+            Ensure.that(skuListRes.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
+
+            //skuId
+            if (!CollectionUtils.isEmpty(skuListRes.getData())) {
+                dto.setFskuIds(skuListRes.getData().stream().map(CouponApplicableSku::getFskuId).collect(Collectors.toList()));
+            }
+
+            Result<List<CouponApplicableSkuCondition>> skuConRes = couponApplicableSkuConditionApi.queryByCriteria(Criteria.of(CouponApplicableSkuCondition.class).andEqualTo(CouponApplicableSkuCondition::getFcouponId, dto.getCouponId()));
+            Ensure.that(skuConRes.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
+
+            skuConResData = skuConRes.getData();
+            myResult = false;
+            return this;
+        }
+    }
 }

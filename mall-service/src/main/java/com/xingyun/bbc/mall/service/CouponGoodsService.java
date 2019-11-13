@@ -2,6 +2,7 @@ package com.xingyun.bbc.mall.service;
 
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.model.dto.CouponGoodsDto;
+import com.xingyun.bbc.mall.model.vo.SearchFilterVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemListVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemVo;
 
@@ -19,4 +20,10 @@ public interface CouponGoodsService {
      */
     Result<SearchItemListVo<SearchItemVo>> queryGoodsList(CouponGoodsDto dto);
 
+    /**
+     * 查询筛选信息
+     * @param dto
+     * @return
+     */
+    Result<SearchFilterVo> querySkuFilter(CouponGoodsDto dto);
 }
