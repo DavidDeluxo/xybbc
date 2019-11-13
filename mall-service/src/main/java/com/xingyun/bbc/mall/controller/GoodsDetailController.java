@@ -87,6 +87,29 @@ public class GoodsDetailController {
         return goodDetailService.getIsRegular(fgoodsId, xyid);
     }
 
+    @ApiOperation(value = "商品详情查询可领取优惠券--未点击", httpMethod = "GET")
+    @GetMapping("/getSkuUserCouponLight")
+    public Result<List<CouponVo>> getSkuUserCouponLight(@RequestParam Long fskuId, HttpServletRequest request){
+        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        logger.info("商品详情查询可领取优惠券--未点击 fskuId {} fuid {}", fskuId, xyid);
+        return goodDetailService.getSkuUserCouponLight(fskuId, xyid);
+    }
+
+    @ApiOperation(value = "商品详情查询可领取优惠券--点击", httpMethod = "GET")
+    @GetMapping("/getSkuUserCoupon")
+    public Result<GoodsDetailCoupon> getSkuUserCoupon(@RequestParam Long fskuId, HttpServletRequest request){
+        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        logger.info("商品详情查询可领取优惠券--点击 fskuId {} fuid {}", fskuId, xyid);
+        return goodDetailService.getSkuUserCoupon(fskuId, xyid);
+    }
+
+    @ApiOperation(value = "获取优惠券使用说明", httpMethod = "GET")
+    @GetMapping("/getCouponInstructions")
+    public Result<String> getCouponInstructions(@RequestParam Long fcouponId, HttpServletRequest request){
+        logger.info("获取优惠券使用说明 fcouponId {}, fcouponId");
+        return goodDetailService.getCouponInstructions(fcouponId);
+    }
+
     @ApiOperation(value = "商品详情领取优惠券", httpMethod = "GET")
     @GetMapping("/addReceiveCoupon")
     public Result<Boolean> addReceiveCoupon(@RequestParam Long fcouponId, HttpServletRequest request){
