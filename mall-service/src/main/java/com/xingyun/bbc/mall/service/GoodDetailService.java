@@ -2,6 +2,7 @@ package com.xingyun.bbc.mall.service;
 
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.model.dto.GoodsDetailDto;
+import com.xingyun.bbc.mall.model.dto.ReceiveCouponDto;
 import com.xingyun.bbc.mall.model.vo.*;
 
 import java.util.List;
@@ -41,6 +42,9 @@ public interface GoodDetailService {
 
     //商品详情领取优惠券
     Result<Boolean> addReceiveCoupon(Long fcouponId, Long fuid);
+
+    //领取优惠券
+    Result receiveCoupon(ReceiveCouponDto receiveCouponDto);
 
 
 

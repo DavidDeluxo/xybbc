@@ -886,7 +886,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     }
 
     @GlobalTransactional
-    public Result<Boolean> receiveCoupon(ReceiveCouponDto receiveCouponDto) {
+    @Override
+    public Result receiveCoupon(ReceiveCouponDto receiveCouponDto) {
         Long fcouponId = receiveCouponDto.getFcouponId();
         Long fuid = receiveCouponDto.getFuid();
         String fcouponCode = receiveCouponDto.getFcouponCode();
@@ -900,7 +901,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         String lockValue = RandomUtils.getUUID();
         try {
             //绑定用户和优惠券关系
-            Ensure.that(xybbcLock.tryLockTimes(lockKey, lockValue,3,5)).isTrue(MallExceptionCode.SYSTEM_BUSY_ERROR);
+            Ensure.that(xybbcLock.tryLockTimes(lockKey, lockValue,3,6)).isTrue(MallExceptionCode.SYSTEM_BUSY_ERROR);
             CouponBindUser couponBindUser = new CouponBindUser();
             couponBindUser.setFcouponId(fcouponId);
             couponBindUser.setFuid(fuid);
@@ -919,12 +920,12 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             couponReleaseDto.setDeltaValue(1);
             Result updateReleaseResult = couponProviderApi.updateReleaseQty(couponReleaseDto);
             if (!updateReleaseResult.isSuccess()) {
-                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+                return updateReleaseResult;
             }
             //调用领券服务
             Result receiveReceive = couponProviderApi.receive(couponReleaseDto);
             if (!receiveReceive.isSuccess()) {
-                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+                return receiveReceive;
             }
         } catch (Exception e) {
             e.printStackTrace();
