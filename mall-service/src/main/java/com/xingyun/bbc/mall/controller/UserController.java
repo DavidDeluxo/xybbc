@@ -167,4 +167,10 @@ public class UserController {
         dto.setFuid(Long.parseLong(request.getHeader("xyid")));
         return userService.couponLinkReceive(dto);
     }
+    @ApiOperation("查询优惠卷未使用的数量")
+    @PostMapping("/getUnusedCouponCount")
+    public Result<Integer> getUnusedCouponCount(HttpServletRequest request){
+        Long fuid = Long.parseLong(request.getHeader("xyid"));
+        return userService.getUnusedCouponCount(fuid);
+    }
 }

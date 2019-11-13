@@ -1173,4 +1173,15 @@ public class UserServiceImpl implements UserService {
         }
         return str.toString();
     }
+
+    @Override
+    public Result<Integer> getUnusedCouponCount(Long fuid) {
+      Result<Integer> couponResult = couponReceiveApi.countByCriteria(Criteria.of(CouponReceive.class).fields(
+          CouponReceive::getFcouponId).andEqualTo(CouponReceive::getFuid, fuid).andEqualTo(CouponReceive::getFuserCouponStatus,1));
+      
+      if(!couponResult.isSuccess()) {
+          throw  new  BizException(ResultStatus.INTERNAL_SERVER_ERROR);  
+      }
+      return Result.success(couponResult.getData());
+    }
 }
