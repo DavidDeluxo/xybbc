@@ -20,6 +20,7 @@ public interface CouponGoodsService {
      */
     Result<SearchItemListVo<SearchItemVo>> queryGoodsList(CouponGoodsDto dto);
 
+
     /**
      * 查询筛选信息
      * @param dto

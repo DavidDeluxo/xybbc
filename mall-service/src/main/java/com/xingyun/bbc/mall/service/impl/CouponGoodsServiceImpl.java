@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 @Service
 public class CouponGoodsServiceImpl implements CouponGoodsService {
 
+
     @Autowired
     private GoodsService goodsService;
     @Autowired
