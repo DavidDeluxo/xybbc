@@ -40,10 +40,19 @@ public interface GoodDetailService {
     //查询是否已经加入常购清单
     Result<Integer> getIsRegular(Long fgoodsId, Long fuid);
 
-    //商品详情领取优惠券
-    Result<Boolean> addReceiveCoupon(Long fcouponId, Long fuid);
+    //商品详情查询可领取优惠券--未点击
+    Result<List<CouponVo>> getSkuUserCouponLight(Long fskuId, Long fuid);
 
-    //领取优惠券
+    //商品详情查询可领取优惠券--点击
+    Result<GoodsDetailCoupon> getSkuUserCoupon(Long fskuId, Long fuid);
+
+    //查询优惠券使用说明
+    Result<String> getCouponInstructions (Long fcouponId);
+
+    //商品详情领取优惠券
+    Result addReceiveCoupon(Long fcouponId, Long fuid);
+
+    //领取优惠券--通用
     Result receiveCoupon(ReceiveCouponDto receiveCouponDto);
 
 

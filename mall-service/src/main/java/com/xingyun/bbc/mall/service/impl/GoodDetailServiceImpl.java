@@ -8,11 +8,13 @@ import com.xingyun.bbc.core.activity.model.dto.CouponReleaseDto;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.CouponApi;
+import com.xingyun.bbc.core.market.api.CouponApplicableSkuConditionApi;
 import com.xingyun.bbc.core.market.api.CouponBindUserApi;
 import com.xingyun.bbc.core.market.api.CouponReceiveApi;
 import com.xingyun.bbc.core.market.enums.CouponReleaseTypeEnum;
 import com.xingyun.bbc.core.market.enums.CouponStatusEnum;
 import com.xingyun.bbc.core.market.po.Coupon;
+import com.xingyun.bbc.core.market.po.CouponApplicableSkuCondition;
 import com.xingyun.bbc.core.market.po.CouponBindUser;
 import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
@@ -84,6 +86,12 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     private GoodsBrandApi goodsBrandApi;
 
     @Autowired
+    private GoodsCategoryApi goodsCategoryApi;
+
+    @Autowired
+    private GoodsTradeInfoApi goodsTradeInfoApi;
+
+    @Autowired
     private CountryApi countryApi;
 
     @Autowired
@@ -130,6 +138,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     @Autowired
     private CouponProviderApi couponProviderApi;
+
+    @Autowired
+    private CouponApplicableSkuConditionApi couponApplicableSkuConditionApi;
 
     @Autowired
     private Mapper dozerMapper;
@@ -477,7 +488,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         freightDto.setFfreightId(ffreightId);
         freightDto.setFregionId(fdeliveryCityId);
         freightDto.setFbatchId(fsupplierSkuBatchId);
-        freightDto.setFbuyNum(fnum*fbatchPackageNum);
+        freightDto.setFbuyNum(fnum * fbatchPackageNum);
         logger.info("商品详情--查询运费入参{}", JSON.toJSONString(freightDto));
         Result<BigDecimal> bigDecimalResult = freightApi.queryFreight(freightDto);
         if (bigDecimalResult.isSuccess() && null != bigDecimalResult.getData()) {
@@ -848,7 +859,111 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     }
 
     @Override
-    public Result<Boolean> addReceiveCoupon(Long fcouponId, Long fuid) {
+    public Result<List<CouponVo>> getSkuUserCouponLight(Long fskuId, Long fuid) {
+        return null;
+    }
+
+    @Override
+    public Result<GoodsDetailCoupon> getSkuUserCoupon(Long fskuId, Long fuid) {
+        return null;
+    }
+
+    @Override
+    public Result<String> getCouponInstructions(Long fcouponId) {
+        Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
+                .andEqualTo(Coupon::getFcouponId, fcouponId)
+                .fields(Coupon::getFapplicableSku));
+        if (!couponResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (null == couponResult.getData()) {
+            Result.failure(MallExceptionCode.COUPON_IS_NOT_EXIST);
+        }
+        String result = "";
+        //1全部商品、2指定商品可用、3指定商品不可用
+        int fapplicableSku = couponResult.getData().getFapplicableSku().intValue();
+        if (1 == fapplicableSku) {
+            result = "全部商品可用";
+        } else if (2 == fapplicableSku) {
+            if (this.isHasCouponSkuCondition(fcouponId)) {
+                result = "部分商品可用" + "\n" + this.getCouponSkuCondition(fcouponId);
+            } else {
+                result = "部分商品可用";
+            }
+        } else {
+            if (this.isHasCouponSkuCondition(fcouponId)) {
+                result = "部分商品不可用" + "\n" + this.getCouponSkuCondition(fcouponId);
+            } else {
+                result = "部分商品不可用";
+            }
+        }
+        return Result.success(result);
+    }
+
+    private Boolean isHasCouponSkuCondition(Long fcouponId) {
+        Result<Integer> countResult = couponApplicableSkuConditionApi.countByCriteria(Criteria.of(CouponApplicableSkuCondition.class)
+                .andEqualTo(CouponApplicableSkuCondition::getFcouponId, fcouponId));
+        if (!countResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (null == countResult.getData()) {
+            Result.failure(MallExceptionCode.COUPON_IS_NOT_EXIST);
+        }
+        if (countResult.getData() > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private String getCouponSkuCondition(Long fcouponId) {
+        String result = "";
+        //贸易类型--三级分类--品牌
+        Result<CouponApplicableSkuCondition> conditionResult = couponApplicableSkuConditionApi.queryOneByCriteria(Criteria.of(CouponApplicableSkuCondition.class)
+                .andEqualTo(CouponApplicableSkuCondition::getFcouponId, fcouponId)
+                .fields(CouponApplicableSkuCondition::getFbrandId,
+                        CouponApplicableSkuCondition::getFcategoryId,
+                        CouponApplicableSkuCondition::getFtradeCode));
+        CouponApplicableSkuCondition conditionData = conditionResult.getData();
+        if (!conditionResult.isSuccess() || null == conditionData) {
+            return result;
+        }
+        StringBuffer resBf = new StringBuffer();
+        if (!StringUtils.isEmpty(conditionData.getFtradeCode())) {
+            Result<GoodsTradeInfo> tradeInfoResult = goodsTradeInfoApi.queryOneByCriteria(Criteria.of(GoodsTradeInfo.class)
+                    .andEqualTo(GoodsTradeInfo::getFtradeId, conditionData.getFtradeCode())
+                    .fields(GoodsTradeInfo::getFtradeName));
+            if (tradeInfoResult.isSuccess() && null != tradeInfoResult.getData()) {
+                resBf.append("贸易类型：").append(tradeInfoResult.getData().getFtradeName()).append("\n");
+            }
+        }
+        if (!StringUtils.isEmpty(conditionData.getFcategoryId())) {
+            Map<Integer, List<Long>> categoryIds = (Map<Integer, List<Long>>)JSON.parse(conditionData.getFcategoryId());
+            List<Long> threeCategoryId = categoryIds.get(3);
+            if (null != threeCategoryId) {
+                Result<List<GoodsCategory>> categoryResult = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class)
+                        .andIn(GoodsCategory::getFcategoryId, threeCategoryId)
+                        .fields(GoodsCategory::getFcategoryName));
+                List<GoodsCategory> categoryData = categoryResult.getData();
+                if (categoryResult.isSuccess() && null != categoryData) {
+                    resBf.append("品类：").append(categoryData.stream().map(GoodsCategory::getFcategoryName).collect(Collectors.joining("、"))).append("\n");
+                }
+            }
+        }
+        if (!StringUtils.isEmpty(conditionData.getFbrandId())) {
+            List<Long> brandIds = (List<Long>)JSON.parse(conditionData.getFbrandId());
+            Result<List<GoodsBrand>> brandResult = goodsBrandApi.queryByCriteria(Criteria.of(GoodsBrand.class).andIn(GoodsBrand::getFbrandId, brandIds).fields(GoodsBrand::getFbrandName));
+            List<GoodsBrand> brandData = brandResult.getData();
+            if (brandResult.isSuccess() && null != brandData) {
+                resBf.append("品牌：").append(brandData.stream().map(GoodsBrand::getFbrandName).collect(Collectors.joining("、"))).append("\n");
+            }
+        }
+        result = resBf.toString();
+        return result;
+    }
+
+    @Override
+    public Result addReceiveCoupon(Long fcouponId, Long fuid) {
         if (null == fcouponId || null == fuid) {
             return Result.failure(MallExceptionCode.PARAM_ERROR);
         }
@@ -881,8 +996,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         ReceiveCouponDto receiveCouponDto = new ReceiveCouponDto();
         receiveCouponDto.setFuid(fuid);
         receiveCouponDto.setFcouponId(fcouponId);
-        Result<Boolean> booleanResult = this.receiveCoupon(receiveCouponDto);
-        return Result.success(booleanResult.getData());
+        Result result = this.receiveCoupon(receiveCouponDto);
+        return Result.success(result.getData());
     }
 
     @GlobalTransactional
@@ -901,7 +1016,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         String lockValue = RandomUtils.getUUID();
         try {
             //绑定用户和优惠券关系
-            Ensure.that(xybbcLock.tryLockTimes(lockKey, lockValue,3,6)).isTrue(MallExceptionCode.SYSTEM_BUSY_ERROR);
+            Ensure.that(xybbcLock.tryLockTimes(lockKey, lockValue, 3, 6)).isTrue(MallExceptionCode.SYSTEM_BUSY_ERROR);
             CouponBindUser couponBindUser = new CouponBindUser();
             couponBindUser.setFcouponId(fcouponId);
             couponBindUser.setFuid(fuid);
@@ -917,7 +1032,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             couponReleaseDto.setUserId(fuid);
             couponReleaseDto.setCouponCode(fcouponCode);
             couponReleaseDto.setAlreadyReceived(true);
-            couponReleaseDto.setDeltaValue(1);
+            couponReleaseDto.setDeltaValue(-1);
             Result updateReleaseResult = couponProviderApi.updateReleaseQty(couponReleaseDto);
             if (!updateReleaseResult.isSuccess()) {
                 return updateReleaseResult;
