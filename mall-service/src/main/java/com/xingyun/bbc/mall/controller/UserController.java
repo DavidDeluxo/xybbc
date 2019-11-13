@@ -3,6 +3,7 @@ package com.xingyun.bbc.mall.controller;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.model.dto.*;
 import com.xingyun.bbc.mall.model.vo.*;
+import com.xingyun.bbc.mall.service.GoodDetailService;
 import com.xingyun.bbc.mall.service.UserService;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,8 @@ import java.util.List;
 public class UserController {
     @Autowired
     private UserService userService;
+    @Autowired
+    private GoodDetailService goodDetailService;
 
     @ApiOperation("登陆")
     @PostMapping("/via/userLogin")
@@ -165,7 +168,16 @@ public class UserController {
     @PostMapping("/couponLinkReceive")
     public Result couponLinkReceive(@RequestBody CouponLinkDto dto, HttpServletRequest request){
         dto.setFuid(Long.parseLong(request.getHeader("xyid")));
-        return userService.couponLinkReceive(dto);
+        Result result = new Result();
+        result = userService.couponLinkReceive(dto);
+        if(result.isSuccess()){
+            Long couponId = Long.parseLong(String.valueOf(result.getData()));
+            ReceiveCouponDto receiveCouponDto = new ReceiveCouponDto();
+            receiveCouponDto.setFcouponId(couponId);
+            receiveCouponDto.setFuid(dto.getFuid());
+//            result = goodDetailService.receiveCoupon(receiveCouponDto);
+        }
+        return result;
     }
     @ApiOperation("查询优惠卷未使用的数量")
     @PostMapping("/getUnusedCouponCount")

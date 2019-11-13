@@ -713,7 +713,7 @@ public class UserServiceImpl implements UserService {
                 return Result.failure(MallExceptionCode.COUPON_IS_MAX);
             }
         }
-        return Result.success();
+        return Result.success(couponId);
     }
 
     private Integer queryAuthenticationCoupon(Long fuid) {
