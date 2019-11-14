@@ -119,4 +119,7 @@ public class SearchItemDto {
 
     @ApiModelProperty(value = "类目等级")
     private Integer fcategoryLevel;
+
+    @ApiModelProperty("优惠券ID")
+    private Long couponId;
 }

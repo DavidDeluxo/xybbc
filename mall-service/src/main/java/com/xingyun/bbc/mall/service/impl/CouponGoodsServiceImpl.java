@@ -3,28 +3,39 @@ package com.xingyun.bbc.mall.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.github.pagehelper.Page;
 import com.google.common.collect.Lists;
+import com.xingyun.bbc.core.enums.ResultStatus;
+import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.CouponApi;
 import com.xingyun.bbc.core.market.api.CouponApplicableSkuApi;
 import com.xingyun.bbc.core.market.api.CouponApplicableSkuConditionApi;
+import com.xingyun.bbc.core.market.api.CouponGoodsApi;
+import com.xingyun.bbc.core.market.dto.ItemDto;
 import com.xingyun.bbc.core.market.po.Coupon;
 import com.xingyun.bbc.core.market.po.CouponApplicableSku;
 import com.xingyun.bbc.core.market.po.CouponApplicableSkuCondition;
+import com.xingyun.bbc.core.market.vo.ItemVo;
 import com.xingyun.bbc.core.query.Criteria;
+import com.xingyun.bbc.core.user.api.UserApi;
+import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.core.utils.StringUtil;
+import com.xingyun.bbc.mall.base.enums.MallResultStatus;
+import com.xingyun.bbc.mall.base.utils.PriceUtil;
 import com.xingyun.bbc.mall.common.ensure.Ensure;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
-import com.xingyun.bbc.mall.model.dto.CouponGoodsDto;
+import com.xingyun.bbc.mall.model.dto.SearchItemDto;
 import com.xingyun.bbc.mall.model.vo.SearchFilterVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemListVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemVo;
 import com.xingyun.bbc.mall.service.CouponGoodsService;
 import com.xingyun.bbc.mall.service.GoodsService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,6 +44,7 @@ import java.util.stream.Collectors;
  * @date 2019/11/11 11:36
  * @Description
  */
+@Slf4j
 @Service
 public class CouponGoodsServiceImpl implements CouponGoodsService {
 
@@ -48,7 +60,7 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
 
 
     @Override
-    public Result<SearchItemListVo<SearchItemVo>> queryGoodsList(CouponGoodsDto dto) {
+    public Result<SearchItemListVo<SearchItemVo>> queryGoodsList(SearchItemDto dto) {
 
         CouponSkuCondition couponSkuCondition = new CouponSkuCondition(dto).invoke();
 
@@ -56,14 +68,44 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
 
         List<CouponApplicableSkuCondition> skuConResData = couponSkuCondition.getSkuConResData();
 
-        if (CollectionUtils.isEmpty(skuConResData)) return goodsService.searchSkuList(dto);
+        if (CollectionUtils.isEmpty(skuConResData)) return this.getListVoResult(dto);
 
         this.buildCategory(dto, skuConResData);
 
-        return goodsService.searchSkuList(dto);
+        return this.getListVoResult(dto);
     }
 
-    private void buildCategory(CouponGoodsDto dto, List<CouponApplicableSkuCondition> skuConResData) {
+    private Result<SearchItemListVo<SearchItemVo>> getListVoResult(SearchItemDto dto) {
+        Result<SearchItemListVo<SearchItemVo>> res = new Result<>();
+        SearchItemListVo<SearchItemVo> pageVo = new SearchItemListVo<>();
+        pageVo.setIsLogin(dto.getIsLogin());
+        pageVo.setTotalCount(0);
+        pageVo.setCurrentPage(dto.getPageIndex());
+        pageVo.setPageSize(dto.getPageSize());
+        pageVo.setHasNext(false);
+        pageVo.setHasPrevious(false);
+        pageVo.setPageCount(0);
+        pageVo.setList(Lists.newArrayList());
+        res.setData(pageVo);
+
+        try {
+            res = goodsService.searchSkuList(dto);
+            if (!res.isSuccess()) throw new Exception();
+
+        } catch (Exception e) {
+            log.warn("ES优惠券商品搜索失败!...");
+
+            if (Objects.nonNull(dto.getCouponId())){
+
+                log.info("----------ES优惠券商品搜索失败!,转SQL查询------------");
+                res = this.queryGoodsListRealTime(dto);
+            }
+
+        }
+        return res;
+    }
+
+    private void buildCategory(SearchItemDto dto, List<CouponApplicableSkuCondition> skuConResData) {
         //一级分类
         Set<Integer> categoryIdL1 = new HashSet<>();
         //二级分类
@@ -104,7 +146,7 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
     }
 
     @Override
-    public Result<SearchFilterVo> querySkuFilter(CouponGoodsDto dto) {
+    public Result<SearchFilterVo> querySkuFilter(SearchItemDto dto) {
         CouponSkuCondition couponSkuCondition = new CouponSkuCondition(dto).invoke();
 
         if (couponSkuCondition.is()) return Result.success(this.getInitSearchFilterVo());
@@ -118,6 +160,69 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
         return goodsService.searchSkuFilter(dto);
     }
 
+    @Autowired
+    private CouponGoodsApi couponGoodsApi;
+
+    @Override
+    public Result<SearchItemListVo<SearchItemVo>> queryGoodsListRealTime(SearchItemDto dto) {
+        ItemDto itemDto = new ItemDto();
+        BeanUtils.copyProperties(dto, itemDto);
+        itemDto.setPageNum(dto.getPageIndex());
+        if (dto.getIsLogin()){
+            Integer priceType = this.getUserPriceType(dto);
+            itemDto.setFuserTypeId(priceType+"");
+        }
+        Result<Page<ItemVo>> pageResult = couponGoodsApi.queryCouponGoods(itemDto);
+
+        if (!pageResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+
+        Page<ItemVo> data = pageResult.getData();
+        if (CollectionUtils.isEmpty(data.getResult())) return Result.success(this.getInitListVo(dto));
+
+        List<SearchItemVo> list = new ArrayList<SearchItemVo>(data.getResult().size());
+        data.getResult().forEach(da -> {
+            SearchItemVo vo = new SearchItemVo();
+            BeanUtils.copyProperties(da, vo);
+            if (Objects.nonNull(vo.getFbatchSellPrice())){
+                vo.setFbatchSellPrice(PriceUtil.toYuan(vo.getFbatchSellPrice()));
+            }
+            list.add(vo);
+        });
+
+        SearchItemListVo<SearchItemVo> itemListVo = new SearchItemListVo<SearchItemVo>();
+        itemListVo.setIsLogin(dto.getIsLogin());
+        itemListVo.setCurrentPage(data.getPageNum());
+        itemListVo.setPageSize(data.getPageSize());
+        itemListVo.setList(list);
+        itemListVo.setTotalCount(list.size());
+        itemListVo.setPageCount(data.getPages());
+        return Result.success(itemListVo);
+    }
+
+    @Autowired
+    UserApi userApi;
+
+    /**
+     * 根据用户身份选择价格类型
+     *
+     * @param dto
+     * @return
+     */
+    private Integer getUserPriceType(SearchItemDto dto) {
+        //默认为未认证
+        Integer userTypeId = 0;
+        if (dto.getIsLogin() && Objects.nonNull(dto.getFuid())) {
+            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class).andEqualTo(User::getFuid, dto.getFuid()));
+
+            if (!userResult.isSuccess()) throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            User user = userResult.getData();
+            if (Objects.isNull(user)) throw new BizException(MallResultStatus.USER_NOT_EXIST);
+
+            userTypeId = user.getFoperateType();
+        }
+        return userTypeId;
+    }
+
     private SearchFilterVo getInitSearchFilterVo() {
         SearchFilterVo vo = new SearchFilterVo();
         vo.setTotalCount(0);
@@ -129,7 +234,7 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
         return vo;
     }
 
-    public SearchItemListVo<SearchItemVo> getInitListVo(CouponGoodsDto dto) {
+    public SearchItemListVo<SearchItemVo> getInitListVo(SearchItemDto dto) {
         return new SearchItemListVo<>(0, dto.getPageIndex(), dto.getPageSize(), Lists.newArrayList());
     }
 
@@ -191,10 +296,10 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
 
     private class CouponSkuCondition {
         private boolean myResult;
-        private CouponGoodsDto dto;
+        private SearchItemDto dto;
         private List<CouponApplicableSkuCondition> skuConResData;
 
-        public CouponSkuCondition(CouponGoodsDto dto) {
+        public CouponSkuCondition(SearchItemDto dto) {
             this.dto = dto;
         }
 

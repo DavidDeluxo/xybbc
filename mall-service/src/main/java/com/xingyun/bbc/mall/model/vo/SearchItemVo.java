@@ -42,4 +42,8 @@ public class SearchItemVo {
 
     @ApiModelProperty("关联商品标签Id")
     private Integer flabelId;
+
+    @ApiModelProperty(value = "用户认证类型",hidden = true)
+    private Integer fuserTypeId;
+
 }

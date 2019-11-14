@@ -1,7 +1,7 @@
 package com.xingyun.bbc.mall.service;
 
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mall.model.dto.CouponGoodsDto;
+import com.xingyun.bbc.mall.model.dto.SearchItemDto;
 import com.xingyun.bbc.mall.model.vo.SearchFilterVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemListVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemVo;
@@ -18,13 +18,19 @@ public interface CouponGoodsService {
      * @param dto
      * @return
      */
-    Result<SearchItemListVo<SearchItemVo>> queryGoodsList(CouponGoodsDto dto);
-
+    Result<SearchItemListVo<SearchItemVo>> queryGoodsList(SearchItemDto dto);
 
     /**
      * 查询筛选信息
      * @param dto
      * @return
      */
-    Result<SearchFilterVo> querySkuFilter(CouponGoodsDto dto);
+    Result<SearchFilterVo> querySkuFilter(SearchItemDto dto);
+
+    /**
+     * 根据优惠券条件查询商品-sql
+     * @param dto
+     * @return
+     */
+    Result<SearchItemListVo<SearchItemVo>> queryGoodsListRealTime(SearchItemDto dto);
 }
