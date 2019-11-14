@@ -50,5 +50,21 @@ public interface UserService {
     Result<UserVo> queryUserInfo(Long fuid);
 
     Result<Integer> modifiyUserNickname(UserDto dto);
+
+    Result<UserVo> queryPopupWindowsStatus(Long fuid);
+
+    Result couponLinkReceive(CouponLinkDto dto);
+    
+    /**
+    * 
+    * @Title: getUnusedCouponCount 
+    * @Description: 获取未使用的优惠卷数量
+    * @param @param fuid
+    * @param @return  参数说明 
+    * @return Result<Integer>    返回类型 
+    * @author feixiaojie
+    * @throws
+     */
+    Result<Integer>getUnusedCouponCount(Long fuid);
 }
 
