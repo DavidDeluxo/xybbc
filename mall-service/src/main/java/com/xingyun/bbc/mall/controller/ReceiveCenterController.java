@@ -32,9 +32,6 @@ public class ReceiveCenterController {
     public static final Logger logger = LoggerFactory.getLogger(ReceiveCenterController.class);
 
     @Autowired
-    GoodDetailService goodDetailService;
-
-    @Autowired
     ReceiveCenterService receiveCenterService;
 
     /**
@@ -50,7 +47,7 @@ public class ReceiveCenterController {
     public Result<Boolean> receiveCoupon(@RequestBody ReceiveCouponDto receiveCouponDto, HttpServletRequest request){
         Long xyid = Long.parseLong(request.getHeader("xyid"));
         logger.info("领券中心领取优惠券 fcouponId {} fuid {}", receiveCouponDto.getFcouponId(), xyid);
-        return goodDetailService.addReceiveCoupon(receiveCouponDto.getFcouponId(), xyid);
+        return receiveCenterService.addReceiveCoupon(receiveCouponDto.getFcouponId(), xyid);
     }
 
     /**

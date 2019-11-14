@@ -10,9 +10,13 @@ import com.xingyun.bbc.core.activity.model.vo.CouponQueryVo;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 
+import com.xingyun.bbc.core.market.api.CouponApi;
 import com.xingyun.bbc.core.market.api.CouponCodeApi;
 
 import com.xingyun.bbc.core.market.api.CouponReceiveApi;
+import com.xingyun.bbc.core.market.enums.CouponReleaseTypeEnum;
+import com.xingyun.bbc.core.market.enums.CouponStatusEnum;
+import com.xingyun.bbc.core.market.po.Coupon;
 import com.xingyun.bbc.core.market.po.CouponCode;
 import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.query.Criteria;
@@ -24,6 +28,7 @@ import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.ReceiveCouponDto;
 
 import com.xingyun.bbc.mall.model.vo.ReceiveCenterCoupon;
+import com.xingyun.bbc.mall.service.GoodDetailService;
 import com.xingyun.bbc.mall.service.ReceiveCenterService;
 
 import io.seata.spring.annotation.GlobalTransactional;
@@ -57,7 +62,11 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
     @Autowired
     CouponReceiveApi couponReceiveApi;
 
+    @Autowired
+    private CouponApi couponApi;
 
+    @Autowired
+    GoodDetailService goodDetailService;
 
     /**
      * @author lll
@@ -74,7 +83,9 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
             throw new BizException(MallExceptionCode.PARAM_ERROR);
         }
         //通过券码查询券id
-       Result<CouponCode>  couponCode = couponCodeApi.queryOneByCriteria(Criteria.of(CouponCode.class).fields(CouponCode::getFcouponId));
+       Result<CouponCode>  couponCode = couponCodeApi.queryOneByCriteria(Criteria.of(CouponCode.class)
+               .andEqualTo(CouponCode::getFcouponCode,fcouponCode)
+               .fields(CouponCode::getFcouponId));
         if (!couponCode.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
@@ -157,12 +168,12 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
             throw new BizException(MallExceptionCode.PARAM_ERROR);
         }
         List<Integer> list = new ArrayList<>();
+        //查出发放类型为2：页面领取的数据
         list.add(2);
         couponQueryDto.setReleaseTypes(list);
         Result<List<CouponQueryVo>> couponQueryVos = couponProviderApi.queryByUserId(couponQueryDto);
         List<ReceiveCenterCoupon> receiveCenterCouponList = new ArrayList<>();
         for (CouponQueryVo couponQueryVo:couponQueryVos.getData()) {
-            //校验用户可领券是否达到上限
             //查询已经领到的券张数
             Result<Integer> countResult = couponReceiveApi.countByCriteria(Criteria.of(CouponReceive.class)
                     .andEqualTo(CouponReceive::getFuid, couponQueryDto.getUserId())
@@ -170,8 +181,8 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
             if (!countResult.isSuccess()) {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
-            //当领券上限到达时提示无法再领
-            if (countResult.getData() <couponQueryVo.getFperLimit()) {
+            //当领券上限未达到限领次数时
+            if (countResult.getData() < couponQueryVo.getFperLimit()) {
                 //封装返回对象
                 ReceiveCenterCoupon receiveCenterCoupon = new ReceiveCenterCoupon();
                 receiveCenterCoupon.setFcouponId(couponQueryVo.getFcouponId());
@@ -189,4 +200,28 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         }
         return Result.success(receiveCenterCouponList);
     }
+
+
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 领券中心领取优惠券
+     * @Param: receiveCouponDto
+     * @return: Result                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
+     * @date 2019/11/12 13:49
+     */
+    @Override
+    public Result addReceiveCoupon(Long fcouponId, Long fuid) {
+        if (null == fcouponId || null == fuid) {
+            throw new BizException(MallExceptionCode.PARAM_ERROR);
+        }
+        ReceiveCouponDto receiveCouponDto = new ReceiveCouponDto();
+        receiveCouponDto.setFuid(fuid);
+        receiveCouponDto.setFcouponId(fcouponId);
+        Result result = goodDetailService.receiveCoupon(receiveCouponDto);
+        return Result.success(result.getData());
+        }
+
+
+
 }
