@@ -43,7 +43,7 @@ public class GoodsController {
         dto.setIsLogin(infoVo.getIsLogin());
         dto.setFuid(infoVo.getFuid());
 
-        log.info("查询商品列表请求参数:{}", JSON.toJSONString(dto));
+        log.info("查询商品列表,请求参数:{}", JSON.toJSONString(dto));
         if (Objects.nonNull(dto.getCouponId())) return couponGoodsService.queryGoodsList(dto);
 
         return goodsService.searchSkuList(dto);
@@ -55,6 +55,10 @@ public class GoodsController {
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
         dto.setIsLogin(infoVo.getIsLogin());
         dto.setFuid(infoVo.getFuid());
+
+        log.info("查询筛选信息,请求参数:{}", JSON.toJSONString(dto));
+        if (Objects.nonNull(dto.getCouponId())) couponGoodsService.querySkuFilter(dto);
+
         return goodsService.searchSkuFilter(dto);
     }
 
