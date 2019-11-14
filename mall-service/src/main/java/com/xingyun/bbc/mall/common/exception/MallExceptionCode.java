@@ -65,8 +65,12 @@ public class MallExceptionCode implements IResultStatus {
     /**
      * Mall优惠券错误信息
      */
-    public static final MallExceptionCode COUPON_IS_INVALID =new MallExceptionCode("9000", "该优惠券已经失效");
-    public static final MallExceptionCode COUPON_IS_MAX =new MallExceptionCode("9000", "该优惠券已经达到限领张数");
+    public static final MallExceptionCode COUPON_IS_INVALID =new MallExceptionCode("9000", "优惠券已过期");
+    public static final MallExceptionCode COUPON_IS_MAX =new MallExceptionCode("9001", "该优惠券已领取过");
+    public static final MallExceptionCode COUPON_LINK_INEXUSTENCE =new MallExceptionCode("9002", "优惠券链接已失效");
+    public static final MallExceptionCode COUPON_IS_PAID_OUT =new MallExceptionCode("9003", "优惠券已发放完");
+    public static final MallExceptionCode COUPON_IS_NOT_EXIST =new MallExceptionCode("9004", "优惠券不存在");
+    public static final MallExceptionCode COUPON_INELIGIBILITY =new MallExceptionCode("9005", "暂不满足领取资格哦~");
 
 
     private String code;
