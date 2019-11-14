@@ -14,9 +14,7 @@ import com.xingyun.bbc.core.market.api.CouponApi;
 import com.xingyun.bbc.core.market.api.CouponCodeApi;
 
 import com.xingyun.bbc.core.market.api.CouponReceiveApi;
-import com.xingyun.bbc.core.market.enums.CouponReleaseTypeEnum;
-import com.xingyun.bbc.core.market.enums.CouponStatusEnum;
-import com.xingyun.bbc.core.market.po.Coupon;
+
 import com.xingyun.bbc.core.market.po.CouponCode;
 import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.query.Criteria;
