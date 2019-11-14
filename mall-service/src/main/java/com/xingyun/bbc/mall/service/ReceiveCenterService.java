@@ -2,10 +2,11 @@ package com.xingyun.bbc.mall.service;
 
 import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mall.model.vo.CouponCenterVo;
+
+import com.xingyun.bbc.mall.model.vo.ReceiveCenterCoupon;
 
 
-import javax.servlet.http.HttpServletRequest;
+
 import java.util.List;
 
 
@@ -30,7 +31,7 @@ public interface ReceiveCenterService {
      * @return: List<CouponCenterVo>                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
-    Result<List<CouponCenterVo>> getCoupon(CouponQueryDto couponQueryDto);
+    Result<List<ReceiveCenterCoupon>> getCoupon(CouponQueryDto couponQueryDto);
 
 
 }

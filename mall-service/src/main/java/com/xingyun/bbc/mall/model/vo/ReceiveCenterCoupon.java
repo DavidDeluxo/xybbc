@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.model.vo;
 
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -8,9 +9,10 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
+
+@ApiModel("领券中心")
 @Data
-@ApiModel("优惠券")
-public class CouponCenterVo implements Serializable {
+public class ReceiveCenterCoupon implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -27,9 +29,9 @@ public class CouponCenterVo implements Serializable {
     private String fcouponName;
 
     /**
-     * 优惠券类型
+     * 优惠券类型，1满减券、2折扣券
      */
-    @ApiModelProperty("优惠券类型")
+    @ApiModelProperty("优惠券类型，1满减券、2折扣券")
     private Integer fcouponType;
 
     /**
@@ -55,5 +57,23 @@ public class CouponCenterVo implements Serializable {
      */
     @ApiModelProperty("有效期开始时间")
     private Date fvalidityEnd;
+
+    /**
+     * 系统时间时间
+     */
+    @ApiModelProperty("当前时间")
+    private Date nowDate;
+
+    /**
+     * 每人限领
+     */
+    @ApiModelProperty("每人限领数量")
+    private Integer fperLimit;
+
+    /**
+     * 已领取券数量
+     */
+    @ApiModelProperty("已领取券数量")
+    private Long receiveNum;
 
 }
