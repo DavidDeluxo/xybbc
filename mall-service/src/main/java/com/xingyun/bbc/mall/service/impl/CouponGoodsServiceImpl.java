@@ -90,7 +90,8 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
 
         try {
             res = goodsService.searchSkuList(dto);
-            if (!res.isSuccess()) throw new Exception();
+            if (!res.isSuccess())
+                throw new Exception();
 
         } catch (Exception e) {
             log.warn("ES优惠券商品搜索失败!...");
