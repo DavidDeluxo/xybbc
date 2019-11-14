@@ -6,6 +6,7 @@ import com.xingyun.bbc.core.activity.enums.CouponScene;
 import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.core.activity.model.dto.CouponReleaseDto;
 
+import com.xingyun.bbc.core.activity.model.vo.CouponQueryVo;
 import com.xingyun.bbc.core.exception.BizException;
 
 import com.xingyun.bbc.core.market.api.CouponCodeApi;
@@ -114,7 +115,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         if(null == couponQueryDto.getUserId()){
             throw new BizException(MallExceptionCode.PARAM_ERROR);
         }
-        Result<List<Long>> couponQueryVos = couponProviderApi.queryByUserId(couponQueryDto);
+        Result<List<CouponQueryVo>> couponQueryVos = couponProviderApi.queryByUserId(couponQueryDto);
         return null;
     }
 }
