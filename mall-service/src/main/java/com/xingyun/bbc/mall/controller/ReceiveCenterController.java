@@ -76,12 +76,12 @@ public class ReceiveCenterController {
      * @return: List<CouponCenterVo>                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
-    @ApiOperation(value = "券码兑换优惠券", httpMethod = "Post")
+    @ApiOperation(value = "查询领券中心优惠券", httpMethod = "Post")
     @PostMapping("/getCoupon")
     public Result<List<CouponCenterVo>> getCoupon(HttpServletRequest request,CouponQueryDto couponQueryDto){
         Long xyid = Long.parseLong(request.getHeader("xyid"));
         couponQueryDto.setUserId(xyid);
-        logger.info("券码兑换优惠券 fuid {}",  xyid);
+        logger.info("查询领券中心优惠券 fuid {}",  xyid);
         return receiveCenterService.getCoupon(couponQueryDto);
     }
 }
