@@ -4,7 +4,9 @@ import com.google.common.base.Strings;
 import com.xingyun.bbc.common.redis.XyRedisManager;
 import com.xingyun.bbc.core.activity.api.CouponProviderApi;
 import com.xingyun.bbc.core.activity.enums.CouponScene;
+import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.core.activity.model.dto.CouponReleaseDto;
+import com.xingyun.bbc.core.activity.model.vo.CouponQueryVo;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.helper.api.EmailApi;
 import com.xingyun.bbc.core.helper.api.SMSApi;
@@ -658,7 +660,7 @@ public class UserServiceImpl implements UserService {
                 .andEqualTo(Coupon::getFcouponLink, dto.getCouponLink())
                 .andNotEqualTo(Coupon::getFcouponStatus,1)
                 .fields(Coupon::getFcouponId, Coupon::getFperLimit,Coupon::getFsurplusReleaseQty
-                        ,Coupon::getFcouponStatus);
+                        ,Coupon::getFcouponStatus,Coupon::getFcouponType);
         Result<Coupon> couponResult = couponApi.queryOneByCriteria(couponCriteria);
         if(!couponResult.isSuccess()){
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -672,6 +674,27 @@ public class UserServiceImpl implements UserService {
         if(!couponStatus.equals(2)){
             return Result.failure(MallExceptionCode.COUPON_IS_INVALID);
         }
+        Long couponId = couponResult.getData().getFcouponId();
+        //查询用户是否有领取资格
+        CouponQueryDto couponQueryDto = new CouponQueryDto();
+        List<Integer> couponTypeList = new ArrayList<>();
+        couponTypeList.add(couponResult.getData().getFcouponType());
+        couponQueryDto.setCouponTypes(couponTypeList);
+        couponQueryDto.setUserId(dto.getFuid());
+        Result<List<CouponQueryVo>> listResult = couponProviderApi.queryByUserId(couponQueryDto);
+        if(!listResult.isSuccess()){
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        Boolean isReceive = false;
+        for(CouponQueryVo couponQueryVo : listResult.getData()){
+            if(couponQueryVo.getFcouponId().equals(couponId)){
+                isReceive = true;
+                break;
+            }
+        }
+        if(!isReceive){
+            return Result.failure(MallExceptionCode.COUPON_INELIGIBILITY);
+        }
         //剩余发放数量
         Integer surplusReleaseQty = couponResult.getData().getFsurplusReleaseQty();
         if(surplusReleaseQty.equals(0)){
@@ -679,7 +702,6 @@ public class UserServiceImpl implements UserService {
         }
         //每人限领
         Integer perLimit = couponResult.getData().getFperLimit();
-        Long couponId = couponResult.getData().getFcouponId();
         if(!perLimit.equals(0)){
             //查询用户领取数量 = 待发放+已发放
             Criteria<CouponBindUser, Object> couponBindUserCriteria = Criteria.of(CouponBindUser.class)
