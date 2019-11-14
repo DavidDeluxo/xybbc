@@ -6,7 +6,8 @@ import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.core.utils.Result;
 
 import com.xingyun.bbc.mall.model.dto.ReceiveCouponDto;
-import com.xingyun.bbc.mall.model.vo.CouponCenterVo;
+
+import com.xingyun.bbc.mall.model.vo.ReceiveCenterCoupon;
 import com.xingyun.bbc.mall.service.GoodDetailService;
 import com.xingyun.bbc.mall.service.ReceiveCenterService;
 import io.swagger.annotations.Api;
@@ -72,13 +73,13 @@ public class ReceiveCenterController {
      * @author lll
      * @version V1.0
      * @Description: 查询领券中心优惠券
-     * @Param: receiveCouponDto
+     * @Param: ReceiveCenterCoupon
      * @return: List<CouponCenterVo>                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
     @ApiOperation(value = "查询领券中心优惠券", httpMethod = "Post")
     @PostMapping("/getCoupon")
-    public Result<List<CouponCenterVo>> getCoupon(HttpServletRequest request,CouponQueryDto couponQueryDto){
+    public Result<List<ReceiveCenterCoupon>> getCoupon(HttpServletRequest request, @RequestBody CouponQueryDto couponQueryDto){
         Long xyid = Long.parseLong(request.getHeader("xyid"));
         couponQueryDto.setUserId(xyid);
         logger.info("查询领券中心优惠券 fuid {}",  xyid);
