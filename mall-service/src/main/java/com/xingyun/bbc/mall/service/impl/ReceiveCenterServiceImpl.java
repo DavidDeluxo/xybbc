@@ -84,6 +84,9 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         //校验券码对应的券和指定会员关系
         CouponQueryDto couponQueryDto = new CouponQueryDto();
         couponQueryDto.setUserId(fuid);
+        List<Integer> list = new ArrayList<>();
+        list.add(8);
+        couponQueryDto.setReleaseTypes(list);
         Result<List<CouponQueryVo>> couponQueryVoResult = couponProviderApi.queryByUserId(couponQueryDto);
         if (!couponQueryVoResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -153,6 +156,9 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         if(null == couponQueryDto.getUserId()){
             throw new BizException(MallExceptionCode.PARAM_ERROR);
         }
+        List<Integer> list = new ArrayList<>();
+        list.add(2);
+        couponQueryDto.setReleaseTypes(list);
         Result<List<CouponQueryVo>> couponQueryVos = couponProviderApi.queryByUserId(couponQueryDto);
         List<ReceiveCenterCoupon> receiveCenterCouponList = new ArrayList<>();
         for (CouponQueryVo couponQueryVo:couponQueryVos.getData()) {
