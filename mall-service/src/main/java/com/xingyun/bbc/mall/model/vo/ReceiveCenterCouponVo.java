@@ -12,7 +12,7 @@ import java.util.Date;
 
 @ApiModel("领券中心")
 @Data
-public class ReceiveCenterCoupon implements Serializable {
+public class ReceiveCenterCouponVo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -45,6 +45,20 @@ public class ReceiveCenterCoupon implements Serializable {
      */
     @ApiModelProperty("指定金额")
     private BigDecimal fdeductionValue;
+
+
+    /**
+     * 有效期类型，1有效期区间、2有效期天数
+     */
+    @ApiModelProperty("有效期类型，1有效期区间、2有效期天数")
+    private Integer fvalidityType;
+
+    /**
+     * 有效期天数
+     */
+    @ApiModelProperty("有效期天数")
+    private Integer fvalidityDays;
+
 
     /**
      * 有效期开始时间
