@@ -8,7 +8,7 @@ import java.io.Serializable;
 
 @Data
 @ApiModel("商品详情")
-public class GoodsDetailDto implements Serializable {
+public class GoodsDetailMallDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
