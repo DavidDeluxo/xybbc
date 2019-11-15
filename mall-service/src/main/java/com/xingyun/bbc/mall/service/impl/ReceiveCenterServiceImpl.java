@@ -106,7 +106,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         couponQueryDto.setUserId(fuid);
         List<Integer> list = new ArrayList<>();
         list.add(8);
-        couponQueryDto.setReleaseTypes(list);
+        couponQueryDto.setCouponTypes(list);
         Result<List<CouponQueryVo>> couponQueryVoResult = couponProviderApi.queryByUserId(couponQueryDto);
         if (!couponQueryVoResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -178,7 +178,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         List<Integer> list = new ArrayList<>();
         //查出发放类型为2：页面领取的数据
         list.add(2);
-        couponQueryDto.setReleaseTypes(list);
+        couponQueryDto.setCouponTypes(list);
         Result<List<CouponQueryVo>> couponQueryVos = couponProviderApi.queryByUserId(couponQueryDto);
         List<ReceiveCenterCouponVo> receiveCenterCouponVoList = new ArrayList<>();
         for (CouponQueryVo couponQueryVo : couponQueryVos.getData()) {
@@ -203,6 +203,8 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
                 receiveCenterCouponVo.setNowDate(new Date());
                 receiveCenterCouponVo.setReceiveNum(Long.valueOf(countResult.getData()));
                 receiveCenterCouponVo.setFperLimit(couponQueryVo.getFperLimit());
+                receiveCenterCouponVo.setFvalidityType(couponQueryVo.getFvalidityType());
+                receiveCenterCouponVo.setFvalidityDays(couponQueryVo.getFvalidityDays());
                 receiveCenterCouponVoList.add(receiveCenterCouponVo);
             }
         }
