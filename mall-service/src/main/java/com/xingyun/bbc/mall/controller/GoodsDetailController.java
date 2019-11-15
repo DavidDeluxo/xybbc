@@ -97,7 +97,7 @@ public class GoodsDetailController {
 
     @ApiOperation(value = "商品详情查询可领取优惠券--点击", httpMethod = "GET")
     @GetMapping("/getSkuUserCoupon")
-    public Result<GoodsDetailCoupon> getSkuUserCoupon(@RequestParam Long fskuId, HttpServletRequest request){
+    public Result<GoodsDetailCouponVo> getSkuUserCoupon(@RequestParam Long fskuId, HttpServletRequest request){
         Long xyid = Long.parseLong(request.getHeader("xyid"));
         logger.info("商品详情查询可领取优惠券--点击 fskuId {} fuid {}", fskuId, xyid);
         return goodDetailService.getSkuUserCoupon(fskuId, xyid);

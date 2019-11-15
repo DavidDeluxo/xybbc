@@ -44,7 +44,7 @@ public interface GoodDetailService {
     Result<List<CouponVo>> getSkuUserCouponLight(Long fskuId, Long fuid);
 
     //商品详情查询可领取优惠券--点击
-    Result<GoodsDetailCoupon> getSkuUserCoupon(Long fskuId, Long fuid);
+    Result<GoodsDetailCouponVo> getSkuUserCoupon(Long fskuId, Long fuid);
 
     //查询优惠券使用说明
     Result<String> getCouponInstructions (Long fcouponId);

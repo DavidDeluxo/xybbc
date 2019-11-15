@@ -4,19 +4,16 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.xingyun.bbc.core.activity.api.CouponProviderApi;
 import com.xingyun.bbc.core.activity.enums.CouponScene;
+import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.core.activity.model.dto.CouponReleaseDto;
+import com.xingyun.bbc.core.activity.model.vo.CouponQueryVo;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
-import com.xingyun.bbc.core.market.api.CouponApi;
-import com.xingyun.bbc.core.market.api.CouponApplicableSkuConditionApi;
-import com.xingyun.bbc.core.market.api.CouponBindUserApi;
-import com.xingyun.bbc.core.market.api.CouponReceiveApi;
+import com.xingyun.bbc.core.market.api.*;
+import com.xingyun.bbc.core.market.enums.CouponReceiveStatusEnum;
 import com.xingyun.bbc.core.market.enums.CouponReleaseTypeEnum;
 import com.xingyun.bbc.core.market.enums.CouponStatusEnum;
-import com.xingyun.bbc.core.market.po.Coupon;
-import com.xingyun.bbc.core.market.po.CouponApplicableSkuCondition;
-import com.xingyun.bbc.core.market.po.CouponBindUser;
-import com.xingyun.bbc.core.market.po.CouponReceive;
+import com.xingyun.bbc.core.market.po.*;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
 import com.xingyun.bbc.core.operate.api.CountryApi;
 import com.xingyun.bbc.core.operate.po.CityRegion;
@@ -27,6 +24,7 @@ import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.sku.api.*;
 import com.xingyun.bbc.core.sku.enums.GoodsSkuEnums;
 import com.xingyun.bbc.core.sku.enums.SkuBatchEnums;
+import com.xingyun.bbc.core.sku.po.GoodsSku;
 import com.xingyun.bbc.core.sku.po.*;
 import com.xingyun.bbc.core.supplier.enums.TradeTypeEnums;
 import com.xingyun.bbc.core.user.api.UserApi;
@@ -59,14 +57,13 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 public class GoodDetailServiceImpl implements GoodDetailService {
@@ -140,6 +137,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     private CouponProviderApi couponProviderApi;
 
     @Autowired
+    private CouponApplicableSkuApi couponApplicableSkuApi;
+
+    @Autowired
     private CouponApplicableSkuConditionApi couponApplicableSkuConditionApi;
 
     @Autowired
@@ -173,7 +173,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         if (CollectionUtils.isNotEmpty(spuLis.getData())) {
             spuPic = spuLis.getData().stream().filter(goodsThumbImage ->
                     StringUtils.isNotBlank(goodsThumbImage.getFimgUrl())).map(goodsThumbImage ->
-                    goodsThumbImage.getFimgUrl()).collect(Collectors.toList());
+                    goodsThumbImage.getFimgUrl()).collect(toList());
         }
         result.addAll(spuPic);
         return Result.success(result);
@@ -372,7 +372,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 .fields(GoodsAttribute::getFclassAttributeItemVal, GoodsAttribute::getFclassAttributeId, GoodsAttribute::getFclassAttributeName));
         List<GoodsAttributeVo> convert = dozerHolder.convert(goodsAttributeRes.getData(), GoodsAttributeVo.class);
 
-        Map<String, List<GoodsAttributeVo>> collect = convert.stream().collect(Collectors.groupingBy(GoodsAttributeVo::getFclassAttributeName, Collectors.toList()));
+        Map<String, List<GoodsAttributeVo>> collect = convert.stream().collect(Collectors.groupingBy(GoodsAttributeVo::getFclassAttributeName, toList()));
         return Result.success(collect);
     }
 
@@ -860,12 +860,223 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     @Override
     public Result<List<CouponVo>> getSkuUserCouponLight(Long fskuId, Long fuid) {
-        return null;
+        List<CouponVo> allReceiveCoupon = this.getAllReceiveCoupon(fskuId, fuid);
+        List<CouponVo> collect = allReceiveCoupon.stream().sorted(Comparator.comparing(CouponVo::getFthresholdAmount).reversed()).limit(3).collect(toList());
+        return Result.success(collect);
     }
 
     @Override
-    public Result<GoodsDetailCoupon> getSkuUserCoupon(Long fskuId, Long fuid) {
-        return null;
+    public Result<GoodsDetailCouponVo> getSkuUserCoupon(Long fskuId, Long fuid) {
+        GoodsDetailCouponVo result = new GoodsDetailCouponVo();
+        //所有券
+        List<CouponVo> allReceiveCoupon = this.getAllReceiveCoupon(fskuId, fuid);
+        //已领取券
+        List<CouponVo> alreadyReceiveCoupon = this.getAlreadyReceiveCoupon(fskuId, fuid);
+        List<Long> alCouponIds = alreadyReceiveCoupon.stream().map(CouponVo::getFcouponId).collect(toList());
+        //未领取券
+        List<CouponVo> unReceiceCoupon = allReceiveCoupon.stream().filter(item -> !alCouponIds.contains(item.getFcouponId())).collect(toList());
+
+
+        result.setReceiveCouponLis(alreadyReceiveCoupon.stream().sorted(Comparator.comparing(CouponVo::getFthresholdAmount).reversed()).collect(toList()));
+        result.setUnReceiveCouponLis(unReceiceCoupon.stream().sorted(Comparator.comparing(CouponVo::getFthresholdAmount).reversed()).collect(toList()));
+        return Result.success(result);
+    }
+
+    //获取sku满足的所有已领取和未领取的页面领取类型券
+    private List<CouponVo> getAllReceiveCoupon(Long fskuId, Long fuid) {
+        CouponQueryDto couponQueryDto = new CouponQueryDto();
+        couponQueryDto.setReleaseTypes(Lists.newArrayList(CouponReleaseTypeEnum.PAGE_RECEIVE.getCode()));
+        couponQueryDto.setSkuId(fskuId);
+        couponQueryDto.setUserId(fuid);
+        Result<List<CouponQueryVo>> listResult = couponProviderApi.queryBySkuAndUserId(couponQueryDto);
+        if (!listResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        List<CouponQueryVo> apiCouponLis = listResult.getData();
+        List<CouponVo> convert = new ArrayList<>();
+        if (!CollectionUtils.isEmpty(apiCouponLis)) {
+            convert = dozerHolder.convert(apiCouponLis, CouponVo.class);
+        }
+        this.dealAmount(convert);
+        return convert;
+    }
+
+    //获取该sku已领券
+    private List<CouponVo> getAlreadyReceiveCoupon(Long fskuId, Long fuid) {
+        Date now = new Date();
+        //查询已经领到的券
+        Result<List<CouponReceive>> couponReceResult = couponReceiveApi.queryByCriteria(Criteria.of(CouponReceive.class)
+                .andEqualTo(CouponReceive::getFuid, fuid)
+                .andEqualTo(CouponReceive::getFuserCouponStatus, CouponReceiveStatusEnum.NOT_USED.getCode())
+                .andLessThanOrEqualTo(CouponReceive::getFvalidityStart, now)
+                .andGreaterThanOrEqualTo(CouponReceive::getFvalidityEnd, now)
+                .fields(CouponReceive::getFcouponId, CouponReceive::getFvalidityStart, CouponReceive::getFvalidityEnd));
+        if (!couponReceResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        List<CouponReceive> couponReceLis = couponReceResult.getData();
+        List<CouponVo> result = new ArrayList<>();
+        Map<String, Long> skuCondition = new HashMap<>(5);
+        if (!CollectionUtils.isEmpty(couponReceLis)) {
+            for (CouponReceive couponReceive : couponReceLis) {
+                Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
+                        .andEqualTo(Coupon::getFcouponId, couponReceive.getFcouponId())
+                        .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
+                        .andLessThanOrEqualTo(Coupon::getFvalidityStart, now)
+                        .andGreaterThanOrEqualTo(Coupon::getFvalidityEnd, now)
+                        .andEqualTo(Coupon::getFisShow, 1)
+                        .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType,
+                                Coupon::getFthresholdAmount, Coupon::getFdeductionValue, Coupon::getFvalidityStart,
+                                Coupon::getFvalidityEnd, Coupon::getFapplicableSku));
+                Coupon coupon = couponResult.getData();
+                if (couponResult.isSuccess() && null != coupon) {
+                    //1全部商品、2指定商品可用、3指定商品不可用
+                    int ableSku = coupon.getFapplicableSku().intValue();
+                    if (ableSku == 1) {
+                        result.add(dozerMapper.map(coupon, CouponVo.class));
+                    } else if (ableSku == 2) {
+                        //如果是单独存的skuid
+                        Result<Integer> countCouponSku = this.getCouponSkuCount(couponReceive.getFcouponId(), fskuId);
+                        if (countCouponSku.isSuccess() && countCouponSku.getData() > 0) {
+                            result.add(dozerMapper.map(coupon, CouponVo.class));
+                            continue;
+                        }
+                        //如果存的是条件
+                        Result<CouponApplicableSkuCondition> skuConditionRes = this.getCouponSkuAble(couponReceive.getFcouponId());
+                        if (!skuConditionRes.isSuccess()) {
+                            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+                        }
+                        CouponApplicableSkuCondition couponCondition = skuConditionRes.getData();
+
+                        this.setSkuCondition(skuCondition, fskuId);
+                        if (null == couponCondition) {
+                            continue;
+                        }
+                        //优惠券条件
+                        List<Long> fbrandIds_coupon = (List<Long>) JSON.parse(couponCondition.getFbrandId());
+                        Map<Integer, List<Long>> fcategoryIds_coupon = (Map<Integer, List<Long>>) JSON.parse(couponCondition.getFcategoryId());
+                        List<Long> flabelIds_coupon = (List<Long>) JSON.parse(couponCondition.getFlabelId());
+
+                        //skuid反推的条件
+                        Long brandId = skuCondition.get("brandId");
+                        Long categoryId1 = skuCondition.get("categoryId1");
+                        Long categoryId2 = skuCondition.get("categoryId2");
+                        Long categoryId3 = skuCondition.get("categoryId3");
+                        Long labelId = skuCondition.get("labelId");
+
+                        if (fbrandIds_coupon.contains(brandId)) {
+                            result.add(dozerMapper.map(coupon, CouponVo.class));
+                            continue;
+                        }
+                        if (null != fcategoryIds_coupon.get(1) && fcategoryIds_coupon.get(1).contains(categoryId1)) {
+                            result.add(dozerMapper.map(coupon, CouponVo.class));
+                            continue;
+                        }
+                        if (null != fcategoryIds_coupon.get(2) && fcategoryIds_coupon.get(1).contains(categoryId2)) {
+                            result.add(dozerMapper.map(coupon, CouponVo.class));
+                            continue;
+                        }
+                        if (null != fcategoryIds_coupon.get(3) && fcategoryIds_coupon.get(1).contains(categoryId3)) {
+                            result.add(dozerMapper.map(coupon, CouponVo.class));
+                            continue;
+                        }
+                        if (flabelIds_coupon.contains(labelId)) {
+                            result.add(dozerMapper.map(coupon, CouponVo.class));
+                            continue;
+                        }
+                    } else {
+                        //指定商品不可用
+                        //如果是单独存的skuid
+                        Result<Integer> countCouponSku = this.getCouponSkuCount(couponReceive.getFcouponId(), fskuId);
+                        if (countCouponSku.isSuccess() && countCouponSku.getData() < 0) {
+                            result.add(dozerMapper.map(coupon, CouponVo.class));
+                            continue;
+                        }
+                        //如果存的是条件
+                        Result<CouponApplicableSkuCondition> skuConditionRes = this.getCouponSkuAble(couponReceive.getFcouponId());
+                        if (!skuConditionRes.isSuccess()) {
+                            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+                        }
+                        CouponApplicableSkuCondition couponCondition = skuConditionRes.getData();
+                        this.setSkuCondition(skuCondition, fskuId);
+                        if (null == couponCondition) {
+                            //优惠券条件
+                            List<Long> fbrandIds_coupon = (List<Long>) JSON.parse(couponCondition.getFbrandId());
+                            Map<Integer, List<Long>> fcategoryIds_coupon = (Map<Integer, List<Long>>) JSON.parse(couponCondition.getFcategoryId());
+                            List<Long> flabelIds_coupon = (List<Long>) JSON.parse(couponCondition.getFlabelId());
+
+                            //skuid反推的条件
+                            Long brandId = skuCondition.get("brandId");
+                            Long categoryId1 = skuCondition.get("categoryId1");
+                            Long categoryId2 = skuCondition.get("categoryId2");
+                            Long categoryId3 = skuCondition.get("categoryId3");
+                            Long labelId = skuCondition.get("labelId");
+
+                            if (!fbrandIds_coupon.contains(brandId)) {
+                                if (null != fcategoryIds_coupon.get(1) && fcategoryIds_coupon.get(1).contains(categoryId1)) {
+                                    if (null != fcategoryIds_coupon.get(2) && fcategoryIds_coupon.get(1).contains(categoryId2)) {
+                                        if (null != fcategoryIds_coupon.get(3) && fcategoryIds_coupon.get(1).contains(categoryId3)) {
+                                            if (flabelIds_coupon.contains(labelId)) {
+                                                result.add(dozerMapper.map(coupon, CouponVo.class));
+                                                continue;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        this.dealAmount(result);
+        return result;
+    }
+
+    private Result<Integer> getCouponSkuCount(Long fcouponId, Long fskuId) {
+        Result<Integer> countCouponSku = couponApplicableSkuApi.countByCriteria(Criteria.of(CouponApplicableSku.class)
+                .andEqualTo(CouponApplicableSku::getFcouponId, fcouponId)
+                .andEqualTo(CouponApplicableSku::getFskuId, fskuId));
+        return countCouponSku;
+    }
+
+    private Result<CouponApplicableSkuCondition> getCouponSkuAble(Long fcouponId) {
+        Result<CouponApplicableSkuCondition> skuConditionRes = couponApplicableSkuConditionApi.queryOneByCriteria(Criteria.of(CouponApplicableSkuCondition.class)
+                .andEqualTo(CouponApplicableSkuCondition::getFcouponId, fcouponId)
+                .fields(CouponApplicableSkuCondition::getFbrandId,
+                        CouponApplicableSkuCondition::getFcategoryId,
+                        CouponApplicableSkuCondition::getFlabelId));
+        return skuConditionRes;
+    }
+
+    private Map<String, Long> setSkuCondition(Map<String, Long> skuCondition, Long fskuId) {
+        if (null == skuCondition.get("brandId")) {
+            Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
+                    .andEqualTo(GoodsSku::getFskuId, fskuId)
+                    .fields(GoodsSku::getFbrandId, GoodsSku::getFcategoryId1, GoodsSku::getFcategoryId2, GoodsSku::getFcategoryId3, GoodsSku::getFlabelId));
+            GoodsSku goodsSku = goodsSkuResult.getData();
+            if (goodsSkuResult.isSuccess() && null != goodsSku) {
+                skuCondition.put("brandId", goodsSku.getFbrandId());
+                skuCondition.put("categoryId1", goodsSku.getFcategoryId1());
+                skuCondition.put("categoryId2", goodsSku.getFcategoryId2());
+                skuCondition.put("categoryId3", goodsSku.getFcategoryId3());
+                skuCondition.put("labelId", goodsSku.getFlabelId());
+            }
+        }
+        return skuCondition;
+    }
+
+    private List<CouponVo> dealAmount (List<CouponVo> result) {
+        for (CouponVo couponMap : result) {
+            couponMap.setFthresholdAmount(PriceUtil.toYuan(couponMap.getFthresholdAmount()));
+            //优惠券类型，1满减券、2折扣券
+            if (couponMap.getFcouponType().intValue() == 1) {
+                couponMap.setFdeductionValue(PriceUtil.toYuan(couponMap.getFdeductionValue()));
+            } else {
+                couponMap.setFdeductionValue(couponMap.getFdeductionValue().divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP));
+            }
+        }
+        return result;
     }
 
     @Override
@@ -929,7 +1140,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             return result;
         }
         StringBuffer resBf = new StringBuffer();
-        if (!StringUtils.isEmpty(conditionData.getFtradeCode())) {
+        if (!StringUtils.isEmpty(conditionData.getFtradeName())) {
             Result<GoodsTradeInfo> tradeInfoResult = goodsTradeInfoApi.queryOneByCriteria(Criteria.of(GoodsTradeInfo.class)
                     .andEqualTo(GoodsTradeInfo::getFtradeId, conditionData.getFtradeCode())
                     .fields(GoodsTradeInfo::getFtradeName));
@@ -938,7 +1149,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             }
         }
         if (!StringUtils.isEmpty(conditionData.getFcategoryId())) {
-            Map<Integer, List<Long>> categoryIds = (Map<Integer, List<Long>>)JSON.parse(conditionData.getFcategoryId());
+            Map<Integer, List<Long>> categoryIds = (Map<Integer, List<Long>>) JSON.parse(conditionData.getFcategoryId());
             List<Long> threeCategoryId = categoryIds.get(3);
             if (null != threeCategoryId) {
                 Result<List<GoodsCategory>> categoryResult = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class)
@@ -951,7 +1162,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             }
         }
         if (!StringUtils.isEmpty(conditionData.getFbrandId())) {
-            List<Long> brandIds = (List<Long>)JSON.parse(conditionData.getFbrandId());
+            List<Long> brandIds = (List<Long>) JSON.parse(conditionData.getFbrandId());
             Result<List<GoodsBrand>> brandResult = goodsBrandApi.queryByCriteria(Criteria.of(GoodsBrand.class).andIn(GoodsBrand::getFbrandId, brandIds).fields(GoodsBrand::getFbrandName));
             List<GoodsBrand> brandData = brandResult.getData();
             if (brandResult.isSuccess() && null != brandData) {
@@ -990,7 +1201,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         if (!couponResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        if (countResult.getData().equals(couponResult.getData().getFperLimit())) {
+        if (null != countResult.getData() && countResult.getData().equals(couponResult.getData().getFperLimit())) {
             Result.failure(MallExceptionCode.COUPON_IS_MAX);
         }
         ReceiveCouponDto receiveCouponDto = new ReceiveCouponDto();
@@ -1021,6 +1232,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             couponBindUser.setFcouponId(fcouponId);
             couponBindUser.setFuid(fuid);
             couponBindUser.setFcreateTime(new Date());
+            couponBindUser.setFisReceived(1);
             Result<Integer> insertBindResult = couponBindUserApi.create(couponBindUser);
             if (!insertBindResult.isSuccess()) {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);

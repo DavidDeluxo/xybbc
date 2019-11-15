@@ -10,7 +10,7 @@ import java.util.List;
 
 @ApiModel("商品详情优惠券--点击")
 @Data
-public class GoodsDetailCoupon implements Serializable {
+public class GoodsDetailCouponVo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
