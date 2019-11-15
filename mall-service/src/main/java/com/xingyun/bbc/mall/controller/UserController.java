@@ -175,7 +175,7 @@ public class UserController {
             ReceiveCouponDto receiveCouponDto = new ReceiveCouponDto();
             receiveCouponDto.setFcouponId(couponId);
             receiveCouponDto.setFuid(dto.getFuid());
-//            result = goodDetailService.receiveCoupon(receiveCouponDto);
+            result = goodDetailService.receiveCoupon(receiveCouponDto);
         }
         return result;
     }

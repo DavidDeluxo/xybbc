@@ -2,6 +2,7 @@ package com.xingyun.bbc.mall.controller;
 
 
 import com.xingyun.bbc.core.utils.Result;
+
 import com.xingyun.bbc.mall.model.dto.*;
 import com.xingyun.bbc.mall.model.vo.CityRegionVo;
 import com.xingyun.bbc.mall.model.vo.PageVo;
@@ -69,7 +70,5 @@ public class UserAddressController {
     public Result<List<CityRegionVo>> getCityRegionLis(@RequestBody CityRegionDto cityRegionDto) {
         return userAddressService.getCityRegionLis(cityRegionDto);
     }
-
-
 
 }

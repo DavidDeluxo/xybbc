@@ -16,7 +16,10 @@ import com.xingyun.bbc.core.user.po.*;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.core.utils.StringUtil;
 import com.xingyun.bbc.mall.base.enums.MallResultStatus;
-import com.xingyun.bbc.mall.base.utils.*;
+import com.xingyun.bbc.mall.base.utils.EncryptUtils;
+import com.xingyun.bbc.mall.base.utils.MD5Util;
+import com.xingyun.bbc.mall.base.utils.PriceUtil;
+import com.xingyun.bbc.mall.base.utils.RandomUtils;
 import com.xingyun.bbc.mall.common.constans.MallRedisConstant;
 import com.xingyun.bbc.mall.common.ensure.Ensure;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
@@ -308,7 +311,7 @@ public class WalletServiceImpl implements WalletService {
 
         if (StringUtil.isBlank(passWord)) throw new BizException(MallResultStatus.WITHDRAW_PASSWORD_ERROR);
 
-        passWord = Md5Utils.toMd5(passWord);
+        passWord = MD5Util.MD5EncodeUtf8(passWord);
 
         if (!passWord.equals(user.getFwithdrawPasswd()))
             throw new BizException(MallResultStatus.WITHDRAW_PASSWORD_ERROR);

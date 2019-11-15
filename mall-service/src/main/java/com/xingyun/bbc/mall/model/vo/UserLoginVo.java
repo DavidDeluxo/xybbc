@@ -65,4 +65,5 @@ public class UserLoginVo implements Serializable {
 
     @ApiModelProperty("注册领取的优惠券数量")
     private Integer couponRegisterNum;
+
 }
