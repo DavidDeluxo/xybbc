@@ -33,5 +33,15 @@ public interface ReceiveCenterService {
      */
     Result<List<ReceiveCenterCoupon>> getCoupon(CouponQueryDto couponQueryDto);
 
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 领券中心领取优惠券
+     * @Param: receiveCouponDto
+     * @return: Result                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
+     * @date 2019/11/12 13:49
+     */
+    Result addReceiveCoupon(Long fcouponId, Long fuid);
+
 
 }
