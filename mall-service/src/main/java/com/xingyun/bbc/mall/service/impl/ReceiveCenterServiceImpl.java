@@ -242,14 +242,10 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
     public Result receiveCenterCoupon(ReceiveCouponDto receiveCouponDto) {
         Long fcouponId = receiveCouponDto.getFcouponId();
         Long fuid = receiveCouponDto.getFuid();
-        String fcouponCode = receiveCouponDto.getFcouponCode();
         if (null == fcouponId || null == fuid) {
             throw new BizException(MallExceptionCode.PARAM_ERROR);
         }
         String lockKey = StringUtils.join(Lists.newArrayList(MallConstants.MALL_RECEIVE_COUPON, fcouponId, fuid), ":");
-        if (null != fcouponCode) {
-            lockKey = StringUtils.join(Lists.newArrayList(MallConstants.MALL_RECEIVE_COUPON, fcouponId, fuid, fcouponCode), ":");
-        }
         String lockValue = RandomUtils.getUUID();
         try {
             //绑定用户和优惠券关系
@@ -268,7 +264,6 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
             couponReleaseDto.setCouponScene(CouponScene.PAGE_RECEIVE);
             couponReleaseDto.setCouponId(fcouponId);
             couponReleaseDto.setUserId(fuid);
-            couponReleaseDto.setCouponCode(fcouponCode);
             couponReleaseDto.setAlreadyReceived(true);
             couponReleaseDto.setDeltaValue(-1);
             Result updateReleaseResult = couponProviderApi.updateReleaseQty(couponReleaseDto);
