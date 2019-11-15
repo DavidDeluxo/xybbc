@@ -106,7 +106,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         couponQueryDto.setUserId(fuid);
         List<Integer> list = new ArrayList<>();
         list.add(8);
-        couponQueryDto.setCouponTypes(list);
+        couponQueryDto.setReleaseTypes(list);
         Result<List<CouponQueryVo>> couponQueryVoResult = couponProviderApi.queryByUserId(couponQueryDto);
         if (!couponQueryVoResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -178,34 +178,36 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         List<Integer> list = new ArrayList<>();
         //查出发放类型为2：页面领取的数据
         list.add(2);
-        couponQueryDto.setCouponTypes(list);
+        couponQueryDto.setReleaseTypes(list);
         Result<List<CouponQueryVo>> couponQueryVos = couponProviderApi.queryByUserId(couponQueryDto);
         List<ReceiveCenterCouponVo> receiveCenterCouponVoList = new ArrayList<>();
-        for (CouponQueryVo couponQueryVo : couponQueryVos.getData()) {
-            //查询已经领到的券张数
-            Result<Integer> countResult = couponReceiveApi.countByCriteria(Criteria.of(CouponReceive.class)
-                    .andEqualTo(CouponReceive::getFuid, couponQueryDto.getUserId())
-                    .andEqualTo(CouponReceive::getFcouponId, couponQueryVo.getFcouponId()));
-            if (!countResult.isSuccess()) {
-                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-            }
-            //当领券上限未达到限领次数时
-            if (countResult.getData() < couponQueryVo.getFperLimit()) {
-                //封装返回对象
-                ReceiveCenterCouponVo receiveCenterCouponVo = new ReceiveCenterCouponVo();
-                receiveCenterCouponVo.setFcouponId(couponQueryVo.getFcouponId());
-                receiveCenterCouponVo.setFcouponName(couponQueryVo.getFcouponName());
-                receiveCenterCouponVo.setFcouponType(couponQueryVo.getFcouponType());
-                receiveCenterCouponVo.setFdeductionValue(BigDecimal.valueOf(couponQueryVo.getFdeductionValue()));
-                receiveCenterCouponVo.setFthresholdAmount(BigDecimal.valueOf(couponQueryVo.getFthresholdAmount()));
-                receiveCenterCouponVo.setFvalidityEnd(couponQueryVo.getFvalidityEnd());
-                receiveCenterCouponVo.setFvalidityStart(couponQueryVo.getFvalidityStart());
-                receiveCenterCouponVo.setNowDate(new Date());
-                receiveCenterCouponVo.setReceiveNum(Long.valueOf(countResult.getData()));
-                receiveCenterCouponVo.setFperLimit(couponQueryVo.getFperLimit());
-                receiveCenterCouponVo.setFvalidityType(couponQueryVo.getFvalidityType());
-                receiveCenterCouponVo.setFvalidityDays(couponQueryVo.getFvalidityDays());
-                receiveCenterCouponVoList.add(receiveCenterCouponVo);
+        if(CollectionUtils.isNotEmpty(couponQueryVos.getData())){
+            for (CouponQueryVo couponQueryVo : couponQueryVos.getData()) {
+                //查询已经领到的券张数
+                Result<Integer> countResult = couponReceiveApi.countByCriteria(Criteria.of(CouponReceive.class)
+                        .andEqualTo(CouponReceive::getFuid, couponQueryDto.getUserId())
+                        .andEqualTo(CouponReceive::getFcouponId, couponQueryVo.getFcouponId()));
+                if (!countResult.isSuccess()) {
+                    throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+                }
+                //当领券上限未达到限领次数时
+                if (countResult.getData() < couponQueryVo.getFperLimit()) {
+                    //封装返回对象
+                    ReceiveCenterCouponVo receiveCenterCouponVo = new ReceiveCenterCouponVo();
+                    receiveCenterCouponVo.setFcouponId(couponQueryVo.getFcouponId());
+                    receiveCenterCouponVo.setFcouponName(couponQueryVo.getFcouponName());
+                    receiveCenterCouponVo.setFcouponType(couponQueryVo.getFcouponType());
+                    receiveCenterCouponVo.setFdeductionValue(BigDecimal.valueOf(couponQueryVo.getFdeductionValue()));
+                    receiveCenterCouponVo.setFthresholdAmount(BigDecimal.valueOf(couponQueryVo.getFthresholdAmount()));
+                    receiveCenterCouponVo.setFvalidityEnd(couponQueryVo.getFvalidityEnd());
+                    receiveCenterCouponVo.setFvalidityStart(couponQueryVo.getFvalidityStart());
+                    receiveCenterCouponVo.setNowDate(new Date());
+                    receiveCenterCouponVo.setReceiveNum(Long.valueOf(countResult.getData()));
+                    receiveCenterCouponVo.setFperLimit(couponQueryVo.getFperLimit());
+                    receiveCenterCouponVo.setFvalidityType(couponQueryVo.getFvalidityType());
+                    receiveCenterCouponVo.setFvalidityDays(couponQueryVo.getFvalidityDays());
+                    receiveCenterCouponVoList.add(receiveCenterCouponVo);
+                }
             }
         }
         return Result.success(receiveCenterCouponVoList);
@@ -221,6 +223,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
      * @date 2019/11/12 13:49
      */
     @Override
+    @GlobalTransactional
     public Result addReceiveCoupon(Long fcouponId, Long fuid) {
         if (null == fcouponId || null == fuid) {
             throw new BizException(MallExceptionCode.PARAM_ERROR);
@@ -236,7 +239,6 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
     }
 
 
-    @GlobalTransactional
     public Result receiveCenterCoupon(ReceiveCouponDto receiveCouponDto) {
         Long fcouponId = receiveCouponDto.getFcouponId();
         Long fuid = receiveCouponDto.getFuid();
@@ -256,6 +258,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
             couponBindUser.setFuid(fuid);
             couponBindUser.setFcreateTime(new Date());
             couponBindUser.setFcouponId(fcouponId);
+            couponBindUser.setFisReceived(1);
             Result<Integer> insertBindResult = couponBindUserApi.create(couponBindUser);
             if (!insertBindResult.isSuccess()) {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
