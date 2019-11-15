@@ -1132,42 +1132,22 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         //贸易类型--三级分类--品牌
         Result<CouponApplicableSkuCondition> conditionResult = couponApplicableSkuConditionApi.queryOneByCriteria(Criteria.of(CouponApplicableSkuCondition.class)
                 .andEqualTo(CouponApplicableSkuCondition::getFcouponId, fcouponId)
-                .fields(CouponApplicableSkuCondition::getFbrandId,
-                        CouponApplicableSkuCondition::getFcategoryId,
-                        CouponApplicableSkuCondition::getFtradeCode));
+                .fields(CouponApplicableSkuCondition::getFbrandName,
+                        CouponApplicableSkuCondition::getFcategoryName,
+                        CouponApplicableSkuCondition::getFtradeName));
         CouponApplicableSkuCondition conditionData = conditionResult.getData();
         if (!conditionResult.isSuccess() || null == conditionData) {
             return result;
         }
         StringBuffer resBf = new StringBuffer();
         if (!StringUtils.isEmpty(conditionData.getFtradeName())) {
-            Result<GoodsTradeInfo> tradeInfoResult = goodsTradeInfoApi.queryOneByCriteria(Criteria.of(GoodsTradeInfo.class)
-                    .andEqualTo(GoodsTradeInfo::getFtradeId, conditionData.getFtradeCode())
-                    .fields(GoodsTradeInfo::getFtradeName));
-            if (tradeInfoResult.isSuccess() && null != tradeInfoResult.getData()) {
-                resBf.append("贸易类型：").append(tradeInfoResult.getData().getFtradeName()).append("\n");
-            }
+            resBf.append("贸易类型：").append(conditionData.getFtradeName()).append("\n");
         }
-        if (!StringUtils.isEmpty(conditionData.getFcategoryId())) {
-            Map<Integer, List<Long>> categoryIds = (Map<Integer, List<Long>>) JSON.parse(conditionData.getFcategoryId());
-            List<Long> threeCategoryId = categoryIds.get(3);
-            if (null != threeCategoryId) {
-                Result<List<GoodsCategory>> categoryResult = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class)
-                        .andIn(GoodsCategory::getFcategoryId, threeCategoryId)
-                        .fields(GoodsCategory::getFcategoryName));
-                List<GoodsCategory> categoryData = categoryResult.getData();
-                if (categoryResult.isSuccess() && null != categoryData) {
-                    resBf.append("品类：").append(categoryData.stream().map(GoodsCategory::getFcategoryName).collect(Collectors.joining("、"))).append("\n");
-                }
-            }
+        if (!StringUtils.isEmpty(conditionData.getFcategoryName())) {
+            resBf.append("品类：").append(conditionData.getFcategoryName()).append("\n");
         }
-        if (!StringUtils.isEmpty(conditionData.getFbrandId())) {
-            List<Long> brandIds = (List<Long>) JSON.parse(conditionData.getFbrandId());
-            Result<List<GoodsBrand>> brandResult = goodsBrandApi.queryByCriteria(Criteria.of(GoodsBrand.class).andIn(GoodsBrand::getFbrandId, brandIds).fields(GoodsBrand::getFbrandName));
-            List<GoodsBrand> brandData = brandResult.getData();
-            if (brandResult.isSuccess() && null != brandData) {
-                resBf.append("品牌：").append(brandData.stream().map(GoodsBrand::getFbrandName).collect(Collectors.joining("、"))).append("\n");
-            }
+        if (!StringUtils.isEmpty(conditionData.getFbrandName())) {
+            resBf.append("品牌：").append(conditionData.getFbrandName()).append("\n");
         }
         result = resBf.toString();
         return result;
