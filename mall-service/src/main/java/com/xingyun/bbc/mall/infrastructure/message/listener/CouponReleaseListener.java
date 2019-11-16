@@ -19,11 +19,11 @@ public class CouponReleaseListener {
     @StreamListener(CouponChannel.COUPON_RELEASE_INPUT)
     public void consumeCouponReleaseMessage(Coupon coupon){
         try {
-            log.info("开始消费发布优惠券消息，message={}", JSON.toJSONString(coupon));
+            log.info("寮�濮嬫秷璐瑰彂甯冧紭鎯犲埜淇℃伅message={}", JSON.toJSONString(coupon));
             goodsService.updateEsSkuWithCouponInfo(coupon);
-            log.info("消费领取优惠券消息成功，message={}", JSON.toJSONString(coupon));
+            log.info("娑堣垂鍙戝竷浼樻儬鍒镐俊鎭垚鍔焟essage={}", JSON.toJSONString(coupon));
         } catch (Throwable e) {
-            log.error("消费领取优惠券消息失败，message={}", JSON.toJSONString(coupon), e);
+            log.error("娑堣垂鍙戝竷浼樻儬鍒镐俊鎭け璐essage={}", JSON.toJSONString(coupon), e);
         }
     }
 
