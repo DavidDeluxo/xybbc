@@ -2,6 +2,7 @@ package com.xingyun.bbc.mall.controller;
 
 
 import com.alibaba.fastjson.JSON;
+import com.xingyun.bbc.core.market.po.Coupon;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.JwtParser;
 import com.xingyun.bbc.mall.model.dto.SearchItemDto;
@@ -72,6 +73,15 @@ public class GoodsController {
     @PostMapping("/via/queryHotSearch")
     public Result<List<String>> queryHotSearch(){
         return goodsService.queryHotSearch();
+    }
+
+    @ApiOperation(value = "优惠券更新测试")
+    @PostMapping("/via/updateCouponList")
+    public Result<Boolean> updateCouponList(@RequestParam Long fcouponId){
+        Coupon param = new Coupon();
+        param.setFcouponId(fcouponId);
+        goodsService.updateEsSkuWithCouponInfo(param);
+        return Result.success(true);
     }
 
 

@@ -21,6 +21,7 @@ dependencies {
     compile("org.springframework.cloud:spring-cloud-starter-openfeign")
     compile("org.springframework.cloud:spring-cloud-starter-sleuth")
     compile group: 'org.springframework.cloud', name: 'spring-cloud-alibaba-seata', version: '0.9.1.BUILD-SNAPSHOT'
+    compile("org.springframework.cloud:spring-cloud-stream-binder-rabbit")
     compile group: 'joda-time', name: 'joda-time', version: '2.10.1'
     compile('io.seata:seata-all:0.7.1')
     annotationProcessor 'org.projectlombok:lombok:1.18.8'
@@ -54,6 +55,7 @@ dependencies {
     compile group: 'cn.hutool', name: 'hutool-all', version: '4.1.1'
     compile group: 'com.fasterxml.uuid', name: 'java-uuid-generator', version: '3.2.0'
     compile group: 'redis.clients', name: 'jedis', version: '2.9.0'
+    compile group: 'com.xingyun.bbc', name: 'xybbc-core-market-api', version: '1.0.21'
     compile project(':mall-common-elasticsearch')
 }
 

@@ -7,6 +7,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.DateUtils;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.MultiGetItemResponse;
+import org.elasticsearch.action.get.MultiGetRequest;
+import org.elasticsearch.action.get.MultiGetResponse;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
@@ -20,11 +25,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
-import org.elasticsearch.search.aggregations.bucket.nested.Nested;
-import org.elasticsearch.search.aggregations.bucket.terms.Terms;
-import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.search.sort.SortBuilder;
@@ -289,6 +290,41 @@ public class EsManager {
         }
         BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
         return bulkResponse;
+    }
+
+    public BulkResponse indexInBulk(Map<String, Map<String,Object>> multiSourceMap) throws Exception{
+        if(MapUtils.isEmpty(multiSourceMap)){
+            throw new Exception("sourceMap cannot be empty!");
+        }
+        BulkRequest bulkRequest = new BulkRequest();
+        multiSourceMap.forEach((key, value)->{
+            IndexRequest indexRequest = new IndexRequest(properties.getIndex(), properties.getType(),key);
+            indexRequest.source(value);
+            bulkRequest.add(indexRequest);
+        });
+        BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+        return bulkResponse;
+    }
+
+
+    public List<Map<String, Object>> getInBulk(List<String> documentIds) throws Exception{
+        List<Map<String, Object>> resultList = new LinkedList<>();
+        if(CollectionUtils.isEmpty(documentIds)){
+            return resultList;
+        }
+        MultiGetRequest multiGetRequest = new MultiGetRequest();
+        for(String documentId : documentIds){
+            multiGetRequest.add(properties.getIndex(), properties.getType(),documentId);
+        }
+        MultiGetResponse multiGetResponse = client.mget(multiGetRequest,RequestOptions.DEFAULT);
+        for(MultiGetItemResponse itemResponse : multiGetResponse){
+            if(!itemResponse.isFailed()){
+                GetResponse getResponse = itemResponse.getResponse();
+                Map<String, Object> sourceMap = getResponse.getSourceAsMap();
+                resultList.add(sourceMap);
+            }
+        }
+        return resultList;
     }
 
     public EsSettingsProperties getProperties() {

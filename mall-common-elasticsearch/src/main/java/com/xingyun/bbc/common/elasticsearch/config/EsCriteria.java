@@ -2,6 +2,7 @@ package com.xingyun.bbc.common.elasticsearch.config;
 
 
 import com.xingyun.bbc.common.elasticsearch.config.autobuild.EsMark;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.Tuple;
@@ -36,6 +37,8 @@ public class EsCriteria {
     public static final String BOOST_SEPERATOR = "^";
     public static final String BOOST_SEPERATOR_REGEX = "\\^";
     private static final String UPDATE_SCRIPT_COMPONENT = "ctx._source.? = params.?";
+//    private static final String UPDATE_SCRIPT_ARRAY_APPEND = "if (!ctx._source.?.contains(params.?)){ctx._source.?.add(params.?)}";
+    private static final String UPDATE_SCRIPT_ARRAY_APPEND = "ctx._source.?.add(params.?)";
     private static final String UPDATE_SCRIPT_PLACEHOLDER = "?";
 
     private BoolQueryBuilder filterBuilder = QueryBuilders.boolQuery();
@@ -521,8 +524,24 @@ public class EsCriteria {
         return this;
     }
 
+
+    public EsCriteria addUpdateRequest(String documentId, Map<String, Object> parameters){
+        if(StringUtils.isEmpty(documentId) || MapUtils.isEmpty(parameters)){
+            return this;
+        }
+        for (Entry<String, Object> entry : parameters.entrySet()) {
+            Map<String, Object> param = new HashMap<>(2);
+            param.put(entry.getKey(), entry.getValue());
+            Script inline = new Script(ScriptType.INLINE, "painless",
+                    getScript_singleFieldUpdate(entry), param);
+            Tuple<String, Script> tuple = new Tuple<String, Script>(documentId, inline);
+            updateScripts.add(tuple);
+        }
+        return this;
+    }
+
     private String getScript_singleFieldUpdate(Entry<String, Object> fieldValuePair) {
-        String script = StringUtils.replace(UPDATE_SCRIPT_COMPONENT, UPDATE_SCRIPT_PLACEHOLDER, fieldValuePair.getKey());
+        String script = StringUtils.replace(UPDATE_SCRIPT_ARRAY_APPEND, UPDATE_SCRIPT_PLACEHOLDER, fieldValuePair.getKey());
         return script;
     }
 
