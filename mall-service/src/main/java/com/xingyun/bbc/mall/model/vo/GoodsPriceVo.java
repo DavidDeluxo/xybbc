@@ -19,6 +19,12 @@ public class GoodsPriceVo implements Serializable {
     @ApiModelProperty(value = "结尾价格")
     private BigDecimal priceEnd;
 
+    @ApiModelProperty(value = "税费起始价格")
+    private BigDecimal taxStart;
+
+    @ApiModelProperty(value = "税费结尾价格")
+    private BigDecimal taxEnd;
+
     @ApiModelProperty(value = "运费")
     private BigDecimal freightPrice;
 

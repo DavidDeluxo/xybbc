@@ -3,7 +3,7 @@ package com.xingyun.bbc.mall.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mall.model.dto.GoodsDetailDto;
+import com.xingyun.bbc.mall.model.dto.GoodsDetailMallDto;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.GoodDetailService;
 import io.swagger.annotations.Api;
@@ -57,26 +57,26 @@ public class GoodsDetailController {
 
     @ApiOperation(value = "获取价格", httpMethod = "POST")
     @PostMapping("/getGoodPrice")
-    public Result<GoodsPriceVo> getGoodPrice(@RequestBody  GoodsDetailDto goodsDetailDto, HttpServletRequest request){
+    public Result<GoodsPriceVo> getGoodPrice(@RequestBody GoodsDetailMallDto goodsDetailMallDto, HttpServletRequest request){
         Long xyid = Long.parseLong(request.getHeader("xyid"));
-        goodsDetailDto.setFuid(xyid);
-//      goodsDetailDto.setFuid(1l);
-        logger.info("获取价格 {}", JSON.toJSONString(goodsDetailDto));
-        return goodDetailService.getGoodPrice(goodsDetailDto);
+        goodsDetailMallDto.setFuid(xyid);
+//      goodsDetailMallDto.setFuid(1l);
+        logger.info("获取价格 {}", JSON.toJSONString(goodsDetailMallDto));
+        return goodDetailService.getGoodPrice(goodsDetailMallDto);
     }
 
     @ApiOperation(value = "获取库存", httpMethod = "POST")
     @PostMapping("/via/getGoodStock")
-    public Result<GoodStockSellVo> getGoodStock(@RequestBody GoodsDetailDto goodsDetailDto){
-        logger.info("获取库存 {}", JSON.toJSONString(goodsDetailDto));
-        return goodDetailService.getGoodStock(goodsDetailDto);
+    public Result<GoodStockSellVo> getGoodStock(@RequestBody GoodsDetailMallDto goodsDetailMallDto){
+        logger.info("获取库存 {}", JSON.toJSONString(goodsDetailMallDto));
+        return goodDetailService.getGoodStock(goodsDetailMallDto);
     }
 
     @ApiOperation(value = "获取销量", httpMethod = "POST")
     @PostMapping("/via/getGoodSell")
-    public Result<GoodStockSellVo> getGoodSell(@RequestBody GoodsDetailDto goodsDetailDto){
-        logger.info("获取销量 {}", JSON.toJSONString(goodsDetailDto));
-        return goodDetailService.getGoodSell(goodsDetailDto);
+    public Result<GoodStockSellVo> getGoodSell(@RequestBody GoodsDetailMallDto goodsDetailMallDto){
+        logger.info("获取销量 {}", JSON.toJSONString(goodsDetailMallDto));
+        return goodDetailService.getGoodSell(goodsDetailMallDto);
     }
 
     @ApiOperation(value = "获取是否加入常购清单", httpMethod = "GET")
@@ -97,7 +97,7 @@ public class GoodsDetailController {
 
     @ApiOperation(value = "商品详情查询可领取优惠券--点击", httpMethod = "GET")
     @GetMapping("/getSkuUserCoupon")
-    public Result<GoodsDetailCoupon> getSkuUserCoupon(@RequestParam Long fskuId, HttpServletRequest request){
+    public Result<GoodsDetailCouponVo> getSkuUserCoupon(@RequestParam Long fskuId, HttpServletRequest request){
         Long xyid = Long.parseLong(request.getHeader("xyid"));
         logger.info("商品详情查询可领取优惠券--点击 fskuId {} fuid {}", fskuId, xyid);
         return goodDetailService.getSkuUserCoupon(fskuId, xyid);

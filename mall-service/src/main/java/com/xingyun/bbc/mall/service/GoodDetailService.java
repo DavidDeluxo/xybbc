@@ -1,7 +1,7 @@
 package com.xingyun.bbc.mall.service;
 
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mall.model.dto.GoodsDetailDto;
+import com.xingyun.bbc.mall.model.dto.GoodsDetailMallDto;
 import com.xingyun.bbc.mall.model.dto.ReceiveCouponDto;
 import com.xingyun.bbc.mall.model.vo.*;
 
@@ -29,13 +29,13 @@ public interface GoodDetailService {
 //    Result<List<GoodsSkuBatchPackageVo>> getSkuBatchPackageSpecifi(Long fskuBatchId);
 
     //获取价格
-    Result<GoodsPriceVo> getGoodPrice(GoodsDetailDto goodsDetailDto);
+    Result<GoodsPriceVo> getGoodPrice(GoodsDetailMallDto goodsDetailMallDto);
 
     //获取库存
-    Result<GoodStockSellVo> getGoodStock(GoodsDetailDto goodsDetailDto);
+    Result<GoodStockSellVo> getGoodStock(GoodsDetailMallDto goodsDetailMallDto);
 
     //获取销量
-    Result<GoodStockSellVo> getGoodSell(GoodsDetailDto goodsDetailDto);
+    Result<GoodStockSellVo> getGoodSell(GoodsDetailMallDto goodsDetailMallDto);
 
     //查询是否已经加入常购清单
     Result<Integer> getIsRegular(Long fgoodsId, Long fuid);
@@ -44,7 +44,7 @@ public interface GoodDetailService {
     Result<List<CouponVo>> getSkuUserCouponLight(Long fskuId, Long fuid);
 
     //商品详情查询可领取优惠券--点击
-    Result<GoodsDetailCoupon> getSkuUserCoupon(Long fskuId, Long fuid);
+    Result<GoodsDetailCouponVo> getSkuUserCoupon(Long fskuId, Long fuid);
 
     //查询优惠券使用说明
     Result<String> getCouponInstructions (Long fcouponId);
