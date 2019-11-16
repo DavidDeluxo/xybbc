@@ -55,7 +55,7 @@ dependencies {
     compile group: 'cn.hutool', name: 'hutool-all', version: '4.1.1'
     compile group: 'com.fasterxml.uuid', name: 'java-uuid-generator', version: '3.2.0'
     compile group: 'redis.clients', name: 'jedis', version: '2.9.0'
-    compile group: 'com.xingyun.bbc', name: 'xybbc-core-market-api', version: '1.0.21'
+    compile group: 'com.xingyun.bbc', name: 'xybbc-core-market-api', version: '1.0.27'
     compile project(':mall-common-elasticsearch')
 }
 
