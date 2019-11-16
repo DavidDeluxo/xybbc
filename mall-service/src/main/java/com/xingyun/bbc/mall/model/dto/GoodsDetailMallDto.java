@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 @Data
 @ApiModel("商品详情")
@@ -47,6 +48,9 @@ public class GoodsDetailMallDto implements Serializable {
 
     @ApiModelProperty("sku下用户认证类型是否支持折扣")
     private Integer fskuUserDiscount;
+
+    @ApiModelProperty("sku税率")
+    private BigDecimal fskuTaxRate;
 
 
 }
