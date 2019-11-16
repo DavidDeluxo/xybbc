@@ -64,7 +64,8 @@ public class MyCouponServiceImpl implements MyCouponService {
                     .andEqualTo(Coupon::getFcouponId, couponVo.getFcouponId())
                     .fields(Coupon::getFcouponName, Coupon::getFcouponType,
                             Coupon::getFthresholdAmount, Coupon::getFdeductionValue,
-                            Coupon::getFvalidityStart, Coupon::getFvalidityEnd));
+                            Coupon::getFvalidityStart, Coupon::getFvalidityEnd,
+                            Coupon::getFvalidityType, Coupon::getFvalidityDays));
             if (!couponResult.isSuccess()) {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
@@ -79,6 +80,8 @@ public class MyCouponServiceImpl implements MyCouponService {
             couponVo.setFdeductionValue(PriceUtil.toYuan(coupon.getFdeductionValue()));
             couponVo.setFvalidityStart(coupon.getFvalidityStart());
             couponVo.setFvalidityEnd(coupon.getFvalidityEnd());
+            couponVo.setFvalidityType(coupon.getFvalidityType());
+            couponVo.setFvalidityDays(coupon.getFvalidityDays());
         }
         //查询各种优惠券数量
         Integer fuserCouponStatus = myCouponDto.getFuserCouponStatus();

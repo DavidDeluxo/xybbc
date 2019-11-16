@@ -12,27 +12,41 @@ public class GoodsDetailMallDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "fuid")
+    @ApiModelProperty("fuid")
     private Long fuid;
 
-    @ApiModelProperty(value = "关联商品Id")
+    @ApiModelProperty("关联商品Id")
     private Long fgoodsId;
 
-    @ApiModelProperty(value = "商品skuId")
+    @ApiModelProperty("商品skuId")
     private Long fskuId;
 
-    @ApiModelProperty(value = "批次id")
+    @ApiModelProperty("批次id")
     private String fsupplierSkuBatchId;
 
-    @ApiModelProperty(value = "包装规格Id")
+    @ApiModelProperty("包装规格Id")
     private Long fbatchPackageId;
 
-    @ApiModelProperty(value = "购买数量")
+    @ApiModelProperty("购买数量")
     private Long fnum;
 
-    @ApiModelProperty(value = "规格数量")
+    @ApiModelProperty("规格数量")
     private Long fbatchPackageNum;
 
     @ApiModelProperty("市ID")
     private Long fdeliveryCityId;
+
+    @ApiModelProperty("用户认证类型")
+    private Integer foperateType;
+
+    @ApiModelProperty("用户认证状态")
+    private Integer fverifyStatus;
+
+    @ApiModelProperty("sku下是否支持折扣")
+    private Integer fskuDiscount;
+
+    @ApiModelProperty("sku下用户认证类型是否支持折扣")
+    private Integer fskuUserDiscount;
+
+
 }
