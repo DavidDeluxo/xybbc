@@ -136,7 +136,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
      * @version V1.0
      * @Description: 调用远程服务领取优惠券
      * @Param: receiveCouponDto
-     * @return: Boolean                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
+     * @return: Result                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
     @GlobalTransactional
@@ -241,6 +241,14 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
     }
 
 
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 调用远程服务领取优惠券
+     * @Param: receiveCouponDto
+     * @return: Result                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
+     * @date 2019/11/12 13:49
+     */
     public Result receiveCenterCoupon(ReceiveCouponDto receiveCouponDto) {
         Long fcouponId = receiveCouponDto.getFcouponId();
         Long fuid = receiveCouponDto.getFuid();
