@@ -16,7 +16,7 @@ import org.springframework.context.annotation.ComponentScan;
  */
 @SpringCloudApplication
 @EnableFeignClients("com.xingyun.bbc.*")
-@ComponentScan(value = "com.xingyun.bbc.*")
+@ComponentScan("com.xingyun.bbc.*")
 public class MallPcApplication {
 
     public static void main(String[] args) {
