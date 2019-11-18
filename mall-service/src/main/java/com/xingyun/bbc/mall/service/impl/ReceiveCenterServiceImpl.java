@@ -225,12 +225,14 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
     @Override
     @GlobalTransactional
     public Result addReceiveCoupon(Long fcouponId, Long fuid) {
+        //校验参数
         if (null == fcouponId || null == fuid) {
             throw new BizException(MallExceptionCode.PARAM_ERROR);
         }
         ReceiveCouponDto receiveCouponDto = new ReceiveCouponDto();
         receiveCouponDto.setFuid(fuid);
         receiveCouponDto.setFcouponId(fcouponId);
+        //调用聚合服务进行领券操作
         Result result = this.receiveCenterCoupon(receiveCouponDto);
         if (!result.isSuccess()) {
             return result;
