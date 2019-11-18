@@ -50,7 +50,7 @@ public class MyCouponServiceImpl implements MyCouponService {
         if (!countResult.isSuccess()){
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        criteria.fields(CouponReceive::getFcouponId)
+        criteria.fields(CouponReceive::getFcouponId, CouponReceive::getFvalidityStart, CouponReceive::getFvalidityEnd)
                 .page(myCouponDto.getCurrentPage(), myCouponDto.getPageSize())
                 .sortDesc(CouponReceive::getFcreateTime);
         Result<List<CouponReceive>> listResult = couponReceiveApi.queryByCriteria(criteria);
@@ -64,7 +64,6 @@ public class MyCouponServiceImpl implements MyCouponService {
                     .andEqualTo(Coupon::getFcouponId, couponVo.getFcouponId())
                     .fields(Coupon::getFcouponName, Coupon::getFcouponType,
                             Coupon::getFthresholdAmount, Coupon::getFdeductionValue,
-                            Coupon::getFvalidityStart, Coupon::getFvalidityEnd,
                             Coupon::getFvalidityType, Coupon::getFvalidityDays));
             if (!couponResult.isSuccess()) {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -78,8 +77,6 @@ public class MyCouponServiceImpl implements MyCouponService {
                     .divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP);
             couponVo.setFthresholdAmount(fthresholdAmount);
             couponVo.setFdeductionValue(PriceUtil.toYuan(coupon.getFdeductionValue()));
-            couponVo.setFvalidityStart(coupon.getFvalidityStart());
-            couponVo.setFvalidityEnd(coupon.getFvalidityEnd());
             couponVo.setFvalidityType(coupon.getFvalidityType());
             couponVo.setFvalidityDays(coupon.getFvalidityDays());
         }

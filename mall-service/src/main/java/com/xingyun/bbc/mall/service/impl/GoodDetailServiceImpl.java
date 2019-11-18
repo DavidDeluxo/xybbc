@@ -995,9 +995,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         couponQueryDto.setSkuId(fskuId);
         couponQueryDto.setUserId(fuid);
         Result<List<CouponQueryVo>> listResult = couponProviderApi.queryBySkuAndUserId(couponQueryDto);
-        if (!listResult.isSuccess()) {
-            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        }
         List<CouponQueryVo> apiCouponLis = listResult.getData();
         List<CouponVo> convert = new ArrayList<>();
         if (!CollectionUtils.isEmpty(apiCouponLis)) {
