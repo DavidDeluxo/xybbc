@@ -218,7 +218,7 @@ public class GoodsServiceImpl implements GoodsService {
             Ensure.that(couponApplicableSkuResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
             List<CouponApplicableSku> couponApplicableSkus = couponApplicableSkuResult.getData();
             if (CollectionUtil.isNotEmpty(couponApplicableSkus)) {
-                List<Long> skuIds = couponApplicableSkus.stream().map(CouponApplicableSku::getFcouponAssignSkuId).collect(toList());
+                List<Long> skuIds = couponApplicableSkus.stream().map(CouponApplicableSku::getFskuId).collect(toList());
                 List<String> SkuIdString = skuIds.stream().map(skuId -> String.valueOf(skuId)).collect(Collectors.toList());
                 skuIdVo.setFskuIds(SkuIdString);
                 Result<Integer> totalCountResult = couponApplicableSkuApi.countByCriteria(criteria);
