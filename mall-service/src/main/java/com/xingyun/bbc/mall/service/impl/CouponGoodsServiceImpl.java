@@ -96,7 +96,7 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
         } catch (Exception e) {
             log.warn("ES优惠券商品搜索失败!...");
 
-            if (Objects.nonNull(dto.getCouponId())){
+            if (Objects.nonNull(dto.getFcouponId())){
 
                 log.info("----------ES优惠券商品搜索失败!,转SQL查询------------");
                 res = this.queryGoodsListRealTime(dto);
@@ -313,7 +313,7 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
         }
 
         public CouponSkuCondition invoke() {
-            Result<Coupon> couponResult = couponApi.queryById(dto.getCouponId());
+            Result<Coupon> couponResult = couponApi.queryById(dto.getFcouponId());
             Ensure.that(couponResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
 
             if (Objects.isNull(couponResult.getData())) {
@@ -321,7 +321,7 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
                 return this;
             }
 
-            Result<List<CouponApplicableSku>> skuListRes = couponApplicableSkuApi.queryByCriteria(Criteria.of(CouponApplicableSku.class).andEqualTo(CouponApplicableSku::getFcouponId, dto.getCouponId()));
+            Result<List<CouponApplicableSku>> skuListRes = couponApplicableSkuApi.queryByCriteria(Criteria.of(CouponApplicableSku.class).andEqualTo(CouponApplicableSku::getFcouponId, dto.getFcouponId()));
             Ensure.that(skuListRes.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
 
             //skuId
@@ -329,7 +329,7 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
                 dto.setFskuIds(skuListRes.getData().stream().map(CouponApplicableSku::getFskuId).collect(Collectors.toList()));
             }
 
-            Result<List<CouponApplicableSkuCondition>> skuConRes = couponApplicableSkuConditionApi.queryByCriteria(Criteria.of(CouponApplicableSkuCondition.class).andEqualTo(CouponApplicableSkuCondition::getFcouponId, dto.getCouponId()));
+            Result<List<CouponApplicableSkuCondition>> skuConRes = couponApplicableSkuConditionApi.queryByCriteria(Criteria.of(CouponApplicableSkuCondition.class).andEqualTo(CouponApplicableSkuCondition::getFcouponId, dto.getFcouponId()));
             Ensure.that(skuConRes.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
 
             skuConResData = skuConRes.getData();

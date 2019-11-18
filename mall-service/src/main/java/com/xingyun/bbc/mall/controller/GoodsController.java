@@ -45,7 +45,7 @@ public class GoodsController {
         dto.setFuid(infoVo.getFuid());
 
         log.info("查询商品列表,请求参数:{}", JSON.toJSONString(dto));
-        if (Objects.nonNull(dto.getCouponId())) return couponGoodsService.queryGoodsList(dto);
+        if (Objects.nonNull(dto.getFcouponId())) return couponGoodsService.queryGoodsList(dto);
 
         return goodsService.searchSkuList(dto);
     }
@@ -58,7 +58,7 @@ public class GoodsController {
         dto.setFuid(infoVo.getFuid());
 
         log.info("查询筛选信息,请求参数:{}", JSON.toJSONString(dto));
-        if (Objects.nonNull(dto.getCouponId())) couponGoodsService.querySkuFilter(dto);
+        if (Objects.nonNull(dto.getFcouponId())) couponGoodsService.querySkuFilter(dto);
 
         return goodsService.searchSkuFilter(dto);
     }
