@@ -48,13 +48,13 @@ public class IndexController {
     @ApiOperation(value = "查询品牌", httpMethod = "GET")
     @GetMapping(value = "/getBrands")
     public Result<List<BrandVo>> getBrands() {
-        return Result.success();//todo
+        return Result.success(indexService.getBrands());
     }
 
     @ApiOperation(value = "查询分销商数量", httpMethod = "GET")
     @GetMapping(value = "/getUserCount")
-    public Result<Long> getUserCount() {
-        return Result.success();//todo
+    public Result<Integer> getUserCount() {
+        return Result.success(indexService.getUserCount());
     }
 
 }

@@ -1,7 +1,7 @@
 package com.xingyun.bbc.mallpc.service;
 
-import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.vo.index.BannerVo;
+import com.xingyun.bbc.mallpc.model.vo.index.BrandVo;
 import com.xingyun.bbc.mallpc.model.vo.index.SpecialTopicVo;
 
 import java.util.List;
@@ -25,4 +25,16 @@ public interface IndexService {
      * @return
      */
     List<BannerVo> getBanners();
+
+    /**
+     * 首页品牌列表
+     * @return
+     */
+    List<BrandVo> getBrands();
+
+    /**
+     * 查询用户数
+     * @return
+     */
+    Integer getUserCount();
 }

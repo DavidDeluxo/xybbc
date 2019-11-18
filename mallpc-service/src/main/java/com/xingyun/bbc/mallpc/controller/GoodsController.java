@@ -3,7 +3,6 @@ package com.xingyun.bbc.mallpc.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mall.base.utils.JwtParser;
 import com.xingyun.bbc.mallpc.model.dto.search.SearchItemDto;
 import com.xingyun.bbc.mallpc.model.vo.search.SearchFilterVo;
 import com.xingyun.bbc.mallpc.model.vo.search.SearchItemListVo;
@@ -29,8 +28,8 @@ public class GoodsController {
 
     @Autowired
     GoodsService goodsService;
-    @Autowired
-    JwtParser jwtParser;
+//    @Autowired
+//    JwtParser jwtParser;
 
     @ApiOperation("查询商品列表")
     @PostMapping("/skuSearch")

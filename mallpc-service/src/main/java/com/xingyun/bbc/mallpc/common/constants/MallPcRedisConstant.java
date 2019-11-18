@@ -8,5 +8,25 @@ package com.xingyun.bbc.mallpc.common.constants;
  */
 public interface MallPcRedisConstant {
 
+    /**
+     * 默认分布式锁过期时间
+     */
+    long DEFAULT_LOCK_EXPIRING = 30L;
 
+    String KEY_PREFIX = "xybbc_mall_pc:";
+
+    /**
+     * 默认分布式锁value
+     */
+    String DEFAULT_LOCK_VALUE = "";
+
+    /**
+     * 首页用户数
+     */
+    String INDEX_USER_COUNT = KEY_PREFIX+"index_user_count";
+
+    /**
+     * 首页用户数缓存更新分布式锁前缀
+     */
+    String INDEX_USER_COUNT_UPDATE = KEY_PREFIX+"_update";
 }
