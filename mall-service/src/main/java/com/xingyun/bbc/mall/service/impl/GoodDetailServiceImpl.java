@@ -985,6 +985,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
         result.setReceiveCouponLis(alreadyReceiveCoupon.stream().sorted(Comparator.comparing(CouponVo::getFthresholdAmount).reversed()).collect(toList()));
         result.setUnReceiveCouponLis(unReceiceCoupon.stream().sorted(Comparator.comparing(CouponVo::getFthresholdAmount).reversed()).collect(toList()));
+        result.setNowDate(new Date());
         return Result.success(result);
     }
 

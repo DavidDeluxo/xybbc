@@ -245,14 +245,13 @@ public class GoodsServiceImpl implements GoodsService {
         }
         //反选
         if(coupon.getFapplicableSku() == 3){
-
             Criteria<CouponApplicableSku, Object> criteria = Criteria.of(CouponApplicableSku.class)
                     .fields(CouponApplicableSku::getFskuId).andEqualTo(CouponApplicableSku::getFcouponId, fcouponId);
             Result<List<CouponApplicableSku>> couponApplicableSkuResult = couponApplicableSkuApi.queryByCriteria(criteria);
             Ensure.that(couponApplicableSkuResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
             List<CouponApplicableSku> couponApplicableSkus = couponApplicableSkuResult.getData();
             if (CollectionUtil.isNotEmpty(couponApplicableSkus)) {
-                List<Long> skuIds = couponApplicableSkus.stream().map(CouponApplicableSku::getFcouponAssignSkuId).collect(toList());
+                List<Long> skuIds = couponApplicableSkus.stream().map(CouponApplicableSku::getFskuId).collect(toList());
                 Criteria<GoodsSku, Object> skuIdCriteria = Criteria.of(GoodsSku.class).andNotIn(GoodsSku::getFskuId, skuIds);
                 Result<List<GoodsSku>> skuResult = goodsSkuApi.queryByCriteria(skuIdCriteria.fields(GoodsSku::getFskuId).page(pageIndex, pageSize));
                 Ensure.that(skuResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
