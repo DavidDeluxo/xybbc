@@ -56,10 +56,6 @@ public class GoodsController {
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
         dto.setIsLogin(infoVo.getIsLogin());
         dto.setFuid(infoVo.getFuid());
-
-        log.info("查询筛选信息,请求参数:{}", JSON.toJSONString(dto));
-        if (Objects.nonNull(dto.getFcouponId())) couponGoodsService.querySkuFilter(dto);
-
         return goodsService.searchSkuFilter(dto);
     }
 

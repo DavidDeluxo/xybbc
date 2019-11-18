@@ -20,12 +20,6 @@ public interface CouponGoodsService {
      */
     Result<SearchItemListVo<SearchItemVo>> queryGoodsList(SearchItemDto dto);
 
-    /**
-     * 查询筛选信息
-     * @param dto
-     * @return
-     */
-    Result<SearchFilterVo> querySkuFilter(SearchItemDto dto);
 
     /**
      * 根据优惠券条件查询商品-sql

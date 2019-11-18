@@ -36,6 +36,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -52,6 +54,10 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
     @Autowired
     private GoodsService goodsService;
     @Autowired
+    private CouponGoodsApi couponGoodsApi;
+    @Autowired
+    UserApi userApi;
+    @Autowired
     private CouponApi couponApi;
     @Autowired
     private CouponApplicableSkuApi couponApplicableSkuApi;
@@ -62,20 +68,6 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
     @Override
     public Result<SearchItemListVo<SearchItemVo>> queryGoodsList(SearchItemDto dto) {
 
-        CouponSkuCondition couponSkuCondition = new CouponSkuCondition(dto).invoke();
-
-        if (couponSkuCondition.is()) return Result.success(this.getInitListVo(dto));
-
-        List<CouponApplicableSkuCondition> skuConResData = couponSkuCondition.getSkuConResData();
-
-        if (CollectionUtils.isEmpty(skuConResData)) return this.getListVoResult(dto);
-
-        this.buildCategory(dto, skuConResData);
-
-        return this.getListVoResult(dto);
-    }
-
-    private Result<SearchItemListVo<SearchItemVo>> getListVoResult(SearchItemDto dto) {
         Result<SearchItemListVo<SearchItemVo>> res = new Result<>();
         SearchItemListVo<SearchItemVo> pageVo = new SearchItemListVo<>();
         pageVo.setIsLogin(dto.getIsLogin());
@@ -104,6 +96,7 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
 
         }
         return res;
+
     }
 
     private void buildCategory(SearchItemDto dto, List<CouponApplicableSkuCondition> skuConResData) {
@@ -147,31 +140,21 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
     }
 
     @Override
-    public Result<SearchFilterVo> querySkuFilter(SearchItemDto dto) {
+    public Result<SearchItemListVo<SearchItemVo>> queryGoodsListRealTime(SearchItemDto dto) {
         CouponSkuCondition couponSkuCondition = new CouponSkuCondition(dto).invoke();
 
-        if (couponSkuCondition.is()) return Result.success(this.getInitSearchFilterVo());
+        if (couponSkuCondition.is()) return Result.success(this.getInitListVo(dto));
 
         List<CouponApplicableSkuCondition> skuConResData = couponSkuCondition.getSkuConResData();
 
-        if (CollectionUtils.isEmpty(skuConResData)) return goodsService.searchSkuFilter(dto);
+        if (!CollectionUtils.isEmpty(skuConResData)) this.buildCategory(dto, skuConResData);
 
-        this.buildCategory(dto, skuConResData);
-
-        return goodsService.searchSkuFilter(dto);
-    }
-
-    @Autowired
-    private CouponGoodsApi couponGoodsApi;
-
-    @Override
-    public Result<SearchItemListVo<SearchItemVo>> queryGoodsListRealTime(SearchItemDto dto) {
         ItemDto itemDto = new ItemDto();
         BeanUtils.copyProperties(dto, itemDto);
         itemDto.setPageNum(dto.getPageIndex());
-        if (dto.getIsLogin()){
+        if (dto.getIsLogin()) {
             Integer priceType = this.getUserPriceType(dto);
-            itemDto.setFuserTypeId(priceType+"");
+            itemDto.setFuserTypeId(priceType + "");
         }
         Result<Page<ItemVo>> pageResult = couponGoodsApi.queryCouponGoods(itemDto);
 
@@ -184,24 +167,23 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
         data.getResult().forEach(da -> {
             SearchItemVo vo = new SearchItemVo();
             BeanUtils.copyProperties(da, vo);
-            if (Objects.nonNull(vo.getFbatchSellPrice())){
+            if (dto.getIsLogin() && Objects.nonNull(vo.getFbatchSellPrice())) {
                 vo.setFbatchSellPrice(PriceUtil.toYuan(vo.getFbatchSellPrice()));
+            } else {
+                vo.setFbatchSellPrice(BigDecimal.ZERO);
             }
             list.add(vo);
         });
 
         SearchItemListVo<SearchItemVo> itemListVo = new SearchItemListVo<SearchItemVo>();
         itemListVo.setIsLogin(dto.getIsLogin());
-        itemListVo.setCurrentPage(data.getPageNum());
-        itemListVo.setPageSize(data.getPageSize());
+        itemListVo.setCurrentPage(dto.getPageIndex());
+        itemListVo.setPageSize(dto.getPageSize());
         itemListVo.setList(list);
         itemListVo.setTotalCount(list.size());
-        itemListVo.setPageCount(data.getPages());
         return Result.success(itemListVo);
     }
 
-    @Autowired
-    UserApi userApi;
 
     /**
      * 根据用户身份选择价格类型
