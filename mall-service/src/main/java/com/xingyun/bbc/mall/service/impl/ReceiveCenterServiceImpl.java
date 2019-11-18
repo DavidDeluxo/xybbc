@@ -245,6 +245,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         if (null == fcouponId || null == fuid) {
             throw new BizException(MallExceptionCode.PARAM_ERROR);
         }
+        //对唯一的字段添加分布式锁,如果锁已存在,会立刻抛异常
         String lockKey = StringUtils.join(Lists.newArrayList(MallConstants.MALL_RECEIVE_COUPON, fcouponId, fuid), ":");
         String lockValue = RandomUtils.getUUID();
         try {
