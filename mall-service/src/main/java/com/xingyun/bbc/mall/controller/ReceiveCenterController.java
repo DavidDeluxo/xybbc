@@ -41,7 +41,7 @@ public class ReceiveCenterController {
      * @return: Boolean                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
-    @ApiOperation(value = "领券中心领取优惠券", httpMethod = "Post")
+    @ApiOperation(value = "领券中心领取优惠券", httpMethod = "POST")
     @PostMapping("/receiveCoupon")
     public Result<Boolean> receiveCoupon(@RequestBody ReceiveCouponDto receiveCouponDto, HttpServletRequest request){
         Long xyid = Long.parseLong(request.getHeader("xyid"));
@@ -57,7 +57,7 @@ public class ReceiveCenterController {
      * @return: Boolean                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
-    @ApiOperation(value = "券码兑换优惠券", httpMethod = "Post")
+    @ApiOperation(value = "券码兑换优惠券", httpMethod = "POST")
     @PostMapping("/receiveCodeCoupon")
     public Result<Boolean> receiveCodeCoupon(@RequestBody ReceiveCouponDto receiveCouponDto, HttpServletRequest request){
         Long xyid = Long.parseLong(request.getHeader("xyid"));
@@ -73,7 +73,7 @@ public class ReceiveCenterController {
      * @return: List<CouponCenterVo>                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
-    @ApiOperation(value = "查询领券中心优惠券", httpMethod = "Post")
+    @ApiOperation(value = "查询领券中心优惠券", httpMethod = "POST")
     @PostMapping("/getCoupon")
     public Result<List<ReceiveCenterCouponVo>> getCoupon(HttpServletRequest request, @RequestBody CouponQueryDto couponQueryDto){
         Long xyid = Long.parseLong(request.getHeader("xyid"));
