@@ -56,7 +56,7 @@ public class EsManager {
 
 
     /**
-     * Í¨¹ıËÑË÷Ìõ¼ş²éÑ¯ËÑË÷ÒıÇæ
+     * Í¨é€šè¿‡æœç´¢æ¡ä»¶æŸ¥è¯¢æœç´¢å¼•æ“
      *
      * @param criteria
      * @return
@@ -66,22 +66,22 @@ public class EsManager {
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices(properties.getIndex());
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        //ËÑË÷Ìõ¼ş
+        //æœç´¢æ¡ä»¶
         searchSourceBuilder.query(builder);
-        //·ÖÒ³Ìõ¼ş
+        //åˆ†é¡µæ¡ä»¶
         searchSourceBuilder.from(criteria.getStartIndext()).size(criteria.getPageSize());
-        //ÅÅĞòÌõ¼ş
+        //æ’åºæ¡ä»¶
         if (CollectionUtils.isNotEmpty(criteria.getSorts())) {
             List<SortBuilder> sorts = criteria.getSorts();
             for (SortBuilder sortBuilder : sorts) {
                 searchSourceBuilder.sort(sortBuilder);
             }
         }
-        //×Ô¶¨Òå°üº¬×Ö¶ÎÌõ¼ş
+        //è‡ªå®šä¹‰åŒ…å«å­—æ®µæ¡ä»¶
         searchSourceBuilder.fetchSource(criteria.getIncludeFields(), criteria.getExcludeFields());
-        //¾ÛºÏÌõ¼ş
+        //èšåˆæ¡ä»¶
         criteria.getAggBuilders().forEach((Key, value) -> searchSourceBuilder.aggregation(value));
-        //¸ßÁÁÌõ¼ş
+        //é«˜äº®æ¡ä»¶
         searchSourceBuilder.highlighter(criteria.getHighlightBuilder());
         searchRequest.source(searchSourceBuilder);
         SearchResponse sResponse = client.search(searchRequest, RequestOptions.DEFAULT);
@@ -95,7 +95,7 @@ public class EsManager {
 
 
     /**
-     * ÌáÈ¡ËÑË÷½á¹ûÁĞ±í
+     * æå–æœç´¢ç»“æœåˆ—è¡¨
      *
      * @param SearchResponse sResponse
      * @return
@@ -116,7 +116,7 @@ public class EsManager {
     }
 
     /**
-     * ÏÂ»®Ïß×ªÍÕ·å
+     *ä¸‹åˆ’çº¿è½¬é©¼å³°
      *
      * @param resourceMap
      * @return
@@ -141,7 +141,7 @@ public class EsManager {
     }
 
     /**
-     * ÌáÈ¡¸ßÁÁĞÅÏ¢
+     * æå–é«˜äº®ä¿¡æ¯
      *
      * @param hit
      * @return
@@ -182,7 +182,7 @@ public class EsManager {
     }
 
     /**
-     * ÆÕÍ¨²éÑ¯
+     * æ™®é€šæŸ¥è¯¢
      *
      * @param criteria
      * @return
@@ -202,7 +202,7 @@ public class EsManager {
 
 
     /**
-     * ¼ÓÈë´ò·Ö½Å±¾²éÑ¯
+     * åŠ å…¥æ‰“åˆ†è„šæœ¬æŸ¥è¯¢
      * @param criteria
      * @param script
      * @param mode
@@ -210,13 +210,13 @@ public class EsManager {
      */
     public Map<String, Object> functionQueryForResponse(EsCriteria criteria, String script, CombineFunction mode) {
         if(StringUtils.isEmpty(script)){
-            throw new IllegalArgumentException("´ò·Ö½Å±¾²»ÄÜÎª¿Õ");
+            throw new IllegalArgumentException("æ‰“åˆ†è„šæœ¬ä¸èƒ½ä¸ºç©º");
         }
         if(mode == null){
-            throw new IllegalArgumentException("´ò·ÖÄ£Ê½²»ÄÜÎª¿Õ");
+            throw new IllegalArgumentException("æ‰“åˆ†æ¨¡å¼ä¸èƒ½ä¸ºç©º");
         }
         if(criteria == null){
-            throw new IllegalArgumentException("ËÑË÷Ìõ¼ş²»ÄÜÎª¿Õ");
+            throw new IllegalArgumentException("æœç´¢æ¡ä»¶ä¸èƒ½ä¸ºç©º");
         }
 
         Map<String, Object> resultMap = new HashMap<>();
@@ -233,10 +233,10 @@ public class EsManager {
 
 
     /**
-     * ¾ÛºÏ²éÑ¯
+     * èšåˆæŸ¥è¯¢
      *
      * @param criteria
-     * @param includeSource ÊÇ·ñ·µ»ØËÑË÷½á¹û
+     * @param includeSource æ˜¯å¦è¿”å›æœç´¢ç»“æœ
      * @return
      * @throws Exception
      */
@@ -259,7 +259,7 @@ public class EsManager {
     }
 
     /**
-     * ÌáÈ¡¾ÛºÏĞÅÏ¢
+     * æå–èšåˆä¿¡æ¯
      *
      * @param aggregations
      * @return
@@ -274,7 +274,7 @@ public class EsManager {
     }
 
     /**
-     * ÅúÁ¿¸üĞÂËÑË÷ÒıÇæÊı¾İ
+     * æ‰¹é‡æ›´æ–°æœç´¢å¼•æ“æ•°æ®
      *
      * @param criteria
      * @return
