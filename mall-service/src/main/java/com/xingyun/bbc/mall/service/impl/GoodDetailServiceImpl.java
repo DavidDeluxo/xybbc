@@ -1262,21 +1262,26 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         if (null == fcouponId || null == fuid) {
             return Result.failure(MallExceptionCode.PARAM_ERROR);
         }
-        Date now = new Date();
         //查询优惠券--状态（已发布）--类型（页面领取）--剩余数量--有效期结束时间--发放结束时间
         Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
                 .andEqualTo(Coupon::getFcouponId, fcouponId)
                 .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
-                .andEqualTo(Coupon::getFreleaseType, CouponReleaseTypeEnum.PAGE_RECEIVE)
-                .andGreaterThan(Coupon::getFsurplusReleaseQty, 0)
-                .andLessThan(Coupon::getFvalidityEnd, now)
-                .andLessThan(Coupon::getFreleaseTimeEnd, now)
-                .fields(Coupon::getFperLimit));
+                .andEqualTo(Coupon::getFreleaseType, CouponReleaseTypeEnum.PAGE_RECEIVE.getCode())
+                .fields(Coupon::getFperLimit, Coupon::getFsurplusReleaseQty, Coupon::getFvalidityType,
+                        Coupon::getFvalidityEnd, Coupon::getFreleaseTimeEnd));
         if (!couponResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        if (null == couponResult.getData()) {
-            Result.failure(MallExceptionCode.COUPON_IS_INVALID);
+        Coupon coupon = couponResult.getData();
+        if (null == coupon) {
+            return Result.failure(MallExceptionCode.COUPON_IS_NOT_EXIST);
+        }
+        if (coupon.getFsurplusReleaseQty() <= 0) {
+            return Result.failure(MallExceptionCode.COUPON_IS_PAID_OUT);
+        }
+        Date now = new Date();
+        if (coupon.getFvalidityType() == 1 && now.after(coupon.getFvalidityEnd())) {
+            return Result.failure(MallExceptionCode.COUPON_IS_INVALID);
         }
         //查询已经领到的券张数
         Result<Integer> countResult = couponReceiveApi.countByCriteria(Criteria.of(CouponReceive.class)
@@ -1285,8 +1290,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         if (!couponResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        if (null != countResult.getData() && countResult.getData().equals(couponResult.getData().getFperLimit())) {
-            Result.failure(MallExceptionCode.COUPON_IS_MAX);
+        if (null != countResult.getData() && countResult.getData().equals(coupon.getFperLimit())) {
+            return Result.failure(MallExceptionCode.COUPON_IS_MAX);
         }
         ReceiveCouponDto receiveCouponDto = new ReceiveCouponDto();
         receiveCouponDto.setFuid(fuid);
