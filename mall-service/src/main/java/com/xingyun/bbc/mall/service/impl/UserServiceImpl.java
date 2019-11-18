@@ -385,13 +385,16 @@ public class UserServiceImpl implements UserService {
                 .andNotEqualTo(Coupon::getFsurplusReleaseQty,0);
         Result<List<Coupon>> listResult = couponApi.queryByCriteria(couponCriteria);
         if (listResult.isSuccess()) {
-            couponNum = listResult.getData().size();
             for(Coupon coupon: listResult.getData()){
+                Integer fperLimit  = coupon.getFperLimit();
                 CouponReleaseDto couponDto = new CouponReleaseDto();
                 couponDto.setCouponScene(CouponScene.REGISTER);
                 couponDto.setCouponId(coupon.getFcouponId());
                 couponDto.setUserId(fuid);
+                //每人限领张数
+                couponDto.setReceiveQty(fperLimit);
                 couponProviderApi.receive(couponDto);
+                couponNum = couponNum + fperLimit;
             }
         }
         return couponNum;
