@@ -3,6 +3,7 @@ package com.xingyun.bbc.mallpc.controller;
 
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.vo.index.BannerVo;
+import com.xingyun.bbc.mallpc.model.vo.index.BrandVo;
 import com.xingyun.bbc.mallpc.model.vo.index.SpecialTopicVo;
 import com.xingyun.bbc.mallpc.service.IndexService;
 import io.swagger.annotations.Api;
@@ -42,6 +43,18 @@ public class IndexController {
     @GetMapping(value = "/getBanners")
     public Result<List<BannerVo>> getBanners() {
         return Result.success(indexService.getBanners());
+    }
+
+    @ApiOperation(value = "查询品牌", httpMethod = "GET")
+    @GetMapping(value = "/getBrands")
+    public Result<List<BrandVo>> getBrands() {
+        return Result.success();//todo
+    }
+
+    @ApiOperation(value = "查询分销商数量", httpMethod = "GET")
+    @GetMapping(value = "/getUserCount")
+    public Result<Long> getUserCount() {
+        return Result.success();//todo
     }
 
 }
