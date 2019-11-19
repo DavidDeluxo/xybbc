@@ -1,5 +1,7 @@
 package com.xingyun.bbc.mallpc.common.utils;
 
+import com.xingyun.bbc.mallpc.common.ensure.Ensure;
+import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -17,6 +19,17 @@ public class RequestHolder {
 
     public static HttpServletResponse getResponse() {
         return ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getResponse();
+    }
+
+    /**
+     * 获取uID
+     *
+     * @return
+     */
+    public static Long getAdminId() {
+        String adminId = getRequest().getHeader("xyid");
+        Ensure.that(adminId).isNotBlank(MallPcExceptionCode.USER_NOT_LOGGED_IN);
+        return Long.valueOf(adminId);
     }
 
     public static String loginIp() {
