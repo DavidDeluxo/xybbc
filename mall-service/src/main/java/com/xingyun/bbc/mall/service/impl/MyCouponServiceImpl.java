@@ -71,13 +71,13 @@ public class MyCouponServiceImpl implements MyCouponService {
             Coupon coupon = couponResult.getData();
             couponVo.setFcouponName(coupon.getFcouponName());
             couponVo.setFcouponType(coupon.getFcouponType());
-            couponVo.setFthresholdAmount(PriceUtil.toYuan(couponVo.getFthresholdAmount()));
+            couponVo.setFthresholdAmount(PriceUtil.toYuan(coupon.getFthresholdAmount()));
 
             //优惠券类型，1满减券、2折扣券
-            if (couponVo.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
-                couponVo.setFdeductionValue(PriceUtil.toYuan(couponVo.getFdeductionValue()));
+            if (coupon.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
+                couponVo.setFdeductionValue(PriceUtil.toYuan(coupon.getFdeductionValue()));
             } else {
-                couponVo.setFdeductionValue(couponVo.getFdeductionValue().divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP));
+                couponVo.setFdeductionValue(new BigDecimal(coupon.getFdeductionValue()).divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP));
             }
             couponVo.setFvalidityType(coupon.getFvalidityType());
             couponVo.setFvalidityDays(coupon.getFvalidityDays());
