@@ -13,7 +13,7 @@ public interface MallPcRedisConstant {
      */
     long DEFAULT_LOCK_EXPIRING = 30L;
 
-    String KEY_PREFIX = "xybbc_mall_pc:";
+    String KEY_PREFIX = "mall_pc:";
 
     /**
      * 默认分布式锁value
@@ -28,5 +28,14 @@ public interface MallPcRedisConstant {
     /**
      * 首页用户数缓存更新分布式锁前缀
      */
-    String INDEX_USER_COUNT_UPDATE = KEY_PREFIX+"_update";
+    String INDEX_USER_COUNT_UPDATE = INDEX_USER_COUNT+"_update";
+
+    /**
+     * 首页配置 Banner key
+     */
+    String PC_MALL_PAGECONFIG_BANNER = "pc_mall_banner";
+    /**
+     * pc首页banner更新时redis分布式锁前缀
+     */
+    String PC_MALL_PAGECONFIG_BANNER_UPDATE = "pc_mall_banner_update";
 }

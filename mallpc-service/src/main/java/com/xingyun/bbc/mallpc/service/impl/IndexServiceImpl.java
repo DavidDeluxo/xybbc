@@ -1,9 +1,16 @@
 package com.xingyun.bbc.mallpc.service.impl;
 
 import com.xingyun.bbc.common.redis.XyRedisManager;
+import com.xingyun.bbc.core.operate.api.PageConfigApi;
+import com.xingyun.bbc.core.operate.enums.BooleanNum;
+import com.xingyun.bbc.core.operate.enums.GuideConfigType;
+import com.xingyun.bbc.core.operate.enums.PageConfigPositionEnum;
+import com.xingyun.bbc.core.operate.po.PageConfig;
+import com.xingyun.bbc.core.rpc.Api;
 import com.xingyun.bbc.core.user.api.UserApi;
+import com.xingyun.bbc.core.user.po.User;
+import com.xingyun.bbc.mallpc.common.components.DozerHolder;
 import com.xingyun.bbc.mallpc.common.components.lock.XybbcLock;
-import com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
@@ -17,15 +24,19 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.List;
 
+import static com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant.*;
+
 @Service
 public class IndexServiceImpl implements IndexService {
 
     @Resource
     private UserApi userApi;
-    @Autowired
-    private XyRedisManager xyRedisManager;
     @Resource
-    private XybbcLock xybbcLock;
+    private PageConfigApi pageConfigApi;
+    @Resource
+    private CacheTemplate cacheTemplate;
+    @Resource
+    private DozerHolder dozerHolder;
 
     @Override
     public List<SpecialTopicVo> getSpecialTopics() {
@@ -34,7 +45,14 @@ public class IndexServiceImpl implements IndexService {
 
     @Override
     public List<BannerVo> getBanners() {
-        return null;
+        return (List<BannerVo>) cacheTemplate.execute(PC_MALL_PAGECONFIG_BANNER,PC_MALL_PAGECONFIG_BANNER_UPDATE,10l,()->{
+            PageConfig query = new PageConfig();
+            query.setFconfigType(GuideConfigType.PC_CONFIG.getCode());
+            query.setFposition(Integer.valueOf(PageConfigPositionEnum.BANNER.getKey()));
+            query.setFisDelete(BooleanNum.FALSE.getCode());
+            List<PageConfig> result = ResultUtils.getData(pageConfigApi.queryList(query));
+            return dozerHolder.convert(result,BannerVo.class);
+        });
     }
 
     @Override
@@ -44,28 +62,9 @@ public class IndexServiceImpl implements IndexService {
 
     @Override
     public Integer getUserCount() {
-        //缓存查询用户数
-        Integer userCount = (Integer) xyRedisManager.get(MallPcRedisConstant.INDEX_USER_COUNT);
-        if (userCount != null && userCount > 0) {
-            return userCount;
-        }
-        boolean getLock = false;
-        try {
-            //分布式锁
-            Ensure.that(getLock = xybbcLock.tryLock(MallPcRedisConstant.INDEX_USER_COUNT_UPDATE, MallPcRedisConstant.DEFAULT_LOCK_VALUE, MallPcRedisConstant.DEFAULT_LOCK_EXPIRING)).isTrue(MallPcExceptionCode.SYSTEM_BUSY_ERROR);
-            //获取锁后再查询一次缓存是否有值，有直接返回
-            userCount = (Integer) xyRedisManager.get(MallPcRedisConstant.INDEX_USER_COUNT);
-            if (userCount != null && userCount > 0) {
-                return userCount;
-            }
-            //没有值则查询数据库，更新到缓存，并返回
-            userCount = ResultUtils.getData(userApi.count(null));
-            xyRedisManager.set(MallPcRedisConstant.INDEX_USER_COUNT,userCount,MallPcRedisConstant.DEFAULT_LOCK_EXPIRING);
-            return userCount;
-        } finally {
-            if (getLock) {
-                xybbcLock.releaseLock(MallPcRedisConstant.INDEX_USER_COUNT_UPDATE, MallPcRedisConstant.DEFAULT_LOCK_VALUE);
-            }
-        }
+        return (Integer) cacheTemplate.execute(INDEX_USER_COUNT,INDEX_USER_COUNT_UPDATE,DEFAULT_LOCK_EXPIRING,()->{
+            User user = new User();
+            return ResultUtils.getData(userApi.count(user));
+        });
     }
 }
