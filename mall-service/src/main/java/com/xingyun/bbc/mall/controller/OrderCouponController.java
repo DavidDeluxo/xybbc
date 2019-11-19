@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +32,9 @@ public class OrderCouponController {
 
     @ApiOperation("获取用户当前订单可用和不可用优惠券列表")
     @PostMapping("/queryEffective")
-    public Result<Map<String, List<CouponReceiveVo>>> queryEffective(@RequestBody @Validated OrderSubmitDto orderSubmitDto) {
+    public Result<Map<String, List<CouponReceiveVo>>> queryEffective(@RequestBody @Validated OrderSubmitDto orderSubmitDto, HttpServletRequest request) {
+        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        orderSubmitDto.setFuid(xyid);
         return orderCouponApi.queryEffective(orderSubmitDto);
     }
 
