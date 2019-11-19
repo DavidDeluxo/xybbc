@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.order.api.OrderSettleSplitApi;
 import com.xingyun.bbc.order.model.dto.order.*;
@@ -43,6 +44,7 @@ public class OrderSettleController {
 	public Result<OrderSettleVo> querySettle(@RequestBody OrderSubmitDto orderSubmitDto, HttpServletRequest request) {
 		Long fuid = Long.valueOf(request.getHeader("xyId"));
 		orderSubmitDto.setFuid(fuid);
+		System.out.println(JSON.toJSONString(orderSubmitDto));
 		return orderSettleSplitApi.querySettle(orderSubmitDto);
 	}
 
