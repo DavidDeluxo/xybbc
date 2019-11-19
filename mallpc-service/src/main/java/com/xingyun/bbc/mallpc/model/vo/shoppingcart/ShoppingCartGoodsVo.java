@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mallpc.model.vo.shoppingcart;
 
+import com.xingyun.bbc.mallpc.model.vo.ImageVo;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -25,7 +26,7 @@ public class ShoppingCartGoodsVo implements Serializable {
     /**
      * sku缩略图
      */
-    private String fskuThumbImage;
+    private ImageVo fskuThumbImage;
 
     /**
      * sku名称
@@ -50,12 +51,12 @@ public class ShoppingCartGoodsVo implements Serializable {
     /**
      * 保质有效期起始日期，yyyy-MM
      */
-    private String fvalidityStartDate;
+    private String fqualityStartDate;
 
     /**
      * 保质有效期结束日期，yyyy-MM
      */
-    private String fvalidityEndDate;
+    private String fqualityEndDate;
 
     /**
      * sku销售价

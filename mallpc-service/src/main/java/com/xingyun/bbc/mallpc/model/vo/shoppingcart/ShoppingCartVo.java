@@ -21,12 +21,12 @@ public class ShoppingCartVo implements Serializable {
     /**
      * 有效商品列表
      */
-    private List<ShoppingCartGoodsVo> shoppingCartValidGoodsVos;
+    private List<ShoppingCartGoodsVo> validGoods;
 
     /**
      * 失效商品列表
      */
-    private List<ShoppingCartGoodsVo> shoppingCartGoodsVos;
+    private List<ShoppingCartGoodsVo> invalidGoods;
 
 
 }

@@ -75,4 +75,4 @@ applicationDistribution.from('src/main/resources/bootstrap.yml') {
     into "config"
 }
 
-mainClassName = 'com.xingyun.bbc.activity.MallPcApplication'
+mainClassName = 'com.xingyun.bbc.mallpc.MallPcApplication'
