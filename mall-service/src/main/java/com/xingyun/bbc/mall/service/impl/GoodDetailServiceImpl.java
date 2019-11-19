@@ -1035,9 +1035,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                                 Coupon::getFvalidityEnd, Coupon::getFapplicableSku));
                 Coupon coupon = couponResult.getData();
                 if (couponResult.isSuccess() && null != coupon) {
-                    if (coupon.getFcouponId() == 156) {
-                        System.out.println("");
-                    }
                     //1全部商品、2指定商品可用、3指定商品不可用
                     int ableSku = coupon.getFapplicableSku().intValue();
                     if (ableSku == 1) {
