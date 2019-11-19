@@ -73,4 +73,7 @@ public class MallPcExceptionCode implements IResultStatus {
     public static final MallPcExceptionCode USER_NOT_LOGGED_IN = new MallPcExceptionCode("1010", "用户未登录");
     public static final MallPcExceptionCode USER_CANNOT_VERIFY = new MallPcExceptionCode("1011", "只有未认证或认证失败的用户可以提交认证");
 
+
+    public static final MallPcExceptionCode USER_NOT_EXIST = new MallPcExceptionCode("2020", "用户不存在");
+
 }

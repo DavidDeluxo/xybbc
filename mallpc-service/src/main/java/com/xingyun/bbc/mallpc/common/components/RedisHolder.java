@@ -15,6 +15,7 @@ import org.springframework.util.CollectionUtils;
 import redis.clients.util.SafeEncoder;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -277,6 +278,20 @@ public class RedisHolder {
         return redisTemplate.execute(action);
     }
 
+    public boolean set(String key, Object value, Long expire) {
+        try {
+            if (expire != null && expire > 0) {
+                this.redisTemplate.opsForValue().set(key, value, expire, TimeUnit.SECONDS);
+            } else {
+                this.redisTemplate.opsForValue().set(key, value);
+            }
+            return true;
+        } catch (Exception var6) {
+            return false;
+        }
+
+    }
+
     public Object getObject(String key) {
         return this.redisTemplate.opsForValue().get(key);
     }
@@ -291,7 +306,7 @@ public class RedisHolder {
     }
 
     public List<Object> range(String key, int start, int end) {
-        return this.redisTemplate.opsForList().range(key, (long)start, (long)end);
+        return this.redisTemplate.opsForList().range(key, (long) start, (long) end);
     }
 
 }

@@ -35,7 +35,7 @@ public class CacheTemplate {
      * @param cacheCallBack
      * @return
      */
-    public Object get(String key, String updateKey, long expire, CacheCallBack cacheCallBack) {
+    public Object get(String key, String updateKey, Long expire, CacheCallBack cacheCallBack) {
         //若缓存存在，查询并返回
         if (redisHolder.exists(key)) {
             return redisHolder.getObject(key);
@@ -55,7 +55,8 @@ public class CacheTemplate {
             }
             //没有值则查询数据库，更新到缓存，并返回
             Object result = cacheCallBack.callBack();
-            redisHolder.put(key, result, expire);
+            boolean isSuccess = redisHolder.set(key, result, expire);
+            log.info("缓存{}更新结果：{}", key, isSuccess);
             return result;
         } finally {
             if (getLock) {
@@ -97,7 +98,8 @@ public class CacheTemplate {
             }
             //没有值则查询数据库，更新到缓存，并返回
             Object[] result = cacheCallBack.callBack();
-            redisHolder.pushAll(key, result);
+            boolean isTrue = redisHolder.pushAll(key, result);
+            log.info("缓存更新结果：{}", isTrue);
             return Arrays.asList(result);
         } finally {
             if (getLock) {

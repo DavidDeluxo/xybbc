@@ -23,6 +23,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,7 +43,7 @@ public class IndexServiceImpl implements IndexService {
     private static final long BRAND_EXPIRE = 1800;
 
     /**
-     * 首页用户总署有效期2分钟
+     * 首页用户总数缓存有效期2分钟
      */
     private static final long USER_COUNT_EXPIRE = 120;
 
@@ -62,7 +63,7 @@ public class IndexServiceImpl implements IndexService {
     @Override
     public List<SpecialTopicVo> getSpecialTopics() {
         List<PageConfig> result = (List<PageConfig>) cacheTemplate
-                .range(PC_MALL_PAGECONFIG_TOPIC, PC_MALL_PAGECONFIG_TOPIC_UPDATE, () -> getPageConfig(PageConfigPositionEnum.SPECIAL_TOPIC.getKey()));
+                .get(PC_MALL_PAGECONFIG_TOPIC, PC_MALL_PAGECONFIG_TOPIC_UPDATE,null, () -> getPageConfig(PageConfigPositionEnum.SPECIAL_TOPIC.getKey()));
         List<SpecialTopicVo> vos = dozerHolder.convert(result, SpecialTopicVo.class);
         vos.forEach(vo->vo.setFimgUrl(FileUtils.getFileUrl(vo.getFimgUrl())));
         return vos;
@@ -71,7 +72,7 @@ public class IndexServiceImpl implements IndexService {
     @Override
     public List<BannerVo> getBanners() {
         List<PageConfig> result = (List<PageConfig>) cacheTemplate
-                .range(PC_MALL_PAGECONFIG_BANNER, PC_MALL_PAGECONFIG_BANNER_UPDATE, () -> getPageConfig(PageConfigPositionEnum.BANNER.getKey()));
+                .get(PC_MALL_PAGECONFIG_BANNER, PC_MALL_PAGECONFIG_BANNER_UPDATE,null, () -> getPageConfig(PageConfigPositionEnum.BANNER.getKey()));
         List<BannerVo> vos = dozerHolder.convert(result, BannerVo.class);
         vos.forEach(vo->vo.setFimgUrl(FileUtils.getFileUrl(vo.getFimgUrl())));
         return vos;
@@ -127,15 +128,15 @@ public class IndexServiceImpl implements IndexService {
      * @param position
      * @return
      */
-    private PageConfig[] getPageConfig(String position) {
+    private List<PageConfig> getPageConfig(String position) {
         PageConfig query = new PageConfig();
         query.setFconfigType(GuideConfigType.PC_CONFIG.getCode());
         query.setFposition(Integer.valueOf(position));
         query.setFisDelete(BooleanNum.FALSE.getCode());
         List<PageConfig> list = ResultUtils.getData(pageConfigApi.queryList(query));
         if (CollectionUtils.isEmpty(list)) {
-            return new PageConfig[0];
+            return new ArrayList();
         }
-        return list.toArray(new PageConfig[list.size()]);
+        return list;
     }
 }
