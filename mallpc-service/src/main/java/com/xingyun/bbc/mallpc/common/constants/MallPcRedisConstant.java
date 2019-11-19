@@ -48,4 +48,5 @@ public interface MallPcRedisConstant {
     String PC_MALL_PAGECONFIG_TOPIC_UPDATE = "pc_mall_topic_update";
 
 
+    String VERIFY_CODE_PREFIX = "SMS_";
 }

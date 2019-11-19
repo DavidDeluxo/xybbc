@@ -59,7 +59,18 @@ public class MallPcExceptionCode implements IResultStatus {
     /**
      * 业务级别异常
      */
-    public static final MallPcExceptionCode USER_NOT_LOGGED_IN = new MallPcExceptionCode("1002", "用户未登录");
-    public static final MallPcExceptionCode USER_CANNOT_VERIFY = new MallPcExceptionCode("1003", "只有未认证或认证失败的用户可以提交认证");
+    public static final MallPcExceptionCode AUTO_LOGIN_FAILED = new MallPcExceptionCode("1000", "自动登录失败");
+    public static final MallPcExceptionCode LOGIN_FAILED = new MallPcExceptionCode("1000", "登录失败");
+    public static final MallPcExceptionCode ACCOUNT_FREEZE = new MallPcExceptionCode("1001", "账户冻结中");
+    public static final MallPcExceptionCode REGISTER_MOBILE_EXIST = new MallPcExceptionCode("1002", "手机号已注册");
+    public static final MallPcExceptionCode ACCOUNT_NOT_EXIST = new MallPcExceptionCode("1003", "账户不存在");
+    public static final MallPcExceptionCode BIND_MOBILE_ERROR = new MallPcExceptionCode("1004", "请输入正确的手机号码");
+    public static final MallPcExceptionCode SMS_AUTH_IS_SEND = new MallPcExceptionCode("1005", "验证码已发送,请稍后再试");
+    public static final MallPcExceptionCode USER_SEND_SMS_FAILD = new MallPcExceptionCode("1006", "您提交的太频繁，请明天再试");
+    public static final MallPcExceptionCode SMS_AUTH_NUM_ERROR = new MallPcExceptionCode("1007", "请输入正确的验证码");
+    public static final MallPcExceptionCode PASSWORD_CAN_NOT_BE_NULL = new MallPcExceptionCode("1008", "密码不能为空");
+    public static final MallPcExceptionCode PASSWORD_ILLEGAL = new MallPcExceptionCode("1009", "密码长度不符合要求(6-32位)");
+    public static final MallPcExceptionCode USER_NOT_LOGGED_IN = new MallPcExceptionCode("1010", "用户未登录");
+    public static final MallPcExceptionCode USER_CANNOT_VERIFY = new MallPcExceptionCode("1011", "只有未认证或认证失败的用户可以提交认证");
 
 }
