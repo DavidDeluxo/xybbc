@@ -71,14 +71,10 @@ public class MyCouponServiceImpl implements MyCouponService {
             Coupon coupon = couponResult.getData();
             couponVo.setFcouponName(coupon.getFcouponName());
             couponVo.setFcouponType(coupon.getFcouponType());
-
-            BigDecimal fthresholdAmount = coupon.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode()) ?
-                    PriceUtil.toYuan(coupon.getFthresholdAmount()) : new BigDecimal(coupon.getFthresholdAmount())
-                    .divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP);
-            couponVo.setFthresholdAmount(fthresholdAmount);
+            couponVo.setFthresholdAmount(PriceUtil.toYuan(couponVo.getFthresholdAmount()));
 
             //优惠券类型，1满减券、2折扣券
-            if (couponVo.getFcouponType().intValue() == 1) {
+            if (couponVo.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
                 couponVo.setFdeductionValue(PriceUtil.toYuan(couponVo.getFdeductionValue()));
             } else {
                 couponVo.setFdeductionValue(couponVo.getFdeductionValue().divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP));

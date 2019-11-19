@@ -13,6 +13,7 @@ import com.xingyun.bbc.core.market.api.*;
 import com.xingyun.bbc.core.market.enums.CouponReceiveStatusEnum;
 import com.xingyun.bbc.core.market.enums.CouponReleaseTypeEnum;
 import com.xingyun.bbc.core.market.enums.CouponStatusEnum;
+import com.xingyun.bbc.core.market.enums.CouponTypeEnum;
 import com.xingyun.bbc.core.market.po.*;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
 import com.xingyun.bbc.core.operate.api.CountryApi;
@@ -1172,7 +1173,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         for (CouponVo couponMap : result) {
             couponMap.setFthresholdAmount(PriceUtil.toYuan(couponMap.getFthresholdAmount()));
             //优惠券类型，1满减券、2折扣券
-            if (couponMap.getFcouponType().intValue() == 1) {
+            if (couponMap.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
                 couponMap.setFdeductionValue(PriceUtil.toYuan(couponMap.getFdeductionValue()));
             } else {
                 couponMap.setFdeductionValue(couponMap.getFdeductionValue().divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP));
