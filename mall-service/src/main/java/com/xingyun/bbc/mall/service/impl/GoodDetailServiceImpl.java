@@ -1009,12 +1009,14 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     //获取该sku已领券
     private List<CouponVo> getAlreadyReceiveCoupon(Long fskuId, Long fuid) {
         Date now = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String nowStr = sdf.format(now);
         //查询已经领到的券
         Result<List<CouponReceive>> couponReceResult = couponReceiveApi.queryByCriteria(Criteria.of(CouponReceive.class)
                 .andEqualTo(CouponReceive::getFuid, fuid)
                 .andEqualTo(CouponReceive::getFuserCouponStatus, CouponReceiveStatusEnum.NOT_USED.getCode())
-                .andLessThanOrEqualTo(CouponReceive::getFvalidityStart, now)
-                .andGreaterThanOrEqualTo(CouponReceive::getFvalidityEnd, now)
+                .andLessThanOrEqualTo(CouponReceive::getFvalidityStart, nowStr)//时间要转成string
+                .andGreaterThanOrEqualTo(CouponReceive::getFvalidityEnd, nowStr)
                 .fields(CouponReceive::getFcouponId, CouponReceive::getFvalidityStart, CouponReceive::getFvalidityEnd));
         if (!couponReceResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -1027,14 +1029,15 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
                         .andEqualTo(Coupon::getFcouponId, couponReceive.getFcouponId())
                         .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
-                        .andLessThanOrEqualTo(Coupon::getFvalidityStart, now)
-                        .andGreaterThanOrEqualTo(Coupon::getFvalidityEnd, now)
                         .andEqualTo(Coupon::getFisShow, 1)
                         .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType,
                                 Coupon::getFthresholdAmount, Coupon::getFdeductionValue, Coupon::getFvalidityStart,
                                 Coupon::getFvalidityEnd, Coupon::getFapplicableSku));
                 Coupon coupon = couponResult.getData();
                 if (couponResult.isSuccess() && null != coupon) {
+                    if (coupon.getFcouponId() == 156) {
+                        System.out.println("");
+                    }
                     //1全部商品、2指定商品可用、3指定商品不可用
                     int ableSku = coupon.getFapplicableSku().intValue();
                     if (ableSku == 1) {
