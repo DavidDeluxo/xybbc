@@ -30,6 +30,16 @@ public interface MallPcRedisConstant {
     String INDEX_USER_COUNT_UPDATE = INDEX_USER_COUNT+"_update";
 
     /**
+     * 首页一级分类下热门品牌数据
+     */
+    String INDEX_BRAND = KEY_PREFIX + "index_brand_";
+
+    /**
+     * 首页一级分类下热门品牌数据
+     */
+    String INDEX_BRAND_UPDATE = INDEX_BRAND + "update_";
+
+    /**
      * 首页配置 Banner key
      */
     String PC_MALL_PAGECONFIG_BANNER = "pc_mall_banner";
