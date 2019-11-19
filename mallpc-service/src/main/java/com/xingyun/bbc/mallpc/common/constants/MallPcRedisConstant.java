@@ -38,4 +38,6 @@ public interface MallPcRedisConstant {
      * pc首页banner更新时redis分布式锁前缀
      */
     String PC_MALL_PAGECONFIG_BANNER_UPDATE = "pc_mall_banner_update";
+
+
 }
