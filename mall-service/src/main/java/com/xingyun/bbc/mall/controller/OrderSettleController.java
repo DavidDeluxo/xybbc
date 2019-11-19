@@ -41,7 +41,7 @@ public class OrderSettleController {
 	@ApiOperation("查看拆单之后待结算的订单")
 	@PostMapping("/querySettle")
 	public Result<OrderSettleVo> querySettle(@RequestBody OrderSubmitDto orderSubmitDto, HttpServletRequest request) {
-		Long fuid = Long.valueOf(request.getHeader("xyid"));
+		Long fuid = Long.valueOf(request.getHeader("xyId"));
 		orderSubmitDto.setFuid(fuid);
 		return orderSettleSplitApi.querySettle(orderSubmitDto);
 	}
