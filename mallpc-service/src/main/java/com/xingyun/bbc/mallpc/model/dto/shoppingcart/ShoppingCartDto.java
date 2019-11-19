@@ -9,7 +9,6 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -20,14 +19,14 @@ import java.util.List;
  */
 @Data
 @Accessors(chain = true)
-public class ShoppingCartDto extends BaseDto implements Serializable {
+public class ShoppingCartDto extends BaseDto {
 
     private static final long serialVersionUID = -3237379499351876387L;
 
     /**
      * 用户ID
      */
-    @NotNull(message = "用户ID不能为空", groups = {ShoppingCartValidator.Qty.class})
+    @NotNull(message = "用户ID不能为空", groups = {ShoppingCartValidator.Qty.class, ShoppingCartValidator.Show.class})
     private Long userId;
 
     /**
