@@ -277,4 +277,17 @@ public class RedisHolder {
         return redisTemplate.execute(action);
     }
 
+    public boolean pushAll(String key, Object[] value) {
+        try {
+            this.redisTemplate.opsForList().leftPushAll(key, value);
+            return true;
+        } catch (Exception var4) {
+            return false;
+        }
+    }
+
+    public List<Object> range(String key, int start, int end) {
+        return this.redisTemplate.opsForList().range(key, (long)start, (long)end);
+    }
+
 }

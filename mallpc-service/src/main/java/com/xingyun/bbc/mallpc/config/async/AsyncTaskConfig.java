@@ -39,7 +39,7 @@ public class AsyncTaskConfig implements AsyncConfigurer {
 
     @Override
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
-        return (throwable, method, params) -> log.error("execute asynchronous mothod=[{}],params=[{}] thrown Throwable", method, JSON.toJSONString(params), throwable);
+        return (throwable, method, params) -> log.error("get asynchronous mothod=[{}],params=[{}] thrown Throwable", method, JSON.toJSONString(params), throwable);
     }
 
 }
