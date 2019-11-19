@@ -1,9 +1,10 @@
 package com.xingyun.bbc.mallpc.model.dto;
 
-import io.swagger.annotations.ApiModelProperty;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.xingyun.bbc.mallpc.model.validation.ShoppingCartValidator;
+import lombok.Data;
+import lombok.experimental.Accessors;
 
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
@@ -12,35 +13,28 @@ import java.io.Serializable;
  * @date 2019-08-24
  * @copyright 本内容仅限于浙江云贸科技有限公司内部传阅，禁止外泄以及用于其他的商业目的
  */
+@Data
+@Accessors(chain = true)
 public class BaseDto implements Serializable {
 
-    private static final long serialVersionUID = -3969190777947233434L;
+
+    private static final long serialVersionUID = 2766079010834372301L;
+
+    /**
+     * 数据主键
+     */
+    @NotNull(message = "ID不能为空", groups = {ShoppingCartValidator.EditNum.class})
+    private Long id;
 
     /**
      * 查询类型
      */
-    @ApiModelProperty(value = "查询类型")
     private Integer searchType;
 
     /**
      * 查询关键字
      */
-    @ApiModelProperty(value = "查询关键字")
     private String keyword;
 
-    public Integer getSearchType() {
-        return searchType;
-    }
 
-    public void setSearchType(Integer searchType) {
-        this.searchType = searchType;
-    }
-
-    public String getKeyword() {
-        return StringUtils.replace(StringEscapeUtils.escapeSql(StringUtils.trim(this.keyword)), "%", "\\%");
-    }
-
-    public void setKeyword(String keyword) {
-        this.keyword = keyword;
-    }
 }
