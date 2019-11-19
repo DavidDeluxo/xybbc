@@ -59,5 +59,7 @@ public class MallPcExceptionCode implements IResultStatus {
     /**
      * 业务级别异常
      */
+    public static final MallPcExceptionCode USER_NOT_LOGGED_IN = new MallPcExceptionCode("1002", "用户未登录");
+    public static final MallPcExceptionCode USER_CANNOT_VERIFY = new MallPcExceptionCode("1003", "只有未认证或认证失败的用户可以提交认证");
 
 }
