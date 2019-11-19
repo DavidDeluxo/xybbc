@@ -59,6 +59,7 @@ dependencies {
     compile group: 'com.xingyun.bbc', name: 'xybbc-db-common', version: '1.0'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-user-api', version: '1.0.20'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-operate-api', version: '1.0.26'
+    compile group: 'com.xingyun.bbc', name: 'xybbc-core-order-api', version: '1.0.26'
     compile project(':mall-common-elasticsearch')
 }
 

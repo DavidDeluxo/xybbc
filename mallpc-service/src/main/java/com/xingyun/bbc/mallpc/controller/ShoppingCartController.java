@@ -4,6 +4,7 @@ import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.dto.BaseDto;
 import com.xingyun.bbc.mallpc.model.dto.shoppingcart.ShoppingCartDto;
 import com.xingyun.bbc.mallpc.model.validation.ShoppingCartValidator;
+import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartVo;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -64,6 +65,17 @@ public class ShoppingCartController {
      */
     @PostMapping("delete")
     public Result delete(@RequestBody @Validated(ShoppingCartValidator.Delete.class) ShoppingCartDto shoppingCartDto) {
+        return Result.success();
+    }
+
+    /**
+     * 展示购物车商品列表
+     *
+     * @param shoppingCartDto
+     * @return
+     */
+    @PostMapping("show")
+    public Result<ShoppingCartVo> show(@RequestBody @Validated(ShoppingCartValidator.Show.class) ShoppingCartDto shoppingCartDto) {
         return Result.success();
     }
 
