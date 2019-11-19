@@ -1089,40 +1089,38 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                             continue;
                         }
                     } else {
-                        //指定商品不可用
+                        //指定商品不可用--sku和条件都不满足才可以
                         //如果是单独存的skuid
                         Result<Integer> countCouponSku = this.getCouponSkuCount(couponReceive.getFcouponId(), fskuId);
-                        if (countCouponSku.isSuccess() && countCouponSku.getData() < 0) {
-                            result.add(dozerMapper.map(coupon, CouponVo.class));
-                            continue;
-                        }
-                        //如果存的是条件
-                        Result<CouponApplicableSkuCondition> skuConditionRes = this.getCouponSkuAble(couponReceive.getFcouponId());
-                        if (!skuConditionRes.isSuccess()) {
-                            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-                        }
-                        CouponApplicableSkuCondition couponCondition = skuConditionRes.getData();
-                        this.setSkuCondition(skuCondition, fskuId);
-                        if (null == couponCondition) {
-                            //优惠券条件
-                            List<Long> fbrandIds_coupon = (List<Long>) JSON.parse(couponCondition.getFbrandId());
-                            Map<Integer, List<Long>> fcategoryIds_coupon = (Map<Integer, List<Long>>) JSON.parse(couponCondition.getFcategoryId());
-                            List<Long> flabelIds_coupon = (List<Long>) JSON.parse(couponCondition.getFlabelId());
+                        if (countCouponSku.isSuccess() && countCouponSku.getData() == 0) {
+                            //如果存的是条件
+                            Result<CouponApplicableSkuCondition> skuConditionRes = this.getCouponSkuAble(couponReceive.getFcouponId());
+                            if (!skuConditionRes.isSuccess()) {
+                                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+                            }
+                            CouponApplicableSkuCondition couponCondition = skuConditionRes.getData();
+                            this.setSkuCondition(skuCondition, fskuId);
+                            if (null == couponCondition) {
+                                //优惠券条件
+                                List<Long> fbrandIds_coupon = (List<Long>) JSON.parse(couponCondition.getFbrandId());
+                                Map<Integer, List<Long>> fcategoryIds_coupon = (Map<Integer, List<Long>>) JSON.parse(couponCondition.getFcategoryId());
+                                List<Long> flabelIds_coupon = (List<Long>) JSON.parse(couponCondition.getFlabelId());
 
-                            //skuid反推的条件
-                            Long brandId = skuCondition.get("brandId");
-                            Long categoryId1 = skuCondition.get("categoryId1");
-                            Long categoryId2 = skuCondition.get("categoryId2");
-                            Long categoryId3 = skuCondition.get("categoryId3");
-                            Long labelId = skuCondition.get("labelId");
+                                //skuid反推的条件
+                                Long brandId = skuCondition.get("brandId");
+                                Long categoryId1 = skuCondition.get("categoryId1");
+                                Long categoryId2 = skuCondition.get("categoryId2");
+                                Long categoryId3 = skuCondition.get("categoryId3");
+                                Long labelId = skuCondition.get("labelId");
 
-                            if (!fbrandIds_coupon.contains(brandId)) {
-                                if (null != fcategoryIds_coupon.get(1) && fcategoryIds_coupon.get(1).contains(categoryId1)) {
-                                    if (null != fcategoryIds_coupon.get(2) && fcategoryIds_coupon.get(1).contains(categoryId2)) {
-                                        if (null != fcategoryIds_coupon.get(3) && fcategoryIds_coupon.get(1).contains(categoryId3)) {
-                                            if (flabelIds_coupon.contains(labelId)) {
-                                                result.add(dozerMapper.map(coupon, CouponVo.class));
-                                                continue;
+                                if (!fbrandIds_coupon.contains(brandId)) {
+                                    if (null != fcategoryIds_coupon.get(1) && fcategoryIds_coupon.get(1).contains(categoryId1)) {
+                                        if (null != fcategoryIds_coupon.get(2) && fcategoryIds_coupon.get(1).contains(categoryId2)) {
+                                            if (null != fcategoryIds_coupon.get(3) && fcategoryIds_coupon.get(1).contains(categoryId3)) {
+                                                if (flabelIds_coupon.contains(labelId)) {
+                                                    result.add(dozerMapper.map(coupon, CouponVo.class));
+                                                    continue;
+                                                }
                                             }
                                         }
                                     }
