@@ -1,7 +1,7 @@
 package com.xingyun.bbc.mall.controller;
 
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.order.api.CouponApi;
+import com.xingyun.bbc.order.api.OrderCouponApi;
 import com.xingyun.bbc.order.model.dto.order.OrderSubmitDto;
 import com.xingyun.bbc.order.model.vo.coupon.CouponReceiveVo;
 import io.swagger.annotations.ApiOperation;
@@ -27,12 +27,12 @@ import java.util.Map;
 public class OrderCouponController {
 
     @Resource
-    private CouponApi couponApi;
+    private OrderCouponApi orderCouponApi;
 
     @ApiOperation("获取用户当前订单可用和不可用优惠券列表")
     @PostMapping("/queryEffective")
     public Result<Map<String, List<CouponReceiveVo>>> queryEffective(@RequestBody @Validated OrderSubmitDto orderSubmitDto) {
-        return couponApi.queryEffective(orderSubmitDto);
+        return orderCouponApi.queryEffective(orderSubmitDto);
     }
 
 }
