@@ -129,7 +129,8 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         if (!booleanResult.isSuccess()) {
             return booleanResult;
         }
-        return Result.success(booleanResult.getData());
+        booleanResult.setMsg("兑换成功");
+        return booleanResult;
     }
 
 
@@ -244,7 +245,8 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         if (!result.isSuccess()) {
             return result;
         }
-        return Result.success(result.getData());
+        result.setMsg("领取成功");
+        return result;
     }
 
 
