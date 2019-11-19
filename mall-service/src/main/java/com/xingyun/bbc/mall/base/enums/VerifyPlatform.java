@@ -9,6 +9,13 @@ public enum VerifyPlatform {
     JDCOM(3,"京东"),
     SUNING(4,"苏宁"),
     BEIBEI(5,"贝贝"),
+    YHD(6,"1号店"),
+    JUMEI(7,"聚美"),
+    VIPSHOP(8,"唯品会"),
+    MIA(9,"蜜芽"),
+    HAIZIWANG(10,"孩子王"),
+    KAOLA(11,"考拉"),
+    PINDUODUO(12,"拼多多"),
     ;
 
     private Integer code;

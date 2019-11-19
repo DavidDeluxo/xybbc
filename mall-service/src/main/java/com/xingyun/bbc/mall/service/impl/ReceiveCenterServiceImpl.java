@@ -16,12 +16,14 @@ import com.xingyun.bbc.core.market.api.CouponCodeApi;
 
 import com.xingyun.bbc.core.market.api.CouponReceiveApi;
 
+import com.xingyun.bbc.core.market.enums.CouponTypeEnum;
 import com.xingyun.bbc.core.market.po.CouponBindUser;
 import com.xingyun.bbc.core.market.po.CouponCode;
 import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.utils.Result;
 
+import com.xingyun.bbc.mall.base.utils.PriceUtil;
 import com.xingyun.bbc.mall.base.utils.RandomUtils;
 import com.xingyun.bbc.mall.common.constans.MallConstants;
 import com.xingyun.bbc.mall.common.ensure.Ensure;
@@ -197,8 +199,6 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
                     receiveCenterCouponVo.setFcouponId(couponQueryVo.getFcouponId());
                     receiveCenterCouponVo.setFcouponName(couponQueryVo.getFcouponName());
                     receiveCenterCouponVo.setFcouponType(couponQueryVo.getFcouponType());
-                    receiveCenterCouponVo.setFdeductionValue(BigDecimal.valueOf(couponQueryVo.getFdeductionValue()));
-                    receiveCenterCouponVo.setFthresholdAmount(BigDecimal.valueOf(couponQueryVo.getFthresholdAmount()));
                     receiveCenterCouponVo.setFvalidityEnd(couponQueryVo.getFvalidityEnd());
                     receiveCenterCouponVo.setFvalidityStart(couponQueryVo.getFvalidityStart());
                     receiveCenterCouponVo.setNowDate(new Date());
@@ -206,6 +206,13 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
                     receiveCenterCouponVo.setFperLimit(couponQueryVo.getFperLimit());
                     receiveCenterCouponVo.setFvalidityType(couponQueryVo.getFvalidityType());
                     receiveCenterCouponVo.setFvalidityDays(couponQueryVo.getFvalidityDays());
+                    receiveCenterCouponVo.setFthresholdAmount(PriceUtil.toYuan(couponQueryVo.getFdeductionValue()));
+                    //优惠券类型，1满减券需要除以100、2折扣券需要除以10
+                    if (couponQueryVo.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
+                        receiveCenterCouponVo.setFdeductionValue(PriceUtil.toYuan(couponQueryVo.getFdeductionValue()));
+                    } else {
+                        receiveCenterCouponVo.setFdeductionValue(new BigDecimal(couponQueryVo.getFdeductionValue()).divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP));
+                    }
                     receiveCenterCouponVoList.add(receiveCenterCouponVo);
                 }
             }
