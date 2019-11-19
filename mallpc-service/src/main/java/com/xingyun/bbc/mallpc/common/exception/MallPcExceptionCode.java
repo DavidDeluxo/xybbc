@@ -75,5 +75,49 @@ public class MallPcExceptionCode implements IResultStatus {
 
 
     public static final MallPcExceptionCode USER_NOT_EXIST = new MallPcExceptionCode("2020", "用户不存在");
+    public static final MallPcExceptionCode SKU_BATCH_IS_NONE = new MallPcExceptionCode("6666", "没有批次");
+    public static final MallPcExceptionCode NO_USER = new MallPcExceptionCode("6667", "没有用户信息");
+    public static final MallPcExceptionCode NO_BATCH_USER_PRICE = new MallPcExceptionCode("6668", "没有SKU批次会员类型售价");
+    public static final MallPcExceptionCode NO_BATCH_PRICE = new MallPcExceptionCode("6668", "没有SKU批次类型售价");
+    public static final MallPcExceptionCode WITHDRAW_PROCESSING = new MallPcExceptionCode("6670", "您的操作太频繁啦,每次提现需间隔5分钟");
+    public static final MallPcExceptionCode NO_USER_ID = new MallPcExceptionCode("6671", "未传用户id");
+    public static final MallPcExceptionCode NO_USER_CATEGORY_ID = new MallPcExceptionCode("6672", "未传一级类目ID");
+    public static final MallPcExceptionCode BATCH_PACKAGE_NUM_NOT_EXIST = new MallPcExceptionCode("6673", "查不到包装规格值");
 
+
+    /**
+     *
+     * pay模块错误信息
+     */
+    public static final MallPcExceptionCode ORDER_NOT_EXIST = new MallPcExceptionCode("7777", "订单不存在");
+    public static final MallPcExceptionCode ORDER_NOT_MATCHING = new MallPcExceptionCode("7778", "订单与用户不匹配");
+    public static final MallPcExceptionCode ORDER_AS_CANCELLED = new MallPcExceptionCode("7779", "该订单已取消");
+    public static final MallPcExceptionCode ORDER_IS_COMPLETION = new MallPcExceptionCode("7779", "支付已完成的交易");
+    public static final MallPcExceptionCode WITHDRAW_PSD_WRONG = new MallPcExceptionCode("7780", "支付密码错误");
+    public static final MallPcExceptionCode PAY_PWD_IS_NOT_SET = new MallPcExceptionCode("7781", "支付密码未设置");
+    public static final MallPcExceptionCode THIRD_PAY_NOTIFY_FAIL =new MallPcExceptionCode("7782", "返回回调失败字符串");
+    public static final MallPcExceptionCode REMITTANCE_PAY_FAIL =new MallPcExceptionCode("7783", "线下汇款充值失败");
+    public static final MallPcExceptionCode BALANCE_NOT_ENOUGH =new MallPcExceptionCode("7784", "用户余额为0,请充值!");
+    public static final MallPcExceptionCode FREEZE_WITHDRAW =new MallPcExceptionCode("7785", "用户账户信息有误，请联系客服!");
+    public static final MallPcExceptionCode ORDER_IS_OVERDUE = new MallPcExceptionCode("7786", "订单已过期");
+
+    /**
+     * 用户账号模块
+     *
+     * */
+    public static final MallPcExceptionCode USER_FREEZE_ERROR =new MallPcExceptionCode("8888", "该用户已被冻结或禁用");
+    public static final MallPcExceptionCode NULL_ERROR_WITHDRAWPSD =new MallPcExceptionCode("8889", "尚未设置提现密码");
+
+    /**
+     * Mall优惠券错误信息
+     */
+    public static final MallPcExceptionCode COUPON_IS_INVALID =new MallPcExceptionCode("9000", "优惠券已过期");
+    public static final MallPcExceptionCode COUPON_IS_MAX =new MallPcExceptionCode("9001", "该优惠券已领取过");
+    public static final MallPcExceptionCode COUPON_LINK_INEXUSTENCE =new MallPcExceptionCode("9002", "优惠券链接已失效");
+    public static final MallPcExceptionCode COUPON_IS_PAID_OUT =new MallPcExceptionCode("9003", "优惠券已发放完");
+    public static final MallPcExceptionCode COUPON_IS_NOT_EXIST =new MallPcExceptionCode("9004", "优惠券不存在");
+    public static final MallPcExceptionCode COUPON_INELIGIBILITY =new MallPcExceptionCode("9005", "暂不满足领取资格哦~");
+    public static final MallPcExceptionCode CODE_NOT_COUPON = new MallPcExceptionCode("9996", "券码无匹配优惠券");
+    public static final MallPcExceptionCode USER_NOT_COUPON = new MallPcExceptionCode("9996", "用户无匹配优惠券");
+    public static final MallPcExceptionCode USER_NOT_RIGHT_COUPON = new MallPcExceptionCode("9997", "用户暂无权限兑换该类优惠券");
 }
