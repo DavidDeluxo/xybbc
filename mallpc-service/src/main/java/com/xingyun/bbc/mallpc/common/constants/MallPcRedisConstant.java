@@ -11,7 +11,7 @@ public interface MallPcRedisConstant {
     /**
      * 默认分布式锁过期时间
      */
-    long DEFAULT_LOCK_EXPIRING = 3L;
+    long DEFAULT_LOCK_EXPIRING = 5L;
 
     String KEY_PREFIX = "mall_pc:";
 

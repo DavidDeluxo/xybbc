@@ -13,6 +13,7 @@ import com.xingyun.bbc.core.sku.po.GoodsBrand;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.mallpc.common.components.DozerHolder;
+import com.xingyun.bbc.mallpc.common.utils.FileUtils;
 import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
 import com.xingyun.bbc.mallpc.model.vo.index.BannerVo;
 import com.xingyun.bbc.mallpc.model.vo.index.BrandVo;
@@ -35,6 +36,16 @@ public class IndexServiceImpl implements IndexService {
      */
     private static final int BRAND_MAX = 6;
 
+    /**
+     * 首页一级分类下热门品牌缓存有效期半小时
+     */
+    private static final long BRAND_EXPIRE = 1800;
+
+    /**
+     * 首页用户总署有效期2分钟
+     */
+    private static final long USER_COUNT_EXPIRE = 120;
+
     @Resource
     private UserApi userApi;
     @Resource
@@ -52,20 +63,30 @@ public class IndexServiceImpl implements IndexService {
     public List<SpecialTopicVo> getSpecialTopics() {
         List<PageConfig> result = (List<PageConfig>) cacheTemplate
                 .range(PC_MALL_PAGECONFIG_TOPIC, PC_MALL_PAGECONFIG_TOPIC_UPDATE, () -> getPageConfig(PageConfigPositionEnum.SPECIAL_TOPIC.getKey()));
-        return dozerHolder.convert(result, SpecialTopicVo.class);
+        List<SpecialTopicVo> vos = dozerHolder.convert(result, SpecialTopicVo.class);
+        vos.forEach(vo->vo.setFimgUrl(FileUtils.getFileUrl(vo.getFimgUrl())));
+        return vos;
     }
 
     @Override
     public List<BannerVo> getBanners() {
         List<PageConfig> result = (List<PageConfig>) cacheTemplate
                 .range(PC_MALL_PAGECONFIG_BANNER, PC_MALL_PAGECONFIG_BANNER_UPDATE, () -> getPageConfig(PageConfigPositionEnum.BANNER.getKey()));
-        return dozerHolder.convert(result, BannerVo.class);
+        List<BannerVo> vos = dozerHolder.convert(result, BannerVo.class);
+        vos.forEach(vo->vo.setFimgUrl(FileUtils.getFileUrl(vo.getFimgUrl())));
+        return vos;
+    }
+
+    @Override
+    public Integer getUserCount() {
+        return (Integer) cacheTemplate
+                .get(INDEX_USER_COUNT, INDEX_USER_COUNT_UPDATE, USER_COUNT_EXPIRE, () -> ResultUtils.getData(userApi.count(new User())));
     }
 
     @Override
     public List<BrandVo> getBrands(Long cateId) {
         List<GoodsBrand> result = (List<GoodsBrand>) cacheTemplate
-                .get(INDEX_BRAND+cateId, INDEX_BRAND_UPDATE+cateId,60*30, () -> {
+                .get(INDEX_BRAND+cateId, INDEX_BRAND_UPDATE+cateId,BRAND_EXPIRE, () -> {
                     //查询热门品牌
                     Criteria<GoodsBrand,Object> brandCriteria = Criteria.of(GoodsBrand.class)
                             .andEqualTo(GoodsBrand::getFisDelete, 0)
@@ -75,6 +96,7 @@ public class IndexServiceImpl implements IndexService {
                     if (CollectionUtils.isEmpty(brandList)) {
                         return new GoodsBrand[0];
                     }
+
                     //查询入参一级分类id下的Goods的brandIds
                     Criteria<Goods, Object> goodsCriteria = Criteria.of(Goods.class)
                             .andEqualTo(Goods::getFcategoryId1, cateId)
@@ -84,19 +106,19 @@ public class IndexServiceImpl implements IndexService {
                         return new GoodsBrand[0];
                     }
                     List<Long> brandIds = goodsList.stream().map(Goods::getFbrandId).distinct().collect(Collectors.toList());
+
                     //筛选出符合条件的品牌信息
                     List<GoodsBrand> goodsBrands = brandList.stream().filter(hotBrand -> brandIds.contains(hotBrand.getFbrandId())).collect(Collectors.toList());
                     int endIndex = goodsBrands.size()>BRAND_MAX?BRAND_MAX:goodsBrands.size();
-                    List<GoodsBrand> rerurnBrands = goodsBrands.subList(0,endIndex);
-                    return rerurnBrands.toArray(new GoodsBrand[goodsBrands.size()]);
+                    List<GoodsBrand> returnBrands = goodsBrands.subList(0,endIndex);
+                    return returnBrands;
                 });
-        return dozerHolder.convert(result, BrandVo.class);
-    }
-
-    @Override
-    public Integer getUserCount() {
-        return (Integer) cacheTemplate
-                .get(INDEX_USER_COUNT, INDEX_USER_COUNT_UPDATE, DEFAULT_LOCK_EXPIRING, () -> ResultUtils.getData(userApi.count(new User())));
+        List<BrandVo> vos = dozerHolder.convert(result, BrandVo.class);
+        vos.forEach(vo->{
+            vo.setFbrandLogo(FileUtils.getFileUrl(vo.getFbrandLogo()));
+            vo.setFbrandPoster(FileUtils.getFileUrl(vo.getFbrandPoster()));
+        });
+        return vos;
     }
 
     /**
