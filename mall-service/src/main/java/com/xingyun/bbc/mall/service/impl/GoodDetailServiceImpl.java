@@ -1339,14 +1339,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             couponReleaseDto.setAlreadyReceived(true);
             couponReleaseDto.setDeltaValue(-1);
             Result updateReleaseResult = couponProviderApi.updateReleaseQty(couponReleaseDto);
-            if (!updateReleaseResult.isSuccess()) {
-                return updateReleaseResult;
-            }
+            Ensure.that(updateReleaseResult.isSuccess()).isTrue(new MallExceptionCode(updateReleaseResult.getCode(), updateReleaseResult.getMsg()));
             //调用领券服务
             Result receiveReceive = couponProviderApi.receive(couponReleaseDto);
-            if (!receiveReceive.isSuccess()) {
-                return receiveReceive;
-            }
+            Ensure.that(receiveReceive.isSuccess()).isTrue(new MallExceptionCode(receiveReceive.getCode(), receiveReceive.getMsg()));
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
