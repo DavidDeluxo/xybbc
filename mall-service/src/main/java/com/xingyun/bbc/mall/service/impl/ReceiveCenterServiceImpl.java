@@ -129,7 +129,8 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         if (!booleanResult.isSuccess()) {
             return booleanResult;
         }
-        return Result.success(booleanResult.getData());
+        booleanResult.setMsg("兑换成功");
+        return booleanResult;
     }
 
 
@@ -206,7 +207,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
                     receiveCenterCouponVo.setFperLimit(couponQueryVo.getFperLimit());
                     receiveCenterCouponVo.setFvalidityType(couponQueryVo.getFvalidityType());
                     receiveCenterCouponVo.setFvalidityDays(couponQueryVo.getFvalidityDays());
-                    receiveCenterCouponVo.setFthresholdAmount(PriceUtil.toYuan(couponQueryVo.getFdeductionValue()));
+                    receiveCenterCouponVo.setFthresholdAmount(PriceUtil.toYuan(couponQueryVo.getFthresholdAmount()));
                     //优惠券类型，1满减券需要除以100、2折扣券需要除以10
                     if (couponQueryVo.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
                         receiveCenterCouponVo.setFdeductionValue(PriceUtil.toYuan(couponQueryVo.getFdeductionValue()));
@@ -244,7 +245,8 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         if (!result.isSuccess()) {
             return result;
         }
-        return Result.success(result.getData());
+        result.setMsg("领取成功");
+        return result;
     }
 
 

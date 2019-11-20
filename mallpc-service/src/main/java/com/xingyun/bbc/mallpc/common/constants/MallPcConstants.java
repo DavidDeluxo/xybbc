@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mallpc.common.constants;
 
+import java.math.BigDecimal;
 import java.util.regex.Pattern;
 
 /**
@@ -174,4 +175,13 @@ public interface MallPcConstants {
     int SKU_BATCH_ID = 3;
     int TRANSPORT_ORDER_ID = 4;
 
+    //是否被删除
+    Integer ISDELETE_NO = 0;
+    Integer ISDELETE_YES = 1;
+
+    BigDecimal ONE_HUNDRED = new BigDecimal("100");
+    BigDecimal ONE_THOUSAND = new BigDecimal("1000");
+    BigDecimal TEN_THOUSAND = new BigDecimal("10000");
+
+    public static final String MALL_RECEIVE_COUPON = "mall_receive_coupon_lock";
 }

@@ -20,6 +20,8 @@ public interface ShoppingCartValidator {
     @interface Delete {
     }
 
+    @interface Show {
+    }
 
 
 }

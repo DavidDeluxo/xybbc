@@ -30,7 +30,7 @@ public interface IndexService {
      * 首页品牌列表
      * @return
      */
-    List<BrandVo> getBrands();
+    List<BrandVo> getBrands(Long cateId);
 
     /**
      * 查询用户数

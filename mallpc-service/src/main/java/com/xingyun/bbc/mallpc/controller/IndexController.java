@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -47,8 +48,8 @@ public class IndexController {
 
     @ApiOperation(value = "查询品牌", httpMethod = "GET")
     @GetMapping(value = "/getBrands")
-    public Result<List<BrandVo>> getBrands() {
-        return Result.success(indexService.getBrands());
+    public Result<List<BrandVo>> getBrands(@RequestParam Long cateId) {
+        return Result.success(indexService.getBrands(cateId));
     }
 
     @ApiOperation(value = "查询分销商数量", httpMethod = "GET")
