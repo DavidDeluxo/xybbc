@@ -42,6 +42,7 @@ import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -89,6 +90,8 @@ public class GoodsServiceImpl implements GoodsService {
     UserApi userApi;
     @Autowired
     GoodsApi goodsApi;
+    @Autowired
+
 
 //    @Autowired
 //    MallSkuSearchApi mallSkuSearchApi;
@@ -599,6 +602,35 @@ public class GoodsServiceImpl implements GoodsService {
         long endTimeTotal = System.currentTimeMillis();
         float excTimeTotal = (float) (endTimeTotal-startTimeTotal) / 1000;
         log.info("total_exec_time:{}, totalPages:{}", excTimeTotal, totalPage);
+    }
+
+    @Override
+    public void updateEsSkuWithSkuUpdate(Map<String, Object> skuSourceMap){
+        if(MapUtils.isEmpty(skuSourceMap)){
+            return;
+        }
+        String fskuId = String.valueOf(skuSourceMap.get("fsku_id"));
+        try {
+           GetResponse getResponse = esManager.getSourceById(fskuId);
+           if(getResponse.isExists()){
+              Map<String, Object> oldSourceMap = getResponse.getSourceAsMap();
+              if(oldSourceMap.get("fcoupon_ids") != null){
+                  List<Integer> couponIdList = (List<Integer>) oldSourceMap.get("fcoupon_ids");
+                  skuSourceMap.put("fcoupon_ids", couponIdList);
+              }
+           }else {
+               skuSourceMap.put("fcoupon_ids", getCouponListForSku(fskuId));
+           }
+           Map<String, Map<String, Object>> indexMap = new HashMap<>();
+           indexMap.put(fskuId, skuSourceMap);
+           esManager.indexInBulk(indexMap);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private List<Integer> getCouponListForSku(String fskuId){
+        return Lists.newArrayList();
     }
 
 

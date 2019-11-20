@@ -24,4 +24,6 @@ public interface GoodsService {
 
     void deleteCouponInfoFromEsSku(Coupon coupon);
 
+    void updateEsSkuWithSkuUpdate(Map<String, Object> skuSourceMap);
+
 }
