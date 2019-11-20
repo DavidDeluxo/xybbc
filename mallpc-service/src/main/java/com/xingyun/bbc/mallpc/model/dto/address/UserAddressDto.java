@@ -16,6 +16,9 @@ import javax.validation.constraints.NotNull;
 @Data
 public class UserAddressDto {
 
+    @ApiModelProperty("用户收货地址ID")
+    private String fdeliveryUserId;
+
     @ApiModelProperty("姓名")
     @NotBlank(message = "收件人姓名不能为空")
     private String fdeliveryName;

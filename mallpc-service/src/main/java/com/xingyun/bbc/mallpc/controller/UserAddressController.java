@@ -10,6 +10,7 @@ import com.xingyun.bbc.mallpc.model.vo.PageVo;
 import com.xingyun.bbc.mallpc.model.vo.TokenInfoVo;
 import com.xingyun.bbc.mallpc.model.vo.address.CityRegionVo;
 import com.xingyun.bbc.mallpc.model.vo.address.UserAddressDetailsVo;
+import com.xingyun.bbc.mallpc.model.vo.address.UserAddressListVo;
 import com.xingyun.bbc.mallpc.service.UserAddressService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -32,39 +33,44 @@ import java.util.List;
 @RequestMapping("/userAddress")
 public class UserAddressController {
 
+    private final UserAddressService userAddressService;
+
+    private final JwtParser jwtParser;
+
     @Autowired
-    private UserAddressService userAddressService;
-    @Autowired
-    private JwtParser jwtParser;
+    public UserAddressController(UserAddressService userAddressService, JwtParser jwtParser) {
+        this.userAddressService = userAddressService;
+        this.jwtParser = jwtParser;
+    }
 
     @ApiOperation("收货地址列表查询")
     @PostMapping("/query")
-    public Result<PageVo<UserAddressListDto>> query(@RequestBody UserAddressListDto userAddressListDto) {
-        return null;
+    public Result<PageVo<UserAddressListVo>> query(@RequestBody UserAddressListDto userAddressListDto) {
+        return userAddressService.query(userAddressListDto);
     }
 
     @ApiOperation("新增或编辑收货地址")
     @PostMapping("/saveOrUpdate")
     public Result saveOrUpdate(@Validated @RequestBody UserAddressDto userAddressDto) {
-        return null;
+        return userAddressService.saveOrUpdate(userAddressDto);
     }
 
     @ApiOperation("收货地址列表详情")
     @PostMapping("/view")
     public Result<UserAddressDetailsVo> view(@Validated @RequestBody UserAddressDetailsDto userAddressDetailsDto) {
-        return null;
+        return userAddressService.view(userAddressDetailsDto);
     }
 
     @ApiOperation("删除收货地址")
     @PostMapping("/del")
-    public Result queryUserAddressList(@Validated @RequestBody UserAddressDetailsDto userAddressDetailsDto) {
-        return null;
+    public Result del(@Validated @RequestBody UserAddressDetailsDto userAddressDetailsDto) {
+        return userAddressService.del(userAddressDetailsDto);
     }
 
     @ApiOperation(value = "收件地址查询区域列表", httpMethod = "POST")
     @PostMapping("/queryCityRegion")
     public Result<List<CityRegionVo>> getCityRegionLis(@Validated @RequestBody CityRegionDto cityRegionDto) {
-        return null;
+        return userAddressService.getCityRegionLis(cityRegionDto);
     }
 
     @ApiOperation("默认收货地址")
