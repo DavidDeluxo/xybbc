@@ -17,6 +17,9 @@ public class UserAddressDetailsVo implements Serializable {
 
     private static final long serialVersionUID = -8321483488618835056L;
 
+    @ApiModelProperty("收货地址id")
+    private Long fdeliveryUserId;
+
     @ApiModelProperty("姓名")
     private String fdeliveryName;
 
@@ -47,8 +50,14 @@ public class UserAddressDetailsVo implements Serializable {
     @ApiModelProperty("身份证反面")
     private ImageVo cardUrlBack;
 
+    @ApiModelProperty("身份证正面")
+    private String fdeliveryCardUrlFront;
+
+    @ApiModelProperty("身份证反面")
+    private String fdeliveryCardUrlBack;
+
     @ApiModelProperty("是否默认地址(0否, 1是)")
-    private String fisDefualt;
+    private Integer fisDefualt;
 
 
 }

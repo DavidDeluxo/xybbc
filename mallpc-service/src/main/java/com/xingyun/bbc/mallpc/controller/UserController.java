@@ -62,4 +62,9 @@ public class UserController {
         return null;
     }
 
+    @ApiOperation("查询新人注册优惠券")
+    @GetMapping("/queryRegisterCoupon")
+    public Result queryRegisterCoupon(@RequestParam("uid") Long uid) {
+        return userService.queryRegisterCoupon(uid);
+    }
 }
