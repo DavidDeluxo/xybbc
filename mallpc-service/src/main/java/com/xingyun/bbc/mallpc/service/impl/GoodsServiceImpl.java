@@ -52,6 +52,7 @@ public class GoodsServiceImpl implements GoodsService {
 
     /**
      * 查询商品列表
+     *
      * @param searchItemDto
      * @return
      */
@@ -62,14 +63,19 @@ public class GoodsServiceImpl implements GoodsService {
 
     /**
      * 查询商品筛选信息列表
+     *
      * @param searchItemDto
      * @return
      */
     @Override
     public Result<SearchFilterVo> searchSkuFilter(SearchItemDto searchItemDto) {
         SearchFilterVo filterVo = new SearchFilterVo();
+
+        //分类查询条件设置
         this.setCategoryCondition(searchItemDto);
+        //扫描入参类属性注解, 自动构建搜索条件
         EsCriteria criteria = EsCriteria.build(searchItemDto);
+        //设定搜索条件
         this.setSearchCondition(searchItemDto, criteria);
         this.setAggregation(criteria);
 
@@ -127,20 +133,22 @@ public class GoodsServiceImpl implements GoodsService {
         return Result.success(filterVo);
     }
 
+    /**
+     * 分类查询条件设置
+     * @param searchItemDto
+     */
     private void setCategoryCondition(SearchItemDto searchItemDto) {
         // 商品类目条件
-        if (CollectionUtils.isNotEmpty(searchItemDto.getFUnicategoryIds())
-                && searchItemDto.getFcategoryLevel() != null) {
-            Integer fcateogryLevel = searchItemDto.getFcategoryLevel();
-            if (fcateogryLevel == 1) {
-                searchItemDto.setFcategoryIdL1(searchItemDto.getFUnicategoryIds());
-            }
-            if (fcateogryLevel == 2) {
-                searchItemDto.setFcategoryIdL2(searchItemDto.getFUnicategoryIds());
-            }
-            if (fcateogryLevel == 3) {
-                searchItemDto.setFcategoryId(searchItemDto.getFUnicategoryIds());
-            }
+        if (CollectionUtils.isEmpty(searchItemDto.getFUnicategoryIds()) || searchItemDto.getFcategoryLevel() == null) {
+            return;
+        }
+        Integer categoryLevel = searchItemDto.getFcategoryLevel();
+        if (categoryLevel == 1) {
+            searchItemDto.setFcategoryIdL1(searchItemDto.getFUnicategoryIds());
+        } else if (categoryLevel == 2) {
+            searchItemDto.setFcategoryIdL2(searchItemDto.getFUnicategoryIds());
+        } else if (categoryLevel == 3) {
+            searchItemDto.setFcategoryId(searchItemDto.getFUnicategoryIds());
         }
     }
 
