@@ -152,10 +152,7 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
         ItemDto itemDto = new ItemDto();
         BeanUtils.copyProperties(dto, itemDto);
         itemDto.setPageNum(dto.getPageIndex());
-        if (dto.getIsLogin()) {
-            Integer priceType = this.getUserPriceType(dto);
-            itemDto.setFuserTypeId(priceType + "");
-        }
+
         Result<Page<ItemVo>> pageResult = couponGoodsApi.queryCouponGoods(itemDto);
 
         if (!pageResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -182,39 +179,6 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
         itemListVo.setList(list);
         itemListVo.setTotalCount(list.size());
         return Result.success(itemListVo);
-    }
-
-
-    /**
-     * 根据用户身份选择价格类型
-     *
-     * @param dto
-     * @return
-     */
-    private Integer getUserPriceType(SearchItemDto dto) {
-        //默认为未认证
-        Integer userTypeId = 0;
-        if (dto.getIsLogin() && Objects.nonNull(dto.getFuid())) {
-            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class).andEqualTo(User::getFuid, dto.getFuid()));
-
-            if (!userResult.isSuccess()) throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
-            User user = userResult.getData();
-            if (Objects.isNull(user)) throw new BizException(MallResultStatus.USER_NOT_EXIST);
-
-            userTypeId = user.getFoperateType();
-        }
-        return userTypeId;
-    }
-
-    private SearchFilterVo getInitSearchFilterVo() {
-        SearchFilterVo vo = new SearchFilterVo();
-        vo.setTotalCount(0);
-        vo.setAttributeFilterList(Lists.newArrayList());
-        vo.setBrandList(Lists.newArrayList());
-        vo.setCategoryList(Lists.newArrayList());
-        vo.setOriginList(Lists.newArrayList());
-        vo.setTradeList(Lists.newArrayList());
-        return vo;
     }
 
     public SearchItemListVo<SearchItemVo> getInitListVo(SearchItemDto dto) {
