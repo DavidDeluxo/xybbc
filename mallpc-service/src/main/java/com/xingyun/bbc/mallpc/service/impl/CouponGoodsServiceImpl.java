@@ -31,7 +31,6 @@ import com.xingyun.bbc.mallpc.service.CouponGoodsService;
 import com.xingyun.bbc.mallpc.service.GoodsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -85,11 +84,11 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
         } catch (Exception e) {
             log.warn("ES优惠券商品搜索失败!...");
 
-            if (Objects.nonNull(dto.getFcouponId())){
-
-                log.info("----------ES优惠券商品搜索失败!,转SQL查询------------");
-                res = this.queryGoodsListRealTime(dto);
-            }
+//            if (Objects.nonNull(dto.getFcouponId())){
+//
+//                log.info("----------ES优惠券商品搜索失败!,转SQL查询------------");
+//                res = this.queryGoodsListRealTime(dto);
+//            }
 
         }
         return res;
