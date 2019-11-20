@@ -643,7 +643,9 @@ public class UserServiceImpl implements UserService {
             userVo.setIsPopupWindows(0);
             if(userResult.getData().getFlastloginTime().compareTo(userResult.getData().getFuserValidTime()) < 0){
                 couponAuthenticationNum = queryAuthenticationCoupon(userResult.getData().getFuid());
-                userVo.setIsPopupWindows(1);
+                if(!couponAuthenticationNum.equals(0)){
+                    userVo.setIsPopupWindows(1);
+                }
                 //更新最近登录时间
                 User user = new User();
                 user.setFuid(userResult.getData().getFuid());
