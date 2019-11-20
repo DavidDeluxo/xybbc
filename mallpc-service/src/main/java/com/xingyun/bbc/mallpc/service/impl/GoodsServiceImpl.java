@@ -15,10 +15,12 @@ import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.model.dto.search.SearchItemDto;
 import com.xingyun.bbc.mallpc.model.vo.search.*;
 import com.xingyun.bbc.mallpc.service.GoodsService;
+import com.xingyun.bbc.mallpc.service.SearchRecordService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.search.join.ScoreMode;
+import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -49,6 +51,8 @@ public class GoodsServiceImpl implements GoodsService {
     private UserApi userApi;
     @Resource
     private GoodsCategoryApi goodsCategoryApi;
+    @Autowired
+    private SearchRecordService searchRecordService;
 
     /**
      * 查询商品列表
@@ -58,7 +62,76 @@ public class GoodsServiceImpl implements GoodsService {
      */
     @Override
     public Result<SearchItemListVo<SearchItemVo>> searchSkuList(SearchItemDto searchItemDto) {
-        return null;
+        if (!StringUtils.isEmpty(searchItemDto.getSearchFullText())) {
+            searchRecordService.insertSearchRecordAsync(searchItemDto.getSearchFullText(), searchItemDto.getFuid());
+        }
+        // 初始化PageVo
+        SearchItemListVo<SearchItemVo> pageVo = new SearchItemListVo<>();
+        pageVo.setIsLogin(searchItemDto.getIsLogin());
+        pageVo.setTotalCount(0);
+        pageVo.setPageSize(1);
+        this.setCategoryCondition(searchItemDto);
+        EsCriteria criteria = EsCriteria.build(searchItemDto);
+        this.setSearchCondition(searchItemDto, criteria);
+        String soldAmountScript = "1-Math.pow(doc['fsell_total'].value + 1, -1)";
+
+        Map<String, Object> resultMap = esManager.functionQueryForResponse(criteria, soldAmountScript, CombineFunction.SUM);
+        List<Map<String, Object>> resultList = (List<Map<String, Object>>) resultMap.get("resultList");
+        List<SearchItemVo> voList = new LinkedList<>();
+        pageVo.setList(voList);
+        Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
+        if (!CollectionUtils.isEmpty(resultList)) {
+            for (Map<String, Object> map : resultList) {
+                SearchItemVo vo = new SearchItemVo();
+                if (map.get("fskuId") != null) {
+                    vo.setFskuId(Integer.parseInt(String.valueOf(map.get("fskuId"))));
+                }
+                if (map.get("fskuName") != null) {
+                    vo.setFskuName(String.valueOf(map.get("fskuName")));
+                }
+                if (map.get("ftradeId") != null) {
+                    vo.setFtradedId(Integer.parseInt(String.valueOf(map.get("ftradeId"))));
+                }
+                if (map.get("ftradeName") != null) {
+                    vo.setFtradeName(String.valueOf(map.get("ftradeName")));
+                }
+                if (map.get("fsellTotal") != null) {
+                    vo.setFsellNum(Long.parseLong(String.valueOf(map.get("fsellTotal"))));
+                }
+                if (map.get("fskuThumbImage") != null) {
+                    vo.setFimgUrl(String.valueOf(map.get("fskuThumbImage")));
+                }
+                if (map.get("fgoodsId") != null) {
+                    vo.setFgoodsId(Integer.parseInt(String.valueOf(map.get("fgoodsId"))));
+                }
+                if (map.get("fskuStatus") != null) {
+                    vo.setFskuStatus(Integer.parseInt(String.valueOf(map.get("fskuStatus"))));
+                }
+                if (map.get("flabelId") != null) {
+                    vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
+                }
+                String priceName = this.getUserPriceType(searchItemDto);
+                if (map.get(priceName) != null && searchItemDto.getIsLogin()) {
+                    Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
+                    if (priceMap.get("min_price") != null) {
+                        BigDecimal min_price_penny = new BigDecimal(String.valueOf(priceMap.get("min_price")));
+                        BigDecimal min_price_yuan = min_price_penny.divide(ONE_HUNDRED).setScale(2, BigDecimal.ROUND_HALF_UP);
+                        vo.setFbatchSellPrice(min_price_yuan);
+                    } else {
+                        vo.setFbatchSellPrice(BigDecimal.ZERO);
+                    }
+                }
+                if (map.get("fstockRemainNumTotal") != null) {
+                    vo.setFremainTotal(Integer.parseInt(String.valueOf(map.get("fstockRemainNumTotal"))));
+                }
+                voList.add(vo);
+            }
+            pageVo.setPageSize(searchItemDto.getPageSize());
+            pageVo.setCurrentPage(searchItemDto.getPageIndex());
+            pageVo.setTotalCount(Integer.parseInt(String.valueOf(baseInfoMap.get("totalHits"))));
+        }
+
+        return Result.success(pageVo);
     }
 
     /**
