@@ -1,33 +1,45 @@
 package com.xingyun.bbc.mall.infrastructure.message.listener;
 
 import com.alibaba.fastjson.JSON;
+import com.xingyun.bbc.core.market.event.CouponEvent;
+import com.xingyun.bbc.core.market.event.CouponInvalidateEvent;
+import com.xingyun.bbc.core.market.event.CouponReleaseEvent;
+import com.xingyun.bbc.core.market.event.channel.CouponEventInputChannel;
 import com.xingyun.bbc.core.market.po.Coupon;
-import com.xingyun.bbc.mall.infrastructure.message.channel.CouponChannel;
 import com.xingyun.bbc.mall.service.GoodsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 
+@EnableBinding(CouponEventInputChannel.class)
 @Slf4j
-@EnableBinding(CouponChannel.class)
 public class CouponReleaseListener {
 
     @Autowired
     private GoodsService goodsService;
 
-    @StreamListener(CouponChannel.COUPON_RELEASE_INPUT)
-    public void consumeCouponReleaseMessage(Coupon coupon){
+    @StreamListener(CouponEventInputChannel.COUPON_EVENT_INPUT)
+    public void consumeCouponReleaseMessage(CouponEvent couponEvent) {
         try {
-            log.info("开始消费发布优惠券信息message={}", JSON.toJSONString(coupon));
-            goodsService.updateEsSkuWithCouponInfo(coupon);
-            log.info("消费发布优惠券信息成功message={}", JSON.toJSONString(coupon));
+            if (couponEvent instanceof CouponReleaseEvent) {
+                log.info("开始消费发布优惠券信息message={}", JSON.toJSONString(couponEvent));
+                Coupon coupon = couponEvent.getCoupon();
+                goodsService.updateEsSkuWithCouponInfo(coupon);
+                log.info("消费发布优惠券信息成功message={}", JSON.toJSONString(couponEvent));
+
+            } else if (couponEvent instanceof CouponInvalidateEvent) {
+
+                log.info("开始消费失效优惠券信息message={}", JSON.toJSONString(couponEvent));
+                Coupon coupon = couponEvent.getCoupon();
+                goodsService.deleteCouponInfoFromEsSku(coupon);
+                log.info("消费发布失效优惠券信息成功message={}", JSON.toJSONString(couponEvent));
+
+            }else {
+                log.error("不支持该事件类型");
+            }
         } catch (Throwable e) {
-            log.error("消费发布优惠券信息失败message={}", JSON.toJSONString(coupon), e);
+            log.error("消费发布优惠券信息失败", e);
         }
     }
-
-
-
-
 }
