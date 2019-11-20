@@ -251,7 +251,9 @@ public class UserServiceImpl implements UserService {
         //查询手机号是否已注册
         Criteria<User, Object> criteria = Criteria.of(User.class);
         criteria.andEqualTo(User::getFisDelete,"0")
-                .andEqualTo(User::getFmobile,mobile);
+                .andLeft()
+                .orEqualTo(User::getFmobile,mobile)
+                .orEqualTo(User::getFuname,mobile).addRight();
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
         if(userResult.getData() != null){
             return false;
