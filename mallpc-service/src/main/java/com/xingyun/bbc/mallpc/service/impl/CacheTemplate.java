@@ -31,7 +31,7 @@ public class CacheTemplate {
     /**
      * @param key
      * @param updateKey
-     * @param expire
+     * @param expire 过期时间（秒），不传默认是不过期
      * @param cacheCallBack
      * @return
      */
