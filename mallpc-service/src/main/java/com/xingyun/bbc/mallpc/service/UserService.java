@@ -6,6 +6,9 @@ import com.xingyun.bbc.mallpc.model.dto.user.UserLoginDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserRegisterDto;
 import com.xingyun.bbc.mallpc.model.vo.user.SendSmsCodeVo;
 import com.xingyun.bbc.mallpc.model.vo.user.UserLoginVo;
+import com.xingyun.bbc.mallpc.model.vo.user.UserRegisterCouponVo;
+
+import java.util.List;
 
 /**
  * @author nick
@@ -54,4 +57,14 @@ public interface UserService {
      * @version 1.0.0
      */
     Result resetPwd(SendSmsCodeDto sendSmsCodeDto);
+
+    /**
+     * @author nick
+     * @date 2019-11-19
+     * @description :  查询新人注册优惠券
+     * @version 1.0.0
+     */
+    Result<List<UserRegisterCouponVo>> queryRegisterCoupon(Long uid);
+
+
 }

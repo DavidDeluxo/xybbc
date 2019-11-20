@@ -3,14 +3,12 @@ package com.xingyun.bbc.common.elasticsearch.config;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.DateUtils;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.get.MultiGetItemResponse;
-import org.elasticsearch.action.get.MultiGetRequest;
-import org.elasticsearch.action.get.MultiGetResponse;
+import org.elasticsearch.action.get.*;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -326,6 +324,16 @@ public class EsManager {
         }
         return resultList;
     }
+
+    public GetResponse getSourceById(String documentId) throws Exception{
+        if(StringUtils.isEmpty(documentId)){
+            throw new IllegalArgumentException("id不可为空");
+        }
+        GetRequest getRequest = new GetRequest(properties.getIndex(), properties.getType(),documentId);
+        GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
+        return getResponse;
+    }
+
 
     public EsSettingsProperties getProperties() {
         return properties;

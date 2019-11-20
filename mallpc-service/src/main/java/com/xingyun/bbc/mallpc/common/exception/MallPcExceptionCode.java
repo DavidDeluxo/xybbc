@@ -72,6 +72,8 @@ public class MallPcExceptionCode implements IResultStatus {
     public static final MallPcExceptionCode PASSWORD_ILLEGAL = new MallPcExceptionCode("1009", "密码长度不符合要求(6-32位)");
     public static final MallPcExceptionCode USER_NOT_LOGGED_IN = new MallPcExceptionCode("1010", "用户未登录");
     public static final MallPcExceptionCode USER_CANNOT_VERIFY = new MallPcExceptionCode("1011", "只有未认证或认证失败的用户可以提交认证");
+    public static final MallPcExceptionCode EXTENSION_CODE_NOT_EXIST = new MallPcExceptionCode("1012", "请输入正确的邀请码");
+    public static final MallPcExceptionCode COUPON_NOT_EXIST = new MallPcExceptionCode("1013", "优惠券配置不存在");
 
 
     public static final MallPcExceptionCode USER_NOT_EXIST = new MallPcExceptionCode("2020", "用户不存在");

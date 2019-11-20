@@ -9,9 +9,17 @@ import com.xingyun.bbc.core.activity.model.dto.CouponReleaseDto;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.helper.api.SMSApi;
 import com.xingyun.bbc.core.market.api.CouponApi;
+import com.xingyun.bbc.core.market.api.CouponReceiveApi;
+import com.xingyun.bbc.core.market.enums.CouponReceiveStatusEnum;
 import com.xingyun.bbc.core.market.enums.CouponReleaseTypeEnum;
 import com.xingyun.bbc.core.market.enums.CouponStatusEnum;
+import com.xingyun.bbc.core.market.enums.CouponTypeEnum;
 import com.xingyun.bbc.core.market.po.Coupon;
+import com.xingyun.bbc.core.market.po.CouponReceive;
+import com.xingyun.bbc.core.operate.api.MarketUserApi;
+import com.xingyun.bbc.core.operate.api.MarketUserStatisticsApi;
+import com.xingyun.bbc.core.operate.po.MarketUser;
+import com.xingyun.bbc.core.operate.po.MarketUserStatistics;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserAccountApi;
 import com.xingyun.bbc.core.user.api.UserApi;
@@ -29,9 +37,11 @@ import com.xingyun.bbc.mallpc.model.dto.user.UserLoginDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserRegisterDto;
 import com.xingyun.bbc.mallpc.model.vo.user.SendSmsCodeVo;
 import com.xingyun.bbc.mallpc.model.vo.user.UserLoginVo;
+import com.xingyun.bbc.mallpc.model.vo.user.UserRegisterCouponVo;
 import com.xingyun.bbc.mallpc.service.UserService;
 import io.jsonwebtoken.Claims;
 import io.seata.spring.annotation.GlobalTransactional;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -39,6 +49,9 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import javax.servlet.http.Cookie;
 import java.util.*;
+import java.util.function.Function;
+
+import static java.util.stream.Collectors.*;
 
 /**
  * @author nick
@@ -77,6 +90,15 @@ public class UserServiceImpl implements UserService {
 
     @Resource
     private CouponProviderApi couponProviderApi;
+
+    @Resource
+    private MarketUserApi marketUserApi;
+
+    @Resource
+    private MarketUserStatisticsApi marketUserStatisticsApi;
+
+    @Resource
+    private CouponReceiveApi couponReceiveApi;
 
     /**
      * @author nick
@@ -146,9 +168,7 @@ public class UserServiceImpl implements UserService {
                 .findFirst().orElseThrow(() -> new BizException(MallPcExceptionCode.AUTO_LOGIN_FAILED))
                 .getValue();
         Claims claims = xyUserJwtManager.parseJwt(token);
-        if (Objects.isNull(claims)) {
-            throw new BizException(MallPcExceptionCode.AUTO_LOGIN_FAILED);
-        }
+        Ensure.that(Objects.nonNull(claims)).isTrue(MallPcExceptionCode.AUTO_LOGIN_FAILED);
         String fmobile = claims.getSubject();
         User user = findUserByMobile(fmobile);
         Ensure.that(user).isNotNull(MallPcExceptionCode.AUTO_LOGIN_FAILED);
@@ -170,6 +190,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @GlobalTransactional
     public Result<UserLoginVo> register(UserRegisterDto userRegisterDto) {
+        MarketUser marketUser = null;
         String fmobile = userRegisterDto.getFmobile();
         // 判断验证码合法性
         Ensure.that(checkVerifyCode(fmobile, userRegisterDto.getVerifyCode())).isTrue(MallPcExceptionCode.SMS_AUTH_NUM_ERROR);
@@ -179,6 +200,15 @@ public class UserServiceImpl implements UserService {
         Ensure.that(StringUtils.isNotBlank(passWord)).isTrue(MallPcExceptionCode.PASSWORD_CAN_NOT_BE_NULL);
         // 校验密码长度
         Ensure.that(passWord.length()).isGt(6, MallPcExceptionCode.PASSWORD_CAN_NOT_BE_NULL).isLt(32, MallPcExceptionCode.PASSWORD_CAN_NOT_BE_NULL);
+        // 验证推广码
+        if (StringUtils.isNotBlank(userRegisterDto.getFinviter())) {
+            Result<MarketUser> marketUserResult = marketUserApi.queryOneByCriteria(Criteria.of(MarketUser.class)
+                    .fields(MarketUser::getFuid, MarketUser::getFextensionCode)
+                    .andEqualTo(MarketUser::getFextensionCode, userRegisterDto.getFinviter()));
+            Ensure.that(marketUserResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+            marketUser = marketUserResult.getData();
+            Ensure.that(Objects.nonNull(marketUser)).isTrue(MallPcExceptionCode.EXTENSION_CODE_NOT_EXIST);
+        }
         passWord = MD5Util.toMd5(passWord);
         User user = new User();
         user.setFregisterFrom("web");
@@ -196,6 +226,15 @@ public class UserServiceImpl implements UserService {
         userAccount.setFuid(userResult.getData().getFuid());
         Ensure.that(userAccountApi.create(userAccount)).isSuccess(MallPcExceptionCode.SYSTEM_ERROR);
         UserLoginVo userLoginVo = createToken(userResult.getData());
+        // 如果使用了推广码注册成功保存推广信息
+        if (Objects.nonNull(marketUser)) {
+            // 保存统计表
+            MarketUserStatistics marketUserStatistics = new MarketUserStatistics();
+            marketUserStatistics.setFextensionCode(marketUser.getFextensionCode());
+            marketUserStatistics.setFuid(marketUser.getFuid());
+            marketUserStatistics.setFinvitorUid(user.getFuid());
+            Ensure.that(marketUserStatisticsApi.create(marketUserStatistics).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+        }
         // 注册成功系统赠送优惠券
         receiveCoupon(user.getFuid());
         return Result.success(userLoginVo);
@@ -296,14 +335,53 @@ public class UserServiceImpl implements UserService {
      */
     private void receiveCoupon(Long fuid) {
         Result<List<Coupon>> couponResult = couponApi.queryByCriteria(Criteria.of(Coupon.class)
+                .fields(Coupon::getFcouponId)
                 .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
                 .andEqualTo(Coupon::getFreleaseType, CouponReleaseTypeEnum.REGISTER.getCode())
                 .andGreaterThan(Coupon::getFsurplusReleaseQty, 0));
         Ensure.that(couponResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
-        couponResult.getData().stream()
-                .forEach(coupon -> couponProviderApi.receive(new CouponReleaseDto()
-                        .setCouponId(coupon.getFcouponId())
-                        .setCouponScene(CouponScene.REGISTER)
-                        .setUserId(fuid)));
+        couponResult.getData().stream().forEach(coupon -> couponProviderApi.receive(new CouponReleaseDto()
+                .setCouponId(coupon.getFcouponId())
+                .setCouponScene(CouponScene.REGISTER)
+                .setUserId(fuid)));
+    }
+
+    /**
+     * @author nick
+     * @date 2019-11-19
+     * @description :  查询新人注册优惠券
+     * @version 1.0.0
+     */
+    @Override
+    public Result<List<UserRegisterCouponVo>> queryRegisterCoupon(Long uid) {
+        Result<List<CouponReceive>> couponReceiveResult = couponReceiveApi.queryByCriteria(Criteria.of(CouponReceive.class)
+                .andEqualTo(CouponReceive::getFuserCouponStatus, CouponReceiveStatusEnum.NOT_USED.getCode())
+                .andEqualTo(CouponReceive::getFuid, uid));
+        Ensure.that(couponReceiveResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+        List<CouponReceive> couponReceiveList = couponReceiveResult.getData();
+        if (CollectionUtils.isEmpty(couponReceiveList)) {
+            return Result.success();
+        }
+        List<Long> couponIds = couponReceiveList.stream().map(CouponReceive::getFcouponId).collect(toList());
+        Result<List<Coupon>> couponResult = couponApi.queryByCriteria(Criteria.of(Coupon.class)
+                .fields(Coupon::getFcouponName, Coupon::getFcouponType, Coupon::getFthresholdAmount, Coupon::getFdeductionValue)
+                .andIn(Coupon::getFcouponId, couponIds));
+        Ensure.that(couponResult).isNotEmptyData(MallPcExceptionCode.COUPON_NOT_EXIST);
+        Map<Long, Coupon> couponMap = couponResult.getData().stream().collect(toMap(Coupon::getFcouponId, Function.identity()));
+        List<UserRegisterCouponVo> voList = couponReceiveList.stream().map(couponReceive -> {
+            UserRegisterCouponVo vo = convertor.convert(couponReceive, UserRegisterCouponVo.class);
+            Coupon coupon = couponMap.get(couponReceive.getFcouponId());
+            Ensure.that(Objects.nonNull(coupon)).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+            vo.setFcouponName(coupon.getFcouponName());
+            vo.setFcouponType(coupon.getFcouponType());
+            vo.setThresholdAmount(AccountUtil.divideOneHundred(coupon.getFthresholdAmount()));
+            if (Objects.equals(vo.getFcouponType(), CouponTypeEnum.FULL_REDUCTION.getCode())) {
+                vo.setDeductionValue(AccountUtil.divideOneHundred(coupon.getFdeductionValue()));
+            } else if (Objects.equals(vo.getFcouponType(), CouponTypeEnum.DISCOUNT.getCode())) {
+                vo.setDeductionValue(AccountUtil.divideOneHundred(coupon.getFdeductionValue() * 10));
+            }
+            return vo;
+        }).collect(toList());
+        return Result.success(voList);
     }
 }

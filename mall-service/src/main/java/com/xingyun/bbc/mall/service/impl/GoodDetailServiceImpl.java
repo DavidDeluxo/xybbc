@@ -27,6 +27,11 @@ import com.xingyun.bbc.core.sku.enums.GoodsSkuEnums;
 import com.xingyun.bbc.core.sku.enums.SkuBatchEnums;
 import com.xingyun.bbc.core.sku.po.GoodsSku;
 import com.xingyun.bbc.core.sku.po.*;
+import com.xingyun.bbc.core.sku.po.GoodsSkuBatchPrice;
+import com.xingyun.bbc.core.sku.po.SkuBatch;
+import com.xingyun.bbc.core.sku.po.SkuBatchPackage;
+import com.xingyun.bbc.core.sku.po.SkuBatchUserPrice;
+import com.xingyun.bbc.core.sku.po.SkuUserDiscountConfig;
 import com.xingyun.bbc.core.supplier.enums.TradeTypeEnums;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.api.UserDeliveryApi;
@@ -1030,9 +1035,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                         .andEqualTo(Coupon::getFcouponId, couponReceive.getFcouponId())
                         .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
                         .andEqualTo(Coupon::getFisShow, 1)
-                        .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType,
-                                Coupon::getFthresholdAmount, Coupon::getFdeductionValue, Coupon::getFvalidityStart,
-                                Coupon::getFvalidityEnd, Coupon::getFapplicableSku));
+                        .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType, Coupon::getFthresholdAmount,
+                                Coupon::getFdeductionValue, Coupon::getFvalidityStart, Coupon::getFvalidityEnd,
+                                Coupon::getFapplicableSku, Coupon::getFvalidityType, Coupon::getFvalidityDays));
                 Coupon coupon = couponResult.getData();
                 if (couponResult.isSuccess() && null != coupon) {
                     //1全部商品、2指定商品可用、3指定商品不可用

@@ -4,6 +4,7 @@ package com.xingyun.bbc.mall.service.impl;
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONException;
+import com.google.common.collect.Sets;
 import com.xingyun.bbc.common.elasticsearch.config.EsBeanUtil;
 import com.xingyun.bbc.common.elasticsearch.config.EsCriteria;
 import com.xingyun.bbc.common.elasticsearch.config.EsManager;
@@ -41,6 +42,7 @@ import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -51,10 +53,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -91,6 +90,8 @@ public class GoodsServiceImpl implements GoodsService {
     UserApi userApi;
     @Autowired
     GoodsApi goodsApi;
+    @Autowired
+
 
 //    @Autowired
 //    MallSkuSearchApi mallSkuSearchApi;
@@ -541,6 +542,95 @@ public class GoodsServiceImpl implements GoodsService {
             }
         }
         return Result.success(brandPageVo);
+    }
+
+    @Override
+    public void deleteCouponInfoFromEsSku(Coupon coupon){
+        if(coupon == null || coupon.getFcouponId() == null){
+            return;
+        }
+        Long fcouponId = coupon.getFcouponId();
+        long startTimeTotal = System.currentTimeMillis();
+        int pageSize = 2000;
+        SkuIdVo skuIdVo = queryApplicableSku(fcouponId, 1,9);
+        if(skuIdVo.getTotalCount() == 0){
+            return;
+        }
+        int totalPage = 0;
+        if(skuIdVo.getTotalCount() % pageSize == 0){
+            totalPage = skuIdVo.getTotalCount() / pageSize;
+        }else{
+            totalPage = skuIdVo.getTotalCount() / pageSize + 1;
+        }
+        for(int i = 1; i<=totalPage; i++){
+            skuIdVo = queryApplicableSku(fcouponId, i,pageSize);
+            List<String> skuIds = skuIdVo.getFskuIds();
+            try {
+                long startTime = System.currentTimeMillis();
+                Map<String, Map<String,Object>> multiSourceMap = new HashMap<>();
+                List<Map<String, Object>> responseList = esManager.getInBulk(skuIds);
+//                log.info(JSON.toJSONString(responseList));
+                for(Map<String, Object> sourceMap : responseList){
+                    if(MapUtils.isNotEmpty(sourceMap)){
+                        List<Integer> couponIdList = (List<Integer>) sourceMap.get("fcoupon_ids");
+                        Set<Integer> set = Sets.newHashSet(couponIdList);
+                        if(couponIdList.contains(fcouponId.intValue())){
+                            set.remove(fcouponId.intValue());
+                        }
+                        sourceMap.put("fcoupon_ids", set);
+                        multiSourceMap.put(String.valueOf(sourceMap.get("fsku_id")), sourceMap);
+                    }
+                }
+                long endTime = System.currentTimeMillis();
+                float excTime = (float) (endTime-startTime) / 1000;
+                log.info("get_exec_time:{}, pagesize:{}, pageIndex:{}, totalPages:{}", excTime, pageSize, i, totalPage);
+
+                long startTimeIndex = System.currentTimeMillis();
+                if(MapUtils.isNotEmpty(multiSourceMap)){
+                    BulkResponse bulkResponse = esManager.indexInBulk(multiSourceMap);
+                }else {
+                    log.info("multisourceMap is empty!");
+                }
+                long endTimeIndex = System.currentTimeMillis();
+                float excTime_index = (float) (endTimeIndex-startTimeIndex) / 1000;
+                log.info("index_exec_time:{}, pagesize:{}, pageIndex:{}, totalPages:{}", excTime_index, pageSize, i, totalPage);
+
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+        long endTimeTotal = System.currentTimeMillis();
+        float excTimeTotal = (float) (endTimeTotal-startTimeTotal) / 1000;
+        log.info("total_exec_time:{}, totalPages:{}", excTimeTotal, totalPage);
+    }
+
+    @Override
+    public void updateEsSkuWithSkuUpdate(Map<String, Object> skuSourceMap){
+        if(MapUtils.isEmpty(skuSourceMap)){
+            return;
+        }
+        String fskuId = String.valueOf(skuSourceMap.get("fsku_id"));
+        try {
+           GetResponse getResponse = esManager.getSourceById(fskuId);
+           if(getResponse.isExists()){
+              Map<String, Object> oldSourceMap = getResponse.getSourceAsMap();
+              if(oldSourceMap.get("fcoupon_ids") != null){
+                  List<Integer> couponIdList = (List<Integer>) oldSourceMap.get("fcoupon_ids");
+                  skuSourceMap.put("fcoupon_ids", couponIdList);
+              }
+           }else {
+               skuSourceMap.put("fcoupon_ids", getCouponListForSku(fskuId));
+           }
+           Map<String, Map<String, Object>> indexMap = new HashMap<>();
+           indexMap.put(fskuId, skuSourceMap);
+           esManager.indexInBulk(indexMap);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private List<Integer> getCouponListForSku(String fskuId){
+        return Lists.newArrayList();
     }
 
 
