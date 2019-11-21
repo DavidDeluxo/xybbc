@@ -407,11 +407,22 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             BigDecimal packagePrice = this.getPackagePrice(goodsDetailMallDto);
             priceResult.setRealPrice(PriceUtil.toYuan(packagePrice));
             priceResult.setPriceStart(PriceUtil.toYuan(packagePrice));
+            Result<SkuBatchPackage> skuBatchPackageResult = skuBatchPackageApi.queryById(goodsDetailMallDto.getFbatchPackageId());
+            if (!skuBatchPackageResult.isSuccess()) {
+                throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
+            }
+            String skuBatchId = skuBatchPackageResult.getData().getFsupplierSkuBatchId();
+            SkuBatch skuBatch = getSkuBatchById(skuBatchId);
+            priceResult.setFgoodsPackType(skuBatch.getFgoodsPackType());
+            priceResult.setFwarehouseName(skuBatch.getFwarehouseName());
         }
         //到批次
         if (null != goodsDetailMallDto.getFsupplierSkuBatchId() && null == goodsDetailMallDto.getFbatchPackageId()) {
             priceResult = this.getBatchPrice(goodsDetailMallDto);
             this.dealGoodDetailPriceToYuan(priceResult);
+            SkuBatch skuBatch = getSkuBatchById(goodsDetailMallDto.getFsupplierSkuBatchId());
+            priceResult.setFgoodsPackType(skuBatch.getFgoodsPackType());
+            priceResult.setFwarehouseName(skuBatch.getFwarehouseName());
         }
         //到sku
         if (null != goodsDetailMallDto.getFskuId() && null == goodsDetailMallDto.getFsupplierSkuBatchId() && null == goodsDetailMallDto.getFbatchPackageId()) {
@@ -490,6 +501,14 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             priceResult.setDealUnitPrice(dealUnitPrice);
         }
         return Result.success(priceResult);
+    }
+
+    private SkuBatch getSkuBatchById(String skuBatchId) {
+        Result<SkuBatch> skuBatchResult = skuBatchApi.queryById(skuBatchId);
+        if (!skuBatchResult.isSuccess()) {
+            throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
+        }
+        return skuBatchResult.getData();
     }
 
     private BigDecimal getFreight(Long fbatchPackageId, Long ffreightId, Long fdeliveryCityId, String fsupplierSkuBatchId, Long fnum) {
