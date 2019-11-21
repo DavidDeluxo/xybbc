@@ -44,6 +44,7 @@ import com.xingyun.bbc.mallpc.common.utils.RandomUtils;
 import com.xingyun.bbc.mallpc.model.dto.detail.GoodsDetailMallDto;
 import com.xingyun.bbc.mallpc.model.dto.detail.ReceiveCouponDto;
 import com.xingyun.bbc.mallpc.model.dto.detail.SkuDiscountTaxDto;
+import com.xingyun.bbc.mallpc.model.vo.address.CityRegionAllVO;
 import com.xingyun.bbc.mallpc.model.vo.detail.*;
 import com.xingyun.bbc.mallpc.service.GoodDetailService;
 import com.xingyun.bbc.order.api.FreightApi;
@@ -58,6 +59,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -72,6 +75,11 @@ import static java.util.stream.Collectors.toList;
 public class GoodDetailServiceImpl implements GoodDetailService {
 
     public static final Logger logger = LoggerFactory.getLogger(GoodDetailService.class);
+
+    /**
+     * 中国的省市区结果缓存
+     */
+    private Reference<CityRegionAllVO> cityRegionAllVOReference;
 
     @Resource
     private UserApi userApi;
@@ -1372,6 +1380,45 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         return Result.success(categorys);
     }
 
+    @Override
+    public Result<CityRegionAllVO> queryRegionOfChina() {
+        if (cityRegionAllVOReference != null && cityRegionAllVOReference.get() != null) {
+            return Result.success(cityRegionAllVOReference.get());
+        }
+        Result<List<CityRegion>> queryResult = cityRegionApi.queryAll();
+        if (!queryResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        CityRegionAllVO china = new CityRegionAllVO();
+        china.setValue(1);
+        china.setLabel("中国");
+        fillRegion(china, queryResult.getData());
+        cityRegionAllVOReference = new SoftReference<>(china);
+        return Result.success(china);
+    }
+
+    /**
+     * 组装区域
+     *
+     * @param parent
+     * @param regionAll
+     */
+    private void fillRegion(CityRegionAllVO parent, List<CityRegion> regionAll) {
+        //根据父id从区域集合中筛选出子区域
+        List<CityRegion> subRegions = regionAll.stream().filter((region) -> region.getFpRegionId().equals(parent.getValue())).collect(Collectors.toList());
+        List<CityRegionAllVO> children = new ArrayList<>();
+        parent.setChildren(children);
+        for (CityRegion region : subRegions) {
+            CityRegionAllVO cityRegionAllVO = new CityRegionAllVO();
+            cityRegionAllVO.setLabel(region.getFcrName());
+            cityRegionAllVO.setValue(region.getFregionId());
+            children.add(cityRegionAllVO);
+            //判断是否还有子区域,若有,递归组装
+            if (region.getFisParent() != null && region.getFisParent() == 1) {
+                fillRegion(cityRegionAllVO, regionAll);
+            }
+        }
+    }
     //    @Override
 //    public Result<List<GoodsSkuBatchVo>> getSkuBatchSpecifi(Long fskuId) {
 //        Result<List<SkuBatch>> skuBatchResult = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)

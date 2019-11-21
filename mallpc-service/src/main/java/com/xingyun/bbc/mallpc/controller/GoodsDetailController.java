@@ -4,6 +4,7 @@ package com.xingyun.bbc.mallpc.controller;
 import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.dto.detail.GoodsDetailMallDto;
+import com.xingyun.bbc.mallpc.model.vo.address.CityRegionAllVO;
 import com.xingyun.bbc.mallpc.model.vo.detail.*;
 import com.xingyun.bbc.mallpc.service.GoodDetailService;
 import io.swagger.annotations.Api;
@@ -135,5 +136,19 @@ public class GoodsDetailController {
         Long xyid = Long.parseLong(request.getHeader("xyid"));
         logger.info("获取分类根据skuId skuId {} fuid {}", skuId, xyid);
         return goodDetailService.getCategoryBySkuId(skuId, xyid);
+    }
+
+    /**
+     * 获取中国全部省市区
+     *
+     * @param
+     * @return com.xingyun.bbc.core.utils.Result<com.xingyun.bbc.supplier.api.model.dto.caseManagement.CityRegionAllVO>
+     * @date 2019/10/10 20:48
+     * @author ming.yiFei
+     */
+    @ApiOperation("获取中国全部省市区")
+    @GetMapping("/queryRegionAll")
+    public Result<CityRegionAllVO> queryRegionAll() {
+        return goodDetailService.queryRegionOfChina();
     }
 }
