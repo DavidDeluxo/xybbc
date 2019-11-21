@@ -22,20 +22,8 @@ public class SystemConfig {
      */
     public static String fdfsHost;
 
-    /**
-     * bd二维码跳转地址
-     */
-    public static String qrCodeUrl;
-
-    /**
-     * bd推广地址
-     */
-    public static String extensionUrl;
-
-    public SystemConfig(@Value("${fdfs.xy_host}") String fdfsHostValue, @Value("${bd.qrCodeUrl}") String qrCodeUrlValue, @Value("${bd.extensionUrlValue}") String extensionUrlValue) {
+    public SystemConfig(@Value("${fdfs.xy_host}") String fdfsHostValue) {
         fdfsHost = fdfsHostValue;
-        qrCodeUrl = qrCodeUrlValue;
-        extensionUrl = extensionUrlValue;
     }
 
 

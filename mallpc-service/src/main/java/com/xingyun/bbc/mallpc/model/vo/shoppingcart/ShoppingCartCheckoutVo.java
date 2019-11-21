@@ -4,7 +4,6 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
  * @author penglu
@@ -14,24 +13,19 @@ import java.util.List;
  */
 @Data
 @Accessors(chain = true)
-public class ShoppingCartVo implements Serializable {
+public class ShoppingCartCheckoutVo implements Serializable {
 
     private static final long serialVersionUID = 2053580874130747444L;
 
     /**
-     * 角标数量
+     * 保税商品数量
      */
-    private Integer qty;
+    private Integer bondedQty;
 
     /**
-     * 有效商品列表
+     * 非保税商品数量
      */
-    private List<ShoppingCartGoodsVo> validGoods;
-
-    /**
-     * 失效商品列表
-     */
-    private List<ShoppingCartGoodsVo> invalidGoods;
+    private Integer nonBondedQty;
 
 
 }
