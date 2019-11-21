@@ -24,10 +24,10 @@ public class ShoppingCartDto extends BaseDto {
     private static final long serialVersionUID = -3237379499351876387L;
 
     /**
-     * SKU ID
+     * sku编码
      */
-    @NotNull(message = "SKU ID不能为空", groups = {ShoppingCartValidator.Add.class})
-    private Long fskuId;
+    @NotNull(message = "sku编码不能为空", groups = {ShoppingCartValidator.Add.class})
+    private String fskuId;
 
     /**
      * 批次号
@@ -44,8 +44,8 @@ public class ShoppingCartDto extends BaseDto {
     /**
      * 购买数量
      */
-    @NotNull(message = "购买数量不能为空", groups = {ShoppingCartValidator.Add.class})
-    @Min(value = 1, message = "购买数量不能小于1")
+    @NotNull(message = "购买数量不能为空", groups = {ShoppingCartValidator.Add.class, ShoppingCartValidator.EditNum.class})
+    @Min(value = 1, message = "购买数量不能小于1", groups = {ShoppingCartValidator.Add.class, ShoppingCartValidator.EditNum.class})
     private Integer fbuyNum;
 
     /**
@@ -55,10 +55,8 @@ public class ShoppingCartDto extends BaseDto {
     private List<Long> ids;
 
     /**
-     * 规格数量值
+     * 是否清空失效商品
      */
-    @NotNull(message = "规格数量值不能为空", groups = {ShoppingCartValidator.EditNum.class})
-    @Min(value = 1, message = "规格数量值不能小于1", groups = {ShoppingCartValidator.EditNum.class})
-    private Integer skuNum;
+    private Boolean clearInvalidGoods;
 
 }
