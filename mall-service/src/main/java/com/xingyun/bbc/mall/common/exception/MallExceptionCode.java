@@ -76,6 +76,7 @@ public class MallExceptionCode implements IResultStatus {
     public static final MallExceptionCode CODE_NOT_COUPON = new MallExceptionCode("9996", "券码无匹配优惠券");
     public static final MallExceptionCode USER_NOT_COUPON = new MallExceptionCode("9996", "用户无匹配优惠券");
     public static final MallExceptionCode USER_NOT_RIGHT_COUPON = new MallExceptionCode("9997", "用户暂无权限兑换该类优惠券");
+    public static final MallExceptionCode COUPON_IS_NOT_TIME =new MallExceptionCode("9008", "优惠券不在领取时间内");
 
     private String code;
     private String msg;

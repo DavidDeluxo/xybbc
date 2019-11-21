@@ -18,4 +18,7 @@ public class ReceiveCouponDto implements Serializable {
     @ApiModelProperty("用户id")
     private Long fuid;
 
+    @ApiModelProperty("券码")
+    private String fcouponCode;
+
 }
