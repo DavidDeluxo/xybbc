@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mallpc.controller;
 
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mallpc.model.dto.user.ResetPasswordDto;
 import com.xingyun.bbc.mallpc.model.dto.user.SendSmsCodeDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserLoginDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserRegisterDto;
@@ -58,8 +59,8 @@ public class UserController {
 
     @ApiOperation("重置密码")
     @PostMapping("/resetPwd")
-    public Result resetPwd(@Validated @RequestBody SendSmsCodeDto sendSmsCodeDto) {
-        return null;
+    public Result resetPwd(@Validated @RequestBody ResetPasswordDto resetPasswordDto) {
+        return userService.resetPwd(resetPasswordDto);
     }
 
     @ApiOperation("查询新人注册优惠券")
@@ -67,4 +68,5 @@ public class UserController {
     public Result queryRegisterCoupon(@RequestParam("uid") Long uid) {
         return userService.queryRegisterCoupon(uid);
     }
+
 }

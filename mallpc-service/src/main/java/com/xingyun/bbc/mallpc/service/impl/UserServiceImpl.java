@@ -32,6 +32,7 @@ import com.xingyun.bbc.mallpc.common.constants.UserConstants;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.common.utils.*;
+import com.xingyun.bbc.mallpc.model.dto.user.ResetPasswordDto;
 import com.xingyun.bbc.mallpc.model.dto.user.SendSmsCodeDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserLoginDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserRegisterDto;
@@ -44,6 +45,7 @@ import io.seata.spring.annotation.GlobalTransactional;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.assertj.core.util.Lists;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -51,7 +53,8 @@ import javax.servlet.http.Cookie;
 import java.util.*;
 import java.util.function.Function;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * @author nick
@@ -109,8 +112,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public Result<UserLoginVo> userLogin(UserLoginDto userLoginDto) {
         //解密
-        String passWord = EncryptUtils.aesDecrypt(userLoginDto.getPassword());
-        Ensure.that(StringUtils.isNotBlank(passWord)).isTrue(MallPcExceptionCode.PASSWORD_CAN_NOT_BE_NULL);
+        // String passWord = EncryptUtils.aesDecrypt(userLoginDto.getPassword());
+        String passWord = userLoginDto.getPassword();
         passWord = MD5Util.toMd5(passWord);
         Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
                 .andEqualTo(User::getFisDelete, "0")
@@ -141,13 +144,13 @@ public class UserServiceImpl implements UserService {
         String token = xyUserJwtManager.createJwt(user.getFuid().toString(), user.getFmobile(), expire);
         userLoginVo.setExpire(expire);
         userLoginVo.setToken(token);
-        if (userLoginVo.getFnickname().equals("")) {
+        if (StringUtils.isBlank(userLoginVo.getFnickname())) {
             userLoginVo.setFunameIsModify(1);
         } else {
             userLoginVo.setFunameIsModify(0);
 
         }
-        if (user.getFwithdrawPasswd().equals("")) {
+        if (StringUtils.isBlank(user.getFwithdrawPasswd())) {
             userLoginVo.setFwithdrawPasswdStatus(0);
         } else {
             userLoginVo.setFwithdrawPasswdStatus(1);
@@ -196,10 +199,11 @@ public class UserServiceImpl implements UserService {
         Ensure.that(checkVerifyCode(fmobile, userRegisterDto.getVerifyCode())).isTrue(MallPcExceptionCode.SMS_AUTH_NUM_ERROR);
         // 判断手机号是否注册
         Ensure.that(Objects.isNull(findUserByMobile(fmobile))).isTrue(MallPcExceptionCode.REGISTER_MOBILE_EXIST);
-        String passWord = EncryptUtils.aesDecrypt(userRegisterDto.getPassword());
+        //String passWord = EncryptUtils.aesDecrypt(userRegisterDto.getPassword());
+        String passWord = userRegisterDto.getPassword();
         Ensure.that(StringUtils.isNotBlank(passWord)).isTrue(MallPcExceptionCode.PASSWORD_CAN_NOT_BE_NULL);
         // 校验密码长度
-        Ensure.that(passWord.length()).isGt(6, MallPcExceptionCode.PASSWORD_CAN_NOT_BE_NULL).isLt(32, MallPcExceptionCode.PASSWORD_CAN_NOT_BE_NULL);
+        Ensure.that(passWord.length()).isGt(6, MallPcExceptionCode.PASSWORD_ILLEGAL).isLt(32, MallPcExceptionCode.PASSWORD_ILLEGAL);
         // 验证推广码
         if (StringUtils.isNotBlank(userRegisterDto.getFinviter())) {
             Result<MarketUser> marketUserResult = marketUserApi.queryOneByCriteria(Criteria.of(MarketUser.class)
@@ -279,7 +283,7 @@ public class UserServiceImpl implements UserService {
         // 校验同一个ip发送次数
         String ipAddress = HttpUtil.getClientIP(RequestHolder.getRequest());
         if (Objects.nonNull(redisManager.get(ipAddress))) {
-            Integer count = Integer.valueOf((String) redisManager.get(ipAddress));
+            Integer count = (Integer) redisManager.get(ipAddress);
             Ensure.that(count).isLt(UserConstants.Sms.MAX_IP_SMS_SEND_TIME, MallPcExceptionCode.USER_SEND_SMS_FAILD);
             if (count > UserConstants.Sms.CAPTCHA_THRESHOLD) {
                 // 触发滑动验证
@@ -299,23 +303,12 @@ public class UserServiceImpl implements UserService {
         // 令牌放进redis
         redisManager.set(StringUtils.join(MallPcRedisConstant.VERIFY_CODE_PREFIX, fmobile), verifyCode, UserConstants.Sms.MOBILE_AUTH_CODE_EXPIRE_TIME);
         // 设置一分钟间隔
-        redisManager.set(fmobile, UserConstants.Sms.MOBILE_SEND_SMS_TIME);
+        redisManager.set(fmobile, MallPcRedisConstant.DEFAULT_LOCK_VALUE, UserConstants.Sms.MOBILE_SEND_SMS_TIME);
         // 设置ip次数上限
         redisManager.incr(ipAddress);
-        //获取当天剩余时间
+        //获取当天剩余时间秒
         long secondsLeftToday = 86400 - DateUtils.getFragmentInSeconds(Calendar.getInstance(), Calendar.DATE);
         redisManager.expire(ipAddress, secondsLeftToday);
-    }
-
-    /**
-     * @author nick
-     * @date 2019-11-19
-     * @description :  重置密码
-     * @version 1.0.0
-     */
-    @Override
-    public Result resetPwd(SendSmsCodeDto sendSmsCodeDto) {
-        return null;
     }
 
     public User findUserByMobile(String mobile) {
@@ -360,7 +353,7 @@ public class UserServiceImpl implements UserService {
         Ensure.that(couponReceiveResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
         List<CouponReceive> couponReceiveList = couponReceiveResult.getData();
         if (CollectionUtils.isEmpty(couponReceiveList)) {
-            return Result.success();
+            return Result.success(Lists.emptyList());
         }
         List<Long> couponIds = couponReceiveList.stream().map(CouponReceive::getFcouponId).collect(toList());
         Result<List<Coupon>> couponResult = couponApi.queryByCriteria(Criteria.of(Coupon.class)
@@ -383,5 +376,37 @@ public class UserServiceImpl implements UserService {
             return vo;
         }).collect(toList());
         return Result.success(voList);
+    }
+
+    /**
+     * @author nick
+     * @date 2019-11-19
+     * @description :  重置密码
+     * @version 1.0.0
+     */
+    @Override
+    public Result resetPwd(ResetPasswordDto resetPasswordDto) {
+        String fmobile = resetPasswordDto.getFmobile();
+        // 手机号格式校验
+        Ensure.that(StringUtilExtention.mobileCheck(fmobile)).isTrue(MallPcExceptionCode.BIND_MOBILE_ERROR);
+        String newPassword = resetPasswordDto.getNewPassword();
+        // 校验新密码长度
+        Ensure.that(newPassword.length()).isGt(6, MallPcExceptionCode.PASSWORD_ILLEGAL).isLt(32, MallPcExceptionCode.PASSWORD_ILLEGAL);
+        newPassword = MD5Util.toMd5(newPassword);
+        String verifyCode = resetPasswordDto.getVerifyCode();
+        // 校验验证码
+        Ensure.that(checkVerifyCode(fmobile, verifyCode)).isTrue(MallPcExceptionCode.SMS_AUTH_NUM_ERROR);
+        // 查询账户是否存在
+        Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
+                .fields(User::getFuid, User::getFpasswd).andEqualTo(User::getFmobile, fmobile));
+        Ensure.that(userResult).isNotNull(MallPcExceptionCode.BIND_MOBILE_ERROR);
+        // 查询密码是否相同
+        User user = userResult.getData();
+        String fpasswd = user.getFpasswd();
+        Ensure.that(Objects.equals(newPassword, fpasswd)).isFalse(MallPcExceptionCode.PASSWORD_NOT_CHANGE);
+        // 修改密码
+        user.setFpasswd(newPassword);
+        Ensure.that(userApi.updateNotNull(user).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+        return Result.success();
     }
 }
