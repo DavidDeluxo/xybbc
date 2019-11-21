@@ -2,6 +2,7 @@ package com.xingyun.bbc.mallpc.common.utils;
 
 import com.google.common.base.Strings;
 import com.xingyun.bbc.core.utils.StringUtil;
+import com.xingyun.bbc.mallpc.common.constants.MallPcConstants;
 import net.sourceforge.pinyin4j.PinyinHelper;
 
 import java.util.regex.Matcher;
@@ -87,5 +88,18 @@ public class StringUtilExtention extends StringUtil {
             }
         }
         return true;
+    }
+
+    /**
+     * @author nick
+     * @date 2019-11-20
+     * @description :  校验身份证号
+     * @version 1.0.0
+     */
+    public static boolean idCardCheck(String idCard){
+        if(StringUtil.isBlank(idCard)){
+            return false;
+        }
+        return MallPcConstants.IDCARD_PATTERN.matcher(idCard).matches();
     }
 }

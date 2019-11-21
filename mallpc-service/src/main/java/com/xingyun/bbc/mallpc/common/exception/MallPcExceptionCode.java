@@ -74,6 +74,9 @@ public class MallPcExceptionCode implements IResultStatus {
     public static final MallPcExceptionCode USER_CANNOT_VERIFY = new MallPcExceptionCode("1011", "只有未认证或认证失败的用户可以提交认证");
     public static final MallPcExceptionCode EXTENSION_CODE_NOT_EXIST = new MallPcExceptionCode("1012", "请输入正确的邀请码");
     public static final MallPcExceptionCode COUPON_NOT_EXIST = new MallPcExceptionCode("1013", "优惠券配置不存在");
+    public static final MallPcExceptionCode PASSWORD_NOT_CHANGE = new MallPcExceptionCode("1014", "新密码不能和旧密码相同");
+    public static final MallPcExceptionCode ID_CARD_NUMBER_ILLEGAL = new MallPcExceptionCode("1015", "请输入正确的身份证号码");
+    public static final MallPcExceptionCode USER_DELIVERY_ADDRESS_NOT_EXISTS = new MallPcExceptionCode("1016", "用户收货地址不存在");
 
 
     public static final MallPcExceptionCode USER_NOT_EXIST = new MallPcExceptionCode("2020", "用户不存在");

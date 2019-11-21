@@ -16,5 +16,5 @@ public class UserAddressDetailsDto {
 
     @ApiModelProperty("用户收货地址ID")
     @NotNull(message = "用户收货地址ID不能为空")
-    private Long fdelivery_user_id;
+    private Long fdeliveryUserId;
 }

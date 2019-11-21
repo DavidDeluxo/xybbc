@@ -21,6 +21,7 @@ public class CityRegionDto {
 
     @ApiModelProperty("区域类型，1为国家；2为省/直辖市；3为地级市；4为区/县")
     @NumberRange(values = {1,2,3,4},message = "区域类型值非法")
+    @NotNull(message = "区域类型不能为空")
     private Integer fRegionType;
 
 }

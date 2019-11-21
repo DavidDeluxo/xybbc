@@ -4,6 +4,8 @@ import com.xingyun.bbc.mallpc.model.dto.PageDto;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import javax.validation.constraints.NotBlank;
+
 /**
  * @author nick
  * @version 1.0.0

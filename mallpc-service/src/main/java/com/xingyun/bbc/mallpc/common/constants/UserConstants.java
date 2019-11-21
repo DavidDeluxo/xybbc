@@ -48,7 +48,7 @@ public interface UserConstants {
         /**
          * 短信验证码 有效时间 5分钟
          */
-        public static final long MOBILE_AUTH_CODE_EXPIRE_TIME = 1000 * 60 * 5L;
+        public static final long MOBILE_AUTH_CODE_EXPIRE_TIME = 60 * 5L;
         /**
          * 同一ip发送验证码触发图形验证阈值 5次
          */
@@ -60,7 +60,7 @@ public interface UserConstants {
         /**
          * 手机发送短信间隔时间 60秒
          */
-        public static final long MOBILE_SEND_SMS_TIME = 1000 * 60;
+        public static final long MOBILE_SEND_SMS_TIME = 60;
     }
 
     class Cookie {
