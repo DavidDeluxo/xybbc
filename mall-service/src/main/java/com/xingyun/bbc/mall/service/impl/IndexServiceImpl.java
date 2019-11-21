@@ -116,7 +116,9 @@ public class IndexServiceImpl implements IndexService {
             Criteria<PageConfig, Object> pageConfigCriteria = Criteria.of(PageConfig.class);
             pageConfigCriteria.andEqualTo(PageConfig::getFposition, position);
             //查询未删除的
-            pageConfigCriteria.andEqualTo(PageConfig::getFisDelete, 0);
+           // pageConfigCriteria.andEqualTo(PageConfig::getFisDelete, 0);
+            //查询未删除,配置对象为0的数据
+            pageConfigCriteria.andEqualTo(PageConfig::getFisDelete, 0).andEqualTo(PageConfig::getFconfigType,0);
             //位置为0:Banner配置 1:ICON配置时用sortValue排序字段进行排序
             if (position == 0 || position == 1) {
                 pageConfigCriteria.sort(PageConfig::getFsortValue);
@@ -515,7 +517,7 @@ public class IndexServiceImpl implements IndexService {
             String redisKey = GuidePageContants.GUIDE_PAGE;
             List<Object> result = xyRedisManager.hValues(redisKey);//先查缓存是否命中,没有命中则查询GuidePageVo
             if (result == null) {
-                pageCriteria.andEqualTo(GuidePage::getFtype, ftype);
+                pageCriteria.andEqualTo(GuidePage::getFtype, ftype).andEqualTo(GuidePage::getFguideType,0);
                 Result<List<GuidePage>> res = guidePageApi.queryByCriteria(pageCriteria);
                 if (!res.isSuccess()) {
                     throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
