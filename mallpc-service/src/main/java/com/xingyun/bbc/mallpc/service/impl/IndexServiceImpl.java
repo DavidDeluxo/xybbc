@@ -63,18 +63,22 @@ public class IndexServiceImpl implements IndexService {
     @Override
     public List<SpecialTopicVo> getSpecialTopics() {
         List<PageConfig> result = (List<PageConfig>) cacheTemplate
-                .get(PC_MALL_PAGECONFIG_TOPIC, PC_MALL_PAGECONFIG_TOPIC_UPDATE,null, () -> getPageConfig(PageConfigPositionEnum.SPECIAL_TOPIC.getKey()));
+                .get(PC_MALL_PAGECONFIG_TOPIC, PC_MALL_PAGECONFIG_TOPIC_UPDATE, null, () -> getPageConfig(PageConfigPositionEnum.SPECIAL_TOPIC.getKey()));
+        //若配置中的relationId是默认值0，置为null不返回前端
+        setNullIfZero(result);
         List<SpecialTopicVo> vos = dozerHolder.convert(result, SpecialTopicVo.class);
-        vos.forEach(vo->vo.setFimgUrl(FileUtils.getFileUrl(vo.getFimgUrl())));
+        vos.forEach(vo -> vo.setFimgUrl(FileUtils.getFileUrl(vo.getFimgUrl())));
         return vos;
     }
 
     @Override
     public List<BannerVo> getBanners() {
         List<PageConfig> result = (List<PageConfig>) cacheTemplate
-                .get(PC_MALL_PAGECONFIG_BANNER, PC_MALL_PAGECONFIG_BANNER_UPDATE,null, () -> getPageConfig(PageConfigPositionEnum.BANNER.getKey()));
+                .get(PC_MALL_PAGECONFIG_BANNER, PC_MALL_PAGECONFIG_BANNER_UPDATE, null, () -> getPageConfig(PageConfigPositionEnum.BANNER.getKey()));
+        //若配置中的relationId是默认值0，置为null不返回前端
+        setNullIfZero(result);
         List<BannerVo> vos = dozerHolder.convert(result, BannerVo.class);
-        vos.forEach(vo->vo.setFimgUrl(FileUtils.getFileUrl(vo.getFimgUrl())));
+        vos.forEach(vo -> vo.setFimgUrl(FileUtils.getFileUrl(vo.getFimgUrl())));
         return vos;
     }
 
@@ -87,9 +91,9 @@ public class IndexServiceImpl implements IndexService {
     @Override
     public List<BrandVo> getBrands(Long cateId) {
         List<GoodsBrand> result = (List<GoodsBrand>) cacheTemplate
-                .get(INDEX_BRAND+cateId, INDEX_BRAND_UPDATE+cateId,BRAND_EXPIRE, () -> {
+                .get(INDEX_BRAND + cateId, INDEX_BRAND_UPDATE + cateId, BRAND_EXPIRE, () -> {
                     //查询热门品牌
-                    Criteria<GoodsBrand,Object> brandCriteria = Criteria.of(GoodsBrand.class)
+                    Criteria<GoodsBrand, Object> brandCriteria = Criteria.of(GoodsBrand.class)
                             .andEqualTo(GoodsBrand::getFisDelete, 0)
                             .andEqualTo(GoodsBrand::getFisDisplay, 1)
                             .andEqualTo(GoodsBrand::getFisHot, 1);
@@ -110,12 +114,12 @@ public class IndexServiceImpl implements IndexService {
 
                     //筛选出符合条件的品牌信息
                     List<GoodsBrand> goodsBrands = brandList.stream().filter(hotBrand -> brandIds.contains(hotBrand.getFbrandId())).collect(Collectors.toList());
-                    int endIndex = goodsBrands.size()>BRAND_MAX?BRAND_MAX:goodsBrands.size();
-                    List<GoodsBrand> returnBrands = goodsBrands.subList(0,endIndex);
+                    int endIndex = goodsBrands.size() > BRAND_MAX ? BRAND_MAX : goodsBrands.size();
+                    List<GoodsBrand> returnBrands = goodsBrands.subList(0, endIndex);
                     return returnBrands;
                 });
         List<BrandVo> vos = dozerHolder.convert(result, BrandVo.class);
-        vos.forEach(vo->{
+        vos.forEach(vo -> {
             vo.setFbrandLogo(FileUtils.getFileUrl(vo.getFbrandLogo()));
             vo.setFbrandPoster(FileUtils.getFileUrl(vo.getFbrandPoster()));
         });
@@ -124,19 +128,33 @@ public class IndexServiceImpl implements IndexService {
 
     /**
      * 从数据库查询PageConfig，以数组形式返回（PS：redis的pushAll只接受数组形式才能正确存入）
+     * 后面改成了用string存，因为空数组存不进redis，还是返回list（转string了）
      *
      * @param position
      * @return
      */
     private List<PageConfig> getPageConfig(String position) {
-        PageConfig query = new PageConfig();
-        query.setFconfigType(GuideConfigType.PC_CONFIG.getCode());
-        query.setFposition(Integer.valueOf(position));
-        query.setFisDelete(BooleanNum.FALSE.getCode());
-        List<PageConfig> list = ResultUtils.getData(pageConfigApi.queryList(query));
+        Criteria<PageConfig, Object> criteria = Criteria.of(PageConfig.class)
+                .andEqualTo(PageConfig::getFconfigType, GuideConfigType.PC_CONFIG.getCode())
+                .andEqualTo(PageConfig::getFposition, Integer.valueOf(position))
+                .andEqualTo(PageConfig::getFisDelete, BooleanNum.FALSE.getCode())
+                .sort(PageConfig::getFsortValue);
+        List<PageConfig> list = ResultUtils.getData(pageConfigApi.queryByCriteria(criteria));
         if (CollectionUtils.isEmpty(list)) {
             return new ArrayList();
         }
         return list;
+    }
+
+    /**
+     * 若配置中的relationId是默认值0，置为null不返回前端
+     * @param list
+     */
+    private void setNullIfZero(List<PageConfig> list){
+        for (PageConfig pageConfig : list) {
+            if (pageConfig.getFrelationId() == 0) {
+                pageConfig.setFrelationId(null);
+            }
+        }
     }
 }
