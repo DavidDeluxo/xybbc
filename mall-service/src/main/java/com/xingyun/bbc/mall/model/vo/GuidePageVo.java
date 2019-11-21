@@ -14,7 +14,9 @@ public class GuidePageVo implements Serializable{
     /** 主键id */
     @ApiModelProperty("引导id")
     private Long fguideId;
-
+    
+    @ApiModelProperty("针对配置对象 0 app配置 1 PC配置 默认0")
+    private Long fguideType;
 
     /** 图片地址 */
     @ApiModelProperty("图片地址")
@@ -43,6 +45,14 @@ public class GuidePageVo implements Serializable{
     public Long getFguideId() {
         return this.fguideId;
     }
+    public Long getFguideType() {
+      return fguideType;
+    }
+
+    public void setFguideType(Long fguideType) {
+      this.fguideType = fguideType;
+    }
+
     public void setFimgUrl(String fimgUrl) {
         this.fimgUrl = fimgUrl;
     }
