@@ -508,7 +508,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         return freightPrice;
     }
 
-    private void dealGoodDetailPriceToYuan (GoodsPriceVo goodsPriceVo) {
+    private void dealGoodDetailPriceToYuan(GoodsPriceVo goodsPriceVo) {
         if (null != goodsPriceVo.getPriceStart()) {
             goodsPriceVo.setPriceStart(PriceUtil.toYuan(goodsPriceVo.getPriceStart()));
         }
@@ -1349,6 +1349,27 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             xybbcLock.releaseLock(lockKey, lockValue);
         }
         return Result.success(true);
+    }
+
+    /**
+     * @param skuId
+     * @param xyid
+     * @return
+     * @see GoodDetailService#getCategoryBySkuId(Long, Long)
+     */
+    @Override
+    public Result<Map<String, Long>> getCategoryBySkuId(Long skuId, Long xyid) {
+
+        Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryById(skuId);
+        if (!goodsSkuResult.isSuccess()) {
+            throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
+        }
+        GoodsSku goodsSku = goodsSkuResult.getData();
+        Map<String, Long> categorys = new HashMap<>(4);
+        categorys.put("1", goodsSku.getFcategoryId1());
+        categorys.put("2", goodsSku.getFcategoryId2());
+        categorys.put("3", goodsSku.getFcategoryId3());
+        return Result.success(categorys);
     }
 
     //    @Override
