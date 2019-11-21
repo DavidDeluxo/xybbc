@@ -12,6 +12,7 @@ import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
+import com.xingyun.bbc.mallpc.common.utils.FileUtils;
 import com.xingyun.bbc.mallpc.model.dto.search.SearchItemDto;
 import com.xingyun.bbc.mallpc.model.vo.search.*;
 import com.xingyun.bbc.mallpc.service.GoodsService;
@@ -100,6 +101,7 @@ public class GoodsServiceImpl implements GoodsService {
                 }
                 if (map.get("fskuThumbImage") != null) {
                     vo.setFimgUrl(String.valueOf(map.get("fskuThumbImage")));
+//                    vo.setFimgUrl(FileUtils.getFileUrl(String.valueOf(map.get("fskuThumbImage"))));
                 }
                 if (map.get("fgoodsId") != null) {
                     vo.setFgoodsId(Integer.parseInt(String.valueOf(map.get("fgoodsId"))));
