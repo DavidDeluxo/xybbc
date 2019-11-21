@@ -421,7 +421,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             priceResult.setFgoodsPackType(skuBatch.getFgoodsPackType());
             Long warehouseId = skuBatch.getFsupplierWarehouseId();
             SupplierWarehouse warehouse = getSupplierWarehouseById(warehouseId);
-            priceResult.setFwarehouseName(warehouse.getFwarehouseName());
+            priceResult.setFwarehouseName(warehouse.getFsupplierWarehouseName());
         }
         //到批次
         if (null != goodsDetailMallDto.getFsupplierSkuBatchId() && null == goodsDetailMallDto.getFbatchPackageId()) {
@@ -431,7 +431,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             priceResult.setFgoodsPackType(skuBatch.getFgoodsPackType());
             Long warehouseId = skuBatch.getFsupplierWarehouseId();
             SupplierWarehouse warehouse = getSupplierWarehouseById(warehouseId);
-            priceResult.setFwarehouseName(warehouse.getFwarehouseName());
+            priceResult.setFwarehouseName(warehouse.getFsupplierWarehouseName());
         }
         //到sku
         if (null != goodsDetailMallDto.getFskuId() && null == goodsDetailMallDto.getFsupplierSkuBatchId() && null == goodsDetailMallDto.getFbatchPackageId()) {
