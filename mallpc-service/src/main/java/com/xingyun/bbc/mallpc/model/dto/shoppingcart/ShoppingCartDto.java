@@ -57,8 +57,8 @@ public class ShoppingCartDto extends BaseDto {
     /**
      * 进货单商品ID列表
      */
-    @NotNull(message = "进货单商品ID不能为空", groups = {ShoppingCartValidator.Delete.class})
-    @NotEmpty(message = "进货单商品ID不能为空", groups = {ShoppingCartValidator.Delete.class})
+    @NotNull(message = "进货单商品ID不能为空", groups = {ShoppingCartValidator.Delete.class, ShoppingCartValidator.Checkout.class})
+    @NotEmpty(message = "进货单商品ID不能为空", groups = {ShoppingCartValidator.Delete.class, ShoppingCartValidator.Checkout.class})
     private List<Long> ids;
 
 
