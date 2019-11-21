@@ -3,7 +3,6 @@ package com.xingyun.bbc.mallpc.service;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.dto.BaseDto;
 import com.xingyun.bbc.mallpc.model.dto.shoppingcart.ShoppingCartDto;
-import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartCheckoutVo;
 import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartVo;
 
 /**
@@ -33,10 +32,10 @@ public interface ShoppingCartService {
     /**
      * 编辑规格数量
      *
-     * @param baseDto
+     * @param shoppingCartDto
      * @return
      */
-    Result editNum(BaseDto baseDto);
+    Result editNum(ShoppingCartDto shoppingCartDto);
 
     /**
      * 删除进货单商品
@@ -60,7 +59,7 @@ public interface ShoppingCartService {
      * @param shoppingCartDto
      * @return
      */
-    Result<ShoppingCartCheckoutVo> checkout(ShoppingCartDto shoppingCartDto);
+    Result checkout(ShoppingCartDto shoppingCartDto);
 
 
 }

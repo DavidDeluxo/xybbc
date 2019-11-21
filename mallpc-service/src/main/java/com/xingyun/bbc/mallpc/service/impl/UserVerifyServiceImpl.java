@@ -49,7 +49,7 @@ public class UserVerifyServiceImpl implements UserVerifyService {
     @GlobalTransactional
     @Override
     public void verify(UserVerifyDTO dto) {
-        Long fuid = RequestHolder.getAdminId();
+        Long fuid = RequestHolder.getUserId();
         Criteria<User, Object> userCriteria = Criteria.of(User.class).fields(User::getFuid, User::getFverifyStatus).andEqualTo(User::getFuid, fuid);
         User user = EnsureHelper.checkNotNullAndGetData(userApi.queryOneByCriteria(userCriteria), MallPcExceptionCode.RECORD_NOT_EXIST);
         checkVerifyStatus(user);
@@ -98,7 +98,7 @@ public class UserVerifyServiceImpl implements UserVerifyService {
 
     @Override
     public UserVerifyVO view() {
-        Long fuid = RequestHolder.getAdminId();
+        Long fuid = RequestHolder.getUserId();
         Criteria<UserVerify, Object> criteria = Criteria.of(UserVerify.class).andEqualTo(UserVerify::getFuid, fuid);
         UserVerify userVerify = EnsureHelper.checkSuccessAndGetData(userVerifyApi.queryOneByCriteria(criteria));
         return Objects.isNull(userVerify) ? empty : TypeConvertor.convertUserVerifyToUserVerifyVO(userVerify);
