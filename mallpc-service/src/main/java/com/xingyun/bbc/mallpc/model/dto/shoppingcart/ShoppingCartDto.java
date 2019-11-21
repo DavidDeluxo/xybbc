@@ -58,7 +58,7 @@ public class ShoppingCartDto extends BaseDto {
      * 规格数量值
      */
     @NotNull(message = "规格数量值不能为空", groups = {ShoppingCartValidator.EditNum.class})
-    @Min(value = 1, message = "规格数量值不能小于1")
+    @Min(value = 1, message = "规格数量值不能小于1", groups = {ShoppingCartValidator.EditNum.class})
     private Integer skuNum;
 
 }
