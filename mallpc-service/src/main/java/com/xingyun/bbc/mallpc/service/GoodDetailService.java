@@ -55,9 +55,12 @@ public interface GoodDetailService {
     //领取优惠券--通用
     Result receiveCoupon(ReceiveCouponDto receiveCouponDto);
 
-
-
-
-
-
+    /**
+     * 获取分类根据skuId
+     *
+     * @param skuId
+     * @param xyid
+     * @return
+     */
+    Result<Map<String, Long>> getCategoryBySkuId(Long skuId, Long xyid);
 }
