@@ -84,7 +84,9 @@ public class CommonController {
 
 
     private Result<String> uploadResult(Result<String> result) {
-        if (!result.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (!result.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
         Object data = result.getData();
         if (data == null || StringUtil.isEmpty(data + "")) {
             throw new BizException(MallPcExceptionCode.UPLOAD_FAILED);
