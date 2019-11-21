@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mallpc.service;
 
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mallpc.model.dto.user.ResetPasswordDto;
 import com.xingyun.bbc.mallpc.model.dto.user.SendSmsCodeDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserLoginDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserRegisterDto;
@@ -56,7 +57,7 @@ public interface UserService {
      * @description :  重置密码
      * @version 1.0.0
      */
-    Result resetPwd(SendSmsCodeDto sendSmsCodeDto);
+    Result resetPwd(ResetPasswordDto resetPasswordDto);
 
     /**
      * @author nick

@@ -35,12 +35,13 @@ public class UserVerifyController {
     @ApiOperation("添加用户认证")
     @PostMapping("/verify")
     public Result verify(@RequestBody @Valid UserVerifyDTO dto) {
+        log.debug("添加用户认证,dto:{}", dto);
         checkVerify(dto);
         userVerifyService.verify(dto);
         return Result.success();
     }
 
-    private void checkVerify(UserVerifyDTO userVerifyDTO){
+    private void checkVerify(UserVerifyDTO userVerifyDTO) {
         Integer foperateType = userVerifyDTO.getFoperateType();
         //根据认证类型不同,必填字段也不同
         switch (foperateType) {

@@ -20,4 +20,5 @@ public class ReceiveCouponDto implements Serializable {
 
     @ApiModelProperty("券码")
     private String fcouponCode;
+
 }

@@ -1309,33 +1309,28 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     public Result receiveCoupon(ReceiveCouponDto receiveCouponDto) {
         Long fcouponId = receiveCouponDto.getFcouponId();
         Long fuid = receiveCouponDto.getFuid();
-        String fcouponCode = receiveCouponDto.getFcouponCode();
         if (null == fcouponId || null == fuid) {
             return Result.failure(MallExceptionCode.PARAM_ERROR);
         }
         String lockKey = StringUtils.join(Lists.newArrayList(MallConstants.MALL_RECEIVE_COUPON, fcouponId, fuid), ":");
-        if (null != fcouponCode) {
-            lockKey = StringUtils.join(Lists.newArrayList(MallConstants.MALL_RECEIVE_COUPON, fcouponId, fuid, fcouponCode), ":");
-        }
         String lockValue = RandomUtils.getUUID();
         try {
-            //绑定用户和优惠券关系
-            Ensure.that(xybbcLock.tryLockTimes(lockKey, lockValue, 3, 6)).isTrue(MallExceptionCode.SYSTEM_BUSY_ERROR);
-            CouponBindUser couponBindUser = new CouponBindUser();
-            couponBindUser.setFcouponId(fcouponId);
-            couponBindUser.setFuid(fuid);
-            couponBindUser.setFcreateTime(new Date());
-            couponBindUser.setFisReceived(1);
-            Result<Integer> insertBindResult = couponBindUserApi.create(couponBindUser);
-            if (!insertBindResult.isSuccess()) {
-                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-            }
+//            //绑定用户和优惠券关系
+//            Ensure.that(xybbcLock.tryLockTimes(lockKey, lockValue, 3, 6)).isTrue(MallExceptionCode.SYSTEM_BUSY_ERROR);
+//            CouponBindUser couponBindUser = new CouponBindUser();
+//            couponBindUser.setFcouponId(fcouponId);
+//            couponBindUser.setFuid(fuid);
+//            couponBindUser.setFcreateTime(new Date());
+//            couponBindUser.setFisReceived(1);
+//            Result<Integer> insertBindResult = couponBindUserApi.create(couponBindUser);
+//            if (!insertBindResult.isSuccess()) {
+//                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+//            }
             //更新优惠券发放数量
             CouponReleaseDto couponReleaseDto = new CouponReleaseDto();
             couponReleaseDto.setCouponScene(CouponScene.PAGE_RECEIVE);
             couponReleaseDto.setCouponId(fcouponId);
             couponReleaseDto.setUserId(fuid);
-            couponReleaseDto.setCouponCode(fcouponCode);
             couponReleaseDto.setAlreadyReceived(true);
             couponReleaseDto.setDeltaValue(-1);
             Result updateReleaseResult = couponProviderApi.updateReleaseQty(couponReleaseDto);
