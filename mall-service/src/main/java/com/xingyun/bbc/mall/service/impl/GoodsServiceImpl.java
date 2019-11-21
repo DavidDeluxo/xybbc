@@ -8,6 +8,7 @@ import com.google.common.collect.Sets;
 import com.xingyun.bbc.common.elasticsearch.config.EsBeanUtil;
 import com.xingyun.bbc.common.elasticsearch.config.EsCriteria;
 import com.xingyun.bbc.common.elasticsearch.config.EsManager;
+import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.CouponApi;
@@ -33,6 +34,7 @@ import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.CouponSkuQueryDto;
 import com.xingyun.bbc.mall.model.dto.SearchItemDto;
 import com.xingyun.bbc.mall.model.vo.*;
+import com.xingyun.bbc.mall.service.CouponService;
 import com.xingyun.bbc.mall.service.GoodsService;
 import com.xingyun.bbc.mall.service.SearchRecordService;
 import lombok.extern.slf4j.Slf4j;
@@ -91,7 +93,7 @@ public class GoodsServiceImpl implements GoodsService {
     @Autowired
     GoodsApi goodsApi;
     @Autowired
-
+    CouponService couponService;
 
 //    @Autowired
 //    MallSkuSearchApi mallSkuSearchApi;
@@ -611,26 +613,33 @@ public class GoodsServiceImpl implements GoodsService {
         }
         String fskuId = String.valueOf(skuSourceMap.get("fsku_id"));
         try {
-           GetResponse getResponse = esManager.getSourceById(fskuId);
-           if(getResponse.isExists()){
-              Map<String, Object> oldSourceMap = getResponse.getSourceAsMap();
-              if(oldSourceMap.get("fcoupon_ids") != null){
-                  List<Integer> couponIdList = (List<Integer>) oldSourceMap.get("fcoupon_ids");
-                  skuSourceMap.put("fcoupon_ids", couponIdList);
-              }
-           }else {
-               skuSourceMap.put("fcoupon_ids", getCouponListForSku(fskuId));
-           }
-           Map<String, Map<String, Object>> indexMap = new HashMap<>();
-           indexMap.put(fskuId, skuSourceMap);
-           esManager.indexInBulk(indexMap);
+            GetResponse getResponse = esManager.getSourceById(fskuId);
+            if(getResponse.isExists()){
+                Map<String, Object> oldSourceMap = getResponse.getSourceAsMap();
+                if(oldSourceMap.get("fcoupon_ids") != null){
+                    List<Integer> couponIdList = (List<Integer>) oldSourceMap.get("fcoupon_ids");
+                    skuSourceMap.put("fcoupon_ids", couponIdList);
+                }
+            }else {
+                skuSourceMap.put("fcoupon_ids", getCouponListForSku(fskuId));
+            }
+            Map<String, Map<String, Object>> indexMap = new HashMap<>();
+            indexMap.put(fskuId, skuSourceMap);
+            esManager.indexInBulk(indexMap);
         }catch (Exception e){
             e.printStackTrace();
         }
     }
 
     private List<Integer> getCouponListForSku(String fskuId){
-        return Lists.newArrayList();
+        CouponQueryDto couponQueryDto = new CouponQueryDto();
+        couponQueryDto.setSkuId(Long.parseLong(fskuId));
+        List<Coupon> couponList = couponService.queryBySkuId(couponQueryDto);
+        if(CollectionUtils.isEmpty(couponList)){
+            return Lists.newArrayList();
+        }
+        List<Integer> couponIdList = couponList.stream().map(coupon -> coupon.getFcouponId().intValue()).collect(Collectors.toList());
+        return couponIdList;
     }
 
 
@@ -743,6 +752,10 @@ public class GoodsServiceImpl implements GoodsService {
                 }
                 if (map.get("flabelId") != null) {
                     vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
+                }
+                if(map.get("fcouponIds") != null){
+                    List<Integer> fcouponIds = (List<Integer>) map.get("fcouponIds");
+                    vo.setFcouponIds(fcouponIds);
                 }
                 String priceName = this.getUserPriceType(searchItemDto);
                 if (map.get(priceName) != null && searchItemDto.getIsLogin()) {
