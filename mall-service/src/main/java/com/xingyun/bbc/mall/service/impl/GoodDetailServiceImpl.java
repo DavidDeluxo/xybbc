@@ -1042,9 +1042,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                                 Coupon::getFdeductionValue, Coupon::getFvalidityStart, Coupon::getFvalidityEnd,
                                 Coupon::getFapplicableSku, Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFperLimit));
                 Coupon coupon = couponResult.getData();
-                Long fcouponId = coupon.getFcouponId();
-                Integer fperLimit = coupon.getFperLimit();
+
                 if (couponResult.isSuccess() && null != coupon) {
+                    Long fcouponId = coupon.getFcouponId();
+                    Integer fperLimit = coupon.getFperLimit();
                     //1全部商品、2指定商品可用、3指定商品不可用
                     int ableSku = coupon.getFapplicableSku().intValue();
                     if (ableSku == 1) {
