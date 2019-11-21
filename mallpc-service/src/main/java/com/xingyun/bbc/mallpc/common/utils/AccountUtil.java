@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mallpc.common.utils;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 /**
  * @author pengaoluo
@@ -26,17 +27,11 @@ public class AccountUtil {
      * @return
      */
     public static BigDecimal divideOneHundred(Long amount) {
-        if (amount == null) {
-            return null;
-        }
-        return BigDecimal.valueOf(amount).divide(ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP);
+        return Objects.isNull(amount) ? null :BigDecimal.valueOf(amount).divide(ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP);
     }
 
     public static String divideOneHundredAndGetString(Long amount) {
-        if (amount == null) {
-            return null;
-        }
-        return divideOneHundred(amount).toString();
+        return Objects.isNull(amount) ? null :divideOneHundred(amount).toString();
     }
 
     /**
@@ -46,10 +41,7 @@ public class AccountUtil {
      * @return
      */
     public static BigDecimal divideTenThousand(Long amount) {
-        if (amount == null) {
-            return null;
-        }
-        return BigDecimal.valueOf(amount).divide(TEN_THOUSAND);
+        return Objects.isNull(amount) ? null :BigDecimal.valueOf(amount).divide(TEN_THOUSAND);
     }
 
     /**
@@ -59,10 +51,7 @@ public class AccountUtil {
      * @return
      */
     public static Long multiplyOneHundred(BigDecimal amount) {
-        if (amount == null) {
-            return null;
-        }
-        return amount.multiply(ONE_HUNDRED).longValue();
+        return Objects.isNull(amount) ? null : amount.multiply(ONE_HUNDRED).longValue();
     }
 
     /**
@@ -72,10 +61,7 @@ public class AccountUtil {
      * @return
      */
     public static Long multiplyTenThousand(BigDecimal amount) {
-        if (amount == null) {
-            return null;
-        }
-        return amount.multiply(TEN_THOUSAND).longValue();
+        return Objects.isNull(amount) ? null :amount.multiply(TEN_THOUSAND).longValue();
     }
 
     /**

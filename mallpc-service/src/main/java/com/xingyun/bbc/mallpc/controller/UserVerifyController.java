@@ -53,6 +53,7 @@ public class UserVerifyController {
                 Assert.isTrue(BizHelper.isNotLogicNull(userVerifyDTO.getFshopAreaId()), "区域不能为空");
                 Assert.isTrue(StringUtil.isNotEmpty(userVerifyDTO.getFshopAddress()), "详细地址不能为空");
                 Assert.isTrue(StringUtil.isNotEmpty(userVerifyDTO.getFbusinessLicensePic()), "营业执照照片不能为空");
+                Assert.isTrue(StringUtil.isNotEmpty(userVerifyDTO.getFbusinessLicenseNo()), "营业执照编号不能为空");
                 //相对于运营中台增加的
                 Assert.isTrue(StringUtil.isNotEmpty(userVerifyDTO.getFshopFront()), "店铺门头照片不能为空");
                 Assert.isTrue(StringUtil.isNotEmpty(userVerifyDTO.getFshopInside()), "店铺实景照片不能为空");
