@@ -78,6 +78,9 @@ public class MallPcExceptionCode implements IResultStatus {
     public static final MallPcExceptionCode ID_CARD_NUMBER_ILLEGAL = new MallPcExceptionCode("1015", "请输入正确的身份证号码");
     public static final MallPcExceptionCode USER_DELIVERY_ADDRESS_NOT_EXISTS = new MallPcExceptionCode("1016", "用户收货地址不存在");
 
+    public static final MallPcExceptionCode UPLOAD_FILE_TYPE_ERROR = new MallPcExceptionCode("1052", "上传文件类型错误");
+    public static final MallPcExceptionCode UPLOAD_FAILED = new MallPcExceptionCode("1053", "上传失败");
+
 
     public static final MallPcExceptionCode USER_NOT_EXIST = new MallPcExceptionCode("2020", "用户不存在");
     public static final MallPcExceptionCode SKU_BATCH_IS_NONE = new MallPcExceptionCode("6666", "没有批次");
