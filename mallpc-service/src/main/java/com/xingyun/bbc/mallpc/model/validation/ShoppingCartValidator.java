@@ -23,5 +23,8 @@ public interface ShoppingCartValidator {
     @interface Show {
     }
 
+    @interface Checkout {
+    }
+
 
 }

@@ -4,8 +4,10 @@ import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.dto.BaseDto;
 import com.xingyun.bbc.mallpc.model.dto.shoppingcart.ShoppingCartDto;
 import com.xingyun.bbc.mallpc.model.validation.ShoppingCartValidator;
+import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartCheckoutVo;
 import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartVo;
-import org.springframework.http.MediaType;
+import com.xingyun.bbc.mallpc.service.ShoppingCartService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,8 +23,11 @@ import org.springframework.web.bind.annotation.RestController;
  * @copyright 本内容仅限于深圳市天行云供应链有限公司内部传阅，禁止外泄以及用于其他的商业目的
  */
 @RestController
-@RequestMapping(value = "shoppingCart", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+@RequestMapping(value = "shoppingCart")
 public class ShoppingCartController {
+
+    @Autowired
+    private ShoppingCartService shoppingCartService;
 
     /**
      * 加入商品
@@ -32,7 +37,7 @@ public class ShoppingCartController {
      */
     @PostMapping("add")
     public Result add(@RequestBody @Validated(ShoppingCartValidator.Add.class) ShoppingCartDto shoppingCartDto) {
-        return Result.success();
+        return shoppingCartService.add(shoppingCartDto);
     }
 
     /**
@@ -43,7 +48,7 @@ public class ShoppingCartController {
      */
     @PostMapping("qty")
     public Result qty(@RequestBody @Validated(ShoppingCartValidator.Qty.class) ShoppingCartDto shoppingCartDto) {
-        return Result.success();
+        return shoppingCartService.qty(shoppingCartDto);
     }
 
     /**
@@ -54,7 +59,7 @@ public class ShoppingCartController {
      */
     @PostMapping("editNum")
     public Result editNum(@RequestBody @Validated(ShoppingCartValidator.EditNum.class) BaseDto baseDto) {
-        return Result.success();
+        return shoppingCartService.editNum(baseDto);
     }
 
     /**
@@ -65,7 +70,7 @@ public class ShoppingCartController {
      */
     @PostMapping("delete")
     public Result delete(@RequestBody @Validated(ShoppingCartValidator.Delete.class) ShoppingCartDto shoppingCartDto) {
-        return Result.success();
+        return shoppingCartService.delete(shoppingCartDto);
     }
 
     /**
@@ -76,7 +81,18 @@ public class ShoppingCartController {
      */
     @PostMapping("show")
     public Result<ShoppingCartVo> show(@RequestBody @Validated(ShoppingCartValidator.Show.class) ShoppingCartDto shoppingCartDto) {
-        return Result.success();
+        return shoppingCartService.show(shoppingCartDto);
+    }
+
+    /**
+     * 结算商品
+     *
+     * @param shoppingCartDto
+     * @return
+     */
+    @PostMapping("checkout")
+    public Result<ShoppingCartCheckoutVo> checkout(@RequestBody @Validated(ShoppingCartValidator.Checkout.class) ShoppingCartDto shoppingCartDto) {
+        return shoppingCartService.checkout(shoppingCartDto);
     }
 
 }

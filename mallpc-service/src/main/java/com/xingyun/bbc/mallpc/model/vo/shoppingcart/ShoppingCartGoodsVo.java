@@ -1,6 +1,5 @@
 package com.xingyun.bbc.mallpc.model.vo.shoppingcart;
 
-import com.xingyun.bbc.mallpc.model.vo.ImageVo;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -19,6 +18,11 @@ public class ShoppingCartGoodsVo implements Serializable {
     private static final long serialVersionUID = 8446980144270805694L;
 
     /**
+     * 进货单商品ID
+     */
+    private Long fshopcarId;
+
+    /**
      * sku编号
      */
     private String fskuId;
@@ -26,7 +30,7 @@ public class ShoppingCartGoodsVo implements Serializable {
     /**
      * sku缩略图
      */
-    private ImageVo fskuThumbImage;
+    private String fskuThumbImage;
 
     /**
      * sku名称
@@ -49,12 +53,12 @@ public class ShoppingCartGoodsVo implements Serializable {
     private String batchPackageNum;
 
     /**
-     * 保质有效期起始日期，yyyy-MM
+     * 保质有效期起始日期，yyyy.MM
      */
     private String fqualityStartDate;
 
     /**
-     * 保质有效期结束日期，yyyy-MM
+     * 保质有效期结束日期，yyyy.MM
      */
     private String fqualityEndDate;
 

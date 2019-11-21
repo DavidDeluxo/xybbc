@@ -512,28 +512,35 @@ public class IndexServiceImpl implements IndexService {
      */
     @Override
     public Result<List<GuidePageVo>> selectGuidePageVos(Integer ftype) {
-        try {
-            Criteria<GuidePage, Object> pageCriteria = Criteria.of(GuidePage.class);
-            String redisKey = GuidePageContants.GUIDE_PAGE;
-            List<Object> result = xyRedisManager.hValues(redisKey);//先查缓存是否命中,没有命中则查询GuidePageVo
-            if (result == null) {
-                pageCriteria.andEqualTo(GuidePage::getFtype, ftype).andEqualTo(GuidePage::getFguideType,0);
-                Result<List<GuidePage>> res = guidePageApi.queryByCriteria(pageCriteria);
-                if (!res.isSuccess()) {
-                    throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
-                } else {
-                    List<GuidePage> guidePageList = res.getData();
-                    List<GuidePageVo> convetVoList = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(guidePageList), GuidePageVo.class);
-                    return Result.success(convetVoList);
-                }
+      try 
+      {
+        Criteria<GuidePage, Object> pageCriteria = Criteria.of(GuidePage.class);
+        String redisKey = GuidePageContants.GUIDE_PAGE;
+        List<Object> result = xyRedisManager.hValues(redisKey);//先查缓存是否命中,没有命中则查询GuidePageVo
+        if (result == null) {
+            pageCriteria.andEqualTo(GuidePage::getFtype, ftype);
+            Result<List<GuidePage>> res = guidePageApi.queryByCriteria(pageCriteria.andEqualTo(GuidePage::getFguideType, 0));
+            if (!res.isSuccess()) {
+                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             } else {
-                List<GuidePage> guidePage = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(result), GuidePage.class);
-                List<GuidePageVo> convetVoList = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(guidePage), GuidePageVo.class);
-                List<GuidePageVo> tempList = convetVoList.stream().filter(index -> index.getFtype() == ftype).collect(Collectors.toList());
-                return Result.success(tempList);
+                List<GuidePage> guidePageList = res.getData();
+                List<GuidePageVo> convetVoList = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(guidePageList), GuidePageVo.class);
+                return Result.success(convetVoList);
             }
-        } catch (Exception e) {
-            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+        } else {
+            List<GuidePage> guidePage = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(result), GuidePage.class);
+            List<GuidePageVo> convetVoList = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(guidePage), GuidePageVo.class);
+            List<GuidePageVo> tempList = convetVoList.stream().filter(index -> {
+              boolean  flag = false;
+              if(index.getFtype() == ftype && index.getFguideType()==0l) {
+                flag = index.getFtype() == ftype && index.getFguideType()==0l;
+              }
+              return  flag;
+            }).collect(Collectors.toList());
+            return Result.success(tempList);
         }
+    } catch (Exception e){
+        throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
     }
+  }
 }
