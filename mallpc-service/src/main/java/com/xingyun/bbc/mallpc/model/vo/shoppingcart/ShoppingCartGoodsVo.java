@@ -77,4 +77,9 @@ public class ShoppingCartGoodsVo implements Serializable {
      */
     private Integer surplusStock;
 
+    /**
+     * 是否保税商品
+     */
+    private boolean bondedGoods;
+
 }

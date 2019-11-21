@@ -1,10 +1,8 @@
 package com.xingyun.bbc.mallpc.controller;
 
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mallpc.model.dto.BaseDto;
 import com.xingyun.bbc.mallpc.model.dto.shoppingcart.ShoppingCartDto;
 import com.xingyun.bbc.mallpc.model.validation.ShoppingCartValidator;
-import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartCheckoutVo;
 import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartVo;
 import com.xingyun.bbc.mallpc.service.ShoppingCartService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,12 +52,12 @@ public class ShoppingCartController {
     /**
      * 编辑规格数量
      *
-     * @param baseDto
+     * @param shoppingCartDto
      * @return
      */
     @PostMapping("editNum")
-    public Result editNum(@RequestBody @Validated(ShoppingCartValidator.EditNum.class) BaseDto baseDto) {
-        return shoppingCartService.editNum(baseDto);
+    public Result editNum(@RequestBody @Validated(ShoppingCartValidator.EditNum.class) ShoppingCartDto shoppingCartDto) {
+        return shoppingCartService.editNum(shoppingCartDto);
     }
 
     /**
@@ -91,7 +89,7 @@ public class ShoppingCartController {
      * @return
      */
     @PostMapping("checkout")
-    public Result<ShoppingCartCheckoutVo> checkout(@RequestBody @Validated(ShoppingCartValidator.Checkout.class) ShoppingCartDto shoppingCartDto) {
+    public Result checkout(@RequestBody @Validated(ShoppingCartValidator.Checkout.class) ShoppingCartDto shoppingCartDto) {
         return shoppingCartService.checkout(shoppingCartDto);
     }
 

@@ -24,12 +24,6 @@ public class ShoppingCartDto extends BaseDto {
     private static final long serialVersionUID = -3237379499351876387L;
 
     /**
-     * 用户ID
-     */
-    @NotNull(message = "用户ID不能为空", groups = {ShoppingCartValidator.Qty.class, ShoppingCartValidator.Show.class})
-    private Long userId;
-
-    /**
      * SKU ID
      */
     @NotNull(message = "SKU ID不能为空", groups = {ShoppingCartValidator.Add.class})
@@ -57,9 +51,14 @@ public class ShoppingCartDto extends BaseDto {
     /**
      * 进货单商品ID列表
      */
-    @NotNull(message = "进货单商品ID不能为空", groups = {ShoppingCartValidator.Delete.class, ShoppingCartValidator.Checkout.class})
     @NotEmpty(message = "进货单商品ID不能为空", groups = {ShoppingCartValidator.Delete.class, ShoppingCartValidator.Checkout.class})
     private List<Long> ids;
 
+    /**
+     * 规格数量值
+     */
+    @NotNull(message = "规格数量值不能为空", groups = {ShoppingCartValidator.EditNum.class})
+    @Min(value = 1, message = "规格数量值不能小于1")
+    private Integer skuNum;
 
 }
