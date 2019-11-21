@@ -28,6 +28,8 @@ import com.xingyun.bbc.core.sku.enums.GoodsSkuEnums;
 import com.xingyun.bbc.core.sku.enums.SkuBatchEnums;
 import com.xingyun.bbc.core.sku.po.GoodsSku;
 import com.xingyun.bbc.core.sku.po.*;
+import com.xingyun.bbc.core.supplier.api.SupplierWarehouseApi;
+import com.xingyun.bbc.core.supplier.po.SupplierWarehouse;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.api.UserDeliveryApi;
 import com.xingyun.bbc.core.user.enums.UserVerifyStatusEnum;
@@ -125,6 +127,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     @Resource
     private SkuUserDiscountConfigApi skuUserDiscountConfigApi;
+
+    @Resource
+    private SupplierWarehouseApi warehouseApi;
 
     @Resource
     private UserDeliveryApi userDeliveryApi;
@@ -407,11 +412,26 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             BigDecimal packagePrice = this.getPackagePrice(goodsDetailMallDto);
             priceResult.setRealPrice(PriceUtil.toYuan(packagePrice));
             priceResult.setPriceStart(PriceUtil.toYuan(packagePrice));
+            Result<SkuBatchPackage> skuBatchPackageResult = skuBatchPackageApi.queryById(goodsDetailMallDto.getFbatchPackageId());
+            if (!skuBatchPackageResult.isSuccess()) {
+                throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
+            }
+            String skuBatchId = skuBatchPackageResult.getData().getFsupplierSkuBatchId();
+            SkuBatch skuBatch = getSkuBatchById(skuBatchId);
+            priceResult.setFgoodsPackType(skuBatch.getFgoodsPackType());
+            Long warehouseId = skuBatch.getFsupplierWarehouseId();
+            SupplierWarehouse warehouse = getSupplierWarehouseById(warehouseId);
+            priceResult.setFwarehouseName(warehouse.getFsupplierWarehouseName());
         }
         //到批次
         if (null != goodsDetailMallDto.getFsupplierSkuBatchId() && null == goodsDetailMallDto.getFbatchPackageId()) {
             priceResult = this.getBatchPrice(goodsDetailMallDto);
             this.dealGoodDetailPriceToYuan(priceResult);
+            SkuBatch skuBatch = getSkuBatchById(goodsDetailMallDto.getFsupplierSkuBatchId());
+            priceResult.setFgoodsPackType(skuBatch.getFgoodsPackType());
+            Long warehouseId = skuBatch.getFsupplierWarehouseId();
+            SupplierWarehouse warehouse = getSupplierWarehouseById(warehouseId);
+            priceResult.setFwarehouseName(warehouse.getFsupplierWarehouseName());
         }
         //到sku
         if (null != goodsDetailMallDto.getFskuId() && null == goodsDetailMallDto.getFsupplierSkuBatchId() && null == goodsDetailMallDto.getFbatchPackageId()) {
@@ -490,6 +510,23 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             priceResult.setDealUnitPrice(dealUnitPrice);
         }
         return Result.success(priceResult);
+    }
+
+    private SupplierWarehouse getSupplierWarehouseById(Long warehouseId) {
+        Result<SupplierWarehouse> warehouseResult = warehouseApi.queryById(warehouseId);
+        if(!warehouseResult.isSuccess()){
+            throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
+        }
+        return warehouseResult.getData();
+    }
+
+    private SkuBatch getSkuBatchById(String skuBatchId) {
+        Result<SkuBatch> skuBatchResult = skuBatchApi.queryOneByCriteria(Criteria
+                .of(SkuBatch.class).andEqualTo(SkuBatch::getFsupplierSkuBatchId, skuBatchId));
+        if (!skuBatchResult.isSuccess()) {
+            throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
+        }
+        return skuBatchResult.getData();
     }
 
     private BigDecimal getFreight(Long fbatchPackageId, Long ffreightId, Long fdeliveryCityId, String fsupplierSkuBatchId, Long fnum) {
@@ -985,15 +1022,16 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     public Result<GoodsDetailCouponVo> getSkuUserCoupon(Long fskuId, Long fuid) {
         GoodsDetailCouponVo result = new GoodsDetailCouponVo();
         //所有券
-        List<CouponVo> allReceiveCoupon = this.getAllReceiveCoupon(fskuId, fuid);
+        List<CouponVo> allCoupon = this.getAllReceiveCoupon(fskuId, fuid);
         //已领取券
-        List<CouponVo> alreadyReceiveCoupon = this.getAlreadyReceiveCoupon(fskuId, fuid);
-        List<Long> alCouponIds = alreadyReceiveCoupon.stream().map(CouponVo::getFcouponId).collect(toList());
+        List<CouponVo> receiveCoupon = (List<CouponVo>)this.getAlreadyReceiveCoupon(fskuId, fuid).get("receiveCoupon");
+        List<Long> alCouponIds = (List<Long>)this.getAlreadyReceiveCoupon(fskuId, fuid).get("removeCoupon");
         //未领取券
-        List<CouponVo> unReceiceCoupon = allReceiveCoupon.stream().filter(item -> !alCouponIds.contains(item.getFcouponId())).collect(toList());
+        List<CouponVo> unReceiceCoupon = allCoupon.stream().filter(item -> !alCouponIds.contains(item.getFcouponId())).collect(toList());
 
-
-        result.setReceiveCouponLis(alreadyReceiveCoupon.stream().sorted(Comparator.comparing(CouponVo::getFthresholdAmount).reversed()).collect(toList()));
+        this.dealAmount(receiveCoupon);
+        this.dealAmount(unReceiceCoupon);
+        result.setReceiveCouponLis(receiveCoupon.stream().sorted(Comparator.comparing(CouponVo::getFthresholdAmount).reversed()).collect(toList()));
         result.setUnReceiveCouponLis(unReceiceCoupon.stream().sorted(Comparator.comparing(CouponVo::getFthresholdAmount).reversed()).collect(toList()));
         result.setNowDate(new Date());
         return Result.success(result);
@@ -1016,7 +1054,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     }
 
     //获取该sku已领券
-    private List<CouponVo> getAlreadyReceiveCoupon(Long fskuId, Long fuid) {
+    private Map<String, Object> getAlreadyReceiveCoupon(Long fskuId, Long fuid) {
         Date now = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String nowStr = sdf.format(now);
@@ -1031,7 +1069,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         List<CouponReceive> couponReceLis = couponReceResult.getData();
-        List<CouponVo> result = new ArrayList<>();
+        List<CouponVo> receiveCoupon = new ArrayList<>();//该sku已领券
+        List<Long> removeCoupon = new ArrayList<>();//总集合需要排除已领的券
+        List<Long> isDealCouponLis = new ArrayList<>();
         Map<String, Long> skuCondition = new HashMap<>(5);
         if (!CollectionUtils.isEmpty(couponReceLis)) {
             for (CouponReceive couponReceive : couponReceLis) {
@@ -1039,20 +1079,30 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                         .andEqualTo(Coupon::getFcouponId, couponReceive.getFcouponId())
                         .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
                         .andEqualTo(Coupon::getFisShow, 1)
-                        .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType,
-                                Coupon::getFthresholdAmount, Coupon::getFdeductionValue, Coupon::getFvalidityStart,
-                                Coupon::getFvalidityEnd, Coupon::getFapplicableSku));
+                        .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType, Coupon::getFthresholdAmount,
+                                Coupon::getFdeductionValue, Coupon::getFvalidityStart, Coupon::getFvalidityEnd,
+                                Coupon::getFapplicableSku, Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFperLimit));
                 Coupon coupon = couponResult.getData();
+
                 if (couponResult.isSuccess() && null != coupon) {
+                    Long fcouponId = coupon.getFcouponId();
+                    Integer fperLimit = coupon.getFperLimit();
                     //1全部商品、2指定商品可用、3指定商品不可用
                     int ableSku = coupon.getFapplicableSku().intValue();
                     if (ableSku == 1) {
-                        result.add(dozerMapper.map(coupon, CouponVo.class));
+                        receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                        if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
+                            removeCoupon.add(fcouponId);
+                        }
+                        continue;
                     } else if (ableSku == 2) {
                         //如果是单独存的skuid
                         Result<Integer> countCouponSku = this.getCouponSkuCount(couponReceive.getFcouponId(), fskuId);
                         if (countCouponSku.isSuccess() && countCouponSku.getData() > 0) {
-                            result.add(dozerMapper.map(coupon, CouponVo.class));
+                            receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
+                                removeCoupon.add(fcouponId);
+                            }
                             continue;
                         }
                         //如果存的是条件
@@ -1079,23 +1129,38 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                         Long labelId = skuCondition.get("labelId");
 
                         if (fbrandIds_coupon.contains(brandId)) {
-                            result.add(dozerMapper.map(coupon, CouponVo.class));
+                            receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
+                                removeCoupon.add(fcouponId);
+                            }
                             continue;
                         }
                         if (null != fcategoryIds_coupon.get(1) && fcategoryIds_coupon.get(1).contains(categoryId1)) {
-                            result.add(dozerMapper.map(coupon, CouponVo.class));
+                            receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
+                                removeCoupon.add(fcouponId);
+                            }
                             continue;
                         }
                         if (null != fcategoryIds_coupon.get(2) && fcategoryIds_coupon.get(1).contains(categoryId2)) {
-                            result.add(dozerMapper.map(coupon, CouponVo.class));
+                            receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
+                                removeCoupon.add(fcouponId);
+                            }
                             continue;
                         }
                         if (null != fcategoryIds_coupon.get(3) && fcategoryIds_coupon.get(1).contains(categoryId3)) {
-                            result.add(dozerMapper.map(coupon, CouponVo.class));
+                            receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
+                                removeCoupon.add(fcouponId);
+                            }
                             continue;
                         }
                         if (flabelIds_coupon.contains(labelId)) {
-                            result.add(dozerMapper.map(coupon, CouponVo.class));
+                            receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
+                                removeCoupon.add(fcouponId);
+                            }
                             continue;
                         }
                     } else {
@@ -1128,7 +1193,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                                         if (null != fcategoryIds_coupon.get(2) && fcategoryIds_coupon.get(1).contains(categoryId2)) {
                                             if (null != fcategoryIds_coupon.get(3) && fcategoryIds_coupon.get(1).contains(categoryId3)) {
                                                 if (flabelIds_coupon.contains(labelId)) {
-                                                    result.add(dozerMapper.map(coupon, CouponVo.class));
+                                                    receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                                                    if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
+                                                        removeCoupon.add(fcouponId);
+                                                    }
                                                     continue;
                                                 }
                                             }
@@ -1141,8 +1209,19 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 }
             }
         }
-        this.dealAmount(result);
+        Map<String, Object> result = new HashMap<>(2);
+        result.put("receiveCoupon", receiveCoupon);
+        result.put("removeCoupon", removeCoupon);
         return result;
+    }
+
+    private Boolean isCanReceive(Long fcouponId, Long fuid, int fperLimit) {
+        Result<Integer> countResult = couponReceiveApi.countByCriteria(Criteria.of(CouponReceive.class)
+                .andEqualTo(CouponReceive::getFcouponId, fcouponId)
+                .andEqualTo(CouponReceive::getFuid, fuid));
+        Ensure.that(countResult.isSuccess()).isTrue(new MallPcExceptionCode(countResult.getCode(), countResult.getMsg()));
+        int isReceive = countResult.getData().intValue();
+        return isReceive < fperLimit ? true : false;
     }
 
     private Result<Integer> getCouponSkuCount(Long fcouponId, Long fskuId) {

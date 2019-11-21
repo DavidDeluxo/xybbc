@@ -49,5 +49,10 @@ public class GoodsPriceVo implements Serializable {
     @ApiModelProperty("详细地址")
     private String fdeliveryAddr;
 
+    @ApiModelProperty("商品类型  (1、新包装； 2、旧包装 ；3、新旧包装随机 ")
+    private Integer fgoodsPackType;
+
+    @ApiModelProperty("发货仓")
+    private String fwarehouseName;
 
 }
