@@ -53,7 +53,7 @@ public class RechargeServiceImpl implements RechargeService {
     @Override
     public String save(RechargeSubmitDTO dto) {
         log.debug("调用生成充值单方法,dto:{}", dto);
-        Long fuid = RequestHolder.getAdminId();
+        Long fuid = RequestHolder.getUserId();
         //生成充值单号
         String ftransId = XyIdGenerator.generateId(OrderTypeEnum.RECHARGE_ORDER.getCode(), RechargeOrderBizEnum.TRADE.getCode());
 
