@@ -1031,7 +1031,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
         Result<SearchItemListVo<SearchItemVo>> res;
         SearchItemDto searchItemDto = new SearchItemDto();
-        searchItemDto.setPageSize(Integer.MAX_VALUE);
+        searchItemDto.setPageSize(10000);
         searchItemDto.setFskuIds(Lists.newArrayList(fskuId));
         List<CouponVo> result = new ArrayList<>();
         Map<String, Object> userCondition = new HashMap<>(5);
