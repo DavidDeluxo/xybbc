@@ -109,7 +109,7 @@ public class RechargeServiceImpl implements RechargeService {
         thirdPayDto.setForderId(ftransId);
         thirdPayDto.setPayScene("1");
         thirdPayDto.setPayType(AccountRechargeType.AliPay.getCode().equals(userAccountTrans.getFrechargeType()) ? "1" : "2");
-        return EnsureHelper.checkNotNullAndGetData(payApi.createThirdPayCode(thirdPayDto));
+        return EnsureHelper.checkNotNullAndGetData(payApi.createThirdPayUrl(thirdPayDto));
     }
 
     /**
