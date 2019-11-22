@@ -112,8 +112,9 @@ public class AftersaleServiceImpl implements AftersaleService {
 
         //获取skuName
         for (AftersaleListVo aftersaleListVo : result.getList()) {
-            aftersaleListVo.setFskuName(this.getSkuInfor(aftersaleListVo.getFskuCode()).getFskuName());
-            aftersaleListVo.setFskuPic(this.getSkuInfor(aftersaleListVo.getFskuCode()).getFskuThumbImage());
+            GoodsSku skuInfor = this.getSkuInfor(aftersaleListVo.getFskuCode());
+            aftersaleListVo.setFskuName(skuInfor.getFskuName());
+            aftersaleListVo.setFskuPic(skuInfor.getFskuThumbImage());
             aftersaleListVo.setFbatchPackageName(aftersaleListVo.getFbatchPackageNum() + "件装");
             aftersaleListVo.setFunitPrice(aftersaleListVo.getFunitPrice().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP));
             aftersaleListVo.setFaftersaleNumShow(this.getAftersaleNumShow(aftersaleListVo.getFaftersaleNum(), aftersaleListVo.getFtransportOrderId(), aftersaleListVo.getFskuCode()));
