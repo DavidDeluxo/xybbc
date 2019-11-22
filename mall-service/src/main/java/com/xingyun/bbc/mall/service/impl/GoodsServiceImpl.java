@@ -32,6 +32,7 @@ import com.xingyun.bbc.mall.base.enums.MallResultStatus;
 import com.xingyun.bbc.mall.common.ensure.Ensure;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.CouponSkuQueryDto;
+import com.xingyun.bbc.mall.model.dto.RefreshCouponDto;
 import com.xingyun.bbc.mall.model.dto.SearchItemDto;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.CouponService;
@@ -285,6 +286,8 @@ public class GoodsServiceImpl implements GoodsService {
         }
         return skuIdVo;
     }
+
+
 
 
     /**
@@ -544,6 +547,44 @@ public class GoodsServiceImpl implements GoodsService {
             }
         }
         return Result.success(brandPageVo);
+    }
+
+    @Override
+    public void updateCouponIdForAllSku(RefreshCouponDto refreshCouponDto){
+        Integer pageSize = 2000;
+        EsCriteria criteria = EsCriteria.build(null);
+//        DisMaxQueryBuilder disMaxQueryBuilder = new DisMaxQueryBuilder();
+
+        criteria.setPageSize(pageSize);
+        Map<String, Object> resultMap = esManager.queryWithBaseInfo(criteria);
+        if(resultMap.get("baseInfoMap") != null){
+            Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
+            Integer totalPage = 0;
+            if(baseInfoMap.get("totalPage") != null){
+                totalPage = Integer.parseInt(String.valueOf(baseInfoMap.get("totalPage")));
+            }
+            for(int var = 1; var <= totalPage; var ++){
+                log.info("处理第{}页, 共{}页开始", var, totalPage);
+                criteria.setPageIndex(var);
+                Map<String, Object> aresultMap = esManager.queryWithBaseInfo(criteria);
+                List<Map<String, Object>> aList = (List<Map<String, Object>>) aresultMap.get("resultList");
+                Map<String, Map<String, Object>> updateMap = new HashMap<>();
+                for(Map<String, Object> sourceMap : aList){
+                    if(sourceMap.get("fsku_id") != null){
+                        String fskuId = String.valueOf(sourceMap.get("fsku_id"));
+                        List<Integer> couponList = getCouponListForSku(fskuId);
+                        sourceMap.put("fcoupon_ids",couponList);
+                        updateMap.put(fskuId, sourceMap);
+                    }
+                }
+                try {
+                    esManager.indexInBulk(updateMap);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+                log.info("处理第{}页, 共{}页结束", var, totalPage);
+            }
+        }
     }
 
     @Override

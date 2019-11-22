@@ -2,6 +2,7 @@ package com.xingyun.bbc.mall.service;
 
 import com.xingyun.bbc.core.market.po.Coupon;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mall.model.dto.RefreshCouponDto;
 import com.xingyun.bbc.mall.model.dto.SearchItemDto;
 import com.xingyun.bbc.mall.model.vo.*;
 
@@ -25,5 +26,7 @@ public interface GoodsService {
     void deleteCouponInfoFromEsSku(Coupon coupon);
 
     void updateEsSkuWithSkuUpdate(Map<String, Object> skuSourceMap);
+
+    void updateCouponIdForAllSku(RefreshCouponDto refreshCouponDto);
 
 }
