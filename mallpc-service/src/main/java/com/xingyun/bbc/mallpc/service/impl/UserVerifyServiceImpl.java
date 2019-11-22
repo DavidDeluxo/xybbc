@@ -99,12 +99,12 @@ public class UserVerifyServiceImpl implements UserVerifyService {
     @Override
     public UserVerifyVO view() {
         Long fuid = RequestHolder.getUserId();
-        Criteria<User, Object> userObjectCriteria = Criteria.of(User.class).fields(User::getFverifyStatus).andEqualTo(User::getFuid, fuid);
-        Integer fverifyStatus = EnsureHelper.checkNotNullAndGetData(userApi.queryOneByCriteria(userObjectCriteria), MallPcExceptionCode.USER_NOT_EXIST).getFverifyStatus();
+        User user = EnsureHelper.checkNotNullAndGetData(userApi.queryById(fuid), MallPcExceptionCode.USER_NOT_EXIST);
         Criteria<UserVerify, Object> criteria = Criteria.of(UserVerify.class).andEqualTo(UserVerify::getFuid, fuid);
         UserVerify userVerify = EnsureHelper.checkSuccessAndGetData(userVerifyApi.queryOneByCriteria(criteria));
         UserVerifyVO userVerifyVO = Objects.isNull(userVerify) ? empty : TypeConvertor.convertUserVerifyToUserVerifyVO(userVerify);
-        userVerifyVO.setFverifyStatus(fverifyStatus);
+        userVerifyVO.setFverifyStatus(user.getFverifyStatus());
+        userVerifyVO.setFoperateType(user.getFoperateType());
         return userVerifyVO;
     }
 }
