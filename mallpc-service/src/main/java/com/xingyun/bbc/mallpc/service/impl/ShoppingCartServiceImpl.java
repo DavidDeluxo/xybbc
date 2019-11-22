@@ -3,6 +3,8 @@ package com.xingyun.bbc.mallpc.service.impl;
 import com.google.common.collect.Lists;
 import com.xingyun.bbc.core.sku.enums.GoodsTradeType;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mallpc.common.ensure.Ensure;
+import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.common.utils.FileUtils;
 import com.xingyun.bbc.mallpc.common.utils.RequestHolder;
 import com.xingyun.bbc.mallpc.model.dto.shoppingcart.ShoppingCartDto;
@@ -134,8 +136,9 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         QueryCartDto queryCartDto = new QueryCartDto().setFuid(RequestHolder.getUserId());
         queryCartDto.setPageNum(1);
         queryCartDto.setPageSize(SHOPPINGCART_GOODS_QTY_LIMIT);
-        Result<PageVo<CartsVo>> queryShoppingCartResult = cartApi.queryCart(queryCartDto);
-        List<CartsVo> cartsVos = queryShoppingCartResult.getData().getList();
+        Result<PageVo<CartsVo>> result = cartApi.queryCart(queryCartDto);
+        Ensure.that(result).isSuccess(new MallPcExceptionCode(result.getCode(), result.getMsg()));
+        List<CartsVo> cartsVos = result.getData().getList();
         if (CollectionUtils.isEmpty(cartsVos)) {
             return Result.success(shoppingCartVo);
         }
