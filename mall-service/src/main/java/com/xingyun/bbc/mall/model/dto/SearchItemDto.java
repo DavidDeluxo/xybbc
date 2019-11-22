@@ -113,7 +113,7 @@ public class SearchItemDto {
 
     @EsMark(policy = BuildPolicy.MUST, field = "fcoupon_ids")
     @ApiModelProperty("优惠券ID")
-    private Long fcouponId;
+    private Long couponId;
 
     @EsMark(policy = BuildPolicy.MUST_KEY_WORD, field = "fsku_code")
     @ApiModelProperty("商品编码")

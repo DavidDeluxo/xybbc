@@ -24,6 +24,12 @@ public class UserVerifyVO {
     @ApiModelProperty("用户ID")
     private Long fuid;
 
+    @ApiModelProperty("认证类型：1实体门店，2网络店铺，3网络平台，4批采企业，5微商代购 ")
+    private Integer foperateType;
+
+    @ApiModelProperty("认证状态: 1未认证，2 认证中，3 已认证，4未通过 ")
+    private Integer fverifyStatus;
+
     @ApiModelProperty("经营方式")
     private String foperateMethod;
 
