@@ -90,6 +90,7 @@ public class MallPcExceptionCode implements IResultStatus {
     public static final MallPcExceptionCode NO_USER_CATEGORY_ID = new MallPcExceptionCode("1027", "未传一级类目ID");
     public static final MallPcExceptionCode BATCH_PACKAGE_NUM_NOT_EXIST = new MallPcExceptionCode("1028", "查不到包装规格值");
     public static final MallPcExceptionCode SHOPPING_CART_NOT_EXIST = new MallPcExceptionCode("1029", "进货单商品不存在");
+    public static final MallPcExceptionCode BUSINESSLICENSENO_REPEAT = new MallPcExceptionCode("1030", "该营业执照编号已注册");
 
 
     /**
