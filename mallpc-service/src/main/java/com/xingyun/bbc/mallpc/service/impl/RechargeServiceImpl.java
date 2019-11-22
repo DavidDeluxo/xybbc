@@ -103,8 +103,9 @@ public class RechargeServiceImpl implements RechargeService {
         UserAccountTrans userAccountTrans = EnsureHelper.checkNotNullAndGetData(userAccountTransApi.queryById(ftransId), MallPcExceptionCode.RECORD_NOT_EXIST);
         checkUserAccountTransOfQRCode(userAccountTrans);
         ThirdPayDto thirdPayDto = new ThirdPayDto();
-        //有效时间一分钟
-        thirdPayDto.setLockTime(new Date(System.currentTimeMillis() + MallPcConstants.ONE_MINITE_OF_MILLI));
+        //有效时间一分钟,考虑到下层会整除取分钟和时间差,这里加上些时间
+        //thirdPayDto.setLockTime(new Date(System.currentTimeMillis() + MallPcConstants.ONE_MINITE_OF_MILLI));
+        thirdPayDto.setLockTime(new Date(System.currentTimeMillis() + MallPcConstants.ONE_MINITE_OF_MILLI + MallPcConstants.ONE_MINITE_OF_MILLI - 1));
         thirdPayDto.setPayAmount(userAccountTrans.getFtransAmount().toString());
         thirdPayDto.setForderId(ftransId);
         thirdPayDto.setPayScene("1");
