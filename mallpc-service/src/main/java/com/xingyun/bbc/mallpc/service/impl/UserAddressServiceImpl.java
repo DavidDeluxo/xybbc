@@ -123,7 +123,9 @@ public class UserAddressServiceImpl implements UserAddressService {
     public Result saveOrUpdate(UserAddressDto userAddressDto) {
         //校验身份证 手机号
         Ensure.that(StringUtilExtention.mobileCheck(userAddressDto.getFdeliveryMobile())).isTrue(MallPcExceptionCode.BIND_MOBILE_ERROR);
-        Ensure.that(StringUtilExtention.idCardCheck(userAddressDto.getFdeliveryCardid())).isTrue(MallPcExceptionCode.ID_CARD_NUMBER_ILLEGAL);
+        if (StringUtil.isNotBlank(userAddressDto.getFdeliveryCardid())) {
+            Ensure.that(StringUtilExtention.idCardCheck(userAddressDto.getFdeliveryCardid())).isTrue(MallPcExceptionCode.ID_CARD_NUMBER_ILLEGAL);
+        }
         UserDelivery userDelivery = convertor.convert(userAddressDto, UserDelivery.class);
         if (StringUtil.isBlank(userAddressDto.getFdeliveryUserId())) {
             Ensure.that(userDeliveryApi.create(userDelivery).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);

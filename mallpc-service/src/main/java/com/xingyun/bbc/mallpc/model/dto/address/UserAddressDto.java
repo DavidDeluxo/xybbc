@@ -66,6 +66,6 @@ public class UserAddressDto {
 
     @ApiModelProperty("是否默认地址(0否, 1是)")
     @NumberRange(values = {0,1},message = "是否为默认地址参数非法")
-    private String fisDefualt;
+    private Integer fisDefualt;
 
 }

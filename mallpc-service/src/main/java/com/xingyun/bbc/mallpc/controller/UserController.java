@@ -33,16 +33,16 @@ public class UserController {
         this.userService = userService;
     }
 
+    @ApiOperation("获取注册页图片")
+    @GetMapping("/viewlogin")
+    public Result<String> guideLogin() {
+        return userService.guideLogin();
+    }
+
     @ApiOperation("用户登录")
     @PostMapping("/userLogin")
     public Result<UserLoginVo> userLogin(@Validated @RequestBody UserLoginDto userLoginDto) {
         return userService.userLogin(userLoginDto);
-    }
-
-    @ApiOperation("自动登录")
-    @GetMapping("/autoLogin")
-    public Result<UserLoginVo> autoLogin() {
-        return userService.autoLogin();
     }
 
     @ApiOperation("用户注册")
@@ -65,8 +65,8 @@ public class UserController {
 
     @ApiOperation("查询新人注册优惠券")
     @GetMapping("/queryRegisterCoupon")
-    public Result queryRegisterCoupon(@RequestParam("uid") Long uid) {
-        return userService.queryRegisterCoupon(uid);
+    public Result queryRegisterCoupon() {
+        return userService.queryRegisterCoupon();
     }
 
 }
