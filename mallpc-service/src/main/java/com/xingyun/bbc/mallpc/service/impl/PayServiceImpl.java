@@ -1,7 +1,5 @@
 package com.xingyun.bbc.mallpc.service.impl;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
 import com.google.common.base.Strings;
 import com.xingyun.bbc.core.operate.api.OrderConfigApi;
 import com.xingyun.bbc.core.operate.po.OrderConfig;
@@ -10,14 +8,11 @@ import com.xingyun.bbc.core.order.po.OrderPayment;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserAccountApi;
 import com.xingyun.bbc.core.user.api.UserAccountTransApi;
-import com.xingyun.bbc.core.user.api.UserAccountTransWaterApi;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.user.po.UserAccount;
 import com.xingyun.bbc.core.user.po.UserAccountTrans;
-import com.xingyun.bbc.core.user.po.UserAccountTransWater;
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mallpc.common.components.DozerHolder;
 import com.xingyun.bbc.mallpc.common.constants.PayConstants;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.common.utils.DecodeUtil;
@@ -25,32 +20,23 @@ import com.xingyun.bbc.mallpc.common.utils.EncryptUtils;
 import com.xingyun.bbc.mallpc.common.utils.Md5Utils;
 import com.xingyun.bbc.mallpc.common.utils.PriceUtil;
 import com.xingyun.bbc.mallpc.common.utils.TimeAddUtil;
+import com.xingyun.bbc.mallpc.model.dto.pay.BalancePayDto;
+import com.xingyun.bbc.mallpc.model.vo.pay.OrderResultVo;
 import com.xingyun.bbc.mallpc.service.PayService;
 import com.xingyun.bbc.order.api.OrderPayApi;
 import com.xingyun.bbc.order.model.dto.order.PayDto;
 import com.xingyun.bbc.order.model.vo.pay.BalancePayVo;
-import com.xingyun.bbc.order.model.vo.pay.ThirdPayVo;
 import com.xingyun.bbc.pay.api.PayChannelApi;
 import com.xingyun.bbc.pay.model.dto.ThirdPayDto;
-import com.xingyun.bbc.pay.model.dto.ThirdPayResponseDto;
-import com.xingyun.bbc.pay.model.vo.PayInfoVo;
-import io.seata.spring.annotation.GlobalTransactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
-
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
 
 /**
  * @author jianghui
@@ -84,13 +70,84 @@ public class PayServiceImpl implements PayService {
 	private UserAccountTransApi userAccountTransApi;
 
 	@Autowired
-	private UserAccountTransWaterApi userAccountTransWaterApi;
-
-	@Autowired
 	private OrderConfigApi orderConfigApi;
 
-	@Autowired
-	private DozerHolder dozerHolder;
+
+	
+	
+	/**
+	 * @author jianghui
+	 * @version V1.0
+	 * @Description: 余额支付，混合支付
+	 * @date 2019/8/20 13:49
+	 */
+	@Override
+	public Result<?> balancePay(BalancePayDto dto, HttpServletRequest request) {
+		
+		String fuid= request.getHeader("xyid").toString();
+
+		logger.info("余额支付。用户id：" +fuid+ "，订单号：" + dto.getForderId() + "，余额类型：" + dto.getBalanceType());
+		
+		Result<?> checkEntity = this.checkBalancePayParams(fuid, dto.getForderId(), dto.getPayPwd(), Integer.parseInt(dto.getBalanceType()));
+		if (checkEntity != null) {
+			return checkEntity;
+		}
+		// 检查订单是否能支付
+		checkEntity = this.checkOrderIsEnablePay(dto);
+		if (checkEntity != null) {
+			return checkEntity;
+		}
+
+		Long totalAmount=null;//订单总金额
+		Long unPayAmount=null;//未支付金额
+		OrderPayment orderPayment=orderPaymentApi.queryById(dto.getForderId()).getData();
+		
+		//查询账号余额信息
+		UserAccount account=userAccountApi.queryById(fuid).getData();
+		if(account==null)
+		{
+			logger.info("余额支付。用户id：" +fuid+ "账号信息不存在");
+			return Result.failure(MallPcExceptionCode.USER_FREEZE_ERROR);
+		}else{
+			if(account.getFbalance()==0)
+			{
+				logger.info("余额支付。用户id：" +fuid+ "余额为0!");
+				return Result.failure(MallPcExceptionCode.BALANCE_NOT_ENOUGH);
+			}
+		}
+		totalAmount= orderPayment.getFtotalOrderAmount();
+		unPayAmount = totalAmount - orderPayment.getFbalancePayAmount() - orderPayment.getFcreditPayAmount();
+		Long fbalance=account.getFbalance();
+
+		
+		PayDto payDto =new PayDto();
+		payDto.setForderPaymentId(dto.getForderId());
+		Result<BalancePayVo> code = orderPayApi.balancePay(payDto);
+		
+		OrderResultVo orderResultVo=new OrderResultVo();
+		//余额不足支付 此时为混合支付
+		if(unPayAmount > fbalance){
+			orderResultVo.setOrder_status(1); //还需要第三方支付状态
+			orderResultVo.setBalance(BigDecimal.ZERO);
+		}else{
+			orderResultVo.setOrder_status(2); //余额足够
+			orderResultVo.setBalance(PriceUtil.toYuan(fbalance-unPayAmount));
+		}
+		
+		if(code.getData().getCode()==200)
+		{
+			logger.info("余额部分支付成功。订单:"+dto.getForderId()+",总金额:"+PriceUtil.toYuan(totalAmount)+",金额："+fbalance);	
+			orderResultVo.setCode(200);
+			orderResultVo.setMsg("余额支付成功");
+			return Result.success(orderResultVo);
+		}else{
+			logger.info("余额部分支付失败。订单:"+dto.getForderId()+",总金额:"+PriceUtil.toYuan(totalAmount)+",金额："+fbalance);	
+			orderResultVo.setCode(code.getData().getCode());
+			orderResultVo.setMsg("余额支付失败");
+			return Result.success(orderResultVo);
+		}
+
+	}
 
 	/**
 	 * @author jianghui
@@ -274,5 +331,6 @@ public class PayServiceImpl implements PayService {
 		dto.setRecieveName(orderPayment.getFpayerName());
 		return null;
 	}
+
 
 }
