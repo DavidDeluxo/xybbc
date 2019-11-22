@@ -91,18 +91,13 @@ public class UserVerifyServiceImpl implements UserVerifyService {
         }
     }
 
-    /**
-     * 查不到认证记录时,返回空对象
-     */
-    private static final UserVerifyVO empty = new UserVerifyVO();
-
     @Override
     public UserVerifyVO view() {
         Long fuid = RequestHolder.getUserId();
         User user = EnsureHelper.checkNotNullAndGetData(userApi.queryById(fuid), MallPcExceptionCode.USER_NOT_EXIST);
         Criteria<UserVerify, Object> criteria = Criteria.of(UserVerify.class).andEqualTo(UserVerify::getFuid, fuid);
         UserVerify userVerify = EnsureHelper.checkSuccessAndGetData(userVerifyApi.queryOneByCriteria(criteria));
-        UserVerifyVO userVerifyVO = Objects.isNull(userVerify) ? empty : TypeConvertor.convertUserVerifyToUserVerifyVO(userVerify);
+        UserVerifyVO userVerifyVO = Objects.isNull(userVerify) ? new UserVerifyVO() : TypeConvertor.convertUserVerifyToUserVerifyVO(userVerify);
         userVerifyVO.setFverifyStatus(user.getFverifyStatus());
         userVerifyVO.setFoperateType(user.getFoperateType());
         return userVerifyVO;
