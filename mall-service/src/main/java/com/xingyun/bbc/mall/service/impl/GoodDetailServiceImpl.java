@@ -1037,7 +1037,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         Map<String, Object> userCondition = new HashMap<>(5);
         try {
             res = goodsService.searchSkuList(searchItemDto);
-            logger.info("es获取sku满足的页面领取类型券" + JSON.toJSONString(res.getData()));
+            logger.info("es获取sku满足的页面领取类型券{}， skuid ={}" + JSON.toJSONString(res.getData()), fskuId);
             if (!res.isSuccess()) {
                 throw new Exception();
             }
