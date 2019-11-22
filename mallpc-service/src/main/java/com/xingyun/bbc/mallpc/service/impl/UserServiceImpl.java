@@ -395,6 +395,38 @@ public class UserServiceImpl implements UserService {
         Ensure.that(userApi.updateNotNull(user).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
         return Result.success();
     }
+    
+    /**
+     * @author nick
+     * @date 2019-11-19
+     * @description :  修改/设置支付密码
+     * @version 1.0.0
+     */
+    @Override
+    public Result modifiyPayPwd(ResetPasswordDto resetPasswordDto) {
+        String fmobile = resetPasswordDto.getFmobile();
+        // 手机号格式校验
+        Ensure.that(StringUtilExtention.mobileCheck(fmobile)).isTrue(MallPcExceptionCode.BIND_MOBILE_ERROR);
+        String newPassword = resetPasswordDto.getNewPassword();
+        // 校验新密码长度
+        Ensure.that(newPassword.length()).isGt(5, MallPcExceptionCode.PASSWORD_ILLEGAL).isLt(33, MallPcExceptionCode.PASSWORD_ILLEGAL);
+        newPassword = MD5Util.toMd5(newPassword);
+        String verifyCode = resetPasswordDto.getVerifyCode();
+        // 校验验证码
+        Ensure.that(checkVerifyCode(fmobile, verifyCode)).isTrue(MallPcExceptionCode.SMS_AUTH_NUM_ERROR);
+        // 查询账户是否存在
+        Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
+                .fields(User::getFuid, User::getFpasswd).andEqualTo(User::getFmobile, fmobile));
+        Ensure.that(userResult).isNotNull(MallPcExceptionCode.BIND_MOBILE_ERROR);
+        // 查询密码是否相同
+        User user = userResult.getData();
+        String fwithdrawPasswd = user.getFwithdrawPasswd();
+        Ensure.that(Objects.equals(newPassword, fwithdrawPasswd)).isFalse(MallPcExceptionCode.PASSWORD_NOT_CHANGE);
+        // 修改密码
+        user.setFwithdrawPasswd(newPassword);
+        Ensure.that(userApi.updateNotNull(user).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+        return Result.success();
+    }
 
     @Override
     public Result<String> guideLogin() {

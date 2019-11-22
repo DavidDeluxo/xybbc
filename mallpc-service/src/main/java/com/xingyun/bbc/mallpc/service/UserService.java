@@ -50,6 +50,14 @@ public interface UserService {
      * @version 1.0.0
      */
     Result resetPwd(ResetPasswordDto resetPasswordDto);
+    
+    /**
+     * @author nick
+     * @date 2019-11-19
+     * @description :  修改/设置支付密码
+     * @version 1.0.0
+     */
+    Result modifiyPayPwd(ResetPasswordDto resetPasswordDto);
 
     /**
      * @author nick
