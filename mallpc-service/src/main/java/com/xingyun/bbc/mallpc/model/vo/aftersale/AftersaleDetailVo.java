@@ -75,6 +75,9 @@ public class AftersaleDetailVo  implements Serializable {
     @ApiModelProperty(value = "回寄收件人电话")
     private String fdeliveryMobile;
 
+    @ApiModelProperty(value = "回寄状态 1 未签收 2已签收")
+    private Integer fbackStatus;
+
     @ApiModelProperty(value = "退货时间")
     private Date freGoodsTime;
 
