@@ -7,6 +7,7 @@ import com.xingyun.bbc.mallpc.common.utils.AccountUtil;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import org.springframework.util.StringUtils;
 
 import javax.validation.constraints.*;
 import java.math.BigDecimal;
@@ -93,5 +94,9 @@ public class UserVerifyDTO {
     public void setFsalesVolumeShow(BigDecimal fsalesVolumeShow) {
         this.fsalesVolumeShow = fsalesVolumeShow;
         this.fsalesVolume = AccountUtil.multiplyOneHundred(fsalesVolumeShow);
+    }
+
+    public void setFbusinessLicenseNo(String fbusinessLicenseNo) {
+        this.fbusinessLicenseNo = StringUtils.trimWhitespace(fbusinessLicenseNo);
     }
 }

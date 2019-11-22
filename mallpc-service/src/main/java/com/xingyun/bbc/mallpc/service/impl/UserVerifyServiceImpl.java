@@ -22,6 +22,7 @@ import com.xingyun.bbc.mallpc.service.UserVerifyService;
 import io.seata.spring.annotation.GlobalTransactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import java.util.Objects;
@@ -66,7 +67,7 @@ public class UserVerifyServiceImpl implements UserVerifyService {
         boolean lockBusinessLicenseNo = false;
         String businessLicenseNoLockKey = LOCK_PREFIX_BUSINESSLICENSENO + fbusinessLicenseNo;
         try {
-            if (Objects.nonNull(fbusinessLicenseNo)) {
+            if (StringUtils.hasLength(fbusinessLicenseNo)) {
                 Ensure.that(lockBusinessLicenseNo = xybbcLock.tryLock(businessLicenseNoLockKey, MallPcRedisConstant.DEFAULT_LOCK_VALUE, MallPcRedisConstant.DEFAULT_LOCK_EXPIRING)).isTrue(MallPcExceptionCode.SYSTEM_BUSY_ERROR);
                 //校验字段唯一性
                 checkFbusinessLicenseNoRepeat(fbusinessLicenseNo, fuid);
