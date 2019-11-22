@@ -99,11 +99,20 @@ public class EsManager {
      * @return
      */
     private List<Map<String, Object>> getHitList(SearchResponse sResponse) {
+        return getHitList(sResponse,true);
+    }
+
+
+    private List<Map<String, Object>> getHitList(SearchResponse sResponse, Boolean isToCamel) {
         List<Map<String, Object>> resList = new LinkedList<>();
         try {
             for (SearchHit hit : sResponse.getHits().getHits()) {
                 Map<String, Object> resultMap = new HashMap<>();
-                resultMap.putAll(convertUpperUndercsoreToLowerCamel(hit.getSourceAsMap()));
+                if(isToCamel){
+                    resultMap.putAll(convertUpperUndercsoreToLowerCamel(hit.getSourceAsMap()));
+                }else {
+                    resultMap.putAll(hit.getSourceAsMap());
+                }
                 resultMap.putAll(getHighlightField(hit));
                 resList.add(resultMap);
             }
@@ -159,13 +168,24 @@ public class EsManager {
     private Map<String, Object> getBaseInfoMap(SearchResponse sResponse, EsCriteria criteria) {
         Map<String, Object> baseInfo = new HashMap<>();
         if (sResponse == null) return baseInfo;
-        baseInfo.put("totalHits", sResponse.getHits().getTotalHits());
+        Integer totalHits = Integer.parseInt(String.valueOf(sResponse.getHits().getTotalHits()));
+        baseInfo.put("totalHits", totalHits);
         baseInfo.put("currentDate", DateUtils.formatDate(new Date(), "yyyy/MM/dd HH:mm:ss"));
         baseInfo.put("pageSize", criteria.getPageSize());
         baseInfo.put("pageIndex", criteria.getPageIndex());
-        baseInfo.put("totalPage", criteria.getTotalPage(
-                Integer.parseInt(String.valueOf(baseInfo.get("totalHits")))));
+        baseInfo.put("totalPage", criteria.getTotalPage(getTotalPageNum(criteria.getPageSize(), totalHits)));
         return baseInfo;
+    }
+
+    private Integer getTotalPageNum(Integer pageSize, Integer totalCount){
+        if(pageSize == 0){
+            return 0;
+        }
+        if(totalCount % pageSize == 0){
+            return totalCount / pageSize;
+        }else {
+            return totalCount / pageSize + 1;
+        }
     }
 
     public List<Map<String, Object>> queryForList(EsCriteria criteria) {
@@ -191,7 +211,7 @@ public class EsManager {
         try {
             SearchResponse sResponse = queryForResponse(criteria);
             resultMap.put("baseInfoMap", getBaseInfoMap(sResponse, criteria));
-            resultMap.put("resultList", getHitList(sResponse));
+            resultMap.put("resultList", getHitList(sResponse,false));
         }catch (Exception e){
             e.printStackTrace();
         }
