@@ -23,7 +23,7 @@ public class WithdrawDto implements Serializable {
 
     private static final long serialVersionUID = -3375325720449344887L;
 
-    @NotNull(message = "提现金额不能为空1")
+    @NotNull(message = "提现金额不能为空")
     @ApiModelProperty("提现金额")
     private BigDecimal withdrawAmount;
 
