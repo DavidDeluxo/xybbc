@@ -656,13 +656,18 @@ public class GoodsServiceImpl implements GoodsService {
         try {
             GetResponse getResponse = esManager.getSourceById(fskuId);
             if(getResponse.isExists()){
+                log.info("更新sku:{}",fskuId);
                 Map<String, Object> oldSourceMap = getResponse.getSourceAsMap();
                 if(oldSourceMap.get("fcoupon_ids") != null){
                     List<Integer> couponIdList = (List<Integer>) oldSourceMap.get("fcoupon_ids");
+                    log.info("保留现有优惠券id列表:{}", couponIdList);
                     skuSourceMap.put("fcoupon_ids", couponIdList);
                 }
             }else {
-                skuSourceMap.put("fcoupon_ids", getCouponListForSku(fskuId));
+                log.info("新增sku:{}",fskuId);
+                List<Integer> couponList = getCouponListForSku(fskuId);
+                log.info("新建sku对应优惠券id列表:{}", couponList);
+                skuSourceMap.put("fcoupon_ids", couponList);
             }
             Map<String, Map<String, Object>> indexMap = new HashMap<>();
             indexMap.put(fskuId, skuSourceMap);
