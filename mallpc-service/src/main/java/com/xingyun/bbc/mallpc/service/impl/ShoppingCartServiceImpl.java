@@ -78,7 +78,6 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
      */
     @Override
     public Result qty(ShoppingCartDto shoppingCartDto) {
-        //todo 加入缓存
         Result<Integer> countShopcarResult = cartApi.countCart(RequestHolder.getUserId());
         Integer shopcarGoodsQty = countShopcarResult.getData();
         ShoppingCartVo shoppingCartVo = new ShoppingCartVo();
