@@ -41,7 +41,7 @@ public class GoodsController {
     private JwtParser jwtParser;
 
     @ApiOperation("查询商品列表")
-    @PostMapping("/skuSearch")
+    @PostMapping("/via/skuSearch")
     public Result<SearchItemListVo<SearchItemVo>> skuSearch(@RequestBody SearchItemDto dto, HttpServletRequest request) {
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
         dto.setIsLogin(infoVo.getIsLogin());
@@ -62,7 +62,7 @@ public class GoodsController {
     }
 
     @ApiOperation("查询筛选信息")
-    @PostMapping("/skuSearchFilter")
+    @PostMapping("/via/skuSearchFilter")
     public Result<SearchFilterVo> skuSearchFilter(@RequestBody SearchItemDto dto, HttpServletRequest request) {
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
         dto.setIsLogin(infoVo.getIsLogin());

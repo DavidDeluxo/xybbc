@@ -34,26 +34,26 @@ public class IndexController {
     private IndexService indexService;
 
     @ApiOperation(value = "查询专题", httpMethod = "GET")
-    @GetMapping("/getSpecialTopics")
+    @GetMapping("/via/getSpecialTopics")
     public Result<List<SpecialTopicVo>> getSpecialTopics() {
         return Result.success(indexService.getSpecialTopics());
     }
 
 
     @ApiOperation(value = "查询Banner", httpMethod = "GET")
-    @GetMapping(value = "/getBanners")
+    @GetMapping(value = "/via/getBanners")
     public Result<List<BannerVo>> getBanners() {
         return Result.success(indexService.getBanners());
     }
 
     @ApiOperation(value = "查询品牌", httpMethod = "GET")
-    @GetMapping(value = "/getBrands")
+    @GetMapping(value = "/via/getBrands")
     public Result<List<BrandVo>> getBrands(@RequestParam Long cateId) {
         return Result.success(indexService.getBrands(cateId));
     }
 
     @ApiOperation(value = "查询分销商数量", httpMethod = "GET")
-    @GetMapping(value = "/getUserCount")
+    @GetMapping(value = "/via/getUserCount")
     public Result<Integer> getUserCount() {
         return Result.success(indexService.getUserCount());
     }

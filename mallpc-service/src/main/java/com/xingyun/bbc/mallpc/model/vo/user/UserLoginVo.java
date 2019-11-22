@@ -1,9 +1,11 @@
 package com.xingyun.bbc.mallpc.model.vo.user;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * @author nick
@@ -33,6 +35,17 @@ public class UserLoginVo implements Serializable {
 
     @ApiModelProperty("用户等级")
     private Long fuserLevelId;
+
+    @ApiModelProperty("用户免认证剩余天数")
+    private String freeVerifyRemainDays;
+
+    @ApiModelProperty("用户免认证到期时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date freeVerifyEndTime;
+
+    @ApiModelProperty("用户创建时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date fcreateTime;
 
     @ApiModelProperty("用户等级")
     private String flevelName;
