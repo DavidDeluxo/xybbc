@@ -21,6 +21,11 @@ public interface MallPcConstants {
 
     int MAX_EASYPOI_EXPORT_EXCEL_APPEND_OFFSET = 10000;
 
+    /**
+     * 一分钟的毫秒值
+     */
+    long ONE_MINITE_OF_MILLI = 60 * 1000L;
+
 
     /**
      * 初始密码
@@ -184,4 +189,8 @@ public interface MallPcConstants {
     BigDecimal TEN_THOUSAND = new BigDecimal("10000");
 
     public static final String MALL_RECEIVE_COUPON = "mall_receive_coupon_lock";
+
+    // 支付场景 1.充值 2.订单
+    String PAY_SCENE_RECHARGE = "1";
+    String PAY_SCENE_ORDER = "2";
 }

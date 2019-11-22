@@ -1,7 +1,9 @@
 package com.xingyun.bbc.mallpc.service.impl;
 
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.google.common.collect.Lists;
+import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.order.enums.work.UserWorkStatus;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserAccountTransApi;
@@ -16,7 +18,11 @@ import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.components.DozerHolder;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
+import com.xingyun.bbc.mallpc.common.utils.AccountUtil;
+import com.xingyun.bbc.mallpc.common.utils.DateUtils;
+import com.xingyun.bbc.mallpc.model.dto.account.AccountDetailDto;
 import com.xingyun.bbc.mallpc.model.vo.PageVo;
+import com.xingyun.bbc.mallpc.model.vo.account.AccountDetailVo;
 import com.xingyun.bbc.mallpc.model.vo.account.AccountRechargeRecordsVo;
 import com.xingyun.bbc.mallpc.model.vo.account.InAndOutRecordsVo;
 import com.xingyun.bbc.mallpc.model.vo.account.WithDrawRecordsVo;
@@ -24,15 +30,13 @@ import com.xingyun.bbc.mallpc.service.UserAccountService;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.xingyun.bbc.core.user.enums.UserDetailType.*;
 
 @Service
 public class UserAccountServiceImpl implements UserAccountService {
+    private Date initTime = DateUtils.parseDate("1970-01-01 00:00:00");
 
     //充值提现状态
     private static Set<Integer> status = new HashSet<>(5);
@@ -101,6 +105,7 @@ public class UserAccountServiceImpl implements UserAccountService {
     public PageVo<WithDrawRecordsVo> withDrawRecords(PageVo pageVo, Long uid) {
         Criteria<UserAccountTrans, Object> criteria = Criteria.of(UserAccountTrans.class)
                 .andEqualTo(UserAccountTrans::getFtransTypes, UserAccountTransTypesEnum.WITHDRAW.getCode())
+                .andEqualTo(UserAccountTrans::getFuid, uid)
                 .sortDesc(UserAccountTrans::getFcreateTime)
                 .page(pageVo.getCurrentPage(), pageVo.getPageSize());
 
@@ -131,21 +136,102 @@ public class UserAccountServiceImpl implements UserAccountService {
         Criteria<UserDetail, Object> criteria = Criteria.of(UserDetail.class)
                 .andEqualTo(UserDetail::getFuid, uid)
                 .andNotIn(UserDetail::getFdetailType, Lists.newArrayList(ALI_ORDER.getCode(),
-                        WECHAT_ORDER.getCode(),AFTERSALE_WORK_CREDIT.getCode(),CREDIT_LIMIT_AVAILABLE_BALANCE.getCode(),CREDIT_LIMIT_ORDER.getCode()))
+                        WECHAT_ORDER.getCode(), AFTERSALE_WORK_CREDIT.getCode(), CREDIT_LIMIT_AVAILABLE_BALANCE.getCode(), CREDIT_LIMIT_ORDER.getCode()))
                 .sortDesc(UserDetail::getFcreateTime)
-                .page(pageVo.getCurrentPage(),pageVo.getPageSize());
+                .page(pageVo.getCurrentPage(), pageVo.getPageSize());
 
         Result<Integer> integerResult = userDetailApi.countByCriteria(criteria);
-        Ensure.that(integerResult).isSuccess(new MallPcExceptionCode(integerResult.getCode(),integerResult.getMsg()));
+        Ensure.that(integerResult).isSuccess(new MallPcExceptionCode(integerResult.getCode(), integerResult.getMsg()));
 
-        if(integerResult.getData()<1){
-            return new PageVo<>(0,pageVo.getCurrentPage(),pageVo.getPageSize(),new ArrayList<>(2));
+        if (integerResult.getData() < 1) {
+            return new PageVo<>(0, pageVo.getCurrentPage(), pageVo.getPageSize(), new ArrayList<>(2));
         }
 
         Result<List<UserDetail>> listResult = userDetailApi.queryByCriteria(criteria);
-        Ensure.that(listResult).isSuccess(new MallPcExceptionCode(listResult.getCode(),listResult.getMsg()));
+        Ensure.that(listResult).isSuccess(new MallPcExceptionCode(listResult.getCode(), listResult.getMsg()));
 
-        return new PageVo<>(integerResult.getData(),pageVo.getCurrentPage(),pageVo.getPageSize(), dozerHolder.convert(listResult.getData(),InAndOutRecordsVo.class));
+        return new PageVo<>(integerResult.getData(), pageVo.getCurrentPage(), pageVo.getPageSize(), dozerHolder.convert(listResult.getData(), InAndOutRecordsVo.class));
     }
+
+    @Override
+    public AccountDetailVo accountDetail(AccountDetailDto accountDetailDto) {
+        AccountDetailVo accountDetailVo = new AccountDetailVo();
+        switch (accountDetailDto.getType()) {
+            case 1:
+            case 2:
+                accountDetailVo = getTransDetail(accountDetailDto.getId());
+                break;
+            case 3:
+                accountDetailVo = getInOutDetail(accountDetailDto.getId(), accountDetailDto.getType1());
+                break;
+            default:
+                break;
+        }
+
+        return accountDetailVo;
+    }
+
+
+    private AccountDetailVo getTransDetail(String id) {
+        Result<UserAccountTrans> userAccountTransResult = userAccountTransApi.queryById(id);
+        Ensure.that(userAccountTransResult).isSuccess(new MallPcExceptionCode(userAccountTransResult.getCode(), userAccountTransResult.getMsg()));
+        if (Objects.isNull(userAccountTransResult.getData())) {
+            return new AccountDetailVo();
+        }
+
+        AccountDetailVo accountDetailVo = dozerHolder.convert(userAccountTransResult.getData(), AccountDetailVo.class);
+        if (userAccountTransResult.getData().getFtransTypes().compareTo(UserAccountTransTypesEnum.RECHARGE.getCode()) == 0) {
+            accountDetailVo.setType(userAccountTransResult.getData().getFrechargeType());
+            accountDetailVo.setFtransPoundage(null);
+            accountDetailVo.setFtransActualAmount(null);
+        } else if (userAccountTransResult.getData().getFtransTypes().compareTo(UserAccountTransTypesEnum.WITHDRAW.getCode()) == 0) {
+            accountDetailVo.setType(userAccountTransResult.getData().getFwithdrawType());
+            accountDetailVo.setFtransActualAmount(AccountUtil.divideOneHundred(accountDetailVo.getFtransActualAmount().longValue()));
+            accountDetailVo.setFtransPoundage(AccountUtil.divideOneHundred(accountDetailVo.getFtransPoundage().longValue()));
+        } else {
+            throw new BizException(MallPcExceptionCode.PARAM_ERROR);
+        }
+
+        if (accountDetailVo.getFtransStatus().compareTo(AccountTransType.WaitPayment.getCode()) == 0
+                || AccountTransType.WaitVerify.getCode().compareTo(accountDetailVo.getFtransStatus()) == 0) {
+            accountDetailVo.setFpassedTime(null);
+        } else {
+            if (initTime.compareTo(accountDetailVo.getFpassedTime()) == 0) {
+                accountDetailVo.setFpassedTime(userAccountTransResult.getData().getFmodifyTime());
+            }
+        }
+
+        accountDetailVo.setFtransAmount(AccountUtil.divideOneHundred(accountDetailVo.getFtransAmount().longValue()));
+        return accountDetailVo;
+    }
+
+
+    private AccountDetailVo getInOutDetail(String id, Integer type) {
+        Result<List<UserDetail>> listResult = userDetailApi.queryByCriteria(Criteria.of(UserDetail.class)
+                .andEqualTo(UserDetail::getFtypeId, id));
+        Ensure.that(listResult).isSuccess(new MallPcExceptionCode(listResult.getCode(), listResult.getMsg()));
+
+        if (CollectionUtil.isEmpty(listResult.getData())) {
+            return new AccountDetailVo();
+        }
+        AccountDetailVo accountDetailVo = new AccountDetailVo();
+        switch (type) {
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 8:
+                accountDetailVo = getTransDetail(id);
+                accountDetailVo.setFpassedTime(listResult.getData().get(0).getFcreateTime());
+                break;
+
+            default:
+                break;
+        }
+
+        return accountDetailVo;
+
+    }
+
 
 }

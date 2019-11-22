@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 /**
  * @author penglu
@@ -65,7 +66,7 @@ public class ShoppingCartGoodsVo implements Serializable {
     /**
      * sku销售价
      */
-    private Long skuPrice;
+    private BigDecimal fskuPrice;
 
     /**
      * 购买数量
@@ -75,6 +76,11 @@ public class ShoppingCartGoodsVo implements Serializable {
     /**
      * 剩余库存
      */
-    private Integer surplusStock;
+    private Long fstockRemianNum;
+
+    /**
+     * 是否保税商品
+     */
+    private boolean bondedGoods;
 
 }

@@ -21,7 +21,7 @@ public class ShoppingCartVo implements Serializable {
     /**
      * 角标数量
      */
-    private Integer qty;
+    private String qty;
 
     /**
      * 有效商品列表

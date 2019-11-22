@@ -1,13 +1,13 @@
 package com.xingyun.bbc.mallpc.common.controller;
 
 
-import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.helper.api.FdfsApi;
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.core.utils.StringUtil;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
+import com.xingyun.bbc.mallpc.common.ensure.EnsureHelper;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
@@ -18,37 +18,39 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
 
 
 /**
- * @author LLL
- * @Description: 公用接口
- * @createTime: 2019-08-26 18:35
+ * @author pengaoluo
+ * @version 1.0.0
  */
+@Api(tags = "公共接口")
 @RestController
 @RequestMapping("/common")
 public class CommonController {
+
+    /**
+     * 允许上传的数据类型
+     */
+    private static final Collection<String> supportType = Collections.unmodifiableCollection(Arrays.asList("jpg", "jpeg", "png", "gif", "pdf", "rar", "zip", "tar"));
 
     @Resource
     private FdfsApi fdfsApi;
 
     @ApiOperation("上传图片")
     @PostMapping("/uploadPic")
-    public Result<String> uploadPic(@RequestParam MultipartFile file){
-
+    public Result<String> uploadPic(@RequestParam MultipartFile file) {
         if (file.isEmpty()) {
             throw new BizException(MallPcExceptionCode.PARAM_ERROR);
         }
-
-        Result<String> result = fdfsApi.uploadFile(file);
-
-        return this.uploadResult(result);
+        return Result.success(EnsureHelper.checkNotNullAndGetData(fdfsApi.uploadFile(file), MallPcExceptionCode.UPLOAD_FAILED));
     }
-
 
     /**
      * 上传文件
+     *
      * @param request
      * @param buffer
      * @return
@@ -57,24 +59,18 @@ public class CommonController {
     @ApiOperation("上传文件")
     @PostMapping("/uploadFile")
     public Result<String> uploadFile(HttpServletRequest request, @RequestBody byte[] buffer) {
-
         String suffix = request.getHeader("suffix");
-
-        Ensure.that(buffer).isNotNull(MallPcExceptionCode.PARAM_ERROR);
         Ensure.that(suffix).isNotNull(MallPcExceptionCode.PARAM_ERROR);
-
         this.check(suffix);
-
-        Result<String> result = fdfsApi.upFile(suffix,buffer);
-
-        return this.uploadResult(result);
+        Result<String> result = fdfsApi.upFile(suffix, buffer);
+        return Result.success(EnsureHelper.checkNotNullAndGetData(result, MallPcExceptionCode.UPLOAD_FAILED));
     }
 
 
     @ApiOperation("删除已上传图片")
     @ApiImplicitParams({@ApiImplicitParam(paramType = "delete", dataType = "String", name = "filePath", value = "文件路径", required = true)})
     @PostMapping("/deleteFile")
-    public Result<String> deleteFile(@RequestParam("filePath") String filePath){
+    public Result<String> deleteFile(@RequestParam("filePath") String filePath) {
         if (filePath.isEmpty()) {
             throw new BizException(MallPcExceptionCode.PARAM_ERROR);
         }
@@ -82,27 +78,8 @@ public class CommonController {
         return result;
     }
 
-
-    private Result<String> uploadResult(Result<String> result) {
-        if (!result.isSuccess()) {
-            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        }
-        Object data = result.getData();
-        if (data == null || StringUtil.isEmpty(data + "")) {
-            throw new BizException(MallPcExceptionCode.UPLOAD_FAILED);
-        }
-        return Result.success(data + "");
-    }
-
     private void check(String suffix) {
-        suffix = suffix.toLowerCase();
-        String [] types = {"jpg", "jpeg", "png", "gif", "pdf", "rar", "zip", "tar"};
-        List<String> supportType = Arrays.asList(types);
-
-        if (!supportType.contains(suffix)) {
-            throw new BizException(MallPcExceptionCode.UPLOAD_FILE_TYPE_ERROR);
-        }
-
+        Ensure.that(supportType.contains(suffix.toLowerCase())).isTrue(MallPcExceptionCode.UPLOAD_FILE_TYPE_ERROR);
     }
 
 }

@@ -27,14 +27,6 @@ public interface UserService {
      */
      Result<UserLoginVo> userLogin(UserLoginDto userLoginDto);
 
-     /**
-      * @author nick
-      * @date 2019-11-19
-      * @description :  自动登录
-      * @version 1.0.0
-      */
-    Result<UserLoginVo> autoLogin();
-
     /**
      * @author nick
      * @date 2019-11-19
@@ -65,7 +57,14 @@ public interface UserService {
      * @description :  查询新人注册优惠券
      * @version 1.0.0
      */
-    Result<List<UserRegisterCouponVo>> queryRegisterCoupon(Long uid);
+    Result<List<UserRegisterCouponVo>> queryRegisterCoupon();
 
 
+    /**
+     * @author nick
+     * @date 2019-11-22
+     * @description :  获取pc登录页图片
+     * @version 1.0.0
+     */
+    Result<String> guideLogin();
 }

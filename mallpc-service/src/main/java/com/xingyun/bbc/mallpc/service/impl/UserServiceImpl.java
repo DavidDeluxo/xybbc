@@ -6,7 +6,6 @@ import com.xingyun.bbc.common.redis.XyRedisManager;
 import com.xingyun.bbc.core.activity.api.CouponProviderApi;
 import com.xingyun.bbc.core.activity.enums.CouponScene;
 import com.xingyun.bbc.core.activity.model.dto.CouponReleaseDto;
-import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.helper.api.SMSApi;
 import com.xingyun.bbc.core.market.api.CouponApi;
 import com.xingyun.bbc.core.market.api.CouponReceiveApi;
@@ -16,8 +15,12 @@ import com.xingyun.bbc.core.market.enums.CouponStatusEnum;
 import com.xingyun.bbc.core.market.enums.CouponTypeEnum;
 import com.xingyun.bbc.core.market.po.Coupon;
 import com.xingyun.bbc.core.market.po.CouponReceive;
+import com.xingyun.bbc.core.operate.api.GuidePageApi;
 import com.xingyun.bbc.core.operate.api.MarketUserApi;
 import com.xingyun.bbc.core.operate.api.MarketUserStatisticsApi;
+import com.xingyun.bbc.core.operate.enums.GuideConfigType;
+import com.xingyun.bbc.core.operate.enums.GuidePageType;
+import com.xingyun.bbc.core.operate.po.GuidePage;
 import com.xingyun.bbc.core.operate.po.MarketUser;
 import com.xingyun.bbc.core.operate.po.MarketUserStatistics;
 import com.xingyun.bbc.core.query.Criteria;
@@ -26,6 +29,7 @@ import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.user.po.UserAccount;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.core.utils.StringUtil;
 import com.xingyun.bbc.mallpc.common.components.DozerHolder;
 import com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant;
 import com.xingyun.bbc.mallpc.common.constants.UserConstants;
@@ -40,7 +44,6 @@ import com.xingyun.bbc.mallpc.model.vo.user.SendSmsCodeVo;
 import com.xingyun.bbc.mallpc.model.vo.user.UserLoginVo;
 import com.xingyun.bbc.mallpc.model.vo.user.UserRegisterCouponVo;
 import com.xingyun.bbc.mallpc.service.UserService;
-import io.jsonwebtoken.Claims;
 import io.seata.spring.annotation.GlobalTransactional;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.DateUtils;
@@ -49,7 +52,6 @@ import org.assertj.core.util.Lists;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import javax.servlet.http.Cookie;
 import java.util.*;
 import java.util.function.Function;
 
@@ -95,6 +97,9 @@ public class UserServiceImpl implements UserService {
     private CouponProviderApi couponProviderApi;
 
     @Resource
+    private GuidePageApi guidePageApi;
+
+    @Resource
     private MarketUserApi marketUserApi;
 
     @Resource
@@ -129,12 +134,6 @@ public class UserServiceImpl implements UserService {
         user.setFuid(userLoginVo.getFuid());
         user.setFlastloginTime(new Date());
         userApi.updateNotNull(user);
-        if (Objects.equals(userLoginDto.getIsAutoLogin(), 1)) {
-            //勾选自动登录将token添加进cookie
-            Cookie cookie = new Cookie(AUTO_LOGIN_COOKIE, userLoginVo.getToken());
-            cookie.setMaxAge(UserConstants.Cookie.COOKIE_EXPIRE_TIME);
-            RequestHolder.getResponse().addCookie(cookie);
-        }
         return Result.success(userLoginVo);
     }
 
@@ -161,32 +160,6 @@ public class UserServiceImpl implements UserService {
     /**
      * @author nick
      * @date 2019-11-19
-     * @description :  自动登录
-     * @version 1.0.0
-     */
-    @Override
-    public Result<UserLoginVo> autoLogin() {
-        String token = Arrays.stream(RequestHolder.getRequest().getCookies())
-                .filter(cookie -> cookie.getName().equals(AUTO_LOGIN_COOKIE))
-                .findFirst().orElseThrow(() -> new BizException(MallPcExceptionCode.AUTO_LOGIN_FAILED))
-                .getValue();
-        Claims claims = xyUserJwtManager.parseJwt(token);
-        Ensure.that(Objects.nonNull(claims)).isTrue(MallPcExceptionCode.AUTO_LOGIN_FAILED);
-        String fmobile = claims.getSubject();
-        User user = findUserByMobile(fmobile);
-        Ensure.that(user).isNotNull(MallPcExceptionCode.AUTO_LOGIN_FAILED);
-        Ensure.that(user.getFfreezeStatus()).isEqual(1, MallPcExceptionCode.ACCOUNT_FREEZE);
-        UserLoginVo userLoginVo = createToken(user);
-        userLoginVo.setToken(token);
-        //更新最近登录时间
-        user.setFlastloginTime(new Date());
-        userApi.updateNotNull(user);
-        return Result.success(userLoginVo);
-    }
-
-    /**
-     * @author nick
-     * @date 2019-11-19
      * @description :  注册
      * @version 1.0.0
      */
@@ -203,7 +176,7 @@ public class UserServiceImpl implements UserService {
         String passWord = userRegisterDto.getPassword();
         Ensure.that(StringUtils.isNotBlank(passWord)).isTrue(MallPcExceptionCode.PASSWORD_CAN_NOT_BE_NULL);
         // 校验密码长度
-        Ensure.that(passWord.length()).isGt(6, MallPcExceptionCode.PASSWORD_ILLEGAL).isLt(32, MallPcExceptionCode.PASSWORD_ILLEGAL);
+        Ensure.that(passWord.length()).isGt(5, MallPcExceptionCode.PASSWORD_ILLEGAL).isLt(33, MallPcExceptionCode.PASSWORD_ILLEGAL);
         // 验证推广码
         if (StringUtils.isNotBlank(userRegisterDto.getFinviter())) {
             Result<MarketUser> marketUserResult = marketUserApi.queryOneByCriteria(Criteria.of(MarketUser.class)
@@ -225,9 +198,10 @@ public class UserServiceImpl implements UserService {
         user.setFlastloginTime(date);
         user.setFmobileValidTime(date);
         Result<User> userResult = userApi.saveAndReturn(user);
+        Long fuid = userResult.getData().getFuid();
         Ensure.that(userResult).isSuccess(MallPcExceptionCode.SYSTEM_ERROR);
         UserAccount userAccount = new UserAccount();
-        userAccount.setFuid(userResult.getData().getFuid());
+        userAccount.setFuid(fuid);
         Ensure.that(userAccountApi.create(userAccount)).isSuccess(MallPcExceptionCode.SYSTEM_ERROR);
         UserLoginVo userLoginVo = createToken(userResult.getData());
         // 如果使用了推广码注册成功保存推广信息
@@ -240,7 +214,7 @@ public class UserServiceImpl implements UserService {
             Ensure.that(marketUserStatisticsApi.create(marketUserStatistics).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
         }
         // 注册成功系统赠送优惠券
-        receiveCoupon(user.getFuid());
+        receiveCoupon(fuid);
         return Result.success(userLoginVo);
     }
 
@@ -275,7 +249,7 @@ public class UserServiceImpl implements UserService {
                 break;
             default:
                 // 找回密码
-                Ensure.that(Objects.nonNull(user)).isTrue(MallPcExceptionCode.REGISTER_MOBILE_EXIST);
+                Ensure.that(Objects.nonNull(user)).isTrue(MallPcExceptionCode.ACCOUNT_NOT_EXIST);
                 break;
         }
         // 校验发送间隔
@@ -346,7 +320,8 @@ public class UserServiceImpl implements UserService {
      * @version 1.0.0
      */
     @Override
-    public Result<List<UserRegisterCouponVo>> queryRegisterCoupon(Long uid) {
+    public Result<List<UserRegisterCouponVo>> queryRegisterCoupon() {
+        Long uid = Long.parseLong(RequestHolder.getRequest().getHeader("xyid"));
         Result<List<CouponReceive>> couponReceiveResult = couponReceiveApi.queryByCriteria(Criteria.of(CouponReceive.class)
                 .andEqualTo(CouponReceive::getFuserCouponStatus, CouponReceiveStatusEnum.NOT_USED.getCode())
                 .andEqualTo(CouponReceive::getFuid, uid));
@@ -357,7 +332,7 @@ public class UserServiceImpl implements UserService {
         }
         List<Long> couponIds = couponReceiveList.stream().map(CouponReceive::getFcouponId).collect(toList());
         Result<List<Coupon>> couponResult = couponApi.queryByCriteria(Criteria.of(Coupon.class)
-                .fields(Coupon::getFcouponName, Coupon::getFcouponType, Coupon::getFthresholdAmount, Coupon::getFdeductionValue)
+                .fields(Coupon::getFcouponId,Coupon::getFcouponName, Coupon::getFcouponType, Coupon::getFthresholdAmount, Coupon::getFdeductionValue)
                 .andIn(Coupon::getFcouponId, couponIds));
         Ensure.that(couponResult).isNotEmptyData(MallPcExceptionCode.COUPON_NOT_EXIST);
         Map<Long, Coupon> couponMap = couponResult.getData().stream().collect(toMap(Coupon::getFcouponId, Function.identity()));
@@ -391,7 +366,7 @@ public class UserServiceImpl implements UserService {
         Ensure.that(StringUtilExtention.mobileCheck(fmobile)).isTrue(MallPcExceptionCode.BIND_MOBILE_ERROR);
         String newPassword = resetPasswordDto.getNewPassword();
         // 校验新密码长度
-        Ensure.that(newPassword.length()).isGt(6, MallPcExceptionCode.PASSWORD_ILLEGAL).isLt(32, MallPcExceptionCode.PASSWORD_ILLEGAL);
+        Ensure.that(newPassword.length()).isGt(5, MallPcExceptionCode.PASSWORD_ILLEGAL).isLt(33, MallPcExceptionCode.PASSWORD_ILLEGAL);
         newPassword = MD5Util.toMd5(newPassword);
         String verifyCode = resetPasswordDto.getVerifyCode();
         // 校验验证码
@@ -408,5 +383,18 @@ public class UserServiceImpl implements UserService {
         user.setFpasswd(newPassword);
         Ensure.that(userApi.updateNotNull(user).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
         return Result.success();
+    }
+
+    @Override
+    public Result<String> guideLogin() {
+        Result<GuidePage> guidePageResult = guidePageApi.queryOneByCriteria(Criteria.of(GuidePage.class)
+                .andEqualTo(GuidePage::getFguideType, GuideConfigType.PC_CONFIG.getCode())
+                .andEqualTo(GuidePage::getFisDelete, 0)
+                .andEqualTo(GuidePage::getFtype, GuidePageType.LOGIN_PAGE.getCode())
+                .fields(GuidePage::getFimgUrl, GuidePage::getFguideId)
+        );
+        Ensure.that(guidePageResult).isNotNull(MallPcExceptionCode.SYSTEM_ERROR);
+        String fimgUrl = guidePageResult.getData().getFimgUrl();
+        return Result.success(StringUtil.isNotBlank(fimgUrl) ? fimgUrl : "");
     }
 }

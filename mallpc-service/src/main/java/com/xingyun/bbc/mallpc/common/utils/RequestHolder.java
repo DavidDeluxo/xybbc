@@ -26,10 +26,10 @@ public class RequestHolder {
      *
      * @return
      */
-    public static Long getAdminId() {
-        String adminId = getRequest().getHeader("xyid");
-        Ensure.that(adminId).isNotBlank(MallPcExceptionCode.USER_NOT_LOGGED_IN);
-        return Long.valueOf(adminId);
+    public static Long getUserId() {
+        String userId = getRequest().getHeader("xyid");
+        Ensure.that(userId).isNotBlank(MallPcExceptionCode.USER_NOT_LOGGED_IN);
+        return Long.valueOf(userId);
     }
 
     public static String loginIp() {

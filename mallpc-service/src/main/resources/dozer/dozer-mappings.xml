@@ -10,15 +10,16 @@
     </configuration>
 
     <mapping>
-        <class-a>com.xingyun.bbc.core.order.po.Shopcar</class-a>
+        <class-a>com.xingyun.bbc.order.model.vo.cart.CartsVo</class-a>
         <class-b>com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartGoodsVo</class-b>
         <field>
-            <a>fvalidityStartDate</a>
+            <a>fqualityStartDate</a>
             <b date-format="yyyy.MM">fqualityStartDate</b>
         </field>
         <field>
-            <a>fvalidityEndDate</a>
+            <a>fqualityEndDate</a>
             <b date-format="yyyy.MM">fqualityEndDate</b>
         </field>
     </mapping>
+
 </mappings>

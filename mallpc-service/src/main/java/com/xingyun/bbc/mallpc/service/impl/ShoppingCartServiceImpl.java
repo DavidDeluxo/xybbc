@@ -1,30 +1,33 @@
 package com.xingyun.bbc.mallpc.service.impl;
 
 import com.google.common.collect.Lists;
-import com.xingyun.bbc.core.order.api.ShopcarApi;
-import com.xingyun.bbc.core.order.api.ShopcarFinishApi;
-import com.xingyun.bbc.core.order.po.Shopcar;
-import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.sku.enums.GoodsTradeType;
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mallpc.common.components.DozerHolder;
 import com.xingyun.bbc.mallpc.common.utils.FileUtils;
-import com.xingyun.bbc.mallpc.common.utils.RandomUtils;
-import com.xingyun.bbc.mallpc.model.dto.BaseDto;
+import com.xingyun.bbc.mallpc.common.utils.RequestHolder;
 import com.xingyun.bbc.mallpc.model.dto.shoppingcart.ShoppingCartDto;
-import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartCheckoutVo;
 import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartGoodsVo;
 import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartVo;
 import com.xingyun.bbc.mallpc.service.ShoppingCartService;
+import com.xingyun.bbc.order.api.CartApi;
+import com.xingyun.bbc.order.api.OrderSettleSplitApi;
+import com.xingyun.bbc.order.model.dto.cart.AddCartDto;
+import com.xingyun.bbc.order.model.dto.cart.CartClearDto;
+import com.xingyun.bbc.order.model.dto.cart.CartNumDto;
+import com.xingyun.bbc.order.model.dto.cart.QueryCartDto;
+import com.xingyun.bbc.order.model.dto.order.OrderSettleDto;
+import com.xingyun.bbc.order.model.vo.PageVo;
+import com.xingyun.bbc.order.model.vo.cart.CartsVo;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.dozer.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 /**
  * @author penglu
@@ -35,72 +38,136 @@ import java.util.stream.Collectors;
 @Service
 public class ShoppingCartServiceImpl implements ShoppingCartService {
 
-    @Resource
-    private ShopcarApi shopcarApi;
+    /**
+     * 进货单商品数量上限
+     */
+    private static final Integer SHOPPINGCART_GOODS_QTY_LIMIT = 120;
 
     @Resource
-    private ShopcarFinishApi shopcarFinishApi;
+    private CartApi cartApi;
 
-    @Autowired
-    private DozerHolder dozerHolder;
+    @Resource
+    private OrderSettleSplitApi orderSettleSplitApi;
 
     @Autowired
     private Mapper dozerMapper;
 
+    /**
+     * 加入商品
+     *
+     * @param shoppingCartDto
+     * @return
+     */
     @Override
     public Result add(ShoppingCartDto shoppingCartDto) {
-        return Result.success();
-    }
-
-    @Override
-    public Result qty(ShoppingCartDto shoppingCartDto) {
-        return Result.success(new ShoppingCartVo().setQty(8));
-    }
-
-    @Override
-    public Result editNum(BaseDto baseDto) {
-        return Result.success();
-    }
-
-    @Override
-    public Result delete(ShoppingCartDto shoppingCartDto) {
-        return Result.success();
-    }
-
-    @Override
-    public Result<ShoppingCartVo> show(ShoppingCartDto shoppingCartDto) {
-        Result<List<Shopcar>> queryShopcarResult = shopcarApi.queryByCriteria(Criteria.of(Shopcar.class).
-                andEqualTo(Shopcar::getFuid, shoppingCartDto.getUserId()).sortDesc(Shopcar::getFcreateTime));
-        List<Shopcar> shopcars = queryShopcarResult.getData();
-        if (CollectionUtils.isEmpty(shopcars)) {
-            return Result.success(new ShoppingCartVo().setValidGoods(Lists.newArrayList()).setInvalidGoods(Lists.newArrayList()));
-        }
-        ShoppingCartVo shoppingCartVo = new ShoppingCartVo();
-        List<ShoppingCartGoodsVo> shoppingCartGoodsVos = shopcars.subList(0, shopcars.size() - 1).stream().map(
-                shopcar -> getShoppingCartGoodsVo(shopcar)).collect(Collectors.toList());
-        shoppingCartVo.setValidGoods(shoppingCartGoodsVos);
-        shoppingCartVo.setInvalidGoods((Lists.newArrayList(getShoppingCartGoodsVo(shopcars.get(shopcars.size() - 1)))));
-        return Result.success(shoppingCartVo);
-    }
-
-    @Override
-    public Result<ShoppingCartCheckoutVo> checkout(ShoppingCartDto shoppingCartDto) {
-        return Result.success(new ShoppingCartCheckoutVo().setBondedQty(1).setNonBondedQty(1));
+        return cartApi.addCart(new AddCartDto().
+                setFuid(RequestHolder.getUserId()).
+                setFskuId(shoppingCartDto.getFskuId()).
+                setFbatchId(shoppingCartDto.getFbatchId()).
+                setFbatchPackageId(shoppingCartDto.getFbatchPackageId()).
+                setFbuyNum(shoppingCartDto.getFbuyNum()));
     }
 
     /**
-     * @param shopcar
+     * 角标数量
+     *
+     * @param shoppingCartDto
      * @return
      */
-    private ShoppingCartGoodsVo getShoppingCartGoodsVo(Shopcar shopcar) {
-        ShoppingCartGoodsVo shoppingCartGoodsVo = dozerMapper.map(shopcar, ShoppingCartGoodsVo.class);
-        shoppingCartGoodsVo.setFskuThumbImage(FileUtils.getFileUrl("M00/00/3F/wKgCkV2lNquAQ5ZAAAA3Rf7UAvw630.png"));//todo
-        shoppingCartGoodsVo.setTradeType(GoodsTradeType.findByCode(shopcar.getFtradeType()).getDesc());
-        shoppingCartGoodsVo.setBatchStartNum(shopcar.getFbatchNum() + "件起发");//todo
-        shoppingCartGoodsVo.setBatchPackageNum(shopcar.getFbatchPackageNum() + "件装");//todo
-        shoppingCartGoodsVo.setSkuPrice(BigDecimal.valueOf(shopcar.getFskuPrice()).multiply(BigDecimal.valueOf(100)).longValue());
-        shoppingCartGoodsVo.setSurplusStock(RandomUtils.randomInt(1, 10));//todo
-        return shoppingCartGoodsVo;
+    @Override
+    public Result qty(ShoppingCartDto shoppingCartDto) {
+        //todo 加入缓存
+        Result<Integer> countShopcarResult = cartApi.countCart(RequestHolder.getUserId());
+        Integer shopcarGoodsQty = countShopcarResult.getData();
+        ShoppingCartVo shoppingCartVo = new ShoppingCartVo();
+        if (Objects.isNull(shopcarGoodsQty)) {
+            return Result.success(shoppingCartVo.setQty("0"));
+        }
+        if (shopcarGoodsQty > 99) {
+            return Result.success(shoppingCartVo.setQty("99+"));
+        } else {
+            return Result.success(shoppingCartVo.setQty(shopcarGoodsQty.toString()));
+        }
+    }
+
+    /**
+     * 编辑规格数量
+     *
+     * @param shoppingCartDto
+     * @return
+     */
+    @Override
+    public Result editNum(ShoppingCartDto shoppingCartDto) {
+        return cartApi.modifyNum(new CartNumDto().
+                setFuid(RequestHolder.getUserId()).
+                setFshopcarId(shoppingCartDto.getId()).
+                setFbuyNum(shoppingCartDto.getFbuyNum()));
+    }
+
+    /**
+     * 删除进货单商品
+     *
+     * @param shoppingCartDto
+     * @return
+     */
+    @Override
+    public Result delete(ShoppingCartDto shoppingCartDto) {
+        return cartApi.clear(new CartClearDto().
+                setIsClearAll(BooleanUtils.toBoolean(shoppingCartDto.getClearInvalidGoods()) ? 1 : 0).
+                setFshopcarIds(shoppingCartDto.getIds()).
+                setFuid(RequestHolder.getUserId()));
+    }
+
+    /**
+     * 展示购物车商品列表
+     *
+     * @param shoppingCartDto
+     * @return
+     */
+    @Override
+    public Result<ShoppingCartVo> show(ShoppingCartDto shoppingCartDto) {
+        ShoppingCartVo shoppingCartVo = new ShoppingCartVo();
+        List<ShoppingCartGoodsVo> validGoods = Lists.newArrayList();
+        shoppingCartVo.setValidGoods(validGoods);
+        List<ShoppingCartGoodsVo> invalidGoods = Lists.newArrayList();
+        shoppingCartVo.setInvalidGoods(invalidGoods);
+        QueryCartDto queryCartDto = new QueryCartDto().setFuid(RequestHolder.getUserId());
+        queryCartDto.setPageNum(1);
+        queryCartDto.setPageSize(SHOPPINGCART_GOODS_QTY_LIMIT);
+        Result<PageVo<CartsVo>> queryShoppingCartResult = cartApi.queryCart(queryCartDto);
+        List<CartsVo> cartsVos = queryShoppingCartResult.getData().getList();
+        if (CollectionUtils.isEmpty(cartsVos)) {
+            return Result.success(shoppingCartVo);
+        }
+        cartsVos.forEach(cartsVo -> {
+            ShoppingCartGoodsVo shoppingCartGoodsVo = dozerMapper.map(cartsVo, ShoppingCartGoodsVo.class);
+            shoppingCartGoodsVo.setFskuThumbImage(FileUtils.getFileUrl(shoppingCartGoodsVo.getFskuThumbImage()));
+            shoppingCartGoodsVo.setBatchStartNum(cartsVo.getFbatchStartNum() + "件起发");
+            shoppingCartGoodsVo.setBatchPackageNum(cartsVo.getFbatchPackageNum() + "件装");
+            GoodsTradeType goodsTradeType = GoodsTradeType.findByCode(cartsVo.getFtradeType());
+            shoppingCartGoodsVo.setTradeType(goodsTradeType.getDesc());
+            shoppingCartGoodsVo.setBondedGoods(goodsTradeType == GoodsTradeType.CROSS_BORDER_BONDED);
+            if (Objects.equals(cartsVo.getIsEffective(), 1)) {
+                validGoods.add(shoppingCartGoodsVo);
+            } else {
+                invalidGoods.add(shoppingCartGoodsVo);
+            }
+        });
+        return Result.success(shoppingCartVo);
+    }
+
+    /**
+     * 结算商品
+     *
+     * @param shoppingCartDto
+     * @return
+     */
+    @Override
+    public Result checkout(ShoppingCartDto shoppingCartDto) {
+        OrderSettleDto orderSettleDto = new OrderSettleDto();
+        orderSettleDto.setFuid(RequestHolder.getUserId());
+        orderSettleDto.setFshopcarIds(StringUtils.join(shoppingCartDto.getIds(), ","));
+        return orderSettleSplitApi.launchSettle(orderSettleDto);
     }
 
 }

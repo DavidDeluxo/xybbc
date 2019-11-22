@@ -68,4 +68,12 @@ public class CouponVo implements Serializable {
     @ApiModelProperty("有效期天数")
     private Integer fvalidityDays;
 
+    /**
+     * 发放类型
+     */
+    @ApiModelProperty("发放类型--1系统赠送、2页面领取、3新人注册、4会员认证、5首单完成、6订单满赠、7好友邀请、8券码激活")
+    private Integer freleaseType;
+
+
+
 }
