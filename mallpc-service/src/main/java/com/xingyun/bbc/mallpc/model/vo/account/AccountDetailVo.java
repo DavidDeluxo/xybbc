@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mallpc.model.vo.account;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -11,6 +12,8 @@ import java.util.Date;
  */
 @Data
 public class AccountDetailVo {
+    @JsonIgnore
+    private String ftransId;
     //提现方式
     private Integer type;
     //姓名
@@ -45,4 +48,18 @@ public class AccountDetailVo {
     private Date fpassedTime;
 
 
+    @JsonIgnore
+    private Integer ftransTypes;
+
+    @JsonIgnore
+    private Integer frechargeType;
+
+    @JsonIgnore
+    private Date fmodifyTime;
+
+    @JsonIgnore
+    private Integer fwithdrawType;
+
+    @JsonIgnore
+    private Date fpayTime;
 }
