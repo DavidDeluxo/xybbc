@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 public class RechargeSubmitDTO {
 
     @ApiModelProperty("充值方式: 1 支付宝  2 微信支付  4 线下汇款")
+    @NotNull(message = "充值方式不可为空")
     @NumberRange(values = {1, 2, 4}, message = "充值方式数值只能为1,2,4")
     private Integer frechargeType;
 

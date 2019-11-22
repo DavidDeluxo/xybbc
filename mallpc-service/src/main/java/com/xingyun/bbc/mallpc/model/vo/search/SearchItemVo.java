@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @ApiModel("商品")
@@ -46,4 +47,6 @@ public class SearchItemVo {
     @ApiModelProperty(value = "用户认证类型",hidden = true)
     private Integer fuserTypeId;
 
+    @ApiModelProperty(value = "优惠券id列表",hidden = true)
+    private List<Integer> fcouponIds;
 }

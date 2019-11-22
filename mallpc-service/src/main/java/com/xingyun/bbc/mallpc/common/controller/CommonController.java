@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,7 +35,7 @@ public class CommonController {
     /**
      * 允许上传的数据类型
      */
-    private static final Collection<String> supportType = Collections.unmodifiableCollection(Arrays.asList("jpg", "jpeg", "png", "gif", "pdf", "rar", "zip", "tar"));
+    private static final Collection<String> SUPPORT_TYPE = Collections.unmodifiableCollection(Arrays.asList("jpg", "jpeg", "png", "gif", "pdf", "rar", "zip", "tar"));
 
     @Resource
     private FdfsApi fdfsApi;
@@ -67,6 +68,24 @@ public class CommonController {
     }
 
 
+    @ApiOperation("测试")
+    @PostMapping("/test")
+    public Result<String> test(HttpServletRequest request) {
+        try {
+            FileInputStream is = new FileInputStream("f:\\微1.png");
+            long size = is.getChannel().size();
+            byte[] bytes = new byte[(int)size];
+            is.read(bytes);
+            Result<String> result = fdfsApi.upFile("png", bytes);
+            System.out.println(result.getData());
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.failure("0",e.getMessage());
+        }
+    }
+
+
     @ApiOperation("删除已上传图片")
     @ApiImplicitParams({@ApiImplicitParam(paramType = "delete", dataType = "String", name = "filePath", value = "文件路径", required = true)})
     @PostMapping("/deleteFile")
@@ -79,7 +98,7 @@ public class CommonController {
     }
 
     private void check(String suffix) {
-        Ensure.that(supportType.contains(suffix.toLowerCase())).isTrue(MallPcExceptionCode.UPLOAD_FILE_TYPE_ERROR);
+        Ensure.that(SUPPORT_TYPE.contains(suffix.toLowerCase())).isTrue(MallPcExceptionCode.UPLOAD_FILE_TYPE_ERROR);
     }
 
 }

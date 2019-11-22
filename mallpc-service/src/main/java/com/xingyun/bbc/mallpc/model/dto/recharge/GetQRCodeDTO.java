@@ -3,7 +3,7 @@ package com.xingyun.bbc.mallpc.model.dto.recharge;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotBlank;
 
 /**
  * @author pengaoluo
@@ -13,6 +13,6 @@ import javax.validation.constraints.NotNull;
 public class GetQRCodeDTO {
 
     @ApiModelProperty("充值单号")
-    @NotNull(message = "充值单号不可为空")
+    @NotBlank(message = "充值单号不可为空")
     private String ftransId;
 }

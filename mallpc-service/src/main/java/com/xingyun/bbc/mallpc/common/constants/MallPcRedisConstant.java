@@ -59,4 +59,6 @@ public interface MallPcRedisConstant {
 
 
     String VERIFY_CODE_PREFIX = "SMS_";
+
+    String ADD_USER_WITHDRAW_LOCK = KEY_PREFIX + "add_user_withdraw_lock";
 }
