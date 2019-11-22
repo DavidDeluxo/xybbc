@@ -34,7 +34,7 @@ public class CommonController {
     /**
      * 允许上传的数据类型
      */
-    private static final Collection<String> supportType = Collections.unmodifiableCollection(Arrays.asList("jpg", "jpeg", "png", "gif", "pdf", "rar", "zip", "tar"));
+    private static final Collection<String> SUPPORT_TYPE = Collections.unmodifiableCollection(Arrays.asList("jpg", "jpeg", "png", "gif", "pdf", "rar", "zip", "tar"));
 
     @Resource
     private FdfsApi fdfsApi;
@@ -79,7 +79,7 @@ public class CommonController {
     }
 
     private void check(String suffix) {
-        Ensure.that(supportType.contains(suffix.toLowerCase())).isTrue(MallPcExceptionCode.UPLOAD_FILE_TYPE_ERROR);
+        Ensure.that(SUPPORT_TYPE.contains(suffix.toLowerCase())).isTrue(MallPcExceptionCode.UPLOAD_FILE_TYPE_ERROR);
     }
 
 }
