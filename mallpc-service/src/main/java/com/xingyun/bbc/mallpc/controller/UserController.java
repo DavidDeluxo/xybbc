@@ -34,31 +34,31 @@ public class UserController {
     }
 
     @ApiOperation("获取注册页图片")
-    @GetMapping("/viewlogin")
+    @GetMapping("/via/viewlogin")
     public Result<String> guideLogin() {
         return userService.guideLogin();
     }
 
     @ApiOperation("用户登录")
-    @PostMapping("/userLogin")
+    @PostMapping("/via/userLogin")
     public Result<UserLoginVo> userLogin(@Validated @RequestBody UserLoginDto userLoginDto) {
         return userService.userLogin(userLoginDto);
     }
 
     @ApiOperation("用户注册")
-    @PostMapping("/register")
+    @PostMapping("/via/register")
     public Result<UserLoginVo> register(@Validated @RequestBody UserRegisterDto userRegisterDto) {
         return userService.register(userRegisterDto);
     }
 
     @ApiOperation("发送验证码")
-    @PostMapping("/sendSmsCode")
+    @PostMapping("/via/sendSmsCode")
     public Result<SendSmsCodeVo> sendSmsCode(@Validated @RequestBody SendSmsCodeDto sendSmsCodeDto) {
         return userService.sendSmsCode(sendSmsCodeDto);
     }
 
     @ApiOperation("重置密码")
-    @PostMapping("/resetPwd")
+    @PostMapping("/via/resetPwd")
     public Result resetPwd(@Validated @RequestBody ResetPasswordDto resetPasswordDto) {
         return userService.resetPwd(resetPasswordDto);
     }
@@ -69,4 +69,9 @@ public class UserController {
         return userService.queryRegisterCoupon();
     }
 
+    @ApiOperation("查询登录信息")
+    @GetMapping("/queryLoginInfo")
+    public Result<UserLoginVo> queryLoginInfo(){
+        return userService.queryLoginInfo();
+    }
 }

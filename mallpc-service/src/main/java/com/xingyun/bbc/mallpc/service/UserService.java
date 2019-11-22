@@ -67,4 +67,12 @@ public interface UserService {
      * @version 1.0.0
      */
     Result<String> guideLogin();
+
+    /**
+     * @author nick
+     * @date 2019-11-22
+     * @description :  查询登录信息
+     * @version 1.0.0
+     */
+    Result<UserLoginVo> queryLoginInfo();
 }

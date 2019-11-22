@@ -28,6 +28,7 @@ import com.xingyun.bbc.core.user.api.UserAccountApi;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.user.po.UserAccount;
+import com.xingyun.bbc.core.utils.DateUtil;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.core.utils.StringUtil;
 import com.xingyun.bbc.mallpc.common.components.DozerHolder;
@@ -49,6 +50,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.util.Lists;
+import org.joda.time.DateTime;
+import org.joda.time.Days;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -154,6 +157,14 @@ public class UserServiceImpl implements UserService {
         } else {
             userLoginVo.setFwithdrawPasswdStatus(1);
         }
+        //用户免认证到期时间 创建时间+30
+        Date createTime = user.getFcreateTime();
+        Date verifyEndTime = DateUtil.addDays(createTime, 30);
+        userLoginVo.setFreeVerifyEndTime(verifyEndTime);
+        //剩余时间
+        Days days = Days.daysBetween(DateTime.now(),new DateTime(verifyEndTime));
+        int remainDays = days.getDays() < 0 ? 0 : days.getDays();
+        userLoginVo.setFreeVerifyRemainDays(remainDays + "天");
         return userLoginVo;
     }
 
@@ -332,7 +343,7 @@ public class UserServiceImpl implements UserService {
         }
         List<Long> couponIds = couponReceiveList.stream().map(CouponReceive::getFcouponId).collect(toList());
         Result<List<Coupon>> couponResult = couponApi.queryByCriteria(Criteria.of(Coupon.class)
-                .fields(Coupon::getFcouponId,Coupon::getFcouponName, Coupon::getFcouponType, Coupon::getFthresholdAmount, Coupon::getFdeductionValue)
+                .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType, Coupon::getFthresholdAmount, Coupon::getFdeductionValue)
                 .andIn(Coupon::getFcouponId, couponIds));
         Ensure.that(couponResult).isNotEmptyData(MallPcExceptionCode.COUPON_NOT_EXIST);
         Map<Long, Coupon> couponMap = couponResult.getData().stream().collect(toMap(Coupon::getFcouponId, Function.identity()));
@@ -396,5 +407,22 @@ public class UserServiceImpl implements UserService {
         Ensure.that(guidePageResult).isNotNull(MallPcExceptionCode.SYSTEM_ERROR);
         String fimgUrl = guidePageResult.getData().getFimgUrl();
         return Result.success(StringUtil.isNotBlank(fimgUrl) ? fimgUrl : "");
+    }
+
+    /**
+     * @author nick
+     * @date 2019-11-22
+     * @description :  查询登录信息
+     * @version 1.0.0
+     */
+    @Override
+    public Result<UserLoginVo> queryLoginInfo() {
+        Long userId = RequestHolder.getUserId();
+        Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
+                .andEqualTo(User::getFisDelete, "0")
+                .andEqualTo(User::getFuid, userId));
+        Ensure.that(userResult).isNotNullData(MallPcExceptionCode.ACCOUNT_NOT_EXIST);
+        Ensure.that(userResult.getData().getFfreezeStatus()).isEqual(1, MallPcExceptionCode.ACCOUNT_FREEZE);
+        return Result.success(createToken(userResult.getData()));
     }
 }
