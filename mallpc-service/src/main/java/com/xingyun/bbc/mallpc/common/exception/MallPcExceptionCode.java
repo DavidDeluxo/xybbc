@@ -61,7 +61,7 @@ public class MallPcExceptionCode implements IResultStatus {
      * 业务级别异常
      */
     public static final MallPcExceptionCode AUTO_LOGIN_FAILED = new MallPcExceptionCode("1000", "自动登录失败");
-    public static final MallPcExceptionCode LOGIN_FAILED = new MallPcExceptionCode("1001", "登录失败");
+    public static final MallPcExceptionCode LOGIN_FAILED = new MallPcExceptionCode("1001", "账号或密码错误");
     public static final MallPcExceptionCode ACCOUNT_FREEZE = new MallPcExceptionCode("1002", "账户冻结中");
     public static final MallPcExceptionCode REGISTER_MOBILE_EXIST = new MallPcExceptionCode("1003", "手机号已注册");
     public static final MallPcExceptionCode ACCOUNT_NOT_EXIST = new MallPcExceptionCode("1004", "账户不存在");
