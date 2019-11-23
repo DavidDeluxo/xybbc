@@ -346,6 +346,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
     public Result receiveCenterCoupon(ReceiveCouponDto receiveCouponDto) {
         Long fcouponId = receiveCouponDto.getFcouponId();
         Long fuid = receiveCouponDto.getFuid();
+        //加分布式锁
         String lockKey = StringUtils.join(Lists.newArrayList(MallConstants.MALL_RECEIVE_COUPON, fcouponId, fuid), ":");
         String lockValue = RandomUtils.getUUID();
         try {
