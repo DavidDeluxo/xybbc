@@ -346,14 +346,8 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
     public Result receiveCenterCoupon(ReceiveCouponDto receiveCouponDto) {
         Long fcouponId = receiveCouponDto.getFcouponId();
         Long fuid = receiveCouponDto.getFuid();
-        String fcouponCode = receiveCouponDto.getFcouponCode();
-        if (null == fcouponId || null == fuid) {
-            return Result.failure(MallExceptionCode.PARAM_ERROR);
-        }
+        //加分布式锁
         String lockKey = StringUtils.join(Lists.newArrayList(MallConstants.MALL_RECEIVE_COUPON, fcouponId, fuid), ":");
-        if (null != fcouponCode) {
-            lockKey = StringUtils.join(Lists.newArrayList(MallConstants.MALL_RECEIVE_COUPON, fcouponId, fuid, fcouponCode), ":");
-        }
         String lockValue = RandomUtils.getUUID();
         try {
             Ensure.that(xybbcLock.tryLockTimes(lockKey, lockValue, 3, 6)).isTrue(MallExceptionCode.SYSTEM_BUSY_ERROR);
@@ -362,7 +356,6 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
             couponReleaseDto.setCouponScene(CouponScene.PAGE_RECEIVE);
             couponReleaseDto.setCouponId(fcouponId);
             couponReleaseDto.setUserId(fuid);
-            couponReleaseDto.setCouponCode(fcouponCode);
             couponReleaseDto.setAlreadyReceived(true);
             couponReleaseDto.setDeltaValue(-1);
             Result updateReleaseResult = couponProviderApi.updateReleaseQty(couponReleaseDto);
