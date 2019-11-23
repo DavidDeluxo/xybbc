@@ -13,10 +13,7 @@ import com.xingyun.bbc.core.utils.StringUtil;
 import com.xingyun.bbc.mallpc.common.components.DozerHolder;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
-import com.xingyun.bbc.mallpc.common.utils.FileUtils;
-import com.xingyun.bbc.mallpc.common.utils.PageHelper;
-import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
-import com.xingyun.bbc.mallpc.common.utils.StringUtilExtention;
+import com.xingyun.bbc.mallpc.common.utils.*;
 import com.xingyun.bbc.mallpc.model.dto.address.CityRegionDto;
 import com.xingyun.bbc.mallpc.model.dto.address.UserAddressDetailsDto;
 import com.xingyun.bbc.mallpc.model.dto.address.UserAddressDto;
@@ -71,7 +68,9 @@ public class UserAddressServiceImpl implements UserAddressService {
         String fdeliveryCardid = userAddressListDto.getFdeliveryCardid();
         String fdeliveryMobile = userAddressListDto.getFdeliveryMobile();
         String fdeliveryName = userAddressListDto.getFdeliveryName();
-        Criteria<UserDelivery, Object> deliveryCondition = Criteria.of(UserDelivery.class).andEqualTo(UserDelivery::getFisDelete, 0);
+        Criteria<UserDelivery, Object> deliveryCondition = Criteria.of(UserDelivery.class)
+                .andEqualTo(UserDelivery::getFuid, RequestHolder.getUserId())
+                .andEqualTo(UserDelivery::getFisDelete, 0);
         if (StringUtil.isNotBlank(fdeliveryCardid)) {
             Ensure.that(StringUtilExtention.idCardCheck(fdeliveryCardid)).isTrue(MallPcExceptionCode.ID_CARD_NUMBER_ILLEGAL);
             deliveryCondition.andEqualTo(UserDelivery::getFdeliveryCardid, fdeliveryCardid);
