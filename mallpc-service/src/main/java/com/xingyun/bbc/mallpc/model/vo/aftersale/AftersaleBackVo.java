@@ -18,6 +18,9 @@ public class AftersaleBackVo implements Serializable {
     @ApiModelProperty(value = "物流公司id")
     private Long flogisticsCompanyId;
 
+    @ApiModelProperty(value = "回寄状态 1 未签收 2已签收")
+    private Integer fbackStatus;
+
     @ApiModelProperty(value = "物流公司名称")
     private String flogisticsCompanyName;
 

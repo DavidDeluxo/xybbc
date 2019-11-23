@@ -61,7 +61,7 @@ public class MallPcExceptionCode implements IResultStatus {
      * 业务级别异常
      */
     public static final MallPcExceptionCode AUTO_LOGIN_FAILED = new MallPcExceptionCode("1000", "自动登录失败");
-    public static final MallPcExceptionCode LOGIN_FAILED = new MallPcExceptionCode("1001", "登录失败");
+    public static final MallPcExceptionCode LOGIN_FAILED = new MallPcExceptionCode("1001", "账号或密码错误");
     public static final MallPcExceptionCode ACCOUNT_FREEZE = new MallPcExceptionCode("1002", "账户冻结中");
     public static final MallPcExceptionCode REGISTER_MOBILE_EXIST = new MallPcExceptionCode("1003", "手机号已注册");
     public static final MallPcExceptionCode ACCOUNT_NOT_EXIST = new MallPcExceptionCode("1004", "账户不存在");
@@ -137,4 +137,5 @@ public class MallPcExceptionCode implements IResultStatus {
     public static final MallPcExceptionCode CODE_NOT_COUPON = new MallPcExceptionCode("6006", "券码无匹配优惠券");
     public static final MallPcExceptionCode USER_NOT_COUPON = new MallPcExceptionCode("6007", "用户无匹配优惠券");
     public static final MallPcExceptionCode USER_NOT_RIGHT_COUPON = new MallPcExceptionCode("6008", "用户暂无权限兑换该类优惠券");
+    public static final MallPcExceptionCode COUPON_IS_NOT_TIME = new MallPcExceptionCode("6009", "优惠券不在领取时间内");
 }

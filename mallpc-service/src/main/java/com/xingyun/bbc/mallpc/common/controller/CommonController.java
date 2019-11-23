@@ -16,7 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -66,25 +65,6 @@ public class CommonController {
         Result<String> result = fdfsApi.upFile(suffix, buffer);
         return Result.success(EnsureHelper.checkNotNullAndGetData(result, MallPcExceptionCode.UPLOAD_FAILED));
     }
-
-
-    @ApiOperation("测试")
-    @PostMapping("/test")
-    public Result<String> test(HttpServletRequest request) {
-        try {
-            FileInputStream is = new FileInputStream("f:\\微1.png");
-            long size = is.getChannel().size();
-            byte[] bytes = new byte[(int)size];
-            is.read(bytes);
-            Result<String> result = fdfsApi.upFile("png", bytes);
-            System.out.println(result.getData());
-            return result;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Result.failure("0",e.getMessage());
-        }
-    }
-
 
     @ApiOperation("删除已上传图片")
     @ApiImplicitParams({@ApiImplicitParam(paramType = "delete", dataType = "String", name = "filePath", value = "文件路径", required = true)})
