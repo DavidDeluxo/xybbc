@@ -25,14 +25,13 @@ public class InAndOutRecordsVo {
     private Integer fdetailType;
 
     //单号
-    private String fdetailId;
+    private String ftypeId;
 
     //支出
     private BigDecimal fexpenseAmount;
 
     //收入
     private BigDecimal fincomeAmount;
-
 
 
 }
