@@ -383,7 +383,7 @@ public class UserAccountServiceImpl implements UserAccountService {
                 AccountDetailVo accountDetail = accountDetails.get(0);
 
                 accountDetail.setOrderId(orderListResult.getData().stream().map(Order::getForderId).collect(Collectors.joining(",")));
-                accountDetail.setFcreateTime(orderPayment.getFpayTime());
+                accountDetail.setFcreateTime(orderPayment.getFcreateTime());
                 break;
             //售后工单
             case 13:
