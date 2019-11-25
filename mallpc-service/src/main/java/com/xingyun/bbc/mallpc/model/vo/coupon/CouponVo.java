@@ -54,7 +54,7 @@ public class CouponVo implements Serializable {
     /**
      * 有效期结束时间
      */
-    @ApiModelProperty("有效期开始时间")
+    @ApiModelProperty("有效期结束时间")
     private Date fvalidityEnd;
 
     /**
