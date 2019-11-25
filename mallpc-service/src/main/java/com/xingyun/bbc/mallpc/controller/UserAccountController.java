@@ -19,7 +19,7 @@ public class UserAccountController {
     private UserAccountService userAccountService;
 
 
-    @GetMapping("accountInfo")
+    @PostMapping("accountInfo")
     public Result<AccountBaseInfoVo> accountInfo() {
         return Result.success(userAccountService.accountInfo(RequestHolder.getUserId()));
     }
