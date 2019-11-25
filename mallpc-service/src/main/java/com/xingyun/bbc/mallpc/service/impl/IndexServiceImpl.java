@@ -1,5 +1,7 @@
 package com.xingyun.bbc.mallpc.service.impl;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.xingyun.bbc.core.operate.api.PageConfigApi;
 import com.xingyun.bbc.core.operate.enums.BooleanNum;
 import com.xingyun.bbc.core.operate.enums.GuideConfigType;
@@ -8,26 +10,32 @@ import com.xingyun.bbc.core.operate.po.PageConfig;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.sku.api.GoodsApi;
 import com.xingyun.bbc.core.sku.api.GoodsBrandApi;
+import com.xingyun.bbc.core.sku.api.GoodsCategoryApi;
 import com.xingyun.bbc.core.sku.po.Goods;
 import com.xingyun.bbc.core.sku.po.GoodsBrand;
+import com.xingyun.bbc.core.sku.po.GoodsCategory;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
+import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.components.DozerHolder;
+import com.xingyun.bbc.mallpc.common.ensure.Ensure;
+import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.common.utils.FileUtils;
 import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
 import com.xingyun.bbc.mallpc.model.vo.index.BannerVo;
 import com.xingyun.bbc.mallpc.model.vo.index.BrandVo;
+import com.xingyun.bbc.mallpc.model.vo.index.GoodsCategoryVo;
 import com.xingyun.bbc.mallpc.model.vo.index.SpecialTopicVo;
 import com.xingyun.bbc.mallpc.service.IndexService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant.*;
+import static java.util.stream.Collectors.*;
 
 @Service
 public class IndexServiceImpl implements IndexService {
@@ -59,6 +67,9 @@ public class IndexServiceImpl implements IndexService {
     private CacheTemplate cacheTemplate;
     @Resource
     private DozerHolder dozerHolder;
+
+    @Resource
+    private GoodsCategoryApi goodsCategoryApi;
 
     @Override
     public List<SpecialTopicVo> getSpecialTopics() {
@@ -148,13 +159,56 @@ public class IndexServiceImpl implements IndexService {
 
     /**
      * 若配置中的relationId是默认值0，置为null不返回前端
+     *
      * @param list
      */
-    private void setNullIfZero(List<PageConfig> list){
+    private void setNullIfZero(List<PageConfig> list) {
         for (PageConfig pageConfig : list) {
             if (pageConfig.getFrelationId() == 0) {
                 pageConfig.setFrelationId(null);
             }
         }
+    }
+
+    @Override
+    public Result<Set<GoodsCategoryVo>> queryCategories() {
+        // 查询所有分类
+        Result<List<GoodsCategory>> goodsCategoryResult = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class)
+                .andEqualTo(GoodsCategory::getFisDelete, 0)
+                .andEqualTo(GoodsCategory::getFisDisplay, 1));
+        Ensure.that(goodsCategoryResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+        List<GoodsCategory> categoryList = goodsCategoryResult.getData();
+        if (CollectionUtils.isEmpty(categoryList)){
+            return Result.success(Sets.newTreeSet());
+        }
+        List<GoodsCategoryVo> voList = categoryList.stream().map(category -> {
+            GoodsCategoryVo vo = dozerHolder.convert(category, GoodsCategoryVo.class);
+            vo.setImageUrl(FileUtils.getFileUrl(category.getFcategoryUrl()));
+            return vo;
+        }).collect(toList());
+        Map<Integer, List<GoodsCategoryVo>> levelMap = voList.stream().collect(groupingBy(GoodsCategoryVo::getFlevel));
+        // 1级
+        Set<GoodsCategoryVo> level1 = Sets.newTreeSet(levelMap.get(1));
+        // 2级
+        Set<GoodsCategoryVo> level2 = Sets.newTreeSet(levelMap.get(2));
+        // 3级
+        Set<GoodsCategoryVo> level3 = Sets.newTreeSet(levelMap.get(3));
+        fillChildCategory(level2,level3);
+        fillChildCategory(level1, level2);
+        return Result.success(level1);
+    }
+
+    private void fillChildCategory(Set<GoodsCategoryVo> parentList, Set<GoodsCategoryVo> childList) {
+        if (CollectionUtils.isEmpty(childList)){
+            return;
+        }
+        Map<Long, List<GoodsCategoryVo>> childMap = childList.stream().collect(groupingBy(GoodsCategoryVo::getFparentCategoryId));
+        parentList.stream().forEach(parent->{
+            List<GoodsCategoryVo> childs = childMap.get(parent.getFcategoryId());
+            if (CollectionUtils.isNotEmpty(childs)){
+                parent.setChildren(Sets.newTreeSet(childs));
+            }
+        });
+
     }
 }

@@ -4,6 +4,7 @@ package com.xingyun.bbc.mallpc.controller;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.vo.index.BannerVo;
 import com.xingyun.bbc.mallpc.model.vo.index.BrandVo;
+import com.xingyun.bbc.mallpc.model.vo.index.GoodsCategoryVo;
 import com.xingyun.bbc.mallpc.model.vo.index.SpecialTopicVo;
 import com.xingyun.bbc.mallpc.service.IndexService;
 import io.swagger.annotations.Api;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -56,6 +58,12 @@ public class IndexController {
     @GetMapping(value = "/via/getUserCount")
     public Result<Integer> getUserCount() {
         return Result.success(indexService.getUserCount());
+    }
+
+    @ApiOperation(value = "商品分类查询接口")
+    @GetMapping("/via/category")
+    public Result<Set<GoodsCategoryVo>> queryCategories(){
+        return indexService.queryCategories();
     }
 
 }
