@@ -40,6 +40,9 @@ public class AftersaleDetailVo  implements Serializable {
     @ApiModelProperty(value = "售后总金额")
     private BigDecimal faftersaleTotalAmount;
 
+    @ApiModelProperty(value = "实付金额")
+    private BigDecimal frealPayAmount;
+
     @ApiModelProperty(value = "SKU件装数")
     private Long fbatchPackageNum;
 
