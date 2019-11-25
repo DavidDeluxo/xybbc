@@ -62,6 +62,12 @@ public class UserController {
     public Result resetPwd(@Validated @RequestBody ResetPasswordDto resetPasswordDto) {
         return userService.resetPwd(resetPasswordDto);
     }
+    
+    @ApiOperation("修改/设置支付密码")
+    @PostMapping("/via/modifiyPayPwd")
+    public Result modifiyPayPwd(@Validated @RequestBody ResetPasswordDto resetPasswordDto) {
+        return userService.modifiyPayPwd(resetPasswordDto);
+    }
 
     @ApiOperation("查询新人注册优惠券")
     @GetMapping("/queryRegisterCoupon")

@@ -91,6 +91,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
      * @return: Boolean                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
+    @GlobalTransactional
     @Override
     public Result receiveCodeCoupon(String fcouponCode, Long fuid) {
         //校验参数
@@ -176,7 +177,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         receiveCouponDto.setFcouponCode(fcouponCode);
         //调用聚合服务进行领券
         Result result = this.receiveCoupon(receiveCouponDto);
-        return Result.success(result.getData());
+        return result;
     }
 
 
@@ -188,7 +189,6 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
      * @return: Result                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
-    @GlobalTransactional
     public Result receiveCoupon(ReceiveCouponDto receiveCouponDto) {
         Long fuid = receiveCouponDto.getFuid();
         String fcouponCode = receiveCouponDto.getFcouponCode();
@@ -280,6 +280,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
      * @date 2019/11/12 13:49
      */
     @Override
+    @GlobalTransactional
     public Result addReceiveCoupon(Long fcouponId, Long fuid) {
         //校验入参
         if (null == fuid || null == fcouponId) {
@@ -330,7 +331,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         receiveCouponDto.setFuid(fuid);
         receiveCouponDto.setFcouponId(fcouponId);
         Result result = this.receiveCenterCoupon(receiveCouponDto);
-        return Result.success(result.getData());
+        return result;
     }
 
 
@@ -342,18 +343,11 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
      * @return: Result                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
-    @GlobalTransactional
     public Result receiveCenterCoupon(ReceiveCouponDto receiveCouponDto) {
         Long fcouponId = receiveCouponDto.getFcouponId();
         Long fuid = receiveCouponDto.getFuid();
-        String fcouponCode = receiveCouponDto.getFcouponCode();
-        if (null == fcouponId || null == fuid) {
-            return Result.failure(MallExceptionCode.PARAM_ERROR);
-        }
+        //加分布式锁
         String lockKey = StringUtils.join(Lists.newArrayList(MallConstants.MALL_RECEIVE_COUPON, fcouponId, fuid), ":");
-        if (null != fcouponCode) {
-            lockKey = StringUtils.join(Lists.newArrayList(MallConstants.MALL_RECEIVE_COUPON, fcouponId, fuid, fcouponCode), ":");
-        }
         String lockValue = RandomUtils.getUUID();
         try {
             Ensure.that(xybbcLock.tryLockTimes(lockKey, lockValue, 3, 6)).isTrue(MallExceptionCode.SYSTEM_BUSY_ERROR);
@@ -362,7 +356,6 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
             couponReleaseDto.setCouponScene(CouponScene.PAGE_RECEIVE);
             couponReleaseDto.setCouponId(fcouponId);
             couponReleaseDto.setUserId(fuid);
-            couponReleaseDto.setCouponCode(fcouponCode);
             couponReleaseDto.setAlreadyReceived(true);
             couponReleaseDto.setDeltaValue(-1);
             Result updateReleaseResult = couponProviderApi.updateReleaseQty(couponReleaseDto);
@@ -370,12 +363,15 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
             //调用领券服务
             Result receiveReceive = couponProviderApi.receive(couponReleaseDto);
             Ensure.that(receiveReceive.isSuccess()).isTrue(new MallExceptionCode(receiveReceive.getCode(), receiveReceive.getMsg()));
+            return receiveReceive;
         } catch (Exception e) {
             e.printStackTrace();
+            BizException be = (BizException) e;
+            return Result.failure(be.getStatus());
         } finally {
             xybbcLock.releaseLock(lockKey, lockValue);
         }
-        return Result.success(true);
+
     }
 
 

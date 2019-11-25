@@ -22,6 +22,7 @@ import com.xingyun.bbc.mallpc.service.UserVerifyService;
 import io.seata.spring.annotation.GlobalTransactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import java.util.Objects;
@@ -33,6 +34,8 @@ import java.util.Objects;
 @Slf4j
 @Service
 public class UserVerifyServiceImpl implements UserVerifyService {
+
+    private static final String LOCK_PREFIX_BUSINESSLICENSENO = "user_add_unique_businesslicenseno_";
 
     @Resource
     private DozerHolder dozerHolder;
@@ -59,23 +62,49 @@ public class UserVerifyServiceImpl implements UserVerifyService {
         UserVerify userVerifyOld = EnsureHelper.checkSuccessAndGetData(userVerifyApi.queryOneByCriteria(criteria));
         user.setFoperateType(dto.getFoperateType());
         user.setFverifyStatus(UserVerifyStatusEnum.INAUTHORIZATION.getCode());
-        EnsureHelper.checkNotNullAndGetData(userApi.updateNotNull(user));
-        if (Objects.isNull(userVerifyOld)) {
-            boolean getLock = false;
-            String key = UserRedisConstant.USER_VERIFY_CREATE_PREFIX + fuid;
-            try {
-                Ensure.that(getLock = xybbcLock.tryLock(key, MallPcRedisConstant.DEFAULT_LOCK_VALUE, MallPcRedisConstant.DEFAULT_LOCK_EXPIRING))
-                        .isTrue(MallPcExceptionCode.SYSTEM_BUSY_ERROR);
-                EnsureHelper.checkSuccess(userVerifyApi.create(userVerifyNew));
-            } finally {
-                if (getLock) {
-                    xybbcLock.releaseLock(key, MallPcRedisConstant.DEFAULT_LOCK_VALUE);
-                }
+
+        String fbusinessLicenseNo = dto.getFbusinessLicenseNo();
+        boolean lockBusinessLicenseNo = false;
+        String businessLicenseNoLockKey = LOCK_PREFIX_BUSINESSLICENSENO + fbusinessLicenseNo;
+        try {
+            if (StringUtils.hasLength(fbusinessLicenseNo)) {
+                Ensure.that(lockBusinessLicenseNo = xybbcLock.tryLock(businessLicenseNoLockKey, MallPcRedisConstant.DEFAULT_LOCK_VALUE, MallPcRedisConstant.DEFAULT_LOCK_EXPIRING)).isTrue(MallPcExceptionCode.SYSTEM_BUSY_ERROR);
+                //校验字段唯一性
+                checkFbusinessLicenseNoRepeat(fbusinessLicenseNo, fuid);
             }
-        } else {
-            userVerifyNew.setFuserVerifyId(userVerifyOld.getFuserVerifyId());
-            EnsureHelper.checkSuccess(userVerifyApi.updateNotNull(userVerifyNew));
+            if (Objects.isNull(userVerifyOld)) {
+                boolean getLock = false;
+                String key = UserRedisConstant.USER_VERIFY_CREATE_PREFIX + fuid;
+                try {
+                    Ensure.that(getLock = xybbcLock.tryLock(key, MallPcRedisConstant.DEFAULT_LOCK_VALUE, MallPcRedisConstant.DEFAULT_LOCK_EXPIRING))
+                            .isTrue(MallPcExceptionCode.SYSTEM_BUSY_ERROR);
+                    EnsureHelper.checkSuccess(userVerifyApi.create(userVerifyNew));
+                } finally {
+                    if (getLock) {
+                        xybbcLock.releaseLock(key, MallPcRedisConstant.DEFAULT_LOCK_VALUE);
+                    }
+                }
+            } else {
+                userVerifyNew.setFuserVerifyId(userVerifyOld.getFuserVerifyId());
+                EnsureHelper.checkSuccess(userVerifyApi.updateNotNull(userVerifyNew));
+            }
+        } finally {
+            if (lockBusinessLicenseNo) {
+                xybbcLock.releaseLock(businessLicenseNoLockKey, MallPcRedisConstant.DEFAULT_LOCK_VALUE);
+            }
         }
+        EnsureHelper.checkNotNullAndGetData(userApi.updateNotNull(user));
+    }
+
+    /**
+     * 校验营业执照编号唯一性
+     */
+    private void checkFbusinessLicenseNoRepeat(String fbusinessLicenseNo, Long fuid) {
+        Criteria<UserVerify, Object> criteria = Criteria.of(UserVerify.class).andEqualTo(UserVerify::getFbusinessLicenseNo, fbusinessLicenseNo);
+        if(Objects.nonNull(fuid)){
+            criteria.andNotEqualTo(UserVerify::getFuid,fuid);
+        }
+        EnsureHelper.checkDataBe(userVerifyApi.countByCriteria(criteria), MallPcExceptionCode.BUSINESSLICENSENO_REPEAT,0);
     }
 
 

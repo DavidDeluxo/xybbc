@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mallpc.controller;
 
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mallpc.model.dto.pay.BalancePayDto;
 import com.xingyun.bbc.mallpc.service.PayService;
 import com.xingyun.bbc.pay.model.dto.ThirdPayDto;
 import io.swagger.annotations.Api;
@@ -28,6 +29,12 @@ public class PayController {
 
 	@Autowired
 	private PayService payService;
+	
+	@ApiOperation("余额支付")
+	@PostMapping(value = "/balancePay")
+	public Result<?> balancePay(@RequestBody BalancePayDto dto, HttpServletRequest request) {
+		return payService.balancePay(dto, request);
+	}
 
 	@ApiOperation("生成第三方支付链接")
 	@PostMapping("/createThirdPayUrl")

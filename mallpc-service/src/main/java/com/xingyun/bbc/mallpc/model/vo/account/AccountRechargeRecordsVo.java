@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mallpc.model.vo.account;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -10,9 +11,9 @@ import java.util.Date;
  * 用户充值对象
  */
 @Data
-public class AccountRechargeRecordsVo extends AccountBaseInfoVo {
+public class AccountRechargeRecordsVo  {
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonIgnore
     private Date fcreateTime;
 
     //交易类型

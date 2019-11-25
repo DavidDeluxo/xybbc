@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mallpc.model.vo.account;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -10,12 +11,11 @@ import java.util.Date;
  * 提现列表入口
  */
 @Data
-public class WithDrawRecordsVo extends AccountBaseInfoVo {
-
+public class WithDrawRecordsVo {
     /**
      * 申请时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonIgnore
     private Date fcreateTime;
 
     //提现单号
@@ -24,6 +24,7 @@ public class WithDrawRecordsVo extends AccountBaseInfoVo {
     //提现金额
     private BigDecimal ftransAmount;
 
+    //手续费
     private BigDecimal ftransPoundage;
 
     //交易状态
