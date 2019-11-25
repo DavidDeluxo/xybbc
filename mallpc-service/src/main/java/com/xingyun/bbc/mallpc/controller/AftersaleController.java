@@ -30,7 +30,7 @@ public class AftersaleController {
     @GetMapping("/getAftersaleLis")
     public Result<PageVo<AftersaleListVo>> getAftersaleLis(@ModelAttribute AftersaleLisDto aftersaleLisDto, HttpServletRequest request) {
         Long xyid = Long.parseLong(request.getHeader("xyid"));
-        aftersaleLisDto.setFuserId(xyid);
+        aftersaleLisDto.setFuid(xyid);
         return aftersaleService.getAftersaleLis(aftersaleLisDto);
     }
 
