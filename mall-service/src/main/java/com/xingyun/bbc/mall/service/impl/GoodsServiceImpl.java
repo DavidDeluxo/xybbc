@@ -305,9 +305,15 @@ public class GoodsServiceImpl implements GoodsService {
                         GoodsSku::getFbrandName,
                         GoodsSku::getFcategoryName3);
         couponSkuQueryDtos.forEach(skuQueryDto -> {
-            List<Long> oneLevel = skuQueryDto.getCategoryIds().get("1");
-            List<Long> twoLevel = skuQueryDto.getCategoryIds().get("2");
-            List<Long> threeLevel = skuQueryDto.getCategoryIds().get("3");
+            List<Long> oneLevel = Lists.newArrayList();
+            List<Long> twoLevel = Lists.newArrayList();
+            List<Long> threeLevel = Lists.newArrayList();
+            if(skuQueryDto.getCategoryIds() != null){
+                oneLevel = skuQueryDto.getCategoryIds().get("1");
+                twoLevel = skuQueryDto.getCategoryIds().get("2");
+                threeLevel = skuQueryDto.getCategoryIds().get("3");
+            }
+
             // 品牌id
             List<Long> brandIds = skuQueryDto.getBrandIds();
             // 标签id
@@ -325,19 +331,22 @@ public class GoodsServiceImpl implements GoodsService {
             }
             // 单组条件开始
             skuObjectCriteria.orLeft();
-            // 分类间或关系开始
-            skuObjectCriteria.orLeft();
-            if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(oneLevel)) {
-                skuObjectCriteria.orIn(GoodsSku::getFcategoryId1, oneLevel);
+
+            if(CollectionUtils.isNotEmpty(oneLevel) || CollectionUtils.isNotEmpty(twoLevel) || CollectionUtils.isNotEmpty(threeLevel)){
+                // 分类间或关系开始
+                skuObjectCriteria.orLeft();
+                if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(oneLevel)) {
+                    skuObjectCriteria.orIn(GoodsSku::getFcategoryId1, oneLevel);
+                }
+                if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(twoLevel)) {
+                    skuObjectCriteria.orIn(GoodsSku::getFcategoryId2, twoLevel);
+                }
+                if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(threeLevel)) {
+                    skuObjectCriteria.orIn(GoodsSku::getFcategoryId3, threeLevel);
+                }
+                // 分类间或关系结束
+                skuObjectCriteria.addRight();
             }
-            if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(twoLevel)) {
-                skuObjectCriteria.orIn(GoodsSku::getFcategoryId2, twoLevel);
-            }
-            if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(threeLevel)) {
-                skuObjectCriteria.orIn(GoodsSku::getFcategoryId3, threeLevel);
-            }
-            // 分类间或关系结束
-            skuObjectCriteria.addRight();
             if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(brandIds)) {
                 skuObjectCriteria.orIn(GoodsSku::getFbrandId, brandIds);
             }
