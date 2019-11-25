@@ -2,6 +2,7 @@ package com.xingyun.bbc.mallpc.controller;
 
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.dto.pay.BalancePayDto;
+import com.xingyun.bbc.mallpc.model.dto.pay.CheckPayDto;
 import com.xingyun.bbc.mallpc.service.PayService;
 import com.xingyun.bbc.pay.model.dto.ThirdPayDto;
 import io.swagger.annotations.Api;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 
 /**
  * @author jianghui
@@ -29,7 +29,7 @@ public class PayController {
 
 	@Autowired
 	private PayService payService;
-	
+
 	@ApiOperation("余额支付")
 	@PostMapping(value = "/balancePay")
 	public Result<?> balancePay(@RequestBody BalancePayDto dto, HttpServletRequest request) {
@@ -46,6 +46,18 @@ public class PayController {
 	@PostMapping("/createThirdPayCode")
 	public Result<?> createThirdPayCode(@RequestBody ThirdPayDto dto, HttpServletRequest request) {
 		return payService.createThirdPayCode(dto, request);
+	}
+
+	@ApiOperation("判断订单是否支付成功")
+	@PostMapping("/checkOrderIsPaySuccess")
+	public Result<?> checkOrderIsPaySuccess(@RequestBody CheckPayDto dto, HttpServletRequest request) {
+		return payService.checkOrderIsPaySuccess(dto, request);
+	}
+
+	@ApiOperation("判断充值是否支付成功")
+	@PostMapping("/checkRechargeIsPaySuccess")
+	public Result<?> checkRechargeIsPaySuccess(@RequestBody CheckPayDto dto, HttpServletRequest request) {
+		return payService.checkRechargeIsPaySuccess(dto, request);
 	}
 
 }

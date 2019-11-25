@@ -26,6 +26,7 @@ import com.xingyun.bbc.mallpc.common.ensure.Ensure;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.common.utils.AccountUtil;
 import com.xingyun.bbc.mallpc.common.utils.DateUtils;
+import com.xingyun.bbc.mallpc.model.dto.PageDto;
 import com.xingyun.bbc.mallpc.model.dto.account.AccountDetailDto;
 import com.xingyun.bbc.mallpc.model.vo.PageVo;
 import com.xingyun.bbc.mallpc.model.vo.account.*;
@@ -85,16 +86,16 @@ public class UserAccountServiceImpl implements UserAccountService {
 
 
     @Override
-    public PageVo<AccountRechargeRecordsVo> rechargeRecords(PageVo pageVo, Long uid) {
+    public PageVo<AccountRechargeRecordsVo> rechargeRecords(PageDto pageDto, Long uid) {
         UserRechargeQueryDTO userRechargeQueryDTO = new UserRechargeQueryDTO();
         userRechargeQueryDTO.setUserIds(Lists.newArrayList(uid));
-        userRechargeQueryDTO.setLimit((pageVo.getCurrentPage() - 1) * pageVo.getPageSize());
-        userRechargeQueryDTO.setOffset(pageVo.getPageSize());
+        userRechargeQueryDTO.setLimit((pageDto.getCurrentPage() - 1) * pageDto.getPageSize());
+        userRechargeQueryDTO.setOffset(pageDto.getPageSize());
         Result<Integer> countResult = userAccountTransApi.countRechargeList(userRechargeQueryDTO);
         Ensure.that(countResult).isSuccess(new MallPcExceptionCode(countResult.getCode(), countResult.getMsg()));
 
         if (countResult.getData() < 1) {
-            return new PageVo<>(0, pageVo.getCurrentPage(), pageVo.getPageSize(), new ArrayList<>(2));
+            return new PageVo<>(0, pageDto.getCurrentPage(), pageDto.getPageSize(), new ArrayList<>(2));
         }
 
         Result<List<UserAccountTrans>> rechargeRecordsResult = userAccountTransApi.queryRechargeListByCreateTimeDesc(userRechargeQueryDTO);
@@ -106,10 +107,15 @@ public class UserAccountServiceImpl implements UserAccountService {
 
             convert.setFpassedTime(null);
             //工单类型的只要不是待审核 都要设置时间
-            if (convert.getFrechargeType() == 5 && convert.getFtransStatus().compareTo(UserWorkStatus.WAITVERIFY.getCode()) != 0) {
-                convert.setFpassedTime(item.getFpassedTime());
+            if (convert.getFrechargeType() == 5 &&convert.getFtransStatus().compareTo(UserWorkStatus.WAITVERIFY.getCode()) != 0 ) {
+                if (convert.getFtransStatus().compareTo(UserWorkStatus.SUCCEED.getCode()) == 0) {
+                    convert.setFpassedTime(item.getFpassedTime());
+                } else {
+                    convert.setFpassedTime(item.getFmodifyTime());
+                }
             } else if (convert.getFtransStatus().compareTo(AccountTransType.Passed.getCode()) == 0
-                    || convert.getFtransStatus().compareTo(AccountTransType.Rejected.getCode()) == 0) {
+                    || convert.getFtransStatus().compareTo(AccountTransType.Rejected.getCode()) == 0
+                    || convert.getFtransStatus().compareTo(AccountTransType.Canceled.getCode()) == 0) {
                 //如果是正常的充值类型 则只有审核通过后者是审核不通过才会有完成时间
 
                 //只有是支付宝 微信支付的才是支付时间
@@ -118,6 +124,8 @@ public class UserAccountServiceImpl implements UserAccountService {
                         item.getFrechargeType().compareTo(AccountRechargeType.WechatPay.getCode()) == 0
                 ) {
                     convert.setFpassedTime(item.getFpayTime());
+                } else {
+                    convert.setFpassedTime(item.getFmodifyTime());
                 }
             }
             data.add(convert);
@@ -126,22 +134,22 @@ public class UserAccountServiceImpl implements UserAccountService {
         data.forEach(item -> {
             item.setFtransAmount(AccountUtil.divideOneHundred(item.getFtransAmount().longValue()));
         });
-        return new PageVo<>(countResult.getData(), pageVo.getCurrentPage(), pageVo.getPageSize(), data);
+        return new PageVo<>(countResult.getData(), pageDto.getCurrentPage(), pageDto.getPageSize(), data);
 
     }
 
     @Override
-    public PageVo<WithDrawRecordsVo> withDrawRecords(PageVo pageVo, Long uid) {
+    public PageVo<WithDrawRecordsVo> withDrawRecords(PageDto pageDto, Long uid) {
         Criteria<UserAccountTrans, Object> criteria = Criteria.of(UserAccountTrans.class)
                 .andEqualTo(UserAccountTrans::getFtransTypes, UserAccountTransTypesEnum.WITHDRAW.getCode())
                 .andEqualTo(UserAccountTrans::getFuid, uid)
                 .sortDesc(UserAccountTrans::getFcreateTime)
-                .page(pageVo.getCurrentPage(), pageVo.getPageSize());
+                .page(pageDto.getCurrentPage(), pageDto.getPageSize());
 
         Result<Integer> countResult = userAccountTransApi.countByCriteria(criteria);
         Ensure.that(countResult).isSuccess(new MallPcExceptionCode(countResult.getCode(), countResult.getMsg()));
         if (countResult.getData() < 1) {
-            return new PageVo<>(0, pageVo.getCurrentPage(), pageVo.getPageSize(), new ArrayList<>(2));
+            return new PageVo<>(0, pageDto.getCurrentPage(), pageDto.getPageSize(), new ArrayList<>(2));
         }
         Result<List<UserAccountTrans>> listResult = userAccountTransApi.queryByCriteria(criteria);
 
@@ -158,24 +166,24 @@ public class UserAccountServiceImpl implements UserAccountService {
         data.forEach(item -> {
             item.setFtransAmount(AccountUtil.divideOneHundred(item.getFtransAmount().longValue()));
         });
-        return new PageVo<>(countResult.getData(), pageVo.getCurrentPage(), pageVo.getPageSize(), data);
+        return new PageVo<>(countResult.getData(), pageDto.getCurrentPage(), pageDto.getPageSize(), data);
     }
 
     @Override
-    public PageVo<InAndOutRecordsVo> inAndOutRecords(PageVo pageVo, Long uid) {
+    public PageVo<InAndOutRecordsVo> inAndOutRecords(PageDto pageDto, Long uid) {
         //过滤掉明细类型为6支付宝下单，7微信下单， 14售后工单调整信用额度，18信用额度-可用余额，19信用额度下单
         Criteria<UserDetail, Object> criteria = Criteria.of(UserDetail.class)
                 .andEqualTo(UserDetail::getFuid, uid)
                 .andNotIn(UserDetail::getFdetailType, Lists.newArrayList(ALI_ORDER.getCode(),
                         WECHAT_ORDER.getCode(), AFTERSALE_WORK_CREDIT.getCode(), CREDIT_LIMIT_AVAILABLE_BALANCE.getCode(), CREDIT_LIMIT_ORDER.getCode()))
                 .sortDesc(UserDetail::getFcreateTime)
-                .page(pageVo.getCurrentPage(), pageVo.getPageSize());
+                .page(pageDto.getCurrentPage(), pageDto.getPageSize());
 
         Result<Integer> integerResult = userDetailApi.countByCriteria(criteria);
         Ensure.that(integerResult).isSuccess(new MallPcExceptionCode(integerResult.getCode(), integerResult.getMsg()));
 
         if (integerResult.getData() < 1) {
-            return new PageVo<>(0, pageVo.getCurrentPage(), pageVo.getPageSize(), new ArrayList<>(2));
+            return new PageVo<>(0, pageDto.getCurrentPage(), pageDto.getPageSize(), new ArrayList<>(2));
         }
 
         Result<List<UserDetail>> listResult = userDetailApi.queryByCriteria(criteria);
@@ -275,7 +283,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 //        }
 //        //15 就不先查了
 //        //16就不先查了
-        return new PageVo<>(integerResult.getData(), pageVo.getCurrentPage(), pageVo.getPageSize(), data);
+        return new PageVo<>(integerResult.getData(), pageDto.getCurrentPage(), pageDto.getPageSize(), data);
     }
 
     @Override
@@ -297,6 +305,7 @@ public class UserAccountServiceImpl implements UserAccountService {
                     accountDetailVo = new AccountDetailVo();
                 } else {
                     accountDetailVo = inOutDetail.get(0);
+                    accountDetailVo.setFtransStatus(AccountTransType.Passed.getCode());
                 }
                 break;
             default:
