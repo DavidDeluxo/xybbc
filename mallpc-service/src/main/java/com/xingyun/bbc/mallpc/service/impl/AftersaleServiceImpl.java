@@ -120,20 +120,19 @@ public class AftersaleServiceImpl implements AftersaleService {
         }
         PageVo<AftersaleListVo> result = pageUtils.convert(countResult.getData().intValue(), listResult.getData(), AftersaleListVo.class, aftersaleLisDto);
 
-        //获取skuName
         for (AftersaleListVo aftersaleListVo : result.getList()) {
             GoodsSku skuInfor = this.getSkuInfor(aftersaleListVo.getFskuCode());
             aftersaleListVo.setFskuName(skuInfor.getFskuName());
             aftersaleListVo.setFskuPic(skuInfor.getFskuThumbImage());
             aftersaleListVo.setFbatchPackageName(aftersaleListVo.getFbatchPackageNum() + "件装");
-            aftersaleListVo.setFunitPrice(PriceUtil.toPenny(aftersaleListVo.getFunitPrice()));
+            aftersaleListVo.setFunitPrice(PriceUtil.toYuan(aftersaleListVo.getFunitPrice()));
             aftersaleListVo.setFaftersaleNumShow(this.getAftersaleNumShow(aftersaleListVo.getFaftersaleNum(), aftersaleListVo.getFtransportOrderId(), aftersaleListVo.getFskuCode()));
             aftersaleListVo.setFtradeType(this.getTradeType(aftersaleListVo.getFskuCode()));
             aftersaleListVo.setFvalidityPeriod(this.getValidityPeriod(aftersaleListVo.getFbatchId()));
             OrderAftersaleBack nameMobile = this.getNameMobile(aftersaleListVo.getForderAftersaleId());
             aftersaleListVo.setFdeliveryName(nameMobile.getFdeliveryName());
             aftersaleListVo.setFdeliveryMobile(nameMobile.getFdeliveryMobile());
-            aftersaleListVo.setFaftersaleTotalAmount(PriceUtil.toPenny(this.getAftersaleTotalAmount(aftersaleListVo.getForderAftersaleId())));
+            aftersaleListVo.setFaftersaleTotalAmount(PriceUtil.toYuan(this.getAftersaleTotalAmount(aftersaleListVo.getForderAftersaleId())));
         }
         return Result.success(result);
     }
@@ -169,7 +168,7 @@ public class AftersaleServiceImpl implements AftersaleService {
                 .fields(OrderAftersale::getForderAftersaleId, OrderAftersale::getFskuCode, OrderAftersale::getFaftersaleNum,
                         OrderAftersale::getFaftersaleStatus, OrderAftersale::getFbatchPackageNum, OrderAftersale::getFunitPrice,
                         OrderAftersale::getFaftersaleReason, OrderAftersale::getFaftersaleType, OrderAftersale::getFtransportOrderId,
-                        OrderAftersale::getFcreateTime, OrderAftersale::getFmodifyTime));
+                        OrderAftersale::getFbatchId, OrderAftersale::getFcreateTime, OrderAftersale::getFmodifyTime));
         if (!aftersaleBasicResult.isSuccess()) {
             logger.info("单号faftersaleId {}获取售后主表信息失败", faftersaleId);
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -180,12 +179,15 @@ public class AftersaleServiceImpl implements AftersaleService {
         aftersaleDetailVo.setFskuName(this.getSkuInfor(aftersaleDetailVo.getFskuCode()).getFskuName());
         aftersaleDetailVo.setFskuPic(this.getSkuInfor(aftersaleDetailVo.getFskuCode()).getFskuThumbImage());
         aftersaleDetailVo.setFbatchPackageName(aftersaleDetailVo.getFbatchPackageNum() + "件装");
-        aftersaleDetailVo.setFunitPrice(PriceUtil.toPenny(aftersaleDetailVo.getFunitPrice()));
+        aftersaleDetailVo.setFunitPrice(PriceUtil.toYuan(aftersaleDetailVo.getFunitPrice()));
         aftersaleDetailVo.setFaftersaleNumShow(this.getAftersaleNumShow(aftersaleDetailVo.getFaftersaleNum(), aftersaleDetailVo.getFtransportOrderId(), aftersaleDetailVo.getFskuCode()));
+
+        //获取效期
+        aftersaleDetailVo.setFvalidityPeriod(this.getValidityPeriod(aftersaleDetailVo.getFbatchId()));
 
         //获取售后总金额
         Long faftersaleTotalAmount = this.getAftersaleTotalAmount(faftersaleId);
-        aftersaleDetailVo.setFaftersaleTotalAmount(PriceUtil.toPenny(faftersaleTotalAmount));
+        aftersaleDetailVo.setFaftersaleTotalAmount(PriceUtil.toYuan(faftersaleTotalAmount));
 
         //售后状态faftersale_status 1待客审、2待采审、3待商审、4待财审、6待退货、7待退款、8已成功 9已撤销、10客服拒绝、11采购拒绝、12供应商拒绝、13财务拒绝、14采购拒绝收货、15逾期回寄
         //售后类型faftersale_type 1 退款 2 退款退货 退货类型获取回寄信息
