@@ -92,24 +92,26 @@ public class UserAddressServiceImpl implements UserAddressService {
         Result<List<UserDelivery>> userDeliveryResult = userDeliveryApi.queryByCriteria(deliveryCondition.page(userAddressListDto.getCurrentPage(), userAddressListDto.getPageSize()));
         Ensure.that(userDeliveryResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
         List<UserDelivery> userDeliveryList = userDeliveryResult.getData();
-        List<UserAddressListVo> vos = userDeliveryList.stream().map(userDelivery -> {
-            UserAddressListVo vo = convertor.convert(userDelivery, UserAddressListVo.class);
-            String deliveryArea = StringUtils.join(userDelivery.getFdeliveryProvinceName(), userDelivery.getFdeliveryCityName(), userDelivery.getFdeliveryAreaName());
-            if (Objects.equals(userDelivery.getFisDefualt(), 0)) {
-                vo.setIsDefualt("/");
-            } else if (Objects.equals(userDelivery.getFisDefualt(), 1)) {
-                vo.setIsDefualt("默认地址");
-            }
-            vo.setFdeliveryCardid(StringUtils.overlay(userDelivery.getFdeliveryCardid(), "****", 4, 7));
-            if (StringUtils.isNotBlank(userDelivery.getFdeliveryCardUrlBack()) && StringUtils.isNotBlank(userDelivery.getFdeliveryCardUrlFront())) {
-                vo.setIsCardUpload("已上传");
-            } else {
-                vo.setIsCardUpload("未上传");
-            }
-            vo.setDeliveryArea(deliveryArea);
-            return vo;
-        }).collect(toList());
+        List<UserAddressListVo> vos = userDeliveryList.stream().map(userDelivery -> convertAddress(userDelivery)).collect(toList());
         return Result.success(new PageVo<>(totalCount, userAddressListDto.getCurrentPage(), userAddressListDto.getPageSize(), vos));
+    }
+
+    private UserAddressListVo convertAddress(UserDelivery userDelivery) {
+        UserAddressListVo vo = convertor.convert(userDelivery, UserAddressListVo.class);
+        String deliveryArea = StringUtils.join(userDelivery.getFdeliveryProvinceName(), userDelivery.getFdeliveryCityName(), userDelivery.getFdeliveryAreaName());
+        if (Objects.equals(userDelivery.getFisDefualt(), 0)) {
+            vo.setIsDefualt("/");
+        } else if (Objects.equals(userDelivery.getFisDefualt(), 1)) {
+            vo.setIsDefualt("默认地址");
+        }
+        vo.setFdeliveryCardid(StringUtils.overlay(userDelivery.getFdeliveryCardid(), "****", 4, 7));
+        if (StringUtils.isNotBlank(userDelivery.getFdeliveryCardUrlBack()) && StringUtils.isNotBlank(userDelivery.getFdeliveryCardUrlFront())) {
+            vo.setIsCardUpload("已上传");
+        } else {
+            vo.setIsCardUpload("未上传");
+        }
+        vo.setDeliveryArea(deliveryArea);
+        return vo;
     }
 
     /**
@@ -119,7 +121,7 @@ public class UserAddressServiceImpl implements UserAddressService {
      * @version 1.0.0
      */
     @Override
-    public Result saveOrUpdate(UserAddressDto userAddressDto) {
+    public Result<UserAddressListVo> saveOrUpdate(UserAddressDto userAddressDto) {
         //校验身份证 手机号
         Ensure.that(StringUtilExtention.mobileCheck(userAddressDto.getFdeliveryMobile())).isTrue(MallPcExceptionCode.BIND_MOBILE_ERROR);
         if (StringUtil.isNotBlank(userAddressDto.getFdeliveryCardid())) {
@@ -127,11 +129,13 @@ public class UserAddressServiceImpl implements UserAddressService {
         }
         UserDelivery userDelivery = convertor.convert(userAddressDto, UserDelivery.class);
         if (StringUtil.isBlank(userAddressDto.getFdeliveryUserId())) {
-            Ensure.that(userDeliveryApi.create(userDelivery).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+            Result<UserDelivery> userDeliveryResult = userDeliveryApi.saveAndReturn(userDelivery);
+            Ensure.that(userDeliveryResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+            return Result.success(convertAddress(userDeliveryResult.getData()));
         } else {
             Ensure.that(userDeliveryApi.updateNotNull(userDelivery).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+            return Result.success();
         }
-        return Result.success();
     }
 
     /**
