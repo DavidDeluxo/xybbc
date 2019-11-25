@@ -121,7 +121,6 @@ public class AftersaleServiceImpl implements AftersaleService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         PageVo<AftersaleListVo> result = pageUtils.convert(countResult.getData().intValue(), listResult.getData(), AftersaleListVo.class, aftersaleLisDto);
-
         for (AftersaleListVo aftersaleListVo : result.getList()) {
             GoodsSku skuInfor = this.getSkuInfor(aftersaleListVo.getFskuCode());
             aftersaleListVo.setFskuName(skuInfor.getFskuName());
