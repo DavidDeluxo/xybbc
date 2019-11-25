@@ -305,9 +305,15 @@ public class GoodsServiceImpl implements GoodsService {
                         GoodsSku::getFbrandName,
                         GoodsSku::getFcategoryName3);
         couponSkuQueryDtos.forEach(skuQueryDto -> {
-            List<Long> oneLevel = skuQueryDto.getCategoryIds().get("1");
-            List<Long> twoLevel = skuQueryDto.getCategoryIds().get("2");
-            List<Long> threeLevel = skuQueryDto.getCategoryIds().get("3");
+            List<Long> oneLevel = Lists.newArrayList();
+            List<Long> twoLevel = Lists.newArrayList();
+            List<Long> threeLevel = Lists.newArrayList();
+            if(skuQueryDto.getCategoryIds() != null){
+                oneLevel = skuQueryDto.getCategoryIds().get("1");
+                twoLevel = skuQueryDto.getCategoryIds().get("2");
+                threeLevel = skuQueryDto.getCategoryIds().get("3");
+            }
+
             // 品牌id
             List<Long> brandIds = skuQueryDto.getBrandIds();
             // 标签id
