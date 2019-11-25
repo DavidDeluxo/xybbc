@@ -10,12 +10,14 @@ import com.xingyun.bbc.core.order.enums.work.UserWorkApplyReasons;
 import com.xingyun.bbc.core.order.enums.work.UserWorkStatus;
 import com.xingyun.bbc.core.order.po.*;
 import com.xingyun.bbc.core.query.Criteria;
+import com.xingyun.bbc.core.user.api.UserAccountApi;
 import com.xingyun.bbc.core.user.api.UserAccountTransApi;
 import com.xingyun.bbc.core.user.api.UserDetailApi;
 import com.xingyun.bbc.core.user.dto.UserRechargeQueryDTO;
 import com.xingyun.bbc.core.user.enums.AccountRechargeType;
 import com.xingyun.bbc.core.user.enums.AccountTransType;
 import com.xingyun.bbc.core.user.enums.UserAccountTransTypesEnum;
+import com.xingyun.bbc.core.user.po.UserAccount;
 import com.xingyun.bbc.core.user.po.UserAccountTrans;
 import com.xingyun.bbc.core.user.po.UserDetail;
 import com.xingyun.bbc.core.utils.Result;
@@ -26,10 +28,7 @@ import com.xingyun.bbc.mallpc.common.utils.AccountUtil;
 import com.xingyun.bbc.mallpc.common.utils.DateUtils;
 import com.xingyun.bbc.mallpc.model.dto.account.AccountDetailDto;
 import com.xingyun.bbc.mallpc.model.vo.PageVo;
-import com.xingyun.bbc.mallpc.model.vo.account.AccountDetailVo;
-import com.xingyun.bbc.mallpc.model.vo.account.AccountRechargeRecordsVo;
-import com.xingyun.bbc.mallpc.model.vo.account.InAndOutRecordsVo;
-import com.xingyun.bbc.mallpc.model.vo.account.WithDrawRecordsVo;
+import com.xingyun.bbc.mallpc.model.vo.account.*;
 import com.xingyun.bbc.mallpc.service.UserAccountService;
 import org.springframework.stereotype.Service;
 
@@ -80,6 +79,9 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     @Resource
     private OrderAftersalePicApi orderAftersalePicApi;
+
+    @Resource
+    private UserAccountApi userAccountApi;
 
 
     @Override
@@ -302,6 +304,24 @@ public class UserAccountServiceImpl implements UserAccountService {
         }
 
         return accountDetailVo;
+    }
+
+
+    @Override
+    public AccountBaseInfoVo accountInfo(Long uid) {
+        Result<List<UserAccount>> listResult = userAccountApi.queryByCriteria(Criteria.of(UserAccount.class)
+                .andEqualTo(UserAccount::getFuid, uid));
+        Ensure.that(listResult).isNotEmptyData(MallPcExceptionCode.PARAM_ERROR);
+
+        UserAccount userAccount = listResult.getData().get(0);
+        AccountBaseInfoVo accountBaseInfoVo = new AccountBaseInfoVo();
+
+        accountBaseInfoVo.setBanlance(AccountUtil.divideOneHundred(userAccount.getFbalance() + userAccount.getFfreezeWithdraw()));
+        accountBaseInfoVo.setCashInAble(AccountUtil.divideOneHundred(userAccount.getFbalance()));
+        accountBaseInfoVo.setCashInIng(AccountUtil.divideOneHundred(userAccount.getFfreezeWithdraw()));
+
+
+        return accountBaseInfoVo;
     }
 
 

@@ -11,7 +11,8 @@ import java.util.Date;
  * 收支明细
  */
 @Data
-public class InAndOutRecordsVo extends AccountBaseInfoVo {
+public class InAndOutRecordsVo {
+
 
     @JsonIgnore
     private Date fcreateTime;
