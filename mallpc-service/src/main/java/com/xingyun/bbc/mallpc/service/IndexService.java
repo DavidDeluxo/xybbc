@@ -1,10 +1,13 @@
 package com.xingyun.bbc.mallpc.service;
 
+import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.vo.index.BannerVo;
 import com.xingyun.bbc.mallpc.model.vo.index.BrandVo;
+import com.xingyun.bbc.mallpc.model.vo.index.GoodsCategoryVo;
 import com.xingyun.bbc.mallpc.model.vo.index.SpecialTopicVo;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author 陈翔
@@ -37,4 +40,6 @@ public interface IndexService {
      * @return
      */
     Integer getUserCount();
+
+    Result<Set<GoodsCategoryVo>> queryCategories();
 }
