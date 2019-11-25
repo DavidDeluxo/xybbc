@@ -19,7 +19,7 @@ import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.utils.Result;
 
-import com.xingyun.bbc.mall.model.vo.ReceiveCenterCouponVo;
+
 import com.xingyun.bbc.mallpc.common.components.lock.XybbcLock;
 import com.xingyun.bbc.mallpc.common.constants.MallPcConstants;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
@@ -32,6 +32,7 @@ import com.xingyun.bbc.mallpc.model.dto.coupon.ReceiveCouponDto;
 import com.xingyun.bbc.mallpc.model.vo.PageVo;
 import com.xingyun.bbc.mallpc.model.vo.coupon.CouponVo;
 import com.xingyun.bbc.mallpc.model.vo.coupon.MyCouponVo;
+import com.xingyun.bbc.mallpc.model.vo.coupon.ReceiveCenterCouponVo;
 import com.xingyun.bbc.mallpc.service.MyCouponService;
 
 import io.seata.spring.annotation.GlobalTransactional;
