@@ -61,7 +61,7 @@ public class MallPcExceptionCode implements IResultStatus {
      * 业务级别异常
      */
     public static final MallPcExceptionCode AUTO_LOGIN_FAILED = new MallPcExceptionCode("1000", "自动登录失败");
-    public static final MallPcExceptionCode LOGIN_FAILED = new MallPcExceptionCode("1001", "登录失败");
+    public static final MallPcExceptionCode LOGIN_FAILED = new MallPcExceptionCode("1001", "账号或密码错误");
     public static final MallPcExceptionCode ACCOUNT_FREEZE = new MallPcExceptionCode("1002", "账户冻结中");
     public static final MallPcExceptionCode REGISTER_MOBILE_EXIST = new MallPcExceptionCode("1003", "手机号已注册");
     public static final MallPcExceptionCode ACCOUNT_NOT_EXIST = new MallPcExceptionCode("1004", "账户不存在");
@@ -91,6 +91,17 @@ public class MallPcExceptionCode implements IResultStatus {
     public static final MallPcExceptionCode BATCH_PACKAGE_NUM_NOT_EXIST = new MallPcExceptionCode("1028", "查不到包装规格值");
     public static final MallPcExceptionCode SHOPPING_CART_NOT_EXIST = new MallPcExceptionCode("1029", "进货单商品不存在");
     public static final MallPcExceptionCode BUSINESSLICENSENO_REPEAT = new MallPcExceptionCode("1030", "该营业执照编号已注册");
+
+    public static final MallPcExceptionCode USER_PAY_PWD_NOT_SET = new MallPcExceptionCode("1031", "未设置提现支付密码");
+    public static final MallPcExceptionCode WITHDRAW_ACCOUNT_EMPTY = new MallPcExceptionCode("1032","支付宝账号或银行卡号为空");
+    public static final MallPcExceptionCode ACCOUNT_BALANCE_INSUFFICIENT = new MallPcExceptionCode("1033", "账户余额不足");
+    public static final MallPcExceptionCode WITHDRAW_PASSWORD_ERROR = new MallPcExceptionCode("1034","提现密码不正确");
+    public static final MallPcExceptionCode  BANK_NOT_CONFIG = new MallPcExceptionCode("1035","银行开户行数据未配置，稍后再试..");
+    public static final MallPcExceptionCode  REEZE_WITHDRAW_ERROR = new MallPcExceptionCode("1036","提现冻结金额小于0");
+    public static final MallPcExceptionCode  LESS_THAN_ONE_RMB = new MallPcExceptionCode("1037", "最低提现金额不得小于1元");
+    public static final MallPcExceptionCode  WITHDRAW_LES_MIN_AMOUNT = new MallPcExceptionCode("1038", "不得小于最低提现金额");
+    public static final MallPcExceptionCode  NAME_NOT_EXIST = new MallPcExceptionCode("1039", "账号不存在");
+    public static final MallPcExceptionCode  ACCOUNT_NOT_AUTH = new MallPcExceptionCode("1040", "账户未认证或认证不通过");
 
 
     /**
@@ -126,4 +137,5 @@ public class MallPcExceptionCode implements IResultStatus {
     public static final MallPcExceptionCode CODE_NOT_COUPON = new MallPcExceptionCode("6006", "券码无匹配优惠券");
     public static final MallPcExceptionCode USER_NOT_COUPON = new MallPcExceptionCode("6007", "用户无匹配优惠券");
     public static final MallPcExceptionCode USER_NOT_RIGHT_COUPON = new MallPcExceptionCode("6008", "用户暂无权限兑换该类优惠券");
+    public static final MallPcExceptionCode COUPON_IS_NOT_TIME = new MallPcExceptionCode("6009", "优惠券不在领取时间内");
 }

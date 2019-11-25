@@ -22,4 +22,13 @@
         </field>
     </mapping>
 
+    <mapping>
+        <class-a>com.xingyun.bbc.mallpc.model.vo.account.InAndOutRecordsVo</class-a>
+        <class-b>com.xingyun.bbc.core.user.po.UserDetail</class-b>
+        <field>
+            <a>fpassedTime</a>
+            <b>fmodifyTime</b>
+        </field>
+
+    </mapping>
 </mappings>

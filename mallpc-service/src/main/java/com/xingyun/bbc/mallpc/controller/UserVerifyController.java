@@ -23,7 +23,7 @@ import javax.validation.Valid;
  * @author pengaoluo
  * @version 1.0.0
  */
-@Api("认证信息")
+@Api(tags = "认证信息")
 @RestController
 @RequestMapping("/my/userVerify")
 @Slf4j

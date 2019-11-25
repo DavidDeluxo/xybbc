@@ -4,7 +4,11 @@ package com.xingyun.bbc.mallpc.service.impl;
 import cn.hutool.core.collection.CollectionUtil;
 import com.google.common.collect.Lists;
 import com.xingyun.bbc.core.exception.BizException;
+import com.xingyun.bbc.core.order.api.*;
+import com.xingyun.bbc.core.order.enums.OrderAftersaleReasonType;
+import com.xingyun.bbc.core.order.enums.work.UserWorkApplyReasons;
 import com.xingyun.bbc.core.order.enums.work.UserWorkStatus;
+import com.xingyun.bbc.core.order.po.*;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserAccountTransApi;
 import com.xingyun.bbc.core.user.api.UserDetailApi;
@@ -31,6 +35,8 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.xingyun.bbc.core.user.enums.UserDetailType.*;
 
@@ -56,6 +62,24 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     @Resource
     private DozerHolder dozerHolder;
+
+    @Resource
+    private OrderPaymentApi orderPaymentApi;
+
+    @Resource
+    private UserWorkApi userWorkApi;
+
+    @Resource
+    private OrderAftersaleApi orderAftersaleApi;
+
+    @Resource
+    private OrderApi orderApi;
+
+    @Resource
+    private OrderAftersaleVerifyApi orderAftersaleVerifyApi;
+
+    @Resource
+    private OrderAftersalePicApi orderAftersalePicApi;
 
 
     @Override
@@ -97,6 +121,9 @@ public class UserAccountServiceImpl implements UserAccountService {
             data.add(convert);
         });
 
+        data.forEach(item -> {
+            item.setFtransAmount(AccountUtil.divideOneHundred(item.getFtransAmount().longValue()));
+        });
         return new PageVo<>(countResult.getData(), pageVo.getCurrentPage(), pageVo.getPageSize(), data);
 
     }
@@ -126,7 +153,9 @@ public class UserAccountServiceImpl implements UserAccountService {
             }
             data.add(convert);
         });
-
+        data.forEach(item -> {
+            item.setFtransAmount(AccountUtil.divideOneHundred(item.getFtransAmount().longValue()));
+        });
         return new PageVo<>(countResult.getData(), pageVo.getCurrentPage(), pageVo.getPageSize(), data);
     }
 
@@ -150,7 +179,101 @@ public class UserAccountServiceImpl implements UserAccountService {
         Result<List<UserDetail>> listResult = userDetailApi.queryByCriteria(criteria);
         Ensure.that(listResult).isSuccess(new MallPcExceptionCode(listResult.getCode(), listResult.getMsg()));
 
-        return new PageVo<>(integerResult.getData(), pageVo.getCurrentPage(), pageVo.getPageSize(), dozerHolder.convert(listResult.getData(), InAndOutRecordsVo.class));
+        List<InAndOutRecordsVo> data = dozerHolder.convert(listResult.getData(), InAndOutRecordsVo.class);
+        data.forEach(item -> {
+            Optional.ofNullable(item.getFexpenseAmount()).ifPresent(i -> item.setFexpenseAmount(AccountUtil.divideOneHundred(i.longValue())));
+            Optional.ofNullable(item.getFincomeAmount()).ifPresent(i -> item.setFincomeAmount(AccountUtil.divideOneHundred(i.longValue())));
+        });
+
+//        Map<Integer, List<InAndOutRecordsVo>> group = data.stream().collect(Collectors.groupingBy(InAndOutRecordsVo::getFdetailType));
+//
+//        Map<String, InAndOutRecordsVo> map = data.stream().collect(Collectors.toMap(InAndOutRecordsVo::getFdetailId, Function.identity()));
+
+//        //去提现充值表里查
+//        List<InAndOutRecordsVo> list1 = new ArrayList<>(10);
+//        Optional.ofNullable(group.get(1)).ifPresent(list1::addAll);
+//        Optional.ofNullable(group.get(2)).ifPresent(list1::addAll);
+//        Optional.ofNullable(group.get(3)).ifPresent(list1::addAll);
+//        Optional.of(group.get(4)).ifPresent(list1::addAll);
+//        Optional.of(group.get(8)).ifPresent(list1::addAll);
+//        if (list1.size() > 0) {
+//            List<String> collect = list1.stream().map(InAndOutRecordsVo::getFdetailId).collect(Collectors.toList());
+//            List<AccountDetailVo> transDetail = getTransDetail(collect);
+//            Map<String, AccountDetailVo> map1 = transDetail.stream().collect(Collectors.toMap(AccountDetailVo::getFtransId, Function.identity()));
+//            list1.forEach(item -> {
+//                Optional.ofNullable(map1.get(item.getFdetailId())).ifPresent(i -> {
+//                    item.setFcreateTime(i.getFcreateTime());
+//                    item.setFpassedTime(i.getFpassedTime());
+//                });
+//            });
+//        }
+//        //支付单
+//        List<InAndOutRecordsVo> list2 = new ArrayList<>(10);
+//        Optional.of(group.get(5)).ifPresent(list2::addAll);
+//        if (list2.size() > 0) {
+//
+//            Map<String, OrderPayment> map1 = orderPayments(list2.stream().map(InAndOutRecordsVo::getFdetailId)
+//                    .collect(Collectors.toList()))
+//                    .stream().collect(Collectors.toMap(OrderPayment::getForderPaymentId, Function.identity()));
+//
+//            list2.forEach(item -> {
+//                Optional.ofNullable(map1.get(item.getFdetailId())).ifPresent(i -> {
+//                    item.setFcreateTime(i.getFcreateTime());
+//                    item.setFpassedTime(i.getFpayTime());
+//                });
+//            });
+//        }
+//        //客户售后工单审核 工单号13  //17 充值工单 工单号里
+//        List<InAndOutRecordsVo> list3 = new ArrayList<>(10);
+//        Optional.of(group.get(13)).ifPresent(list3::addAll);
+//        Optional.of(group.get(17)).ifPresent(list3::addAll);
+//        if (list3.size() > 0) {
+//            Map<String, UserWork> map1 = userWorks(list3.stream().map(InAndOutRecordsVo::getFdetailId).collect(Collectors.toList()))
+//                    .stream()
+//                    .collect(Collectors.toMap(UserWork::getFuserWorkOrder, Function.identity()));
+//
+//            list3.forEach(item -> {
+//                Optional.ofNullable(map1.get(item.getFdetailId())).ifPresent(i -> {
+//                    item.setFcreateTime(i.getFcreateTime());
+//                    item.setFpassedTime(i.getFmodifyTime());
+//                });
+//            });
+//        }
+//        //10 售后单号
+//        List<InAndOutRecordsVo> list4 = new ArrayList<>(10);
+//        Optional.of(group.get(10)).ifPresent(list4::addAll);
+//        if (list4.size() > 0) {
+//            Map<String, OrderAftersale> map1 = orderAftersales(list4.stream().map(InAndOutRecordsVo::getFdetailId).collect(Collectors.toList()))
+//                    .stream()
+//                    .collect(Collectors.toMap(OrderAftersale::getForderAftersaleId, Function.identity()));
+//
+//            list4.forEach(item -> {
+//                Optional.ofNullable(map1.get(item.getFdetailId())).ifPresent(i -> {
+//                    item.setFcreateTime(i.getFcreateTime());
+//                    item.setFpassedTime(i.getFmodifyTime());
+//                });
+//            });
+//        }
+//        //9 11 12销售订单号
+//        List<InAndOutRecordsVo> list5 = new ArrayList<>(10);
+//        Optional.of(group.get(9)).ifPresent(list5::addAll);
+//        Optional.of(group.get(11)).ifPresent(list5::addAll);
+//        Optional.of(group.get(12)).ifPresent(list5::addAll);
+//        if (list5.size() > 0) {
+//            Map<String, Order> map1 = orders(list5.stream().map(InAndOutRecordsVo::getFdetailId).collect(Collectors.toList()))
+//                    .stream()
+//                    .collect(Collectors.toMap(Order::getForderId, Function.identity()));
+//
+//            list5.forEach(item -> {
+//                Optional.ofNullable(map1.get(item.getFdetailId())).ifPresent(i -> {
+//                    item.setFcreateTime(i.getFcreateTime());
+//                    item.setFpassedTime(i.getFmodifyTime());
+//                });
+//            });
+//        }
+//        //15 就不先查了
+//        //16就不先查了
+        return new PageVo<>(integerResult.getData(), pageVo.getCurrentPage(), pageVo.getPageSize(), data);
     }
 
     @Override
@@ -159,10 +282,20 @@ public class UserAccountServiceImpl implements UserAccountService {
         switch (accountDetailDto.getType()) {
             case 1:
             case 2:
-                accountDetailVo = getTransDetail(accountDetailDto.getId());
+                List<AccountDetailVo> transDetail = getTransDetail(Lists.newArrayList(accountDetailDto.getId()));
+                if (CollectionUtil.isEmpty(transDetail)) {
+                    accountDetailVo = new AccountDetailVo();
+                } else {
+                    accountDetailVo = transDetail.get(0);
+                }
                 break;
             case 3:
-                accountDetailVo = getInOutDetail(accountDetailDto.getId(), accountDetailDto.getType1());
+                List<AccountDetailVo> inOutDetail = getInOutDetail(Lists.newArrayList(accountDetailDto.getId()));
+                if (inOutDetail.isEmpty()) {
+                    accountDetailVo = new AccountDetailVo();
+                } else {
+                    accountDetailVo = inOutDetail.get(0);
+                }
                 break;
             default:
                 break;
@@ -172,65 +305,171 @@ public class UserAccountServiceImpl implements UserAccountService {
     }
 
 
-    private AccountDetailVo getTransDetail(String id) {
-        Result<UserAccountTrans> userAccountTransResult = userAccountTransApi.queryById(id);
+    private List<AccountDetailVo> getTransDetail(List<String> ids) {
+        Result<List<UserAccountTrans>> userAccountTransResult = userAccountTransApi.queryByCriteria(Criteria.of(UserAccountTrans.class)
+                .andIn(UserAccountTrans::getFtransId, ids));
         Ensure.that(userAccountTransResult).isSuccess(new MallPcExceptionCode(userAccountTransResult.getCode(), userAccountTransResult.getMsg()));
         if (Objects.isNull(userAccountTransResult.getData())) {
-            return new AccountDetailVo();
+            return new ArrayList<>();
         }
 
-        AccountDetailVo accountDetailVo = dozerHolder.convert(userAccountTransResult.getData(), AccountDetailVo.class);
-        if (userAccountTransResult.getData().getFtransTypes().compareTo(UserAccountTransTypesEnum.RECHARGE.getCode()) == 0) {
-            accountDetailVo.setType(userAccountTransResult.getData().getFrechargeType());
-            accountDetailVo.setFtransPoundage(null);
-            accountDetailVo.setFtransActualAmount(null);
-        } else if (userAccountTransResult.getData().getFtransTypes().compareTo(UserAccountTransTypesEnum.WITHDRAW.getCode()) == 0) {
-            accountDetailVo.setType(userAccountTransResult.getData().getFwithdrawType());
-            accountDetailVo.setFtransActualAmount(AccountUtil.divideOneHundred(accountDetailVo.getFtransActualAmount().longValue()));
-            accountDetailVo.setFtransPoundage(AccountUtil.divideOneHundred(accountDetailVo.getFtransPoundage().longValue()));
-        } else {
-            throw new BizException(MallPcExceptionCode.PARAM_ERROR);
-        }
-
-        if (accountDetailVo.getFtransStatus().compareTo(AccountTransType.WaitPayment.getCode()) == 0
-                || AccountTransType.WaitVerify.getCode().compareTo(accountDetailVo.getFtransStatus()) == 0) {
-            accountDetailVo.setFpassedTime(null);
-        } else {
-            if (initTime.compareTo(accountDetailVo.getFpassedTime()) == 0) {
-                accountDetailVo.setFpassedTime(userAccountTransResult.getData().getFmodifyTime());
+        List<AccountDetailVo> accountDetailVos = dozerHolder.convert(userAccountTransResult.getData(), AccountDetailVo.class);
+        accountDetailVos.forEach(item -> {
+            if (item.getFtransTypes().compareTo(UserAccountTransTypesEnum.RECHARGE.getCode()) == 0) {
+                item.setType(item.getFrechargeType());
+                item.setFtransPoundage(null);
+                item.setFtransActualAmount(null);
+            } else if (item.getFtransTypes().compareTo(UserAccountTransTypesEnum.WITHDRAW.getCode()) == 0) {
+                item.setType(item.getFwithdrawType());
+                item.setFtransActualAmount(AccountUtil.divideOneHundred(item.getFtransActualAmount().longValue()));
+                item.setFtransPoundage(AccountUtil.divideOneHundred(item.getFtransPoundage().longValue()));
+            } else {
+                throw new BizException(MallPcExceptionCode.PARAM_ERROR);
             }
-        }
 
-        accountDetailVo.setFtransAmount(AccountUtil.divideOneHundred(accountDetailVo.getFtransAmount().longValue()));
-        return accountDetailVo;
+            if (item.getFtransStatus().compareTo(AccountTransType.WaitPayment.getCode()) == 0
+                    || AccountTransType.WaitVerify.getCode().compareTo(item.getFtransStatus()) == 0) {
+                item.setFpassedTime(null);
+            } else {
+                if (initTime.compareTo(item.getFpassedTime()) == 0) {
+                    if (initTime.compareTo(item.getFpayTime()) == 0) {
+                        item.setFpassedTime(item.getFmodifyTime());
+                    } else {
+                        item.setFpassedTime(item.getFpayTime());
+                    }
+
+                }
+            }
+            item.setFtransAmount(AccountUtil.divideOneHundred(item.getFtransAmount().longValue()));
+        });
+
+
+        return accountDetailVos;
     }
 
 
-    private AccountDetailVo getInOutDetail(String id, Integer type) {
+    private List<AccountDetailVo> getInOutDetail(List<String> ids) {
         Result<List<UserDetail>> listResult = userDetailApi.queryByCriteria(Criteria.of(UserDetail.class)
-                .andEqualTo(UserDetail::getFtypeId, id));
+                .andIn(UserDetail::getFtypeId, ids));
         Ensure.that(listResult).isSuccess(new MallPcExceptionCode(listResult.getCode(), listResult.getMsg()));
 
         if (CollectionUtil.isEmpty(listResult.getData())) {
-            return new AccountDetailVo();
+            return new ArrayList<>();
         }
-        AccountDetailVo accountDetailVo = new AccountDetailVo();
-        switch (type) {
+        List<AccountDetailVo> accountDetails = new ArrayList<>();
+        accountDetails.add(dozerHolder.convert(listResult.getData().get(0), AccountDetailVo.class));
+        switch (listResult.getData().get(0).getFdetailType()) {
+            //充值提现
             case 1:
             case 2:
             case 3:
             case 4:
             case 8:
-                accountDetailVo = getTransDetail(id);
-                accountDetailVo.setFpassedTime(listResult.getData().get(0).getFcreateTime());
+                accountDetails = getTransDetail(ids);
+                if (CollectionUtil.isEmpty(accountDetails)) {
+                    return accountDetails;
+                }
+                Map<String, UserDetail> collect = listResult.getData().stream().collect(Collectors.toMap(UserDetail::getFtypeId, Function.identity()));
+                accountDetails.forEach(item -> {
+                    item.setFpassedTime(collect.get(item.getFtransId()).getFmodifyTime());
+                });
                 break;
+            case 5:
+                List<OrderPayment> orderPayments = orderPayments(ids);
+                OrderPayment orderPayment = orderPayments.get(0);
+                Result<List<Order>> orderListResult = orderApi.queryByCriteria(Criteria.of(Order.class)
+                        .andEqualTo(Order::getForderPaymentId, orderPayment.getForderPaymentId()));
+                Ensure.that(orderListResult).isNotEmptyData(new MallPcExceptionCode(orderListResult.getCode(), orderListResult.getMsg()));
+                AccountDetailVo accountDetail = accountDetails.get(0);
+
+                accountDetail.setOrderId(orderListResult.getData().stream().map(Order::getForderId).collect(Collectors.joining(",")));
+                accountDetail.setFcreateTime(orderPayment.getFcreateTime());
+                break;
+            //售后工单
+            case 13:
+            case 17:
+                List<UserWork> userWorks = userWorks(ids);
+                if (CollectionUtil.isNotEmpty(userWorks)) {
+                    UserWork userWork = userWorks.get(0);
+                    AccountDetailVo accountDetailVo = accountDetails.get(0);
+                    accountDetailVo.setFcreateTime(userWork.getFcreateTime());
+                    accountDetailVo.setOrderId(userWork.getForderId());
+                    accountDetailVo.setFtransStatus(userWork.getFstatus());
+                    accountDetailVo.setReson(UserWorkApplyReasons.getName(userWork.getFapplyReason()));
+                    accountDetailVo.setFremark(userWork.getFremark());
+                    accountDetailVo.setFapplyPic(userWork.getFapplyPic());
+                }
+                break;
+            //售后单
+            case 10:
+                List<OrderAftersale> orderAftersales = orderAftersales(ids);
+                if (CollectionUtil.isNotEmpty(orderAftersales)) {
+                    OrderAftersale orderAftersale = orderAftersales.get(0);
+                    AccountDetailVo accountDetailVo = accountDetails.get(0);
+                    accountDetailVo.setFcreateTime(orderAftersale.getFcreateTime());
+                    accountDetailVo.setAfterType(orderAftersale.getFaftersaleType());
+                    accountDetailVo.setOrderId(orderAftersale.getForderId());
+                    accountDetailVo.setReson(OrderAftersaleReasonType.getName(orderAftersale.getFaftersaleReason()));
+                    Result<List<OrderAftersaleVerify>> orderAftersaleVerifyResult = orderAftersaleVerifyApi.queryByCriteria(Criteria.of(OrderAftersaleVerify.class)
+                            .andEqualTo(OrderAftersaleVerify::getForderAftersaleId, orderAftersale.getForderAftersaleId())
+                            .andEqualTo(OrderAftersaleVerify::getFroleType, 1));
+                    Ensure.that(orderAftersaleVerifyResult).isSuccess(new MallPcExceptionCode(orderAftersaleVerifyResult.getCode(), orderAftersaleVerifyResult.getMsg()));
+                    if (CollectionUtil.isNotEmpty(orderAftersaleVerifyResult.getData())) {
+                        accountDetailVo.setFremark(orderAftersaleVerifyResult.getData().get(0).getFremark());
+                    }
+
+                    Result<List<OrderAftersalePic>> orderAftersaleListResult = orderAftersalePicApi.queryByCriteria(Criteria.of(OrderAftersalePic.class)
+                            .andEqualTo(OrderAftersalePic::getForderAftersaleId, orderAftersale.getForderAftersaleId())
+                            .andEqualTo(OrderAftersalePic::getFpicType, 2));
+                    Ensure.that(orderAftersaleListResult).isSuccess(new MallPcExceptionCode(orderAftersaleListResult.getCode(), orderAftersaleListResult.getMsg()));
+                    if (CollectionUtil.isNotEmpty(orderAftersaleListResult.getData())) {
+                        accountDetailVo.setFapplyPic(orderAftersaleListResult.getData().get(0).getFaftersalePic());
+                    }
+                }
+            case 9:
+            case 11:
+            case 12:
+                List<Order> orders = orders(ids);
+                Order order = orders.get(0);
+                AccountDetailVo accountDetailVo = accountDetails.get(0);
+                accountDetailVo.setFpassedTime(order.getFmodifyTime());
 
             default:
                 break;
         }
 
-        return accountDetailVo;
+        return accountDetails;
+    }
 
+
+    private List<OrderPayment> orderPayments(List<String> collect) {
+        Result<List<OrderPayment>> listResult1 = orderPaymentApi.queryByCriteria(Criteria.of(OrderPayment.class)
+                .andIn(OrderPayment::getForderPaymentId, collect));
+        Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
+        return listResult1.getData();
+    }
+
+
+    private List<UserWork> userWorks(List<String> collect) {
+        Result<List<UserWork>> listResult1 = userWorkApi.queryByCriteria(Criteria.of(UserWork.class)
+                .andIn(UserWork::getFuserWorkOrder, collect));
+        Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
+        return listResult1.getData();
+    }
+
+
+    private List<OrderAftersale> orderAftersales(List<String> collect) {
+        Result<List<OrderAftersale>> listResult1 = orderAftersaleApi.queryByCriteria(Criteria.of(OrderAftersale.class)
+                .andIn(OrderAftersale::getForderAftersaleId, collect));
+        Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
+
+        return listResult1.getData();
+    }
+
+    private List<Order> orders(List<String> collect) {
+        Result<List<Order>> listResult1 = orderApi.queryByCriteria(Criteria.of(Order.class).andIn(Order::getForderId, collect));
+        Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
+        return listResult1.getData();
     }
 
 
