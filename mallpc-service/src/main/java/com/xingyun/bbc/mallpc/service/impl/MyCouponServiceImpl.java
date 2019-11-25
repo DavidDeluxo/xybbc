@@ -3,7 +3,9 @@ package com.xingyun.bbc.mallpc.service.impl;
 import com.google.common.collect.Lists;
 import com.xingyun.bbc.core.activity.api.CouponProviderApi;
 import com.xingyun.bbc.core.activity.enums.CouponScene;
+import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.core.activity.model.dto.CouponReleaseDto;
+import com.xingyun.bbc.core.activity.model.vo.CouponQueryVo;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.CouponApi;
@@ -17,6 +19,7 @@ import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.utils.Result;
 
+import com.xingyun.bbc.mall.model.vo.ReceiveCenterCouponVo;
 import com.xingyun.bbc.mallpc.common.components.lock.XybbcLock;
 import com.xingyun.bbc.mallpc.common.constants.MallPcConstants;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
@@ -32,13 +35,15 @@ import com.xingyun.bbc.mallpc.model.vo.coupon.MyCouponVo;
 import com.xingyun.bbc.mallpc.service.MyCouponService;
 
 import io.seata.spring.annotation.GlobalTransactional;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
+
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -75,7 +80,7 @@ public class MyCouponServiceImpl implements MyCouponService {
         //查询已经领到的优惠券信息
         Criteria<CouponReceive, Object> criteria = Criteria.of(CouponReceive.class)
                 .andEqualTo(CouponReceive::getFuid, myCouponDto.getFuid());
-        if (!StringUtils.isEmpty(myCouponDto.getFuserCouponStatus())) {
+        if (myCouponDto.getFuserCouponStatus() != 0) {
             criteria.andEqualTo(CouponReceive::getFuserCouponStatus, myCouponDto.getFuserCouponStatus());
         }
 
@@ -98,7 +103,7 @@ public class MyCouponServiceImpl implements MyCouponService {
                     .andEqualTo(Coupon::getFcouponId, couponVo.getFcouponId())
                     .fields(Coupon::getFcouponName, Coupon::getFcouponType,
                             Coupon::getFthresholdAmount, Coupon::getFdeductionValue,
-                            Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFreleaseType));
+                            Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFreleaseType,Coupon::getFapplicableSku));
             if (!couponResult.isSuccess()) {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
@@ -106,7 +111,7 @@ public class MyCouponServiceImpl implements MyCouponService {
             couponVo.setFcouponName(coupon.getFcouponName());
             couponVo.setFcouponType(coupon.getFcouponType());
             couponVo.setFthresholdAmount(PriceUtil.toYuan(coupon.getFthresholdAmount()));
-
+            couponVo.setFapplicableSku(coupon.getFapplicableSku());
             //优惠券类型，1满减券、2折扣券
             if (coupon.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
                 couponVo.setFdeductionValue(PriceUtil.toYuan(coupon.getFdeductionValue()));
@@ -148,12 +153,13 @@ public class MyCouponServiceImpl implements MyCouponService {
     /**
      * @author lll
      * @version V1.0
-     * @Description: 领券中心领取优惠券
+     * @Description: 领取优惠券
      * @Param: receiveCouponDto
      * @return: Result                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
     @Override
+    @GlobalTransactional
     public Result addReceiveCoupon(Long fcouponId, Long fuid) {
         //校验入参
         if (null == fuid || null == fcouponId) {
@@ -204,7 +210,7 @@ public class MyCouponServiceImpl implements MyCouponService {
         receiveCouponDto.setFuid(fuid);
         receiveCouponDto.setFcouponId(fcouponId);
         Result result = this.receiveCenterCoupon(receiveCouponDto);
-        return Result.success(result.getData());
+        return result;
     }
 
 
@@ -216,7 +222,6 @@ public class MyCouponServiceImpl implements MyCouponService {
      * @return: Result                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
-    @GlobalTransactional
     public Result receiveCenterCoupon(ReceiveCouponDto receiveCouponDto) {
         Long fcouponId = receiveCouponDto.getFcouponId();
         Long fuid = receiveCouponDto.getFuid();
@@ -227,8 +232,8 @@ public class MyCouponServiceImpl implements MyCouponService {
         //加分布式锁
         String lockKey = org.apache.commons.lang3.StringUtils.join(Lists.newArrayList(MallPcConstants.MALL_RECEIVE_COUPON, fcouponId, fuid), ":");
         String lockValue = RandomUtils.getUUID();
+        Ensure.that(xybbcLock.tryLockTimes(lockKey, lockValue, 3, 6)).isTrue(MallPcExceptionCode.SYSTEM_BUSY_ERROR);
         try {
-            Ensure.that(xybbcLock.tryLockTimes(lockKey, lockValue, 3, 6)).isTrue(MallPcExceptionCode.SYSTEM_BUSY_ERROR);
             //更新优惠券发放数量
             CouponReleaseDto couponReleaseDto = new CouponReleaseDto();
             couponReleaseDto.setCouponScene(CouponScene.PAGE_RECEIVE);
@@ -242,11 +247,73 @@ public class MyCouponServiceImpl implements MyCouponService {
             //调用领券服务
             Result receiveReceive = couponProviderApi.receive(couponReleaseDto);
             Ensure.that(receiveReceive.isSuccess()).isTrue(new MallPcExceptionCode(receiveReceive.getCode(), receiveReceive.getMsg()));
+            return receiveReceive;
         } catch (Exception e) {
             e.printStackTrace();
+            BizException be = (BizException) e;
+            return Result.failure(be.getStatus());
         } finally {
             xybbcLock.releaseLock(lockKey, lockValue);
         }
-        return Result.success(true);
     }
+
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 查询可领优惠券
+     * @Param: receiveCouponDto
+     * @return: List<CouponCenterVo>                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
+     * @date 2019/11/12 13:49
+     */
+    @Override
+    public Result<List<ReceiveCenterCouponVo>> getCoupon(CouponQueryDto couponQueryDto) {
+        //校验用户id
+        if (null == couponQueryDto.getUserId()) {
+            throw new BizException(MallPcExceptionCode.PARAM_ERROR);
+        }
+        List<Integer> list = new ArrayList<>();
+        //查出发放类型为2：页面领取的数据
+        list.add(2);
+        couponQueryDto.setReleaseTypes(list);
+        Result<List<CouponQueryVo>> couponQueryVos = couponProviderApi.queryByUserId(couponQueryDto);
+        List<ReceiveCenterCouponVo> receiveCenterCouponVoList = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(couponQueryVos.getData())) {
+            for (CouponQueryVo couponQueryVo : couponQueryVos.getData()) {
+                //查询已经领到的券张数
+                Result<Integer> countResult = couponReceiveApi.countByCriteria(Criteria.of(CouponReceive.class)
+                        .andEqualTo(CouponReceive::getFuid, couponQueryDto.getUserId())
+                        .andEqualTo(CouponReceive::getFcouponId, couponQueryVo.getFcouponId()));
+                if (!countResult.isSuccess()) {
+                    logger.error("查询已经领到的券张数失败，userid{} couponId{}", couponQueryDto.getUserId(), couponQueryVo.getFcouponId());
+                    throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+                }
+                //当领券上限未达到限领次数时
+                if (countResult.getData() < couponQueryVo.getFperLimit()) {
+                    //封装返回对象
+                    ReceiveCenterCouponVo receiveCenterCouponVo = new ReceiveCenterCouponVo();
+                    receiveCenterCouponVo.setFcouponId(couponQueryVo.getFcouponId());
+                    receiveCenterCouponVo.setFcouponName(couponQueryVo.getFcouponName());
+                    receiveCenterCouponVo.setFcouponType(couponQueryVo.getFcouponType());
+                    receiveCenterCouponVo.setFvalidityEnd(couponQueryVo.getFvalidityEnd());
+                    receiveCenterCouponVo.setFvalidityStart(couponQueryVo.getFvalidityStart());
+                    receiveCenterCouponVo.setNowDate(new Date());
+                    receiveCenterCouponVo.setReceiveNum(Long.valueOf(countResult.getData()));
+                    receiveCenterCouponVo.setFperLimit(couponQueryVo.getFperLimit());
+                    receiveCenterCouponVo.setFvalidityType(couponQueryVo.getFvalidityType());
+                    receiveCenterCouponVo.setFvalidityDays(couponQueryVo.getFvalidityDays());
+                    receiveCenterCouponVo.setFthresholdAmount(PriceUtil.toYuan(couponQueryVo.getFthresholdAmount()));
+                    receiveCenterCouponVo.setFapplicableSku(couponQueryVo.getFapplicableSku());
+                    //优惠券类型，1满减券需要除以100、2折扣券需要除以10
+                    if (couponQueryVo.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
+                        receiveCenterCouponVo.setFdeductionValue(PriceUtil.toYuan(couponQueryVo.getFdeductionValue()));
+                    } else {
+                        receiveCenterCouponVo.setFdeductionValue(new BigDecimal(couponQueryVo.getFdeductionValue()).divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP));
+                    }
+                    receiveCenterCouponVoList.add(receiveCenterCouponVo);
+                }
+            }
+        }
+        return Result.success(receiveCenterCouponVoList);
+    }
+
 }

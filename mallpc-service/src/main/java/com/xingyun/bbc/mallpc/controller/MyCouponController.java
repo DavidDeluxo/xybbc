@@ -2,7 +2,9 @@ package com.xingyun.bbc.mallpc.controller;
 
 
 
+import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mall.model.vo.ReceiveCenterCouponVo;
 import com.xingyun.bbc.mallpc.model.dto.coupon.MyCouponDto;
 import com.xingyun.bbc.mallpc.model.dto.coupon.ReceiveCouponDto;
 import com.xingyun.bbc.mallpc.model.vo.coupon.MyCouponVo;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 
 @Api("我的优惠券")
@@ -58,5 +61,22 @@ public class MyCouponController {
         Long xyid = Long.parseLong(request.getHeader("xyid"));
         logger.info("领取优惠券 fcouponId {} fuid {}", receiveCouponDto.getFcouponId(), xyid);
         return myCouponService.addReceiveCoupon(receiveCouponDto.getFcouponId(), xyid);
+    }
+
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 查询可领优惠券
+     * @Param: ReceiveCenterCouponVo
+     * @return: List<CouponCenterVo>                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
+     * @date 2019/11/12 13:49
+     */
+    @ApiOperation(value = "查询可领优惠券", httpMethod = "POST")
+    @PostMapping("/getCoupon")
+    public Result<List<ReceiveCenterCouponVo>> getCoupon(HttpServletRequest request, @RequestBody CouponQueryDto couponQueryDto){
+        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        couponQueryDto.setUserId(xyid);
+        logger.info("查询可领优惠券 fuid {}",  xyid);
+        return myCouponService.getCoupon(couponQueryDto);
     }
 }
