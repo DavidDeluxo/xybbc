@@ -89,7 +89,8 @@ public class MyCouponServiceImpl implements MyCouponService {
         if (!countResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        criteria.fields(CouponReceive::getFcouponId, CouponReceive::getFvalidityStart, CouponReceive::getFvalidityEnd)
+        criteria.fields(CouponReceive::getFcouponId, CouponReceive::getFvalidityStart,
+                CouponReceive::getFvalidityEnd,CouponReceive::getFuserCouponStatus)
                 .page(myCouponDto.getCurrentPage(), myCouponDto.getPageSize())
                 .sortDesc(CouponReceive::getFcreateTime);
         Result<List<CouponReceive>> listResult = couponReceiveApi.queryByCriteria(criteria);

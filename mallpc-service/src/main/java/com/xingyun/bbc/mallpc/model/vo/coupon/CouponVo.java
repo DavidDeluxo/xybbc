@@ -4,6 +4,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -79,6 +80,10 @@ public class CouponVo implements Serializable {
      */
     @ApiModelProperty("适用商品范围，1全部商品、2指定商品可用、3指定商品不可用")
     private Integer fapplicableSku;
+
+    /** 优惠券状态，1未使用、2已使用、3已失效 */
+    @ApiModelProperty("优惠券状态，1未使用、2已使用、3已失效")
+    private Integer fuserCouponStatus;
 
 
 }
