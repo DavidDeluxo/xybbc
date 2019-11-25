@@ -27,7 +27,7 @@ public class RequestHolder {
      * @return
      */
     public static Long getUserId() {
-        String userId = getRequest().getHeader("xyid");
+        String userId = getRequest().getHeader("xyId");
         Ensure.that(userId).isNotBlank(MallPcExceptionCode.USER_NOT_LOGGED_IN);
         return Long.valueOf(userId);
     }
