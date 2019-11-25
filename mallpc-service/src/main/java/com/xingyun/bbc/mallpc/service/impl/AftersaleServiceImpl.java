@@ -108,14 +108,14 @@ public class AftersaleServiceImpl implements AftersaleService {
         //获取售后列表信息
         Result<Long> countResult = orderAftersaleApi.selectAftersaleCountMallPc(dto);
         if (!countResult.isSuccess()) {
-            logger.info("用户user_id {}获取售后订单信息失败", aftersaleLisDto.getFuserId());
+            logger.info("用户user_id {}获取售后订单信息失败", aftersaleLisDto.getFuid());
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
 
         Result<List<OrderAftersale>> listResult = orderAftersaleApi.selectAftersaleLisMallPc(dto);
 
         if (!listResult.isSuccess()) {
-            logger.info("用户user_id {}获取售后订单信息失败", aftersaleLisDto.getFuserId());
+            logger.info("用户user_id {}获取售后订单信息失败", aftersaleLisDto.getFuid());
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         PageVo<AftersaleListVo> result = pageUtils.convert(countResult.getData().intValue(), listResult.getData(), AftersaleListVo.class, aftersaleLisDto);

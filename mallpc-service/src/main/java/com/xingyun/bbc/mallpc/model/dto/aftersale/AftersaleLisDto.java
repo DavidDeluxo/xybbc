@@ -16,7 +16,7 @@ public class AftersaleLisDto extends PageDto implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @ApiModelProperty(value = "用户id")
-    private Long fuserId;
+    private Long fuid;
 
     @ApiModelProperty(value = "订单号")
     private String forderId;
