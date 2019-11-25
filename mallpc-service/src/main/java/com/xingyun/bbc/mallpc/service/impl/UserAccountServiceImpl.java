@@ -314,7 +314,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         }
 
         List<AccountDetailVo> accountDetailVos = dozerHolder.convert(userAccountTransResult.getData(), AccountDetailVo.class);
-        accountDetailVos.stream().forEach(item -> {
+        accountDetailVos.forEach(item -> {
             if (item.getFtransTypes().compareTo(UserAccountTransTypesEnum.RECHARGE.getCode()) == 0) {
                 item.setType(item.getFrechargeType());
                 item.setFtransPoundage(null);
@@ -371,17 +371,19 @@ public class UserAccountServiceImpl implements UserAccountService {
                 }
                 Map<String, UserDetail> collect = listResult.getData().stream().collect(Collectors.toMap(UserDetail::getFtypeId, Function.identity()));
                 accountDetails.forEach(item -> {
-                    item.setFpassedTime(collect.get(item.getFtransId()).getFcreateTime());
+                    item.setFpassedTime(collect.get(item.getFtransId()).getFmodifyTime());
                 });
                 break;
             case 5:
                 List<OrderPayment> orderPayments = orderPayments(ids);
-                if (CollectionUtil.isNotEmpty(orderPayments)) {
-                    OrderPayment orderPayment = orderPayments.get(0);
-                    //todo 如果详情展示的是订单 那么 有可能会出现对应多个订单吗 还是就展示支付单
-                    //  accountDetails.get(0).setFcreateTime();
-                }
+                OrderPayment orderPayment = orderPayments.get(0);
+                Result<List<Order>> orderListResult = orderApi.queryByCriteria(Criteria.of(Order.class)
+                        .andEqualTo(Order::getForderPaymentId, orderPayment.getForderPaymentId()));
+                Ensure.that(orderListResult).isNotEmptyData(new MallPcExceptionCode(orderListResult.getCode(), orderListResult.getMsg()));
+                AccountDetailVo accountDetail = accountDetails.get(0);
 
+                accountDetail.setOrderId(orderListResult.getData().stream().map(Order::getForderId).collect(Collectors.joining(",")));
+                accountDetail.setFcreateTime(orderPayment.getFpayTime());
                 break;
             //售后工单
             case 13:
@@ -416,23 +418,21 @@ public class UserAccountServiceImpl implements UserAccountService {
                         accountDetailVo.setFremark(orderAftersaleVerifyResult.getData().get(0).getFremark());
                     }
 
-                    Result<List<OrderAftersalePic>> listResult1 = orderAftersalePicApi.queryByCriteria(Criteria.of(OrderAftersalePic.class)
+                    Result<List<OrderAftersalePic>> orderAftersaleListResult = orderAftersalePicApi.queryByCriteria(Criteria.of(OrderAftersalePic.class)
                             .andEqualTo(OrderAftersalePic::getForderAftersaleId, orderAftersale.getForderAftersaleId())
                             .andEqualTo(OrderAftersalePic::getFpicType, 2));
-                    Ensure.that(listResult1).isSuccess(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
-                    if (CollectionUtil.isNotEmpty(listResult1.getData())) {
-                        accountDetailVo.setFapplyPic(listResult1.getData().get(0).getFaftersalePic());
+                    Ensure.that(orderAftersaleListResult).isSuccess(new MallPcExceptionCode(orderAftersaleListResult.getCode(), orderAftersaleListResult.getMsg()));
+                    if (CollectionUtil.isNotEmpty(orderAftersaleListResult.getData())) {
+                        accountDetailVo.setFapplyPic(orderAftersaleListResult.getData().get(0).getFaftersalePic());
                     }
                 }
             case 9:
             case 11:
             case 12:
                 List<Order> orders = orders(ids);
-                if (CollectionUtil.isNotEmpty(orders)) {
-                    Order order = orders.get(0);
-                    AccountDetailVo accountDetailVo = accountDetails.get(0);
-                    accountDetailVo.setFpassedTime(order.getFmodifyTime());
-                }
+                Order order = orders.get(0);
+                AccountDetailVo accountDetailVo = accountDetails.get(0);
+                accountDetailVo.setFpassedTime(order.getFmodifyTime());
 
             default:
                 break;
@@ -445,7 +445,7 @@ public class UserAccountServiceImpl implements UserAccountService {
     private List<OrderPayment> orderPayments(List<String> collect) {
         Result<List<OrderPayment>> listResult1 = orderPaymentApi.queryByCriteria(Criteria.of(OrderPayment.class)
                 .andIn(OrderPayment::getForderPaymentId, collect));
-        Ensure.that(listResult1).isSuccess(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
+        Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
         return listResult1.getData();
     }
 
@@ -453,7 +453,7 @@ public class UserAccountServiceImpl implements UserAccountService {
     private List<UserWork> userWorks(List<String> collect) {
         Result<List<UserWork>> listResult1 = userWorkApi.queryByCriteria(Criteria.of(UserWork.class)
                 .andIn(UserWork::getFuserWorkOrder, collect));
-        Ensure.that(listResult1).isSuccess(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
+        Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
         return listResult1.getData();
     }
 
@@ -461,15 +461,14 @@ public class UserAccountServiceImpl implements UserAccountService {
     private List<OrderAftersale> orderAftersales(List<String> collect) {
         Result<List<OrderAftersale>> listResult1 = orderAftersaleApi.queryByCriteria(Criteria.of(OrderAftersale.class)
                 .andIn(OrderAftersale::getForderAftersaleId, collect));
-        Ensure.that(listResult1).isSuccess(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
+        Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
 
         return listResult1.getData();
     }
 
     private List<Order> orders(List<String> collect) {
         Result<List<Order>> listResult1 = orderApi.queryByCriteria(Criteria.of(Order.class).andIn(Order::getForderId, collect));
-        Ensure.that(listResult1).isSuccess(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
-
+        Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
         return listResult1.getData();
     }
 
