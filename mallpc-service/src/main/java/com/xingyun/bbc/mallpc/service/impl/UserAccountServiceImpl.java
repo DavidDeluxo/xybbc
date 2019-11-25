@@ -305,6 +305,7 @@ public class UserAccountServiceImpl implements UserAccountService {
                     accountDetailVo = new AccountDetailVo();
                 } else {
                     accountDetailVo = inOutDetail.get(0);
+                    accountDetailVo.setFtransStatus(AccountTransType.Passed.getCode());
                 }
                 break;
             default:
