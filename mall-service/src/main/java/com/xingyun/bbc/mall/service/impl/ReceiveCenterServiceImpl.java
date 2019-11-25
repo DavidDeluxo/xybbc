@@ -101,14 +101,16 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         //通过券码查询券id
         Result<CouponCode> couponCode = couponCodeApi.queryOneByCriteria(Criteria.of(CouponCode.class)
                 .andEqualTo(CouponCode::getFcouponCode, fcouponCode)
-                .andEqualTo(CouponCode::getFisUsed, 0)
-                .fields(CouponCode::getFcouponId));
+                .fields(CouponCode::getFcouponId,CouponCode::getFisUsed));
         if (!couponCode.isSuccess()) {
             logger.error("通过券码查询券id失败，fcouponCode{}", fcouponCode);
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         if (null == couponCode.getData()) {
             throw new BizException(MallExceptionCode.CODE_NOT_COUPON);
+        }
+        if(couponCode.getData().getFisUsed() == 1){
+            throw new BizException(MallExceptionCode.CODE_IS_USED);
         }
         //查询优惠券--状态（已发布）--类型（页面领取）--剩余数量--领取上限--有效期结束时间--发放结束时间
         Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
@@ -150,7 +152,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         }
         //校验该券领取上限
         if (null != countResult.getData() && countResult.getData().equals(coupon.getFperLimit())) {
-            throw new BizException(MallExceptionCode.COUPON_IS_MAX);
+            throw new BizException(MallExceptionCode.COUPON_IS_OUT_OF_LIMIT);
         }
         //校验券码对应的券和指定会员关系
         CouponQueryDto couponQueryDto = new CouponQueryDto();
