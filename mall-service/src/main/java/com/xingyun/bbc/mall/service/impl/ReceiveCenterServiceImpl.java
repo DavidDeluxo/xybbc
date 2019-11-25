@@ -280,6 +280,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
      * @date 2019/11/12 13:49
      */
     @Override
+    @GlobalTransactional
     public Result addReceiveCoupon(Long fcouponId, Long fuid) {
         //校验入参
         if (null == fuid || null == fcouponId) {
@@ -342,7 +343,6 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
      * @return: Result                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
-    @GlobalTransactional
     public Result receiveCenterCoupon(ReceiveCouponDto receiveCouponDto) {
         Long fcouponId = receiveCouponDto.getFcouponId();
         Long fuid = receiveCouponDto.getFuid();
