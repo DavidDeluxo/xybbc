@@ -4,10 +4,12 @@ package com.xingyun.bbc.mallpc.controller;
 
 import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mall.model.vo.ReceiveCenterCouponVo;
+
+
 import com.xingyun.bbc.mallpc.model.dto.coupon.MyCouponDto;
 import com.xingyun.bbc.mallpc.model.dto.coupon.ReceiveCouponDto;
 import com.xingyun.bbc.mallpc.model.vo.coupon.MyCouponVo;
+import com.xingyun.bbc.mallpc.model.vo.coupon.ReceiveCenterCouponVo;
 import com.xingyun.bbc.mallpc.service.MyCouponService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
