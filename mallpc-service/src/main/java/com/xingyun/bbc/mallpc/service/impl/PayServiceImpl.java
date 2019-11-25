@@ -21,7 +21,9 @@ import com.xingyun.bbc.mallpc.common.utils.Md5Utils;
 import com.xingyun.bbc.mallpc.common.utils.PriceUtil;
 import com.xingyun.bbc.mallpc.common.utils.TimeAddUtil;
 import com.xingyun.bbc.mallpc.model.dto.pay.BalancePayDto;
+import com.xingyun.bbc.mallpc.model.dto.pay.CheckPayDto;
 import com.xingyun.bbc.mallpc.model.vo.pay.OrderResultVo;
+import com.xingyun.bbc.mallpc.model.vo.pay.PayResultVo;
 import com.xingyun.bbc.mallpc.service.PayService;
 import com.xingyun.bbc.order.api.OrderPayApi;
 import com.xingyun.bbc.order.model.dto.order.PayDto;
@@ -36,7 +38,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
-
 
 /**
  * @author jianghui
@@ -72,9 +73,6 @@ public class PayServiceImpl implements PayService {
 	@Autowired
 	private OrderConfigApi orderConfigApi;
 
-
-	
-	
 	/**
 	 * @author jianghui
 	 * @version V1.0
@@ -83,12 +81,13 @@ public class PayServiceImpl implements PayService {
 	 */
 	@Override
 	public Result<?> balancePay(BalancePayDto dto, HttpServletRequest request) {
-		
-		String fuid= request.getHeader("xyid").toString();
 
-		logger.info("余额支付。用户id：" +fuid+ "，订单号：" + dto.getForderId() + "，余额类型：" + dto.getBalanceType());
-		
-		Result<?> checkEntity = this.checkBalancePayParams(fuid, dto.getForderId(), dto.getPayPwd(), Integer.parseInt(dto.getBalanceType()));
+		String fuid = request.getHeader("xyid").toString();
+
+		logger.info("余额支付。用户id：" + fuid + "，订单号：" + dto.getForderId() + "，余额类型：" + dto.getBalanceType());
+
+		Result<?> checkEntity = this.checkBalancePayParams(fuid, dto.getForderId(), dto.getPayPwd(),
+				Integer.parseInt(dto.getBalanceType()));
 		if (checkEntity != null) {
 			return checkEntity;
 		}
@@ -98,50 +97,48 @@ public class PayServiceImpl implements PayService {
 			return checkEntity;
 		}
 
-		Long totalAmount=null;//订单总金额
-		Long unPayAmount=null;//未支付金额
-		OrderPayment orderPayment=orderPaymentApi.queryById(dto.getForderId()).getData();
-		
-		//查询账号余额信息
-		UserAccount account=userAccountApi.queryById(fuid).getData();
-		if(account==null)
-		{
-			logger.info("余额支付。用户id：" +fuid+ "账号信息不存在");
+		Long totalAmount = null;// 订单总金额
+		Long unPayAmount = null;// 未支付金额
+		OrderPayment orderPayment = orderPaymentApi.queryById(dto.getForderId()).getData();
+
+		// 查询账号余额信息
+		UserAccount account = userAccountApi.queryById(fuid).getData();
+		if (account == null) {
+			logger.info("余额支付。用户id：" + fuid + "账号信息不存在");
 			return Result.failure(MallPcExceptionCode.USER_FREEZE_ERROR);
-		}else{
-			if(account.getFbalance()==0)
-			{
-				logger.info("余额支付。用户id：" +fuid+ "余额为0!");
+		} else {
+			if (account.getFbalance() == 0) {
+				logger.info("余额支付。用户id：" + fuid + "余额为0!");
 				return Result.failure(MallPcExceptionCode.BALANCE_NOT_ENOUGH);
 			}
 		}
-		totalAmount= orderPayment.getFtotalOrderAmount();
+		totalAmount = orderPayment.getFtotalOrderAmount();
 		unPayAmount = totalAmount - orderPayment.getFbalancePayAmount() - orderPayment.getFcreditPayAmount();
-		Long fbalance=account.getFbalance();
+		Long fbalance = account.getFbalance();
 
-		
-		PayDto payDto =new PayDto();
+		PayDto payDto = new PayDto();
 		payDto.setForderPaymentId(dto.getForderId());
 		Result<BalancePayVo> code = orderPayApi.balancePay(payDto);
-		
-		OrderResultVo orderResultVo=new OrderResultVo();
-		//余额不足支付 此时为混合支付
-		if(unPayAmount > fbalance){
-			orderResultVo.setOrder_status(1); //还需要第三方支付状态
+
+		OrderResultVo orderResultVo = new OrderResultVo();
+		// 余额不足支付 此时为混合支付
+		if (unPayAmount > fbalance) {
+			orderResultVo.setOrder_status(1); // 还需要第三方支付状态
 			orderResultVo.setBalance(BigDecimal.ZERO);
-		}else{
-			orderResultVo.setOrder_status(2); //余额足够
-			orderResultVo.setBalance(PriceUtil.toYuan(fbalance-unPayAmount));
+		} else {
+			orderResultVo.setOrder_status(2); // 余额足够
+			orderResultVo.setBalance(PriceUtil.toYuan(fbalance - unPayAmount));
 		}
-		
-		if(code.getData().getCode()==200)
-		{
-			logger.info("余额部分支付成功。订单:"+dto.getForderId()+",总金额:"+PriceUtil.toYuan(totalAmount)+",金额："+fbalance);	
+
+		if (code.getData().getCode() == 200) {
+			logger.info(
+					"余额部分支付成功。订单:" + dto.getForderId() + ",总金额:" + PriceUtil.toYuan(totalAmount) + ",金额：" + fbalance);
 			orderResultVo.setCode(200);
 			orderResultVo.setMsg("余额支付成功");
 			return Result.success(orderResultVo);
-		}else{
-			logger.info("余额部分支付失败。订单:"+dto.getForderId()+",总金额:"+PriceUtil.toYuan(totalAmount)+",金额："+fbalance);	
+		} else {
+			logger.info(
+					"余额部分支付失败。订单:" + dto.getForderId() + ",总金额:" + PriceUtil.toYuan(totalAmount) + ",金额：" + fbalance);
 			orderResultVo.setCode(code.getData().getCode());
 			orderResultVo.setMsg("余额支付失败");
 			return Result.success(orderResultVo);
@@ -184,7 +181,71 @@ public class PayServiceImpl implements PayService {
 		return payApi.createThirdPayCode(dto);
 	}
 
-	
+	/**
+	 * @author jianghui
+	 * @version V1.0
+	 * @Description: 判断订单是否支付成功
+	 * @date 2019/8/20 13:49
+	 */
+	@Override
+	public Result<?> checkOrderIsPaySuccess(CheckPayDto dto, HttpServletRequest request) {
+
+		logger.info("检查订单是否支付成功，订单号：" + dto.getForderId());
+
+		PayResultVo payResultVo = new PayResultVo();
+
+		boolean payStatus = false;
+
+		Result<OrderPayment> orderPayment = orderPaymentApi.queryById(dto.getForderId());
+
+		if (orderPayment.isSuccess()) {
+			if (orderPayment.getData() != null) {
+
+				if ("2".equals(orderPayment.getData().getForderStatus().toString()))// 2已付款
+				{
+					payStatus = true;
+				}
+			}
+		}
+
+		payResultVo.setPayStatus(payStatus);
+
+		return Result.success(payResultVo);
+
+	}
+
+	/**
+	 * @author jianghui
+	 * @version V1.0
+	 * @Description: 判断充值是否支付成功
+	 * @date 2019/8/20 13:49
+	 */
+	@Override
+	public Result<?> checkRechargeIsPaySuccess(CheckPayDto dto, HttpServletRequest request) {
+
+		logger.info("检查充值是否支付成功，订单号：" + dto.getForderId());
+
+		PayResultVo payResultVo = new PayResultVo();
+
+		boolean payStatus = false;
+
+		Result<UserAccountTrans> userAccountTrans = userAccountTransApi.queryById(dto.getForderId());
+
+		if (userAccountTrans.isSuccess()) {
+			if (userAccountTrans.getData() != null) {
+
+				if ("3".equals(userAccountTrans.getData().getFtransStatus().toString()))// 3审核通过（已付款）
+				{
+					payStatus = true;
+				}
+			}
+		}
+
+		payResultVo.setPayStatus(payStatus);
+
+		return Result.success(payResultVo);
+	}
+
 	// 校验输入的支付密码
 	private Result<?> checkBalancePayParams(String fuid, String forderId, String inputPayPwdEncrypt, int balanceType) {
 		// 检查fuid是否为空
@@ -266,11 +327,11 @@ public class PayServiceImpl implements PayService {
 			return Result.failure(MallPcExceptionCode.ORDER_NOT_EXIST);
 		}
 		// String和Integer直接比较不会为true
-//		String fuid = request.getHeader("xyid");
-//		if (!fuid.equals(String.valueOf(userAccountTrans.getFuid()))) {
-//			logger.info("充值订单用户id和订单用户不匹配");
-//			return Result.failure(MallPcExceptionCode.ORDER_NOT_MATCHING);
-//		}
+		// String fuid = request.getHeader("xyid");
+		// if (!fuid.equals(String.valueOf(userAccountTrans.getFuid()))) {
+		// logger.info("充值订单用户id和订单用户不匹配");
+		// return Result.failure(MallPcExceptionCode.ORDER_NOT_MATCHING);
+		// }
 		dto.setPayAmount(PriceUtil.toYuan(userAccountTrans.getFtransAmount()).toString());
 		return null;
 	}
@@ -331,6 +392,5 @@ public class PayServiceImpl implements PayService {
 		dto.setRecieveName(orderPayment.getFpayerName());
 		return null;
 	}
-
 
 }
