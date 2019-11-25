@@ -224,13 +224,12 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         if (null != fskuId) {
             GoodsSku goodSkuDesc = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
                     .andEqualTo(GoodsSku::getFskuId, fskuId)
-                    .fields(GoodsSku::getFskuDesc, GoodsSku::getFskuThumbImage)).getData();
-            if (null != goodSkuDesc && null != goodSkuDesc.getFskuDesc()) {
+                    .fields(GoodsSku::getFskuDesc, GoodsSku::getFskuThumbImage, GoodsSku::getFskuName)).getData();
+            if (null != goodSkuDesc) {
                 goodsVo.setFskuDesc(goodSkuDesc.getFskuDesc());
-            }
-            //之前取spu表列表缩略图后改成sku表主图
-            if (null != goodSkuDesc && null != goodSkuDesc.getFskuThumbImage()) {
+                //之前取spu表列表缩略图后改成sku表主图
                 goodsVo.setFgoodsImgUrl(goodSkuDesc.getFskuThumbImage());
+                goodsVo.setFgoodsName(goodSkuDesc.getFskuName());
             }
         }
 

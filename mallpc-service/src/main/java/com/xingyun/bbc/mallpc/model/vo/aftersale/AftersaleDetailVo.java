@@ -8,6 +8,7 @@ import lombok.Data;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @ApiModel(value = "售后订单详情")
@@ -17,6 +18,9 @@ public class AftersaleDetailVo  implements Serializable {
 
     @ApiModelProperty(value = "售后单号")
     private String forderAftersaleId;
+
+    @ApiModelProperty(value = "关联订单号")
+    private String forderId;
 
     @ApiModelProperty(value = "SKU编码")
     private String fskuCode;
@@ -81,6 +85,15 @@ public class AftersaleDetailVo  implements Serializable {
     @ApiModelProperty(value = "回寄状态 1 未签收 2已签收")
     private Integer fbackStatus;
 
+    @ApiModelProperty(value = "用户回寄物流公司")
+    private String flogisticsCompany;
+
+    @ApiModelProperty(value = "用户回寄物流单号")
+    private String fbackLogisticsOrder;
+
+    @ApiModelProperty(value = "用户问题描述")
+    private String fbackRemark;
+
     @ApiModelProperty(value = "退货时间")
     private Date freGoodsTime;
 
@@ -90,5 +103,11 @@ public class AftersaleDetailVo  implements Serializable {
 
     @ApiModelProperty(value = "效期")
     private String fvalidityPeriod;
+
+    @ApiModelProperty(value = "贸易类型")
+    private String ftradeType;
+
+    @ApiModelProperty(value = "运营中台凭证")
+    private List<String> fadminAfterSalePic;
 
 }

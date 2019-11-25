@@ -8,16 +8,10 @@ import com.xingyun.bbc.core.operate.api.TradeTypeApi;
 import com.xingyun.bbc.core.operate.po.OrderConfig;
 import com.xingyun.bbc.core.operate.po.ShippingCompany;
 import com.xingyun.bbc.core.operate.po.TradeType;
-import com.xingyun.bbc.core.order.api.OrderAftersaleAdjustApi;
-import com.xingyun.bbc.core.order.api.OrderAftersaleApi;
-import com.xingyun.bbc.core.order.api.OrderAftersaleBackApi;
-import com.xingyun.bbc.core.order.api.OrderAftersalePicApi;
+import com.xingyun.bbc.core.order.api.*;
 import com.xingyun.bbc.core.order.enums.OrderAftersaleStatus;
 import com.xingyun.bbc.core.order.enums.OrderAftersaleType;
-import com.xingyun.bbc.core.order.po.OrderAftersale;
-import com.xingyun.bbc.core.order.po.OrderAftersaleAdjust;
-import com.xingyun.bbc.core.order.po.OrderAftersaleBack;
-import com.xingyun.bbc.core.order.po.OrderAftersalePic;
+import com.xingyun.bbc.core.order.po.*;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.sku.api.GoodsApi;
 import com.xingyun.bbc.core.sku.api.GoodsSkuApi;
@@ -52,6 +46,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -70,6 +65,12 @@ public class AftersaleServiceImpl implements AftersaleService {
 
     @Autowired
     private OrderAftersalePicApi orderAftersalePicApi;
+
+    @Autowired
+    private OrderApi orderApi;
+
+    @Autowired
+    private OrderPaymentApi orderPaymentApi;
 
     @Autowired
     private GoodsSkuApi goodsSkuApi;
@@ -137,35 +138,12 @@ public class AftersaleServiceImpl implements AftersaleService {
         return Result.success(result);
     }
 
-    private String getAftersaleNumShow (Integer faftersaleNum, String ftransportOrderId, String fskuCode) {
-        //发货前直接展示 faftersaleNum 发货后(有发货单) 展示faftersaleNum/发货总数
-        if (StringUtils.isEmpty(ftransportOrderId)) {
-            return faftersaleNum.toString();
-        } else {
-            Result<SupplierTransportSku> supplierTransportSkuResult = supplierTransportSkuApi.queryOneByCriteria(Criteria.of(SupplierTransportSku.class)
-                    .andEqualTo(SupplierTransportSku::getFskuCode, fskuCode)
-                    .andEqualTo(SupplierTransportSku::getFtransportOrderId, ftransportOrderId)
-                    .fields(SupplierTransportSku::getFbatchPackageNum, SupplierTransportSku::getFskuNum));
-            if (!supplierTransportSkuResult.isSuccess()) {
-                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-            }
-            if (null != supplierTransportSkuResult.getData()) {
-                SupplierTransportSku data = supplierTransportSkuResult.getData();
-                Long fbatchPackageNum = data.getFbatchPackageNum();
-                Integer fskuNum = data.getFskuNum();
-                Long total = fbatchPackageNum * fskuNum;
-                return new StringBuffer(faftersaleNum.toString()).append("/").append(total).toString();
-            }
-            return "";
-        }
-    }
-
     @Override
     public Result<AftersaleDetailVo> getAftersaleDetail(String faftersaleId) {
         //查询售后主表基本信息
         Result<OrderAftersale> aftersaleBasicResult = orderAftersaleApi.queryOneByCriteria(Criteria.of(OrderAftersale.class)
                 .andEqualTo(OrderAftersale::getForderAftersaleId, faftersaleId)
-                .fields(OrderAftersale::getForderAftersaleId, OrderAftersale::getFskuCode, OrderAftersale::getFaftersaleNum,
+                .fields(OrderAftersale::getForderAftersaleId, OrderAftersale::getForderId, OrderAftersale::getFskuCode, OrderAftersale::getFaftersaleNum,
                         OrderAftersale::getFaftersaleStatus, OrderAftersale::getFbatchPackageNum, OrderAftersale::getFunitPrice,
                         OrderAftersale::getFaftersaleReason, OrderAftersale::getFaftersaleType, OrderAftersale::getFtransportOrderId,
                         OrderAftersale::getFbatchId, OrderAftersale::getFcreateTime, OrderAftersale::getFmodifyTime));
@@ -181,9 +159,23 @@ public class AftersaleServiceImpl implements AftersaleService {
         aftersaleDetailVo.setFbatchPackageName(aftersaleDetailVo.getFbatchPackageNum() + "件装");
         aftersaleDetailVo.setFunitPrice(PriceUtil.toYuan(aftersaleDetailVo.getFunitPrice()));
         aftersaleDetailVo.setFaftersaleNumShow(this.getAftersaleNumShow(aftersaleDetailVo.getFaftersaleNum(), aftersaleDetailVo.getFtransportOrderId(), aftersaleDetailVo.getFskuCode()));
+        aftersaleDetailVo.setFtradeType(this.getTradeType(aftersaleDetailVo.getFskuCode()));
 
         //获取效期
         aftersaleDetailVo.setFvalidityPeriod(this.getValidityPeriod(aftersaleDetailVo.getFbatchId()));
+
+        //获取中台上传的--售后凭证
+        Result<List<OrderAftersalePic>> afterPicResult = orderAftersalePicApi.queryByCriteria(Criteria.of(OrderAftersalePic.class)
+                .andEqualTo(OrderAftersalePic::getForderAftersaleId, faftersaleId)
+                .andEqualTo(OrderAftersalePic::getFpicType, 1)
+                .fields(OrderAftersalePic::getFaftersalePic));
+        if (!afterPicResult.isSuccess()) {
+            logger.info("单号faftersaleId {}获取售后凭证信息失败", faftersaleId);
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (!CollectionUtils.isEmpty(afterPicResult.getData())) {
+            aftersaleDetailVo.setFadminAfterSalePic(afterPicResult.getData().stream().map(OrderAftersalePic::getFaftersalePic).collect(Collectors.toList()));
+        }
 
         //获取售后总金额
         Long faftersaleTotalAmount = this.getAftersaleTotalAmount(faftersaleId);
@@ -198,8 +190,8 @@ public class AftersaleServiceImpl implements AftersaleService {
                 Result<OrderAftersaleBack> aftersaleBackResult = orderAftersaleBackApi.queryOneByCriteria(Criteria.of(OrderAftersaleBack.class)
                         .andEqualTo(OrderAftersaleBack::getForderAftersaleId, faftersaleId)
                         .fields(OrderAftersaleBack::getFdeliveryName, OrderAftersaleBack::getFdeliveryMobile, OrderAftersaleBack::getFdeliveryProvince,
-                                OrderAftersaleBack::getFdeliveryCity, OrderAftersaleBack::getFdeliveryArea, OrderAftersaleBack::getFdeliveryAddr,
-                                OrderAftersaleBack::getFbackStatus));
+                                OrderAftersaleBack::getFdeliveryCity, OrderAftersaleBack::getFdeliveryArea, OrderAftersaleBack::getFdeliveryAddr, OrderAftersaleBack::getFbackRemark,
+                                OrderAftersaleBack::getFbackStatus, OrderAftersaleBack::getFbackLogisticsOrder, OrderAftersaleBack::getFlogisticsCompanyId));
                 if (!aftersaleBackResult.isSuccess()) {
                     logger.info("单号faftersaleId {}获取售后回寄信息失败", faftersaleId);
                     throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -213,6 +205,16 @@ public class AftersaleServiceImpl implements AftersaleService {
                     aftersaleDetailVo.setFdeliveryArea(aftersaleBack.getFdeliveryArea());
                     aftersaleDetailVo.setFdeliveryAddr(aftersaleBack.getFdeliveryAddr());
                     aftersaleDetailVo.setFbackStatus(aftersaleBack.getFbackStatus());
+                    aftersaleDetailVo.setFbackRemark(aftersaleBack.getFbackRemark());
+                    aftersaleDetailVo.setFbackLogisticsOrder(aftersaleBack.getFbackLogisticsOrder());
+                    if (aftersaleBack.getFlogisticsCompanyId().intValue() != 0) {
+                        Result<ShippingCompany> shippingCompanyResult = shippingCompanyApi.queryOneByCriteria(Criteria.of(ShippingCompany.class)
+                                .andEqualTo(ShippingCompany::getFshippingCompanyId, aftersaleBack.getFlogisticsCompanyId())
+                                .fields(ShippingCompany::getFshippingName));
+                        if (shippingCompanyResult.isSuccess() && null != shippingCompanyResult.getData()) {
+                            aftersaleDetailVo.setFlogisticsCompany(shippingCompanyResult.getData().getFshippingName());
+                        }
+                    }
                 }
 
                 //查询限时回寄分钟数
@@ -235,6 +237,29 @@ public class AftersaleServiceImpl implements AftersaleService {
             aftersaleDetailVo.setFrefundTime(aftersaleBasicResult.getData().getFmodifyTime());
         }
         return Result.success(aftersaleDetailVo);
+    }
+
+    private String getAftersaleNumShow (Integer faftersaleNum, String ftransportOrderId, String fskuCode) {
+        //发货前直接展示 faftersaleNum 发货后(有发货单) 展示faftersaleNum/发货总数
+        if (StringUtils.isEmpty(ftransportOrderId)) {
+            return faftersaleNum.toString();
+        } else {
+            Result<SupplierTransportSku> supplierTransportSkuResult = supplierTransportSkuApi.queryOneByCriteria(Criteria.of(SupplierTransportSku.class)
+                    .andEqualTo(SupplierTransportSku::getFskuCode, fskuCode)
+                    .andEqualTo(SupplierTransportSku::getFtransportOrderId, ftransportOrderId)
+                    .fields(SupplierTransportSku::getFbatchPackageNum, SupplierTransportSku::getFskuNum));
+            if (!supplierTransportSkuResult.isSuccess()) {
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            }
+            if (null != supplierTransportSkuResult.getData()) {
+                SupplierTransportSku data = supplierTransportSkuResult.getData();
+                Long fbatchPackageNum = data.getFbatchPackageNum();
+                Integer fskuNum = data.getFskuNum();
+                Long total = fbatchPackageNum * fskuNum;
+                return new StringBuffer(faftersaleNum.toString()).append("/").append(total).toString();
+            }
+            return "";
+        }
     }
 
     @Override
@@ -310,7 +335,9 @@ public class AftersaleServiceImpl implements AftersaleService {
         Result<OrderAftersaleBack> aftersaleBackResult = orderAftersaleBackApi.queryOneByCriteria(Criteria.of(OrderAftersaleBack.class)
                 .andEqualTo(OrderAftersaleBack::getForderAftersaleId, faftersaleId)
                 .fields(OrderAftersaleBack::getForderAftersaleId, OrderAftersaleBack::getFlogisticsCompanyId, OrderAftersaleBack::getFbackLogisticsOrder,
-                        OrderAftersaleBack::getFbackRemark, OrderAftersaleBack::getFbackMobile));
+                        OrderAftersaleBack::getFbackRemark, OrderAftersaleBack::getFbackMobile, OrderAftersaleBack::getFdeliveryName,
+                        OrderAftersaleBack::getFdeliveryMobile, OrderAftersaleBack::getFdeliveryProvince, OrderAftersaleBack::getFdeliveryCity,
+                        OrderAftersaleBack::getFdeliveryArea, OrderAftersaleBack::getFdeliveryAddr, OrderAftersaleBack::getFbackStatus));
         if (!aftersaleBackResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
@@ -334,15 +361,9 @@ public class AftersaleServiceImpl implements AftersaleService {
         if (!picResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        String picUrl = "";
         if (!CollectionUtils.isEmpty(picResult.getData())) {
-            StringBuffer sf = new StringBuffer();
-            for (OrderAftersalePic pic : picResult.getData()) {
-                sf.append(pic.getFaftersalePic()).append(",");
-            }
-            picUrl = sf.toString();
+            aftersaleBackVo.setFuserAftersalePic(picResult.getData().stream().map(OrderAftersalePic::getFaftersalePic).collect(Collectors.toList()));
         }
-        aftersaleBackVo.setFpicStr(picUrl);
         return Result.success(aftersaleBackVo);
     }
 
@@ -402,16 +423,23 @@ public class AftersaleServiceImpl implements AftersaleService {
         return validityPeriod;
     }
 
-    private OrderAftersaleBack getNameMobile (String faftersaleId) {
+    //获取订单收件人信息
+    private OrderAftersaleBack getNameMobile (String forderId) {
         String name = "";
         String mobile = "";
-        Result<OrderAftersaleBack> orderAftersaleBackResult = orderAftersaleBackApi.queryOneByCriteria(Criteria.of(OrderAftersaleBack.class)
-                .andEqualTo(OrderAftersaleBack::getForderAftersaleId, faftersaleId)
-                .fields(OrderAftersaleBack::getFdeliveryName, OrderAftersaleBack::getFdeliveryMobile));
-        OrderAftersaleBack data = orderAftersaleBackResult.getData();
-        if (orderAftersaleBackResult.isSuccess() && null != data) {
-            name = data.getFdeliveryName();
-            mobile = data.getFdeliveryMobile();
+        Result<Order> orderResult = orderApi.queryOneByCriteria(Criteria.of(Order.class)
+                .andEqualTo(Order::getForderId, forderId).fields(Order::getForderPaymentId));
+        Order orderData = orderResult.getData();
+        if (orderResult.isSuccess() && null != orderData) {
+            String forderPaymentId = orderData.getForderPaymentId();
+            Result<OrderPayment> orderPaymentResult = orderPaymentApi.queryOneByCriteria(Criteria.of(OrderPayment.class)
+                    .andEqualTo(OrderPayment::getForderPaymentId, forderPaymentId)
+                    .fields(OrderPayment::getFdeliveryName, OrderPayment::getFdeliveryMobile));
+            OrderPayment orderPaymentData = orderPaymentResult.getData();
+            if (orderPaymentResult.isSuccess() && null != orderPaymentData) {
+                name = orderPaymentData.getFdeliveryName();
+                mobile = orderPaymentData.getFdeliveryMobile();
+            }
         }
         OrderAftersaleBack result = new OrderAftersaleBack();
         result.setFdeliveryName(name);
