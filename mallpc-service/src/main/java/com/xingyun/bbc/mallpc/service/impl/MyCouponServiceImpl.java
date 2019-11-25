@@ -191,7 +191,7 @@ public class MyCouponServiceImpl implements MyCouponService {
             return Result.failure(MallPcExceptionCode.COUPON_IS_INVALID);
         }
         //校验该券领取时间
-        if (coupon.getFreleaseTimeType() == 2 && now.after(coupon.getFreleaseTimeEnd())) {
+        if (coupon.getFreleaseTimeType() == 2 && (now.after(coupon.getFreleaseTimeEnd()) || now.before(coupon.getFreleaseTimeStart()))) {
             throw new BizException(MallPcExceptionCode.COUPON_IS_NOT_TIME);
         }
         //查询已经领到的券张数
