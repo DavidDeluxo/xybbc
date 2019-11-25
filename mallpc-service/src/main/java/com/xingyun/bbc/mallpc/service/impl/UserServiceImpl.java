@@ -120,8 +120,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Result<UserLoginVo> userLogin(UserLoginDto userLoginDto) {
         //解密
-        // String passWord = EncryptUtils.aesDecrypt(userLoginDto.getPassword());
-        String passWord = userLoginDto.getPassword();
+        String passWord = EncryptUtils.aesDecrypt(userLoginDto.getPassword());
         passWord = MD5Util.toMd5(passWord);
         Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
                 .andEqualTo(User::getFisDelete, "0")
@@ -162,7 +161,7 @@ public class UserServiceImpl implements UserService {
         Date verifyEndTime = DateUtil.addDays(createTime, 30);
         userLoginVo.setFreeVerifyEndTime(verifyEndTime);
         //剩余时间
-        Days days = Days.daysBetween(DateTime.now(),new DateTime(verifyEndTime));
+        Days days = Days.daysBetween(DateTime.now(), new DateTime(verifyEndTime));
         int remainDays = days.getDays() < 0 ? 0 : days.getDays();
         userLoginVo.setFreeVerifyRemainDays(remainDays + "天");
         return userLoginVo;
@@ -183,8 +182,7 @@ public class UserServiceImpl implements UserService {
         Ensure.that(checkVerifyCode(fmobile, userRegisterDto.getVerifyCode())).isTrue(MallPcExceptionCode.SMS_AUTH_NUM_ERROR);
         // 判断手机号是否注册
         Ensure.that(Objects.isNull(findUserByMobile(fmobile))).isTrue(MallPcExceptionCode.REGISTER_MOBILE_EXIST);
-        //String passWord = EncryptUtils.aesDecrypt(userRegisterDto.getPassword());
-        String passWord = userRegisterDto.getPassword();
+        String passWord = EncryptUtils.aesDecrypt(userRegisterDto.getPassword());
         Ensure.that(StringUtils.isNotBlank(passWord)).isTrue(MallPcExceptionCode.PASSWORD_CAN_NOT_BE_NULL);
         // 校验密码长度
         Ensure.that(passWord.length()).isGt(5, MallPcExceptionCode.PASSWORD_ILLEGAL).isLt(33, MallPcExceptionCode.PASSWORD_ILLEGAL);
@@ -375,7 +373,8 @@ public class UserServiceImpl implements UserService {
         String fmobile = resetPasswordDto.getFmobile();
         // 手机号格式校验
         Ensure.that(StringUtilExtention.mobileCheck(fmobile)).isTrue(MallPcExceptionCode.BIND_MOBILE_ERROR);
-        String newPassword = resetPasswordDto.getNewPassword();
+        String newPassword = EncryptUtils.aesDecrypt(resetPasswordDto.getNewPassword());
+        // String newPassword = resetPasswordDto.getNewPassword();
         // 校验新密码长度
         Ensure.that(newPassword.length()).isGt(5, MallPcExceptionCode.PASSWORD_ILLEGAL).isLt(33, MallPcExceptionCode.PASSWORD_ILLEGAL);
         newPassword = MD5Util.toMd5(newPassword);
@@ -395,7 +394,7 @@ public class UserServiceImpl implements UserService {
         Ensure.that(userApi.updateNotNull(user).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
         return Result.success();
     }
-    
+
     /**
      * @author nick
      * @date 2019-11-19
@@ -407,7 +406,7 @@ public class UserServiceImpl implements UserService {
         String fmobile = resetPasswordDto.getFmobile();
         // 手机号格式校验
         Ensure.that(StringUtilExtention.mobileCheck(fmobile)).isTrue(MallPcExceptionCode.BIND_MOBILE_ERROR);
-        String newPassword = resetPasswordDto.getNewPassword();
+        String newPassword = EncryptUtils.aesDecrypt(resetPasswordDto.getNewPassword());
         // 校验新密码长度
         Ensure.that(newPassword.length()).isGt(5, MallPcExceptionCode.PASSWORD_ILLEGAL).isLt(33, MallPcExceptionCode.PASSWORD_ILLEGAL);
         newPassword = MD5Util.toMd5(newPassword);
