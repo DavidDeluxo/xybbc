@@ -34,7 +34,7 @@ public class AccountDetailVo {
     private Integer ftransStatus;
 
     //凭证
-    private Integer imgurl;
+    private String fapplyPic;
 
     //实际到账金额 只有提现时才有
     private BigDecimal ftransActualAmount;
@@ -46,6 +46,18 @@ public class AccountDetailVo {
     //完成时间
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date fpassedTime;
+
+    //关联订单
+    private String orderId;
+
+    //售后原因
+    private String reson;
+
+    //售后备注
+    private String fremark;
+
+    //售后类型
+    private Integer afterType;
 
 
     @JsonIgnore

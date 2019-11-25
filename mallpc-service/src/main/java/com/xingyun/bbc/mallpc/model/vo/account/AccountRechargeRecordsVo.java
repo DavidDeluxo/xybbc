@@ -11,7 +11,7 @@ import java.util.Date;
  * 用户充值对象
  */
 @Data
-public class AccountRechargeRecordsVo extends AccountBaseInfoVo {
+public class AccountRechargeRecordsVo  {
 
     @JsonIgnore
     private Date fcreateTime;

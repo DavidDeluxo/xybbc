@@ -25,7 +25,9 @@ import com.xingyun.bbc.core.sku.enums.GoodsSkuEnums;
 import com.xingyun.bbc.core.sku.enums.SkuBatchEnums;
 import com.xingyun.bbc.core.sku.po.GoodsSku;
 import com.xingyun.bbc.core.sku.po.*;
+import com.xingyun.bbc.core.supplier.api.SupplierSkuBatchApi;
 import com.xingyun.bbc.core.supplier.api.SupplierWarehouseApi;
+import com.xingyun.bbc.core.supplier.po.SupplierSkuBatch;
 import com.xingyun.bbc.core.supplier.po.SupplierWarehouse;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.api.UserDeliveryApi;
@@ -125,6 +127,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     @Resource
     private SkuBatchApi skuBatchApi;
+
+    @Resource
+    private SupplierSkuBatchApi supplierSkuBatchApi;
 
     @Resource
     private SkuBatchPackageApi skuBatchPackageApi;
@@ -427,29 +432,29 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
             }
             String skuBatchId = skuBatchPackageResult.getData().getFsupplierSkuBatchId();
-            SkuBatch skuBatch = getSkuBatchById(skuBatchId);
+            SupplierSkuBatch skuBatch = getSkuBatchById(skuBatchId);
             priceResult.setFgoodsPackType(skuBatch.getFgoodsPackType());
             Long warehouseId = skuBatch.getFsupplierWarehouseId();
             SupplierWarehouse warehouse = getSupplierWarehouseById(warehouseId);
             priceResult.setFwarehouseName(warehouse.getFsupplierWarehouseName());
         }
         //到批次
-        if (null != goodsDetailMallDto.getFsupplierSkuBatchId() && null == goodsDetailMallDto.getFbatchPackageId()) {
+        if (StringUtils.isNotBlank(goodsDetailMallDto.getFsupplierSkuBatchId()) && null == goodsDetailMallDto.getFbatchPackageId()) {
             priceResult = this.getBatchPrice(goodsDetailMallDto);
             this.dealGoodDetailPriceToYuan(priceResult);
-            SkuBatch skuBatch = getSkuBatchById(goodsDetailMallDto.getFsupplierSkuBatchId());
+            SupplierSkuBatch skuBatch = getSkuBatchById(goodsDetailMallDto.getFsupplierSkuBatchId());
             priceResult.setFgoodsPackType(skuBatch.getFgoodsPackType());
             Long warehouseId = skuBatch.getFsupplierWarehouseId();
             SupplierWarehouse warehouse = getSupplierWarehouseById(warehouseId);
             priceResult.setFwarehouseName(warehouse.getFsupplierWarehouseName());
         }
         //到sku
-        if (null != goodsDetailMallDto.getFskuId() && null == goodsDetailMallDto.getFsupplierSkuBatchId() && null == goodsDetailMallDto.getFbatchPackageId()) {
+        if (null != goodsDetailMallDto.getFskuId() && StringUtils.isBlank(goodsDetailMallDto.getFsupplierSkuBatchId()) && null == goodsDetailMallDto.getFbatchPackageId()) {
             priceResult = this.getSkuPrice(goodsDetailMallDto);
             this.dealGoodDetailPriceToYuan(priceResult);
         }
         //到spu
-        if (null != goodsDetailMallDto.getFgoodsId() && null == goodsDetailMallDto.getFskuId() && null == goodsDetailMallDto.getFsupplierSkuBatchId() && null == goodsDetailMallDto.getFbatchPackageId()) {
+        if (null != goodsDetailMallDto.getFgoodsId() && null == goodsDetailMallDto.getFskuId() && StringUtils.isBlank(goodsDetailMallDto.getFsupplierSkuBatchId()) && null == goodsDetailMallDto.getFbatchPackageId()) {
             priceResult = this.getSpuPrice(goodsDetailMallDto);
             this.dealGoodDetailPriceToYuan(priceResult);
         }
@@ -530,9 +535,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         return warehouseResult.getData();
     }
 
-    private SkuBatch getSkuBatchById(String skuBatchId) {
-        Result<SkuBatch> skuBatchResult = skuBatchApi.queryOneByCriteria(Criteria
-                .of(SkuBatch.class).andEqualTo(SkuBatch::getFsupplierSkuBatchId, skuBatchId));
+    private SupplierSkuBatch getSkuBatchById(String skuBatchId) {
+        Result<SupplierSkuBatch> skuBatchResult = supplierSkuBatchApi.queryOneByCriteria(Criteria
+                .of(SupplierSkuBatch.class).andEqualTo(SupplierSkuBatch::getFsupplierSkuBatchId, skuBatchId));
         if (!skuBatchResult.isSuccess()) {
             throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
         }

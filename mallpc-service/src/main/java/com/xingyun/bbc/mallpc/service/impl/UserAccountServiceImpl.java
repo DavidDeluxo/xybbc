@@ -4,22 +4,20 @@ package com.xingyun.bbc.mallpc.service.impl;
 import cn.hutool.core.collection.CollectionUtil;
 import com.google.common.collect.Lists;
 import com.xingyun.bbc.core.exception.BizException;
-import com.xingyun.bbc.core.order.api.OrderAftersaleApi;
-import com.xingyun.bbc.core.order.api.OrderApi;
-import com.xingyun.bbc.core.order.api.OrderPaymentApi;
-import com.xingyun.bbc.core.order.api.UserWorkApi;
+import com.xingyun.bbc.core.order.api.*;
+import com.xingyun.bbc.core.order.enums.OrderAftersaleReasonType;
+import com.xingyun.bbc.core.order.enums.work.UserWorkApplyReasons;
 import com.xingyun.bbc.core.order.enums.work.UserWorkStatus;
-import com.xingyun.bbc.core.order.po.Order;
-import com.xingyun.bbc.core.order.po.OrderAftersale;
-import com.xingyun.bbc.core.order.po.OrderPayment;
-import com.xingyun.bbc.core.order.po.UserWork;
+import com.xingyun.bbc.core.order.po.*;
 import com.xingyun.bbc.core.query.Criteria;
+import com.xingyun.bbc.core.user.api.UserAccountApi;
 import com.xingyun.bbc.core.user.api.UserAccountTransApi;
 import com.xingyun.bbc.core.user.api.UserDetailApi;
 import com.xingyun.bbc.core.user.dto.UserRechargeQueryDTO;
 import com.xingyun.bbc.core.user.enums.AccountRechargeType;
 import com.xingyun.bbc.core.user.enums.AccountTransType;
 import com.xingyun.bbc.core.user.enums.UserAccountTransTypesEnum;
+import com.xingyun.bbc.core.user.po.UserAccount;
 import com.xingyun.bbc.core.user.po.UserAccountTrans;
 import com.xingyun.bbc.core.user.po.UserDetail;
 import com.xingyun.bbc.core.utils.Result;
@@ -30,10 +28,7 @@ import com.xingyun.bbc.mallpc.common.utils.AccountUtil;
 import com.xingyun.bbc.mallpc.common.utils.DateUtils;
 import com.xingyun.bbc.mallpc.model.dto.account.AccountDetailDto;
 import com.xingyun.bbc.mallpc.model.vo.PageVo;
-import com.xingyun.bbc.mallpc.model.vo.account.AccountDetailVo;
-import com.xingyun.bbc.mallpc.model.vo.account.AccountRechargeRecordsVo;
-import com.xingyun.bbc.mallpc.model.vo.account.InAndOutRecordsVo;
-import com.xingyun.bbc.mallpc.model.vo.account.WithDrawRecordsVo;
+import com.xingyun.bbc.mallpc.model.vo.account.*;
 import com.xingyun.bbc.mallpc.service.UserAccountService;
 import org.springframework.stereotype.Service;
 
@@ -78,6 +73,15 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     @Resource
     private OrderApi orderApi;
+
+    @Resource
+    private OrderAftersaleVerifyApi orderAftersaleVerifyApi;
+
+    @Resource
+    private OrderAftersalePicApi orderAftersalePicApi;
+
+    @Resource
+    private UserAccountApi userAccountApi;
 
 
     @Override
@@ -178,9 +182,9 @@ public class UserAccountServiceImpl implements UserAccountService {
         Ensure.that(listResult).isSuccess(new MallPcExceptionCode(listResult.getCode(), listResult.getMsg()));
 
         List<InAndOutRecordsVo> data = dozerHolder.convert(listResult.getData(), InAndOutRecordsVo.class);
-        data.forEach(item->{
-            Optional.ofNullable(item.getFexpenseAmount()).ifPresent(i->item.setFexpenseAmount(AccountUtil.divideOneHundred(i.longValue())));
-            Optional.ofNullable(item.getFincomeAmount()).ifPresent(i->item.setFincomeAmount(AccountUtil.divideOneHundred(i.longValue())));
+        data.forEach(item -> {
+            Optional.ofNullable(item.getFexpenseAmount()).ifPresent(i -> item.setFexpenseAmount(AccountUtil.divideOneHundred(i.longValue())));
+            Optional.ofNullable(item.getFincomeAmount()).ifPresent(i -> item.setFincomeAmount(AccountUtil.divideOneHundred(i.longValue())));
         });
 
 //        Map<Integer, List<InAndOutRecordsVo>> group = data.stream().collect(Collectors.groupingBy(InAndOutRecordsVo::getFdetailType));
@@ -288,7 +292,7 @@ public class UserAccountServiceImpl implements UserAccountService {
                 }
                 break;
             case 3:
-                List<AccountDetailVo> inOutDetail = getInOutDetail(Lists.newArrayList(accountDetailDto.getId()), accountDetailDto.getType1());
+                List<AccountDetailVo> inOutDetail = getInOutDetail(Lists.newArrayList(accountDetailDto.getId()));
                 if (inOutDetail.isEmpty()) {
                     accountDetailVo = new AccountDetailVo();
                 } else {
@@ -303,6 +307,24 @@ public class UserAccountServiceImpl implements UserAccountService {
     }
 
 
+    @Override
+    public AccountBaseInfoVo accountInfo(Long uid) {
+        Result<List<UserAccount>> listResult = userAccountApi.queryByCriteria(Criteria.of(UserAccount.class)
+                .andEqualTo(UserAccount::getFuid, uid));
+        Ensure.that(listResult).isNotEmptyData(MallPcExceptionCode.PARAM_ERROR);
+
+        UserAccount userAccount = listResult.getData().get(0);
+        AccountBaseInfoVo accountBaseInfoVo = new AccountBaseInfoVo();
+
+        accountBaseInfoVo.setBanlance(AccountUtil.divideOneHundred(userAccount.getFbalance() + userAccount.getFfreezeWithdraw()));
+        accountBaseInfoVo.setCashInAble(AccountUtil.divideOneHundred(userAccount.getFbalance()));
+        accountBaseInfoVo.setCashInIng(AccountUtil.divideOneHundred(userAccount.getFfreezeWithdraw()));
+
+
+        return accountBaseInfoVo;
+    }
+
+
     private List<AccountDetailVo> getTransDetail(List<String> ids) {
         Result<List<UserAccountTrans>> userAccountTransResult = userAccountTransApi.queryByCriteria(Criteria.of(UserAccountTrans.class)
                 .andIn(UserAccountTrans::getFtransId, ids));
@@ -312,7 +334,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         }
 
         List<AccountDetailVo> accountDetailVos = dozerHolder.convert(userAccountTransResult.getData(), AccountDetailVo.class);
-        accountDetailVos.stream().forEach(item -> {
+        accountDetailVos.forEach(item -> {
             if (item.getFtransTypes().compareTo(UserAccountTransTypesEnum.RECHARGE.getCode()) == 0) {
                 item.setType(item.getFrechargeType());
                 item.setFtransPoundage(null);
@@ -346,7 +368,7 @@ public class UserAccountServiceImpl implements UserAccountService {
     }
 
 
-    private List<AccountDetailVo> getInOutDetail(List<String> ids, Integer type) {
+    private List<AccountDetailVo> getInOutDetail(List<String> ids) {
         Result<List<UserDetail>> listResult = userDetailApi.queryByCriteria(Criteria.of(UserDetail.class)
                 .andIn(UserDetail::getFtypeId, ids));
         Ensure.that(listResult).isSuccess(new MallPcExceptionCode(listResult.getCode(), listResult.getMsg()));
@@ -355,7 +377,9 @@ public class UserAccountServiceImpl implements UserAccountService {
             return new ArrayList<>();
         }
         List<AccountDetailVo> accountDetails = new ArrayList<>();
-        switch (type) {
+        accountDetails.add(dozerHolder.convert(listResult.getData().get(0), AccountDetailVo.class));
+        switch (listResult.getData().get(0).getFdetailType()) {
+            //充值提现
             case 1:
             case 2:
             case 3:
@@ -367,9 +391,68 @@ public class UserAccountServiceImpl implements UserAccountService {
                 }
                 Map<String, UserDetail> collect = listResult.getData().stream().collect(Collectors.toMap(UserDetail::getFtypeId, Function.identity()));
                 accountDetails.forEach(item -> {
-                    item.setFpassedTime(collect.get(item.getFtransId()).getFcreateTime());
+                    item.setFpassedTime(collect.get(item.getFtransId()).getFmodifyTime());
                 });
                 break;
+            case 5:
+                List<OrderPayment> orderPayments = orderPayments(ids);
+                OrderPayment orderPayment = orderPayments.get(0);
+                Result<List<Order>> orderListResult = orderApi.queryByCriteria(Criteria.of(Order.class)
+                        .andEqualTo(Order::getForderPaymentId, orderPayment.getForderPaymentId()));
+                Ensure.that(orderListResult).isNotEmptyData(new MallPcExceptionCode(orderListResult.getCode(), orderListResult.getMsg()));
+                AccountDetailVo accountDetail = accountDetails.get(0);
+
+                accountDetail.setOrderId(orderListResult.getData().stream().map(Order::getForderId).collect(Collectors.joining(",")));
+                accountDetail.setFcreateTime(orderPayment.getFcreateTime());
+                break;
+            //售后工单
+            case 13:
+            case 17:
+                List<UserWork> userWorks = userWorks(ids);
+                if (CollectionUtil.isNotEmpty(userWorks)) {
+                    UserWork userWork = userWorks.get(0);
+                    AccountDetailVo accountDetailVo = accountDetails.get(0);
+                    accountDetailVo.setFcreateTime(userWork.getFcreateTime());
+                    accountDetailVo.setOrderId(userWork.getForderId());
+                    accountDetailVo.setFtransStatus(userWork.getFstatus());
+                    accountDetailVo.setReson(UserWorkApplyReasons.getName(userWork.getFapplyReason()));
+                    accountDetailVo.setFremark(userWork.getFremark());
+                    accountDetailVo.setFapplyPic(userWork.getFapplyPic());
+                }
+                break;
+            //售后单
+            case 10:
+                List<OrderAftersale> orderAftersales = orderAftersales(ids);
+                if (CollectionUtil.isNotEmpty(orderAftersales)) {
+                    OrderAftersale orderAftersale = orderAftersales.get(0);
+                    AccountDetailVo accountDetailVo = accountDetails.get(0);
+                    accountDetailVo.setFcreateTime(orderAftersale.getFcreateTime());
+                    accountDetailVo.setAfterType(orderAftersale.getFaftersaleType());
+                    accountDetailVo.setOrderId(orderAftersale.getForderId());
+                    accountDetailVo.setReson(OrderAftersaleReasonType.getName(orderAftersale.getFaftersaleReason()));
+                    Result<List<OrderAftersaleVerify>> orderAftersaleVerifyResult = orderAftersaleVerifyApi.queryByCriteria(Criteria.of(OrderAftersaleVerify.class)
+                            .andEqualTo(OrderAftersaleVerify::getForderAftersaleId, orderAftersale.getForderAftersaleId())
+                            .andEqualTo(OrderAftersaleVerify::getFroleType, 1));
+                    Ensure.that(orderAftersaleVerifyResult).isSuccess(new MallPcExceptionCode(orderAftersaleVerifyResult.getCode(), orderAftersaleVerifyResult.getMsg()));
+                    if (CollectionUtil.isNotEmpty(orderAftersaleVerifyResult.getData())) {
+                        accountDetailVo.setFremark(orderAftersaleVerifyResult.getData().get(0).getFremark());
+                    }
+
+                    Result<List<OrderAftersalePic>> orderAftersaleListResult = orderAftersalePicApi.queryByCriteria(Criteria.of(OrderAftersalePic.class)
+                            .andEqualTo(OrderAftersalePic::getForderAftersaleId, orderAftersale.getForderAftersaleId())
+                            .andEqualTo(OrderAftersalePic::getFpicType, 2));
+                    Ensure.that(orderAftersaleListResult).isSuccess(new MallPcExceptionCode(orderAftersaleListResult.getCode(), orderAftersaleListResult.getMsg()));
+                    if (CollectionUtil.isNotEmpty(orderAftersaleListResult.getData())) {
+                        accountDetailVo.setFapplyPic(orderAftersaleListResult.getData().get(0).getFaftersalePic());
+                    }
+                }
+            case 9:
+            case 11:
+            case 12:
+                List<Order> orders = orders(ids);
+                Order order = orders.get(0);
+                AccountDetailVo accountDetailVo = accountDetails.get(0);
+                accountDetailVo.setFpassedTime(order.getFmodifyTime());
 
             default:
                 break;
@@ -382,7 +465,7 @@ public class UserAccountServiceImpl implements UserAccountService {
     private List<OrderPayment> orderPayments(List<String> collect) {
         Result<List<OrderPayment>> listResult1 = orderPaymentApi.queryByCriteria(Criteria.of(OrderPayment.class)
                 .andIn(OrderPayment::getForderPaymentId, collect));
-        Ensure.that(listResult1).isSuccess(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
+        Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
         return listResult1.getData();
     }
 
@@ -390,7 +473,7 @@ public class UserAccountServiceImpl implements UserAccountService {
     private List<UserWork> userWorks(List<String> collect) {
         Result<List<UserWork>> listResult1 = userWorkApi.queryByCriteria(Criteria.of(UserWork.class)
                 .andIn(UserWork::getFuserWorkOrder, collect));
-        Ensure.that(listResult1).isSuccess(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
+        Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
         return listResult1.getData();
     }
 
@@ -398,15 +481,14 @@ public class UserAccountServiceImpl implements UserAccountService {
     private List<OrderAftersale> orderAftersales(List<String> collect) {
         Result<List<OrderAftersale>> listResult1 = orderAftersaleApi.queryByCriteria(Criteria.of(OrderAftersale.class)
                 .andIn(OrderAftersale::getForderAftersaleId, collect));
-        Ensure.that(listResult1).isSuccess(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
+        Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
 
         return listResult1.getData();
     }
 
     private List<Order> orders(List<String> collect) {
         Result<List<Order>> listResult1 = orderApi.queryByCriteria(Criteria.of(Order.class).andIn(Order::getForderId, collect));
-        Ensure.that(listResult1).isSuccess(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
-
+        Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
         return listResult1.getData();
     }
 
