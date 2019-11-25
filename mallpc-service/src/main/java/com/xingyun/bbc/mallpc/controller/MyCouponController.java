@@ -41,8 +41,8 @@ public class MyCouponController {
      * @date 2019/11/12 13:49
      */
     @ApiOperation(value = "获取我的优惠券列表", httpMethod = "GET")
-    @GetMapping("/getMyCouponLis")
-    public Result<MyCouponVo> getMyCouponLis(@ModelAttribute MyCouponDto myCouponDto, HttpServletRequest request) {
+    @GetMapping("/getMyCouponList")
+    public Result<MyCouponVo> getMyCouponList(@ModelAttribute MyCouponDto myCouponDto, HttpServletRequest request) {
         Long xyid = Long.parseLong(request.getHeader("xyid"));
         myCouponDto.setFuid(xyid);
         return myCouponService.getMyCouponVo(myCouponDto);
