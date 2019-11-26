@@ -81,7 +81,7 @@ public class UserAddressServiceImpl implements UserAddressService {
             deliveryCondition.andEqualTo(UserDelivery::getFdeliveryMobile, fdeliveryMobile);
         }
         if (StringUtil.isNotBlank(fdeliveryName)) {
-            deliveryCondition.andEqualTo(UserDelivery::getFdeliveryName, fdeliveryName);
+            deliveryCondition.andLike(UserDelivery::getFdeliveryName, fdeliveryName + "%");
         }
         Result<Integer> integerResult = userDeliveryApi.countByCriteria(deliveryCondition);
         Ensure.that(integerResult).isNotNull(MallPcExceptionCode.SYSTEM_ERROR);
