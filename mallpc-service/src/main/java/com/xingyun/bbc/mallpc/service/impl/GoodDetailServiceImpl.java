@@ -29,7 +29,6 @@ import com.xingyun.bbc.core.supplier.api.SupplierSkuBatchApi;
 import com.xingyun.bbc.core.supplier.api.SupplierSkuBatchPackageApi;
 import com.xingyun.bbc.core.supplier.api.SupplierWarehouseApi;
 import com.xingyun.bbc.core.supplier.po.SupplierSkuBatch;
-import com.xingyun.bbc.core.supplier.po.SupplierSkuBatchPackage;
 import com.xingyun.bbc.core.supplier.po.SupplierWarehouse;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.api.UserDeliveryApi;
@@ -887,16 +886,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         //到spu
         if (null != goodsDetailMallDto.getFgoodsId() && null == goodsDetailMallDto.getFskuId() && null == goodsDetailMallDto.getFsupplierSkuBatchId()) {
             result = this.getSpuStock(goodsDetailMallDto);
-        }
-        if (goodsDetailMallDto.getFbatchPackageId() != null) {
-            Result<SupplierSkuBatchPackage> packageResult = batchPackageApi.queryById(goodsDetailMallDto.getFbatchPackageId());
-            if (!packageResult.isSuccess()) {
-                throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
-            }
-            SupplierSkuBatchPackage batchPackage = packageResult.getData();
-            if (batchPackage != null) {
-                result.setFbatchNum(batchPackage.getFbatchNum());
-            }
         }
         return Result.success(result);
     }

@@ -2,6 +2,7 @@ package com.xingyun.bbc.mall.model.dto;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import org.springframework.util.StringUtils;
 
 import java.util.Date;
 
@@ -98,4 +99,8 @@ public class UserVerifyDto {
 
     @ApiModelProperty("销售平台")
     private String fplatform;
+
+    public void setFbusinessLicenseNo(String fbusinessLicenseNo) {
+        this.fbusinessLicenseNo = StringUtils.trimWhitespace(fbusinessLicenseNo);
+    }
 }
