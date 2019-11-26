@@ -41,6 +41,7 @@ public class MallPcLogHelper {
         }
         MallPcLogVo mallPcLogVo = new MallPcLogVo().setClientIp(HttpUtil.getClientIP(httpServletRequest)).
                 setUserId(RequestHolder.getRequest().getHeader(PermissionEnums.ACCESS_TOKEN_XYID.getCode())).
+                setUserName(RequestHolder.getRequest().getHeader(PermissionEnums.ACCESS_TOKEN_XYSUBJECT.getCode())).
                 setRequestMethod(httpServletRequest.getRequestURI()).
                 setRequestParam(requestParamStr).
                 setExecuteTime(executeTime);
