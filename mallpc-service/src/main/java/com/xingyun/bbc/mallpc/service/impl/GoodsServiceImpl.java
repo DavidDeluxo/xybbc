@@ -346,7 +346,9 @@ public class GoodsServiceImpl implements GoodsService {
         String fuserTypeId = "0";
         if (searchItemDto.getIsLogin() && searchItemDto.getFuid() != null) {
             log.info("登录用户id：{}",searchItemDto.getFuid());
-            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class).andEqualTo(User::getFuid, searchItemDto.getFuid()));
+            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
+                    .fields(User::getFuid,User::getFoperateType)
+                    .andEqualTo(User::getFuid, searchItemDto.getFuid()));
             if (!userResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
