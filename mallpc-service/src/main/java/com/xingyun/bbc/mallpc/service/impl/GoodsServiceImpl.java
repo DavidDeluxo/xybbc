@@ -17,6 +17,7 @@ import com.xingyun.bbc.mallpc.model.dto.search.SearchItemDto;
 import com.xingyun.bbc.mallpc.model.vo.search.*;
 import com.xingyun.bbc.mallpc.service.GoodsService;
 import com.xingyun.bbc.mallpc.service.SearchRecordService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -38,6 +39,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class GoodsServiceImpl implements GoodsService {
 
@@ -343,6 +345,7 @@ public class GoodsServiceImpl implements GoodsService {
         //默认为未认证
         String fuserTypeId = "0";
         if (searchItemDto.getIsLogin() && searchItemDto.getFuid() != null) {
+            log.info("登录用户id：{}",searchItemDto.getFuid());
             Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class).andEqualTo(User::getFuid, searchItemDto.getFuid()));
             if (!userResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
