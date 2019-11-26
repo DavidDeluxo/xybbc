@@ -43,7 +43,8 @@ public class PageConfigPcServiceImpl implements PageConfigPcService {
         for (PageConfigPcEnum configIndex : PageConfigPcEnum.values()) {
             ModuleVo modulesVo = new ModuleVo();
             //这个版本暂不考虑这两个模块
-            if (configIndex.getKey().equals(PageConfigPcEnum.GOODS_ARTICLE.getKey()) || (configIndex.getKey().equals(PageConfigPcEnum.GOODS_TOPIC.getKey()))) {
+            if (configIndex.getKey().equals(PageConfigPcEnum.SKU.getKey())
+                    || configIndex.getKey().equals(PageConfigPcEnum.COUPON_CENTER.getKey())) {
                 continue;
             }
             modulesVo.setFconfigId(Long.valueOf(configIndex.getKey()));
