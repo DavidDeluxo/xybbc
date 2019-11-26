@@ -19,6 +19,8 @@ public enum UserVerifyResultStatus {
     COMPANY_NAME_NOT_EXIST(13,"请录入企业名称"),
     FUNAME_NOT_EXIST(14,"微商名称"),
     OPERATE_TYPE_NOT_EXIST(15,"认证类型缺失"),
+    BUSINESS_LICENSE_PIC_NO_NOT_EXIST(16,"请录入营业执照号码"),
+    BUSINESS_LICENSE_PIC_NO_CERTIFICATION(17,"该营业执照号码已被认证"),
     ;
 
     private Integer code;
