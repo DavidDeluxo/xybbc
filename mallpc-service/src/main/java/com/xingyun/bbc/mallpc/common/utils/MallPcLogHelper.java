@@ -3,6 +3,7 @@ package com.xingyun.bbc.mallpc.common.utils;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mallpc.common.enums.PermissionEnums;
 import com.xingyun.bbc.mallpc.model.vo.MallPcLogVo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -39,6 +40,8 @@ public class MallPcLogHelper {
             log.warn("unsupported data type");
         }
         MallPcLogVo mallPcLogVo = new MallPcLogVo().setClientIp(HttpUtil.getClientIP(httpServletRequest)).
+                setUserId(RequestHolder.getRequest().getHeader(PermissionEnums.ACCESS_TOKEN_XYID.getCode())).
+                setUserName(RequestHolder.getRequest().getHeader(PermissionEnums.ACCESS_TOKEN_XYSUBJECT.getCode())).
                 setRequestMethod(httpServletRequest.getRequestURI()).
                 setRequestParam(requestParamStr).
                 setExecuteTime(executeTime);

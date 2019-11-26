@@ -1,7 +1,6 @@
 package com.xingyun.bbc.mallpc.service;
 
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mallpc.model.dto.BaseDto;
 import com.xingyun.bbc.mallpc.model.dto.shoppingcart.ShoppingCartDto;
 import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartVo;
 

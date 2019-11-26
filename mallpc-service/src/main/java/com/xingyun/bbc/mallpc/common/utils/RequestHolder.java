@@ -1,16 +1,20 @@
 package com.xingyun.bbc.mallpc.common.utils;
 
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
+import com.xingyun.bbc.mallpc.common.enums.PermissionEnums;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Enumeration;
 
 /**
  * @author nick
  */
+@Slf4j
 public class RequestHolder {
 
     public static HttpServletRequest getRequest() {
@@ -22,14 +26,34 @@ public class RequestHolder {
     }
 
     /**
-     * 获取uID
+     * 获取用户ID
      *
      * @return
      */
     public static Long getUserId() {
-        String userId = getRequest().getHeader("xyId");
-        Ensure.that(userId).isNotBlank(MallPcExceptionCode.USER_NOT_LOGGED_IN);
-        return Long.valueOf(userId);
+        String adminId = getRequest().getHeader(PermissionEnums.ACCESS_TOKEN_XYID.getCode());
+        //获取所有的头部参数
+        Enumeration<String> headerNames = getRequest().getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            String headName = headerNames.nextElement();
+            String header = getRequest().getHeader(headName);
+            log.info("=====================");
+            log.info("headName:{}  headVal:{}\r\n", headName, header);
+            System.out.println("=====================");
+        }
+        Ensure.that(adminId).isNotBlank(MallPcExceptionCode.USER_NOT_LOGGED_IN);
+        return Long.valueOf(adminId);
+    }
+
+    /**
+     * 获取用户手机号码
+     *
+     * @return
+     */
+    public static String getUserMobile() {
+        String subject = getRequest().getHeader(PermissionEnums.ACCESS_TOKEN_XYSUBJECT.getCode());
+        Ensure.that(subject).isNotBlank(MallPcExceptionCode.USER_NOT_LOGGED_IN);
+        return subject;
     }
 
     public static String loginIp() {

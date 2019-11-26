@@ -159,12 +159,18 @@ public class UserAccountServiceImpl implements UserAccountService {
             convert.setFpassedTime(null);
             if (status.contains(item.getFtransStatus())
             ) {
-                convert.setFpassedTime(item.getFpassedTime());
+                if (initTime.compareTo(item.getFpassedTime()) == 0) {
+                    convert.setFpassedTime(item.getFmodifyTime());
+                } else {
+                    convert.setFpassedTime(item.getFpassedTime());
+                }
             }
             data.add(convert);
         });
         data.forEach(item -> {
             item.setFtransAmount(AccountUtil.divideOneHundred(item.getFtransAmount().longValue()));
+            item.setFtransActualAmount(AccountUtil.divideOneHundred(item.getFtransActualAmount().longValue()));
+            item.setFtransPoundage(AccountUtil.divideOneHundred(item.getFtransPoundage().longValue()));
         });
         return new PageVo<>(countResult.getData(), pageDto.getCurrentPage(), pageDto.getPageSize(), data);
     }
