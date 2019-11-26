@@ -128,6 +128,7 @@ public class UserAddressServiceImpl implements UserAddressService {
             Ensure.that(StringUtilExtention.idCardCheck(userAddressDto.getFdeliveryCardid())).isTrue(MallPcExceptionCode.ID_CARD_NUMBER_ILLEGAL);
         }
         UserDelivery userDelivery = convertor.convert(userAddressDto, UserDelivery.class);
+        userDelivery.setFuid(RequestHolder.getUserId());
         if (StringUtil.isBlank(userAddressDto.getFdeliveryUserId())) {
             Result<UserDelivery> userDeliveryResult = userDeliveryApi.saveAndReturn(userDelivery);
             Ensure.that(userDeliveryResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
