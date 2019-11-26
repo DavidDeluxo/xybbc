@@ -12,14 +12,17 @@ import java.util.Date;
  */
 @Data
 public class AccountDetailVo {
-//    @JsonIgnore
+    //    @JsonIgnore
     private String ftransId;
-    //提现方式
+    //充值/提现方式
+    //明细类型
     private Integer type;
+    //交易方式
+    private Integer tradeType;
     //姓名
     private String faccountHolder;
     //账号
-    private String fwithdrawAccount ;
+    private String fwithdrawAccount;
 
     //开户行
     private String fwithdrawBank;

@@ -17,6 +17,7 @@ import com.xingyun.bbc.core.user.api.UserAccountTransApi;
 import com.xingyun.bbc.core.user.api.UserDetailApi;
 import com.xingyun.bbc.core.user.dto.UserRechargeQueryDTO;
 import com.xingyun.bbc.core.user.enums.AccountTransType;
+import com.xingyun.bbc.core.user.enums.AccountWithdrawType;
 import com.xingyun.bbc.core.user.enums.UserAccountTransTypesEnum;
 import com.xingyun.bbc.core.user.po.UserAccount;
 import com.xingyun.bbc.core.user.po.UserAccountTrans;
@@ -339,7 +340,7 @@ public class UserAccountServiceImpl implements UserAccountService {
             accountDetailVo.setFremark(userWork.getFremark());
             accountDetailVo.setFapplyPic(userWork.getFapplyPic());
             accountDetailVo.setFtransTypes(UserAccountTransTypesEnum.RECHARGE.getCode());
-            accountDetailVo.setType(5);
+            accountDetailVo.setType(RECHARGE_WORK_ADJUSTMENT_BALANCE.getCode());
             accountDetailVo.setFtransPoundage(null);
             accountDetailVo.setFtransActualAmount(null);
             accountDetailVo.setFpassedTime(userWork.getFmodifyTime());
@@ -354,8 +355,19 @@ public class UserAccountServiceImpl implements UserAccountService {
                 accountDetailVo.setType(accountDetailVo.getFrechargeType());
                 accountDetailVo.setFtransPoundage(null);
                 accountDetailVo.setFtransActualAmount(null);
+                accountDetailVo.setTradeType(accountDetailVo.getType());
             } else if (accountDetailVo.getFtransTypes().compareTo(UserAccountTransTypesEnum.WITHDRAW.getCode()) == 0) {
-                accountDetailVo.setType(accountDetailVo.getFwithdrawType());
+                accountDetailVo.setType(BALANCE_WITHDRAW.getCode());
+                if (accountDetailVo.getFwithdrawType().compareTo(AccountWithdrawType.alipay.getCode()) == 0) {
+                    accountDetailVo.setTradeType(5);
+                } else if (accountDetailVo.getFwithdrawType().compareTo(AccountWithdrawType.unionpay.getCode()) == 0) {
+                    accountDetailVo.setTradeType(6);
+                } else if (accountDetailVo.getFwithdrawType().compareTo(AccountWithdrawType.WechatPay.getCode()) == 0) {
+                    accountDetailVo.setTradeType(7);
+                } else {
+                    accountDetailVo.setTradeType(accountDetailVo.getType());
+                }
+
                 accountDetailVo.setFtransActualAmount(AccountUtil.divideOneHundred(accountDetailVo.getFtransActualAmount().longValue()));
                 accountDetailVo.setFtransPoundage(AccountUtil.divideOneHundred(accountDetailVo.getFtransPoundage().longValue()));
             } else {
