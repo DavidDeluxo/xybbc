@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mallpc.controller;
 
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mallpc.common.utils.RequestHolder;
 import com.xingyun.bbc.mallpc.model.dto.aftersale.AftersaleBackDto;
 import com.xingyun.bbc.mallpc.model.dto.aftersale.AftersaleLisDto;
 import com.xingyun.bbc.mallpc.model.dto.aftersale.ShippingCompanyDto;
@@ -29,8 +30,8 @@ public class AftersaleController {
     @ApiOperation(value = "获取售后列表", httpMethod = "GET")
     @GetMapping("/getAftersaleLis")
     public Result<PageVo<AftersaleListVo>> getAftersaleLis(@ModelAttribute AftersaleLisDto aftersaleLisDto, HttpServletRequest request) {
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
-        aftersaleLisDto.setFuid(xyid);
+        Long userId = RequestHolder.getUserId();
+        aftersaleLisDto.setFuid(userId);
         return aftersaleService.getAftersaleLis(aftersaleLisDto);
     }
 
