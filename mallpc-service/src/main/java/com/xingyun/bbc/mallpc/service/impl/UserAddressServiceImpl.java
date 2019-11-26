@@ -24,6 +24,7 @@ import com.xingyun.bbc.mallpc.model.vo.address.CityRegionVo;
 import com.xingyun.bbc.mallpc.model.vo.address.UserAddressDetailsVo;
 import com.xingyun.bbc.mallpc.model.vo.address.UserAddressListVo;
 import com.xingyun.bbc.mallpc.service.UserAddressService;
+import io.seata.spring.annotation.GlobalTransactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -121,19 +122,34 @@ public class UserAddressServiceImpl implements UserAddressService {
      * @version 1.0.0
      */
     @Override
+    @GlobalTransactional
     public Result<UserAddressListVo> saveOrUpdate(UserAddressDto userAddressDto) {
+        Long userId = RequestHolder.getUserId();
         //校验身份证 手机号
         Ensure.that(StringUtilExtention.mobileCheck(userAddressDto.getFdeliveryMobile())).isTrue(MallPcExceptionCode.BIND_MOBILE_ERROR);
         if (StringUtil.isNotBlank(userAddressDto.getFdeliveryCardid())) {
             Ensure.that(StringUtilExtention.idCardCheck(userAddressDto.getFdeliveryCardid())).isTrue(MallPcExceptionCode.ID_CARD_NUMBER_ILLEGAL);
         }
+        if (Objects.equals(userAddressDto.getFisDefualt(), BooleanNum.TRUE.getCode())) {
+            Criteria<UserDelivery, Object> criteria = Criteria.of(UserDelivery.class)
+                    .andEqualTo(UserDelivery::getFuid, userId)
+                    .andEqualTo(UserDelivery::getFisDefualt, BooleanNum.TRUE.getCode())
+                    .andEqualTo(UserDelivery::getFisDelete, BooleanNum.FALSE.getCode());
+            UserDelivery defaultDelivery = ResultUtils.getData(userDeliveryApi.queryOneByCriteria(criteria));
+            if (Objects.nonNull(defaultDelivery)) {
+                // 修改默认地址为非默认
+                defaultDelivery.setFisDefualt(BooleanNum.FALSE.getCode());
+                Ensure.that(userDeliveryApi.updateNotNull(defaultDelivery).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+            }
+        }
         UserDelivery userDelivery = convertor.convert(userAddressDto, UserDelivery.class);
-        userDelivery.setFuid(RequestHolder.getUserId());
+        userDelivery.setFuid(userId);
         if (StringUtil.isBlank(userAddressDto.getFdeliveryUserId())) {
             Result<UserDelivery> userDeliveryResult = userDeliveryApi.saveAndReturn(userDelivery);
             Ensure.that(userDeliveryResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
             return Result.success(convertAddress(userDeliveryResult.getData()));
         } else {
+            // 编辑
             Ensure.that(userDeliveryApi.updateNotNull(userDelivery).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
             return Result.success();
         }

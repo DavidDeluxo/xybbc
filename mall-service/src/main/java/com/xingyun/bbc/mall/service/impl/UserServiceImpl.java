@@ -660,7 +660,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Result couponLinkReceive(CouponLinkDto dto) {
-        if(dto.getCouponLink() == null){
+        if(dto.getCouponLink() == null || dto.getCouponLink().equals("")){
             return Result.failure(MallExceptionCode.COUPON_LINK_INEXUSTENCE);
         }
         Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)

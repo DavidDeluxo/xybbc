@@ -17,7 +17,4 @@ public class GoodStockSellVo implements Serializable {
 
     @ApiModelProperty(value = "销量")
     private Long fsellNum;
-
-    @ApiModelProperty(value = "起发数")
-    private Long fbatchNum;
 }
