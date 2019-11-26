@@ -60,7 +60,7 @@ public class CacheTemplate {
             return result;
         } finally {
             if (getLock) {
-                log.info("释放释放释放释放释放释放释放释放释放释放释放释放释放释放");
+                log.info("redis分布式锁释放：{}",updateKey);
                 xybbcLock.releaseLock(updateKey, DEFAULT_LOCK_VALUE);
             }
         }
