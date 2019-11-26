@@ -1034,6 +1034,8 @@ public class GoodsServiceImpl implements GoodsService {
         List<SearchItemVo> voList = new LinkedList<>();
         pageVo.setList(voList);
         Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
+        //价格名称
+        String priceName = this.getUserPriceType(searchItemDto);
         if (!CollectionUtils.isEmpty(resultList)) {
             for (Map<String, Object> map : resultList) {
                 SearchItemVo vo = new SearchItemVo();
@@ -1068,7 +1070,6 @@ public class GoodsServiceImpl implements GoodsService {
                     List<Integer> fcouponIds = (List<Integer>) map.get("fcouponIds");
                     vo.setFcouponIds(fcouponIds);
                 }
-                String priceName = this.getUserPriceType(searchItemDto);
                 if (map.get(priceName) != null && searchItemDto.getIsLogin()) {
                     Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
                     if (priceMap.get("min_price") != null) {
