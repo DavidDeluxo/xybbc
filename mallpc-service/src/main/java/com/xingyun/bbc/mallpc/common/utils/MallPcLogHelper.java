@@ -32,28 +32,33 @@ public class MallPcLogHelper {
     }
 
     public void outputLog(Result result, Object requestParam, long executeTime) {
-        HttpServletRequest httpServletRequest = RequestHolder.getRequest();
-        String requestParamStr = null;
         try {
-            requestParamStr = JSON.toJSONString(requestParam);
+            HttpServletRequest httpServletRequest = RequestHolder.getRequest();
+            String requestParamStr = null;
+            try {
+                requestParamStr = JSON.toJSONString(requestParam);
+            } catch (Throwable e) {
+                log.warn("unsupported data type");
+            }
+            MallPcLogVo mallPcLogVo = new MallPcLogVo().setClientIp(HttpUtil.getClientIP(httpServletRequest)).
+                    setUserId(RequestHolder.getRequest().getHeader(PermissionEnums.ACCESS_TOKEN_XYID.getCode())).
+                    setUserName(RequestHolder.getRequest().getHeader(PermissionEnums.ACCESS_TOKEN_XYSUBJECT.getCode())).
+                    setRequestMethod(httpServletRequest.getRequestURI()).
+                    setRequestParam(requestParamStr).
+                    setExecuteTime(executeTime);
+            if (Objects.nonNull(result)) {
+                mallPcLogVo.setResponseCode(result.getCode()).
+                        setResponseMsg(result.getMsg()).
+                        setResponseData(result.isSuccess() ? JSON.toJSONString(result.getData()) : null).
+                        setResponseExtraData(result.isSuccess() ? JSON.toJSONString(result.getExtra()) : null);
+            }
+            switch (mallPcLogVo.getRequestMethod()) {
+                default:
+                    defaultLogOutput(mallPcLogVo);
+                    break;
+            }
         } catch (Throwable e) {
-            log.warn("unsupported data type");
-        }
-        MallPcLogVo mallPcLogVo = new MallPcLogVo().setClientIp(HttpUtil.getClientIP(httpServletRequest)).
-                setUserId(RequestHolder.getRequest().getHeader(PermissionEnums.ACCESS_TOKEN_XYID.getCode())).
-                setRequestMethod(httpServletRequest.getRequestURI()).
-                setRequestParam(requestParamStr).
-                setExecuteTime(executeTime);
-        if (Objects.nonNull(result)) {
-            mallPcLogVo.setResponseCode(result.getCode()).
-                    setResponseMsg(result.getMsg()).
-                    setResponseData(result.isSuccess() ? JSON.toJSONString(result.getData()) : null).
-                    setResponseExtraData(result.isSuccess() ? JSON.toJSONString(result.getExtra()) : null);
-        }
-        switch (mallPcLogVo.getRequestMethod()) {
-            default:
-                defaultLogOutput(mallPcLogVo);
-                break;
+            log.error("print mallpc aspect log error", e);
         }
     }
 

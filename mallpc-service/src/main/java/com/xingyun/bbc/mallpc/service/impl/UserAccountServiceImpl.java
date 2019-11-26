@@ -35,7 +35,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.xingyun.bbc.core.user.enums.UserDetailType.*;
@@ -91,7 +90,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         userRechargeQueryDTO.setUserIds(Lists.newArrayList(uid));
         userRechargeQueryDTO.setLimit((pageDto.getCurrentPage() - 1) * pageDto.getPageSize());
         userRechargeQueryDTO.setOffset(pageDto.getPageSize());
-        Result<Integer> countResult = userAccountTransApi.countRechargeList(userRechargeQueryDTO);
+        Result<Integer> countResult = userAccountTransApi.countRechargeListExcludeUserStatus4(userRechargeQueryDTO);
         Ensure.that(countResult).isSuccess(new MallPcExceptionCode(countResult.getCode(), countResult.getMsg()));
 
         if (countResult.getData() < 1) {
@@ -101,13 +100,15 @@ public class UserAccountServiceImpl implements UserAccountService {
         Result<List<UserAccountTrans>> rechargeRecordsResult = userAccountTransApi.queryRechargeListByCreateTimeDesc(userRechargeQueryDTO);
         Ensure.that(rechargeRecordsResult).isSuccess(new MallPcExceptionCode(rechargeRecordsResult.getCode(), rechargeRecordsResult.getMsg()));
 
+
         List<AccountRechargeRecordsVo> data = new ArrayList<>(rechargeRecordsResult.getData().size());
+
         rechargeRecordsResult.getData().forEach(item -> {
             AccountRechargeRecordsVo convert = dozerHolder.convert(item, AccountRechargeRecordsVo.class);
 
             convert.setFpassedTime(null);
             //工单类型的只要不是待审核 都要设置时间
-            if (convert.getFrechargeType() == 5 &&convert.getFtransStatus().compareTo(UserWorkStatus.WAITVERIFY.getCode()) != 0 ) {
+            if (convert.getFrechargeType() == 5 && convert.getFtransStatus().compareTo(UserWorkStatus.WAITVERIFY.getCode()) != 0) {
                 if (convert.getFtransStatus().compareTo(UserWorkStatus.SUCCEED.getCode()) == 0) {
                     convert.setFpassedTime(item.getFpassedTime());
                 } else {
@@ -128,12 +129,10 @@ public class UserAccountServiceImpl implements UserAccountService {
                     convert.setFpassedTime(item.getFmodifyTime());
                 }
             }
+            convert.setFtransAmount(AccountUtil.divideOneHundred(convert.getFtransAmount().longValue()));
             data.add(convert);
         });
 
-        data.forEach(item -> {
-            item.setFtransAmount(AccountUtil.divideOneHundred(item.getFtransAmount().longValue()));
-        });
         return new PageVo<>(countResult.getData(), pageDto.getCurrentPage(), pageDto.getPageSize(), data);
 
     }
@@ -159,12 +158,21 @@ public class UserAccountServiceImpl implements UserAccountService {
             convert.setFpassedTime(null);
             if (status.contains(item.getFtransStatus())
             ) {
-                convert.setFpassedTime(item.getFpassedTime());
+                if (initTime.compareTo(item.getFpassedTime()) == 0) {
+                    if (initTime.compareTo(item.getFpayTime()) == 0) {
+                        convert.setFpassedTime(item.getFmodifyTime());
+                    } else {
+                        convert.setFpassedTime(item.getFpayTime());
+                    }
+
+                } else {
+                    convert.setFpassedTime(item.getFpassedTime());
+                }
             }
+            convert.setFtransAmount(AccountUtil.divideOneHundred(convert.getFtransAmount().longValue()));
+            convert.setFtransActualAmount(AccountUtil.divideOneHundred(convert.getFtransActualAmount().longValue()));
+            convert.setFtransPoundage(AccountUtil.divideOneHundred(convert.getFtransPoundage().longValue()));
             data.add(convert);
-        });
-        data.forEach(item -> {
-            item.setFtransAmount(AccountUtil.divideOneHundred(item.getFtransAmount().longValue()));
         });
         return new PageVo<>(countResult.getData(), pageDto.getCurrentPage(), pageDto.getPageSize(), data);
     }
@@ -387,6 +395,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         }
         List<AccountDetailVo> accountDetails = new ArrayList<>();
         accountDetails.add(dozerHolder.convert(listResult.getData().get(0), AccountDetailVo.class));
+        accountDetails.get(0).setFpassedTime(listResult.getData().get(0).getFmodifyTime());
         switch (listResult.getData().get(0).getFdetailType()) {
             //充值提现
             case 1:
@@ -398,10 +407,6 @@ public class UserAccountServiceImpl implements UserAccountService {
                 if (CollectionUtil.isEmpty(accountDetails)) {
                     return accountDetails;
                 }
-                Map<String, UserDetail> collect = listResult.getData().stream().collect(Collectors.toMap(UserDetail::getFtypeId, Function.identity()));
-                accountDetails.forEach(item -> {
-                    item.setFpassedTime(collect.get(item.getFtransId()).getFmodifyTime());
-                });
                 break;
             case 5:
                 List<OrderPayment> orderPayments = orderPayments(ids);
@@ -413,6 +418,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 
                 accountDetail.setOrderId(orderListResult.getData().stream().map(Order::getForderId).collect(Collectors.joining(",")));
                 accountDetail.setFcreateTime(orderPayment.getFcreateTime());
+                accountDetail.setFpassedTime(orderPayment.getFpayTime());
                 break;
             //售后工单
             case 13:

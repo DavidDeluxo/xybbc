@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mallpc.controller;
 
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mallpc.common.utils.RequestHolder;
 import com.xingyun.bbc.mallpc.model.dto.aftersale.AftersaleBackDto;
 import com.xingyun.bbc.mallpc.model.dto.aftersale.AftersaleLisDto;
 import com.xingyun.bbc.mallpc.model.dto.aftersale.ShippingCompanyDto;
@@ -29,15 +30,15 @@ public class AftersaleController {
     @ApiOperation(value = "获取售后列表", httpMethod = "GET")
     @GetMapping("/getAftersaleLis")
     public Result<PageVo<AftersaleListVo>> getAftersaleLis(@ModelAttribute AftersaleLisDto aftersaleLisDto, HttpServletRequest request) {
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
-        aftersaleLisDto.setFuid(xyid);
+        Long userId = RequestHolder.getUserId();
+        aftersaleLisDto.setFuid(userId);
         return aftersaleService.getAftersaleLis(aftersaleLisDto);
     }
 
     @ApiOperation(value = "获取售后详情", httpMethod = "GET")
     @GetMapping("/getAftersaleDetail")
-    public Result<AftersaleDetailVo> getAftersaleDetail(@RequestParam String faftersaleId) {
-        return aftersaleService.getAftersaleDetail(faftersaleId);
+    public Result<AftersaleDetailVo> getAftersaleDetail(@RequestParam String forderAftersaleId) {
+        return aftersaleService.getAftersaleDetail(forderAftersaleId);
     }
 
     @ApiOperation(value = "售后详情查询物流公司", httpMethod = "GET")
@@ -48,8 +49,8 @@ public class AftersaleController {
 
     @ApiOperation(value = "售后详情查询回寄物流信息", httpMethod = "GET")
     @GetMapping("/getAftersaleBackShipping")
-    public Result<AftersaleBackVo> getAftersaleBackShipping(@RequestParam String faftersaleId) {
-        return aftersaleService.getAftersaleBackShipping(faftersaleId);
+    public Result<AftersaleBackVo> getAftersaleBackShipping(@RequestParam String forderAftersaleId) {
+        return aftersaleService.getAftersaleBackShipping(forderAftersaleId);
     }
 
     @ApiOperation(value = "售后详情用户上传回寄物流信息", httpMethod = "POST")

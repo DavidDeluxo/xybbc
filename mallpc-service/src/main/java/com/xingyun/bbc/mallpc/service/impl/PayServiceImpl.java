@@ -19,6 +19,7 @@ import com.xingyun.bbc.mallpc.common.utils.DecodeUtil;
 import com.xingyun.bbc.mallpc.common.utils.EncryptUtils;
 import com.xingyun.bbc.mallpc.common.utils.Md5Utils;
 import com.xingyun.bbc.mallpc.common.utils.PriceUtil;
+import com.xingyun.bbc.mallpc.common.utils.RequestHolder;
 import com.xingyun.bbc.mallpc.common.utils.TimeAddUtil;
 import com.xingyun.bbc.mallpc.model.dto.pay.BalancePayDto;
 import com.xingyun.bbc.mallpc.model.dto.pay.CheckPayDto;
@@ -82,7 +83,7 @@ public class PayServiceImpl implements PayService {
 	@Override
 	public Result<?> balancePay(BalancePayDto dto, HttpServletRequest request) {
 
-		String fuid = request.getHeader("xyid").toString();
+		String fuid = RequestHolder.getUserId().toString();
 
 		logger.info("余额支付。用户id：" + fuid + "，订单号：" + dto.getForderId() + "，余额类型：" + dto.getBalanceType());
 
@@ -326,12 +327,12 @@ public class PayServiceImpl implements PayService {
 			logger.info("充值订单不存在或已支付。");
 			return Result.failure(MallPcExceptionCode.ORDER_NOT_EXIST);
 		}
-		// String和Integer直接比较不会为true
-		// String fuid = request.getHeader("xyid");
-		// if (!fuid.equals(String.valueOf(userAccountTrans.getFuid()))) {
-		// logger.info("充值订单用户id和订单用户不匹配");
-		// return Result.failure(MallPcExceptionCode.ORDER_NOT_MATCHING);
-		// }
+		 //String和Long直接比较不会为true
+		 String fuid = RequestHolder.getUserId().toString();
+		 if (!fuid.equals(String.valueOf(userAccountTrans.getFuid()))) {
+		 logger.info("充值订单用户id和订单用户不匹配");
+		 return Result.failure(MallPcExceptionCode.ORDER_NOT_MATCHING);
+		 }
 		dto.setPayAmount(PriceUtil.toYuan(userAccountTrans.getFtransAmount()).toString());
 		return null;
 	}

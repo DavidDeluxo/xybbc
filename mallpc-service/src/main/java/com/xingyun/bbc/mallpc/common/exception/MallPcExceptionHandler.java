@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -24,7 +25,9 @@ public class MallPcExceptionHandler {
     @ExceptionHandler(value = Throwable.class)
     public Object returnErrorCode(Throwable exception) {
         log.error("catch global exception", exception);
-        if (exception instanceof IllegalArgumentException) {
+        if (exception instanceof MissingServletRequestParameterException) {
+            return Result.failure(MallPcExceptionCode.REQUIRED_PARAM_MISSING.getCode(), MallPcExceptionCode.REQUIRED_PARAM_MISSING.getMsg());
+        } else if (exception instanceof IllegalArgumentException) {
             return Result.failure(MallPcExceptionCode.PARAM_ERROR.getCode(), exception.getMessage());
         } else if (exception instanceof BindException) {
             FieldError fieldError = ((BindException) exception).getBindingResult().getFieldError();

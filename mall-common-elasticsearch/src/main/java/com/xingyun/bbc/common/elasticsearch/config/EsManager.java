@@ -6,6 +6,8 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.DateUtils;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
+import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.*;
@@ -13,8 +15,10 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.client.GetAliasesResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.cluster.metadata.AliasAction;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.text.Text;
@@ -62,7 +66,11 @@ public class EsManager {
      */
     private SearchResponse queryForResponse(EsCriteria criteria, QueryBuilder builder) throws Exception {
         SearchRequest searchRequest = new SearchRequest();
-        searchRequest.indices(properties.getIndex());
+        if(StringUtils.isNotEmpty(criteria.getIndexName())){
+            searchRequest.indices(criteria.getIndexName());
+        }else {
+            searchRequest.indices(properties.getIndex());
+        }
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         //搜索条件
         searchSourceBuilder.query(builder);
@@ -91,7 +99,6 @@ public class EsManager {
     }
 
 
-
     /**
      * 提取搜索结果列表
      *
@@ -99,7 +106,7 @@ public class EsManager {
      * @return
      */
     private List<Map<String, Object>> getHitList(SearchResponse sResponse) {
-        return getHitList(sResponse,true);
+        return getHitList(sResponse, true);
     }
 
 
@@ -108,9 +115,9 @@ public class EsManager {
         try {
             for (SearchHit hit : sResponse.getHits().getHits()) {
                 Map<String, Object> resultMap = new HashMap<>();
-                if(isToCamel){
+                if (isToCamel) {
                     resultMap.putAll(convertUpperUndercsoreToLowerCamel(hit.getSourceAsMap()));
-                }else {
+                } else {
                     resultMap.putAll(hit.getSourceAsMap());
                 }
                 resultMap.putAll(getHighlightField(hit));
@@ -123,7 +130,7 @@ public class EsManager {
     }
 
     /**
-     *下划线转驼峰
+     * 下划线转驼峰
      *
      * @param resourceMap
      * @return
@@ -177,13 +184,13 @@ public class EsManager {
         return baseInfo;
     }
 
-    private Integer getTotalPageNum(Integer pageSize, Integer totalCount){
-        if(pageSize == 0){
+    private Integer getTotalPageNum(Integer pageSize, Integer totalCount) {
+        if (pageSize == 0) {
             return 0;
         }
-        if(totalCount % pageSize == 0){
+        if (totalCount % pageSize == 0) {
             return totalCount / pageSize;
-        }else {
+        } else {
             return totalCount / pageSize + 1;
         }
     }
@@ -206,13 +213,13 @@ public class EsManager {
      * @return
      * @throws Exception
      */
-    public Map<String, Object> queryWithBaseInfo(EsCriteria criteria){
+    public Map<String, Object> queryWithBaseInfo(EsCriteria criteria) {
         Map<String, Object> resultMap = new HashMap<>();
         try {
             SearchResponse sResponse = queryForResponse(criteria);
             resultMap.put("baseInfoMap", getBaseInfoMap(sResponse, criteria));
-            resultMap.put("resultList", getHitList(sResponse,false));
-        }catch (Exception e){
+            resultMap.put("resultList", getHitList(sResponse, false));
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return resultMap;
@@ -221,29 +228,30 @@ public class EsManager {
 
     /**
      * 加入打分脚本查询
+     *
      * @param criteria
      * @param script
      * @param mode
      * @return
      */
     public Map<String, Object> functionQueryForResponse(EsCriteria criteria, String script, CombineFunction mode) {
-        if(StringUtils.isEmpty(script)){
+        if (StringUtils.isEmpty(script)) {
             throw new IllegalArgumentException("打分脚本不能为空");
         }
-        if(mode == null){
+        if (mode == null) {
             throw new IllegalArgumentException("打分模式不能为空");
         }
-        if(criteria == null){
+        if (criteria == null) {
             throw new IllegalArgumentException("搜索条件不能为空");
         }
 
         Map<String, Object> resultMap = new HashMap<>();
-        QueryBuilder builder = QueryBuilders.functionScoreQuery(criteria.getFilterBuilder() ,ScoreFunctionBuilders.scriptFunction(script)).boostMode(mode);
+        QueryBuilder builder = QueryBuilders.functionScoreQuery(criteria.getFilterBuilder(), ScoreFunctionBuilders.scriptFunction(script)).boostMode(mode);
         try {
             SearchResponse sResponse = this.queryForResponse(criteria, builder);
             resultMap.put("baseInfoMap", getBaseInfoMap(sResponse, criteria));
             resultMap.put("resultList", getHitList(sResponse));
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return resultMap;
@@ -269,7 +277,7 @@ public class EsManager {
                 resultMap.put("resultList", getHitList(sResponse));
                 resultMap.put("baseInfoMap", getBaseInfoMap(sResponse, criteria));
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         resultMap.put("aggregationMap", aggMap);
@@ -310,13 +318,13 @@ public class EsManager {
         return bulkResponse;
     }
 
-    public BulkResponse indexInBulk(Map<String, Map<String,Object>> multiSourceMap) throws Exception{
-        if(MapUtils.isEmpty(multiSourceMap)){
+    public BulkResponse indexInBulk(Map<String, Map<String, Object>> multiSourceMap) throws Exception {
+        if (MapUtils.isEmpty(multiSourceMap)) {
             throw new Exception("sourceMap cannot be empty!");
         }
         BulkRequest bulkRequest = new BulkRequest();
-        multiSourceMap.forEach((key, value)->{
-            IndexRequest indexRequest = new IndexRequest(properties.getIndex(), properties.getType(),key);
+        multiSourceMap.forEach((key, value) -> {
+            IndexRequest indexRequest = new IndexRequest(properties.getIndex(), properties.getType(), key);
             indexRequest.source(value);
             bulkRequest.add(indexRequest);
         });
@@ -324,19 +332,64 @@ public class EsManager {
         return bulkResponse;
     }
 
+    public void updateAlias(IndicesAliasesRequest.AliasActions aliasActions){
+        try {
+            IndicesAliasesRequest request = new IndicesAliasesRequest();
+            aliasActions.index(properties.getIndex());
+            request.addAliasAction(aliasActions);
+            client.indices().updateAliases(request, RequestOptions.DEFAULT);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
 
-    public List<Map<String, Object>> getInBulk(List<String> documentIds) throws Exception{
+    public void addAlias(IndicesAliasesRequest request) {
+        try {
+            client.indices().updateAliases(request, RequestOptions.DEFAULT);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 返回index名称
+     * @return
+     */
+    public String getIndexName(){
+        return properties.getIndex();
+    }
+
+    /**
+     * 根据名称查询Alias信息
+     *
+     * @param aliasName
+     */
+    public boolean isAliasExist(String aliasName) throws Exception {
+        if (StringUtils.isEmpty(aliasName)) {
+            throw new IllegalArgumentException("Alias name must not be empty!");
+        }
+        return this.isAliasExist(new String[]{aliasName});
+    }
+
+    public boolean isAliasExist(String... aliasNames) throws Exception {
+        GetAliasesRequest request = new GetAliasesRequest(aliasNames);
+        request.indices(properties.getIndex());
+        boolean isExist = client.indices().existsAlias(request, RequestOptions.DEFAULT);
+        return isExist;
+    }
+
+    public List<Map<String, Object>> getInBulk(List<String> documentIds) throws Exception {
         List<Map<String, Object>> resultList = new LinkedList<>();
-        if(CollectionUtils.isEmpty(documentIds)){
+        if (CollectionUtils.isEmpty(documentIds)) {
             return resultList;
         }
         MultiGetRequest multiGetRequest = new MultiGetRequest();
-        for(String documentId : documentIds){
-            multiGetRequest.add(properties.getIndex(), properties.getType(),documentId);
+        for (String documentId : documentIds) {
+            multiGetRequest.add(properties.getIndex(), properties.getType(), documentId);
         }
-        MultiGetResponse multiGetResponse = client.mget(multiGetRequest,RequestOptions.DEFAULT);
-        for(MultiGetItemResponse itemResponse : multiGetResponse){
-            if(!itemResponse.isFailed()){
+        MultiGetResponse multiGetResponse = client.mget(multiGetRequest, RequestOptions.DEFAULT);
+        for (MultiGetItemResponse itemResponse : multiGetResponse) {
+            if (!itemResponse.isFailed()) {
                 GetResponse getResponse = itemResponse.getResponse();
                 Map<String, Object> sourceMap = getResponse.getSourceAsMap();
                 resultList.add(sourceMap);
@@ -345,11 +398,11 @@ public class EsManager {
         return resultList;
     }
 
-    public GetResponse getSourceById(String documentId) throws Exception{
-        if(StringUtils.isEmpty(documentId)){
+    public GetResponse getSourceById(String documentId) throws Exception {
+        if (StringUtils.isEmpty(documentId)) {
             throw new IllegalArgumentException("id不可为空");
         }
-        GetRequest getRequest = new GetRequest(properties.getIndex(), properties.getType(),documentId);
+        GetRequest getRequest = new GetRequest(properties.getIndex(), properties.getType(), documentId);
         GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
         return getResponse;
     }
