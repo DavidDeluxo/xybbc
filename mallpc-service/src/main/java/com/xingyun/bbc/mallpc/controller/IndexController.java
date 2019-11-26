@@ -2,14 +2,15 @@ package com.xingyun.bbc.mallpc.controller;
 
 
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mallpc.model.vo.index.BannerVo;
-import com.xingyun.bbc.mallpc.model.vo.index.BrandVo;
-import com.xingyun.bbc.mallpc.model.vo.index.GoodsCategoryVo;
-import com.xingyun.bbc.mallpc.model.vo.index.SpecialTopicVo;
+import com.xingyun.bbc.mallpc.config.system.SystemConfig;
+import com.xingyun.bbc.mallpc.model.vo.index.*;
+import com.xingyun.bbc.mallpc.model.vo.search.SearchItemListVo;
+import com.xingyun.bbc.mallpc.model.vo.search.SearchItemVo;
 import com.xingyun.bbc.mallpc.service.IndexService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,8 +18,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Set;
+import java.io.File;
+import java.util.*;
 
 
 /**
@@ -52,6 +53,17 @@ public class IndexController {
     @GetMapping(value = "/via/getBrands")
     public Result<List<BrandVo>> getBrands(@RequestParam Long cateId) {
         return Result.success(indexService.getBrands(cateId));
+    }
+
+    @ApiOperation(value = "查询品牌", httpMethod = "GET")
+    @GetMapping(value = "/via/getBrandList")
+    public Result<List<CateBrandVo>> getBrandList(@RequestParam List<Long> cateIds) {
+        Result<List<CateBrandVo>> result = Result.success(indexService.getBrandList(cateIds));
+        //设置图片路径
+        Map<String,Object> extra = new HashMap<>();
+        extra.put("fdfsHost", StringUtils.join(SystemConfig.fdfsHost, File.separator));
+        result.setExtra(extra);
+        return result;
     }
 
     @ApiOperation(value = "查询分销商数量", httpMethod = "GET")
