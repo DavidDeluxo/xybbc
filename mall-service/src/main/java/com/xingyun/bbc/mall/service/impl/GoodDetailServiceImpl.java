@@ -540,65 +540,67 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     //获取到规格的价格
     private BigDecimal getPackagePrice(GoodsDetailMallDto goodsDetailMallDto) {
-        BigDecimal price = BigDecimal.ZERO;
-        //用户认证类型
-        Integer foperateType = goodsDetailMallDto.getFoperateType();
         //如果未认证直接查基础表
         if (goodsDetailMallDto.getFverifyStatus().intValue() == UserVerifyStatusEnum.AUTHENTICATED.getCode()) {
             //sku是否支持平台会员折扣
             if (null == goodsDetailMallDto.getFskuDiscount()) {
                 if (this.getIsSkuDiscountTax(goodsDetailMallDto.getFskuId()).getFisUserTypeDiscount().intValue() == 1) {
                     //sku——user是否支持折扣
-                    return this.getDiscountPriceFinal(goodsDetailMallDto, foperateType);
+                    return this.getDiscountPriceFinal(goodsDetailMallDto);
                 } else {
-                    return this.getGeneralPrice(goodsDetailMallDto.getFbatchPackageId());
+                    return this.getGeneralPrice(goodsDetailMallDto);
                 }
             } else {
                 if (goodsDetailMallDto.getFskuDiscount().intValue() == 1) {
                     //sku——user是否支持折扣
-                    return this.getDiscountPriceFinal(goodsDetailMallDto, foperateType);
+                    return this.getDiscountPriceFinal(goodsDetailMallDto);
                 } else {
-                    return this.getGeneralPrice(goodsDetailMallDto.getFbatchPackageId());
+                    return this.getGeneralPrice(goodsDetailMallDto);
                 }
             }
         } else {
-            return this.getGeneralPrice(goodsDetailMallDto.getFbatchPackageId());
+            return this.getGeneralPrice(goodsDetailMallDto);
         }
     }
 
     //获取折扣价格最终
-    private BigDecimal getDiscountPriceFinal(GoodsDetailMallDto goodsDetailMallDto, Integer foperateType) {
+    private BigDecimal getDiscountPriceFinal(GoodsDetailMallDto goodsDetailMallDto) {
+        //用户认证类型
+        Integer foperateType = goodsDetailMallDto.getFoperateType();
         //sku——user是否支持折扣
         if (null == goodsDetailMallDto.getFskuUserDiscount()) {
             if (this.getIsSkuUserDiscount(goodsDetailMallDto.getFskuId(), foperateType) == 0) {
-                return this.getGeneralPrice(goodsDetailMallDto.getFbatchPackageId());
+                return this.getGeneralPrice(goodsDetailMallDto);
             }
-            return this.getDiscountPrice(goodsDetailMallDto.getFbatchPackageId(), foperateType);
+            return this.getDiscountPrice(goodsDetailMallDto);
         } else {
             if (goodsDetailMallDto.getFskuUserDiscount() == 0) {
-                return this.getGeneralPrice(goodsDetailMallDto.getFbatchPackageId());
+                return this.getGeneralPrice(goodsDetailMallDto);
             }
-            return this.getDiscountPrice(goodsDetailMallDto.getFbatchPackageId(), foperateType);
+            return this.getDiscountPrice(goodsDetailMallDto);
         }
     }
 
     //获取非折扣价格
-    private BigDecimal getGeneralPrice(Long fbatchPackageId) {
-        Long price = 0L;
+    private BigDecimal getGeneralPrice(GoodsDetailMallDto goodsDetailMallDto) {
+        Long fbatchPackageId = goodsDetailMallDto.getFbatchPackageId();
+        BigDecimal price = BigDecimal.ZERO;
         Result<GoodsSkuBatchPrice> goodsSkuBatchPriceResult = goodsSkuBatchPriceApi.queryOneByCriteria(Criteria.of(GoodsSkuBatchPrice.class)
                 .andEqualTo(GoodsSkuBatchPrice::getFbatchPackageId, fbatchPackageId)
                 .fields(GoodsSkuBatchPrice::getFbatchSellPrice));
         if (goodsSkuBatchPriceResult.isSuccess() && null != goodsSkuBatchPriceResult.getData()) {
             if (null != goodsSkuBatchPriceResult.getData().getFbatchSellPrice()) {
-                price = goodsSkuBatchPriceResult.getData().getFbatchSellPrice();
+                price = new BigDecimal(goodsSkuBatchPriceResult.getData().getFbatchSellPrice());
             }
         }
         BigDecimal packageNum = this.getPackageNum(fbatchPackageId);
-        return new BigDecimal(price).divide(packageNum, 8, BigDecimal.ROUND_HALF_UP);
+        return goodsDetailMallDto.getFbatchPackageId() == null ? price.divide(packageNum, 8, BigDecimal.ROUND_HALF_UP) : price;
     }
 
     //获取折扣价格
-    private BigDecimal getDiscountPrice(Long fbatchPackageId, Integer foperateType) {
+    private BigDecimal getDiscountPrice(GoodsDetailMallDto goodsDetailMallDto) {
+        Integer foperateType = goodsDetailMallDto.getFoperateType();
+        Long fbatchPackageId = goodsDetailMallDto.getFbatchPackageId();
         BigDecimal price = BigDecimal.ZERO;
         BigDecimal packageNum = this.getPackageNum(fbatchPackageId);
         Result<SkuBatchUserPrice> skuBatchUserPriceResult = skuBatchUserPriceApi.queryOneByCriteria(Criteria.of(SkuBatchUserPrice.class)
@@ -613,9 +615,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 price = new BigDecimal(skuBatchUserPriceResult.getData().getFbatchSellPrice()).divide(packageNum, 8, BigDecimal.ROUND_HALF_UP);
             }
         } else {
-            return this.getGeneralPrice(fbatchPackageId);
+            return this.getGeneralPrice(goodsDetailMallDto);
         }
-        return price;
+        return goodsDetailMallDto.getFbatchPackageId() == null ? new BigDecimal(skuBatchUserPriceResult.getData().getFbatchSellPrice()).divide(packageNum, 8, BigDecimal.ROUND_HALF_UP) : price;
     }
 
     //是否支持平台会员折扣 0 取 GoodsSkuBatchPrice 1 取 SkuBatchUserPrice
