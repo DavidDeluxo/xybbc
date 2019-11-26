@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mallpc.common.utils;
 
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
+import com.xingyun.bbc.mallpc.common.enums.PermissionEnums;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -22,14 +23,25 @@ public class RequestHolder {
     }
 
     /**
-     * 获取uID
+     * 获取用户ID
      *
      * @return
      */
     public static Long getUserId() {
-        String userId = getRequest().getHeader("xyId");
-        Ensure.that(userId).isNotBlank(MallPcExceptionCode.USER_NOT_LOGGED_IN);
-        return Long.valueOf(userId);
+        String adminId = getRequest().getHeader(PermissionEnums.ACCESS_TOKEN_XYID.getCode());
+        Ensure.that(adminId).isNotBlank(MallPcExceptionCode.USER_NOT_LOGGED_IN);
+        return Long.valueOf(adminId);
+    }
+
+    /**
+     * 获取用户手机号码
+     *
+     * @return
+     */
+    public static String getUserMobile() {
+        String subject = getRequest().getHeader(PermissionEnums.ACCESS_TOKEN_XYSUBJECT.getCode());
+        Ensure.that(subject).isNotBlank(MallPcExceptionCode.USER_NOT_LOGGED_IN);
+        return subject;
     }
 
     public static String loginIp() {

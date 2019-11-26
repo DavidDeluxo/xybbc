@@ -32,6 +32,10 @@ public class MallPcLogHelper {
 
     public void outputLog(Result result, Object requestParam, long executeTime) {
         HttpServletRequest httpServletRequest = RequestHolder.getRequest();
+        String userId = null;
+        if (!StringUtils.contains(httpServletRequest.getRequestURI(), "user/via/")) {
+            userId = String.valueOf(RequestHolder.getUserId());
+        }
         String requestParamStr = null;
         try {
             requestParamStr = JSON.toJSONString(requestParam);
@@ -39,6 +43,7 @@ public class MallPcLogHelper {
             log.warn("unsupported data type");
         }
         MallPcLogVo mallPcLogVo = new MallPcLogVo().setClientIp(HttpUtil.getClientIP(httpServletRequest)).
+                setUserId(userId).
                 setRequestMethod(httpServletRequest.getRequestURI()).
                 setRequestParam(requestParamStr).
                 setExecuteTime(executeTime);
