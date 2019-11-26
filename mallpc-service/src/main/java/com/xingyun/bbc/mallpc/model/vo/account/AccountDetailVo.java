@@ -12,7 +12,7 @@ import java.util.Date;
  */
 @Data
 public class AccountDetailVo {
-    @JsonIgnore
+//    @JsonIgnore
     private String ftransId;
     //提现方式
     private Integer type;
