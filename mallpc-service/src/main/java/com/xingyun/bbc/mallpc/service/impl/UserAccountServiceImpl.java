@@ -327,7 +327,7 @@ public class UserAccountServiceImpl implements UserAccountService {
     private AccountDetailVo getTransDetail(String id) {
         AccountDetailVo accountDetailVo = new AccountDetailVo();
         //充值工单从这里查
-        if (id.startsWith(OrderTypeEnum.AFTER_SALE_WORK_ORDER.getCode() + RechargeOrderBizEnum.BACKGROUND.getCode())) {
+        if (id.startsWith(OrderTypeEnum.RECHARGE_ORDER.getCode() + RechargeOrderBizEnum.BACKGROUND.getCode())) {
             UserWork userWork = userWorks(id);
 
             accountDetailVo.setFtransId(userWork.getFuserWorkOrder());
