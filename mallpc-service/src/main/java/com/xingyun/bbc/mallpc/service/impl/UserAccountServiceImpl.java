@@ -35,7 +35,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.xingyun.bbc.core.user.enums.UserDetailType.*;
@@ -166,7 +165,7 @@ public class UserAccountServiceImpl implements UserAccountService {
                         convert.setFpassedTime(item.getFpayTime());
                     }
 
-                }else{
+                } else {
                     convert.setFpassedTime(item.getFpassedTime());
                 }
             }
@@ -396,6 +395,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         }
         List<AccountDetailVo> accountDetails = new ArrayList<>();
         accountDetails.add(dozerHolder.convert(listResult.getData().get(0), AccountDetailVo.class));
+        accountDetails.get(0).setFpassedTime(listResult.getData().get(0).getFmodifyTime());
         switch (listResult.getData().get(0).getFdetailType()) {
             //充值提现
             case 1:
@@ -407,10 +407,6 @@ public class UserAccountServiceImpl implements UserAccountService {
                 if (CollectionUtil.isEmpty(accountDetails)) {
                     return accountDetails;
                 }
-                Map<String, UserDetail> collect = listResult.getData().stream().collect(Collectors.toMap(UserDetail::getFtypeId, Function.identity()));
-                accountDetails.forEach(item -> {
-                    item.setFpassedTime(collect.get(item.getFtransId()).getFmodifyTime());
-                });
                 break;
             case 5:
                 List<OrderPayment> orderPayments = orderPayments(ids);
@@ -422,6 +418,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 
                 accountDetail.setOrderId(orderListResult.getData().stream().map(Order::getForderId).collect(Collectors.joining(",")));
                 accountDetail.setFcreateTime(orderPayment.getFcreateTime());
+                accountDetail.setFpassedTime(orderPayment.getFpayTime());
                 break;
             //售后工单
             case 13:
