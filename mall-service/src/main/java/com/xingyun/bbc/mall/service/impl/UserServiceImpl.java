@@ -252,8 +252,10 @@ public class UserServiceImpl implements UserService {
     private boolean CheckMobileExist(String mobile) {
         //查询手机号是否已注册
         Criteria<User, Object> criteria = Criteria.of(User.class);
-        criteria.andEqualTo(User::getFisDelete, "0")
-                .andEqualTo(User::getFmobile, mobile);
+        criteria.andEqualTo(User::getFisDelete,"0")
+                .andLeft()
+                .orEqualTo(User::getFmobile,mobile)
+                .orEqualTo(User::getFuname,mobile).addRight();
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
         if (userResult.getData() != null) {
             return false;
@@ -655,7 +657,9 @@ public class UserServiceImpl implements UserService {
             userVo.setIsPopupWindows(0);
             if (userResult.getData().getFlastloginTime().compareTo(userResult.getData().getFuserValidTime()) < 0) {
                 couponAuthenticationNum = queryAuthenticationCoupon(userResult.getData().getFuid());
-                userVo.setIsPopupWindows(1);
+                if(!couponAuthenticationNum.equals(0)){
+                    userVo.setIsPopupWindows(1);
+                }
                 //更新最近登录时间
                 User user = new User();
                 user.setFuid(userResult.getData().getFuid());
@@ -670,7 +674,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Result couponLinkReceive(CouponLinkDto dto) {
-        if (dto.getCouponLink() == null) {
+        if(dto.getCouponLink() == null || dto.getCouponLink().equals("")){
             return Result.failure(MallExceptionCode.COUPON_LINK_INEXUSTENCE);
         }
         Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)

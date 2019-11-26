@@ -70,17 +70,17 @@ public class EsBeanUtil {
 
         }
         if (beanInfo.getIdField() == null) {
-            throw new RuntimeException("Ã»ÓĞÕÒµ½idÊôĞÔ");
+            throw new RuntimeException("æ²¡æœ‰æ‰¾åˆ°idå±æ€§");
         }
         if (beanInfo.getNameField() == null) {
-            throw new RuntimeException("Ã»ÓĞÕÒµ½Ãû³ÆÊôĞÔ");
+            throw new RuntimeException("æ²¡æœ‰æ‰¾åˆ°åç§°å±æ€§");
         }
         cachedBeanIntrospectionInfo.put(clazz, beanInfo);
     }
 
 
     /**
-     * ²ÉÓÃ¾ÛºÏid,×Ó¾ÛºÏidÃû³Æ,»ñÈ¡id-Ãû³Æ¶Ô, ÌáÈ¡bucketListÀïÃæµÄ¾ÛºÏĞÅÏ¢, ²¢Éú³ÉVo
+     * é‡‡ç”¨èšåˆid,å­èšåˆidåç§°,è·å–id-åç§°å¯¹, æå–bucketListé‡Œé¢çš„èšåˆä¿¡æ¯, å¹¶ç”ŸæˆVo
      * @param clazz
      * @param bucketList
      * @param <T>
@@ -88,7 +88,7 @@ public class EsBeanUtil {
      */
     public static <T> List<T> getValueObjectList(Class<T> clazz, List<Map<String, Object>> bucketList) {
         if (Objects.isNull(clazz)) {
-            throw new IllegalArgumentException("VoÀàĞÍ²»ÄÜÎª¿Õ");
+            throw new IllegalArgumentException("Voç±»å‹ä¸èƒ½ä¸ºç©º");
         }
         if (Objects.isNull(cachedBeanIntrospectionInfo.get(clazz))) {
             cacheBeanInfo(clazz);
@@ -100,11 +100,11 @@ public class EsBeanUtil {
         EsBeanUtil.BeanIntrospectionInfo info = cachedBeanIntrospectionInfo.get(clazz);
         try {
             for (Map<String, Object> idMap : bucketList) {
-                //ÌáÈ¡idĞÅÏ¢
+                //æå–idä¿¡æ¯
                 T valueObject = clazz.newInstance();
                 Object idValue = idMap.get(EsManager.AGGREGATION_KEY_NAME);
                 info.setValueForIdField(valueObject, Integer.parseInt(String.valueOf(idValue)));
-                //ÌáÈ¡Ãû³ÆĞÅÏ¢
+                //æå–åç§°ä¿¡æ¯
                 Map<String, Object> nameMap = (Map<String, Object>) idMap.get(EsManager.SUBAGGREGATION_NAME);
                 if (MapUtils.isNotEmpty(nameMap)) {
                     Object[] nameMapValues = nameMap.values().toArray();
@@ -113,7 +113,7 @@ public class EsBeanUtil {
                         Map<String, Object> AggMap = nameList.get(0);
                         Object nameValue = nameList.get(0).get(EsManager.AGGREGATION_KEY_NAME);
                         info.setValueForNameField(valueObject, String.valueOf(nameValue));
-                        //ÌáÈ¡×Ó¾ÛºÏĞÅÏ¢
+                        //æå–å­èšåˆä¿¡æ¯
                         if (!Objects.isNull(info.getNestedPairField())) {
                             Map<String, Object> subAggMap = (Map<String, Object>) AggMap.get(EsManager.SUBAGGREGATION_NAME);
                             List<Map<String, Object>> subAggList = (List<Map<String, Object>>) subAggMap.values().toArray()[0];
@@ -125,7 +125,7 @@ public class EsBeanUtil {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            throw new RuntimeException("ÄÚ²¿µ÷ÓÃ´íÎó");
+            throw new RuntimeException("å†…éƒ¨è°ƒç”¨é”™è¯¯");
         }
         return resultList;
     }

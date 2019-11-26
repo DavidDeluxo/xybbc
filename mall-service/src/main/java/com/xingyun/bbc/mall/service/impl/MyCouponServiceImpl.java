@@ -42,7 +42,7 @@ public class MyCouponServiceImpl implements MyCouponService {
 
     @Override
     public Result<MyCouponVo> getMyCouponVo(MyCouponDto myCouponDto) {
-        //查询优惠券信息
+        //查询已经领到的优惠券信息
         Criteria<CouponReceive, Object> criteria = Criteria.of(CouponReceive.class)
                 .andEqualTo(CouponReceive::getFuid, myCouponDto.getFuid())
                 .andEqualTo(CouponReceive::getFuserCouponStatus, myCouponDto.getFuserCouponStatus());
@@ -59,26 +59,30 @@ public class MyCouponServiceImpl implements MyCouponService {
         }
         Integer count = countResult.getData();
         PageVo<CouponVo> couponPageVo = pageUtils.convert(count, listResult.getData(), CouponVo.class, myCouponDto);
+        //查询优惠券信息
         for (CouponVo couponVo : couponPageVo.getList()) {
             Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
                     .andEqualTo(Coupon::getFcouponId, couponVo.getFcouponId())
                     .fields(Coupon::getFcouponName, Coupon::getFcouponType,
                             Coupon::getFthresholdAmount, Coupon::getFdeductionValue,
-                            Coupon::getFvalidityType, Coupon::getFvalidityDays));
+                            Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFreleaseType));
             if (!couponResult.isSuccess()) {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
             Coupon coupon = couponResult.getData();
             couponVo.setFcouponName(coupon.getFcouponName());
             couponVo.setFcouponType(coupon.getFcouponType());
+            couponVo.setFthresholdAmount(PriceUtil.toYuan(coupon.getFthresholdAmount()));
 
-            BigDecimal fthresholdAmount = coupon.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode()) ?
-                    PriceUtil.toYuan(coupon.getFthresholdAmount()) : new BigDecimal(coupon.getFthresholdAmount())
-                    .divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP);
-            couponVo.setFthresholdAmount(fthresholdAmount);
-            couponVo.setFdeductionValue(PriceUtil.toYuan(coupon.getFdeductionValue()));
+            //优惠券类型，1满减券、2折扣券
+            if (coupon.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
+                couponVo.setFdeductionValue(PriceUtil.toYuan(coupon.getFdeductionValue()));
+            } else {
+                couponVo.setFdeductionValue(new BigDecimal(coupon.getFdeductionValue()).divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP));
+            }
             couponVo.setFvalidityType(coupon.getFvalidityType());
             couponVo.setFvalidityDays(coupon.getFvalidityDays());
+            couponVo.setFreleaseType(coupon.getFreleaseType());
         }
         //查询各种优惠券数量
         Integer fuserCouponStatus = myCouponDto.getFuserCouponStatus();

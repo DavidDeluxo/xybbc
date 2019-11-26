@@ -2,6 +2,7 @@ package com.xingyun.bbc.common.elasticsearch.config;
 
 
 import com.xingyun.bbc.common.elasticsearch.config.autobuild.EsMark;
+import lombok.Data;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.elasticsearch.common.Strings;
@@ -25,7 +26,9 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.Map.Entry;
 
+
 @Component
+@Data
 public class EsCriteria {
 
     private static final int DEFAULT_PAGE_SIZE = 10;
@@ -37,7 +40,6 @@ public class EsCriteria {
     public static final String BOOST_SEPERATOR = "^";
     public static final String BOOST_SEPERATOR_REGEX = "\\^";
     private static final String UPDATE_SCRIPT_COMPONENT = "ctx._source.? = params.?";
-//    private static final String UPDATE_SCRIPT_ARRAY_APPEND = "if (!ctx._source.?.contains(params.?)){ctx._source.?.add(params.?)}";
     private static final String UPDATE_SCRIPT_ARRAY_APPEND = "ctx._source.?.add(params.?)";
     private static final String UPDATE_SCRIPT_PLACEHOLDER = "?";
 
@@ -56,90 +58,7 @@ public class EsCriteria {
     private List<Tuple<String, Script>> updateScripts = new ArrayList<>();
 
     private List<SortBuilder> sorts = new ArrayList<>();
-
-
-    public int getStartIndext() {
-        return startIndext;
-    }
-
-    public void setStartIndext(int startIndext) {
-        this.startIndext = startIndext;
-    }
-
-    public int getPageSize() {
-        return pageSize;
-    }
-
-    public void setPageSize(int pageSize) {
-        this.pageSize = pageSize;
-    }
-
-    public int getPageIndex() {
-        return pageIndex;
-    }
-
-    public void setPageIndex(int pageIndex) {
-        this.pageIndex = pageIndex;
-    }
-
-    public String[] getIncludeFields() {
-        return includeFields;
-    }
-
-    public void setIncludeFields(String[] includeFields) {
-        this.includeFields = includeFields;
-    }
-
-    public String[] getExcludeFields() {
-        return excludeFields;
-    }
-
-    public void setExcludeFields(String[] excludeFields) {
-        this.excludeFields = excludeFields;
-    }
-
-    public BoolQueryBuilder getFilterBuilder() {
-        return filterBuilder;
-    }
-
-    public void setFilterBuilder(BoolQueryBuilder filterBuilder) {
-        this.filterBuilder = filterBuilder;
-    }
-
-
-    public Map<String, AggregationBuilder> getAggBuilders() {
-        return aggBuilders;
-    }
-
-    public void setAggBuilders(Map<String, AggregationBuilder> aggBuilders) {
-        this.aggBuilders = aggBuilders;
-    }
-
-    public SortBuilder getSortBuilder() {
-        return sortBuilder;
-    }
-
-    public void setSortBuilder(SortBuilder sortBuilder) {
-        this.sortBuilder = sortBuilder;
-    }
-
-
-    public List<SortBuilder> getSorts() {
-        return sorts;
-    }
-
-    public void setSorts(List<SortBuilder> sorts) {
-        this.sorts = sorts;
-    }
-
-
-    public List<Tuple<String, Script>> getUpdateScripts() {
-        return updateScripts;
-    }
-
-    public void setUpdateScripts(List<Tuple<String, Script>> updateScripts) {
-        this.updateScripts = updateScripts;
-    }
+    private String indexName;
 
     public EsCriteria page(int pageIndex, int pageSize) {
         if (pageIndex > 0) {
@@ -175,9 +94,9 @@ public class EsCriteria {
 
 
     public EsCriteria OrMust(Object fieldname, List<Object> fieldvalue) {
-        if(!CollectionUtils.isEmpty(fieldvalue ) && fieldname != null){
+        if (!CollectionUtils.isEmpty(fieldvalue) && fieldname != null) {
             DisMaxQueryBuilder disMaxQuerys = QueryBuilders.disMaxQuery();
-            for(Object value : fieldvalue){
+            for (Object value : fieldvalue) {
                 disMaxQuerys.add(QueryBuilders.termsQuery(String.valueOf(fieldname), value));
             }
             filterBuilder.must(disMaxQuerys);
@@ -272,22 +191,22 @@ public class EsCriteria {
 
 
     /**
-     * ¹¹½¨È«ÎÄËÑË÷Ìõ¼ş
+     * æ„å»ºå…¨æ–‡æœç´¢æ¡ä»¶
      *
      * @param keyWord
-     * @param fieldNames ÄÉÈëËÑË÷·¶Î§µÄÄ¿±ê×Ö¶ÎÊı×é, ×Ö¶ÎÃû¿É´øÔöÒæ, Í¨¹ı"^"½øĞĞ·Ö¸î,
-     *                   Àı£º"fitem_name^3.5" Îª×Ö¶Î"fitem_name"Ôö¼Ó3.5±¶µÄÔöÒæ, Ä¬ÈÏ
-     *                   ÔöÒæÎª1
+     * @param fieldNames çº³å…¥æœç´¢èŒƒå›´çš„ç›®æ ‡å­—æ®µæ•°ç»„, å­—æ®µåå¯å¸¦å¢ç›Š, é€šè¿‡"^"è¿›è¡Œåˆ†å‰²,
+     *                   ä¾‹ï¼š"fitem_name^3.5" ä¸ºå­—æ®µ"fitem_name"å¢åŠ 3.5å€çš„å¢ç›Š, é»˜è®¤
+     *                   å¢ç›Šä¸º1
      * @return
      */
     public EsCriteria fullTextMatch(String keyWord, String... fieldNames) {
         if (!Strings.isNullOrEmpty(keyWord) || fieldNames.length == 0) {
             List<String> fieldNameList = Arrays.asList(fieldNames);
-            //¹ıÂËÔöÒæºóµÄ×Ö¶ÎÊı×é
+            //è¿‡æ»¤å¢ç›Šåçš„å­—æ®µæ•°ç»„
             List<String> true_file_name_list = new LinkedList<>();
-            //ÔöÒæMap
+            //å¢ç›ŠMap
             Map<String, Float> boostMap = new HashMap<>();
-            //×Ö¶ÎÃû¹ıÂËÔöÒæ,²¢Éú³ÉboostMap
+            //å­—æ®µåè¿‡æ»¤å¢ç›Š,å¹¶ç”ŸæˆboostMap
             for (String fieldName : fieldNameList) {
                 String[] list = fieldName.split(BOOST_SEPERATOR_REGEX);
                 String true_field_name = list[0];
@@ -298,11 +217,11 @@ public class EsCriteria {
             }
             String[] true_fieldNames = new String[true_file_name_list.size()];
             true_fieldNames = true_file_name_list.toArray(true_fieldNames);
-            //È«ÎÄËÑË÷Ìõ¼ş
+            //å…¨æ–‡æœç´¢æ¡ä»¶
             MultiMatchQueryBuilder multyMatch = QueryBuilders.multiMatchQuery(keyWord, true_fieldNames).type(MultiMatchQueryBuilder.Type.CROSS_FIELDS);
-            //ÔöÒæÌõ¼ş
+            //å¢ç›Šæ¡ä»¶
             multyMatch.fields(boostMap);
-            //Ç°×ºÆ¥ÅäÌõ¼ş
+            //å‰ç¼€åŒ¹é…æ¡ä»¶
             MultiMatchQueryBuilder preMultyMatch = QueryBuilders.multiMatchQuery(keyWord, true_fieldNames).type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX);
             filterBuilder.should(multyMatch).should(preMultyMatch).minimumShouldMatch(1);
         }
@@ -417,10 +336,10 @@ public class EsCriteria {
     }
 
     /**
-     * ¹¹½¨¾ÛºÏÌõ¼ş
+     * æ„å»ºèšåˆæ¡ä»¶
      *
-     * @param aggName   ×Ô¶¨Òå¾ÛºÏÃû³Æ
-     * @param fieldName ¾ÛºÏ×Ö¶Î
+     * @param aggName   è‡ªå®šä¹‰èšåˆåç§°
+     * @param fieldName èšåˆå­—æ®µ
      */
     public EsCriteria termAggregate(String aggName, String fieldName) {
         if (aggName != null && fieldName != null) {
@@ -435,10 +354,10 @@ public class EsCriteria {
     }
 
     /**
-     * ¹¹½¨×Ó¾ÛºÏÌõ¼ş
+     * æ„å»ºå­èšåˆæ¡ä»¶
      *
-     * @param aggName   ×Ô¶¨Òå¾ÛºÏÃû³Æ
-     * @param fieldName ¾ÛºÏ×Ö¶Î
+     * @param aggName   è‡ªå®šä¹‰èšåˆåç§°
+     * @param fieldName èšåˆå­—æ®µ
      */
     public EsCriteria subAggregate(String aggName, String fieldName) {
         if (currentAggregationBuilder != null && aggName != null && fieldName != null) {
@@ -467,24 +386,24 @@ public class EsCriteria {
     }
 
     /**
-     * É¨ÃèÈë²ÎÀàÊôĞÔ×¢½â, ×Ô¶¯¹¹½¨ËÑË÷Ìõ¼ş
+     * æ‰«æå…¥å‚ç±»å±æ€§æ³¨è§£, è‡ªåŠ¨æ„å»ºæœç´¢æ¡ä»¶
      *
      * @param Object
      * @return EsCriteria
      * @throws Exception
      */
     public EsCriteria autoBuild(Object param) throws Exception {
-        //»ñÈ¡ÀàĞÅÏ¢
+        //è·å–ç±»ä¿¡æ¯
         Class<?> cl = param.getClass();
-        //µü´úÀàËùÓĞÊôĞÔÌáÈ¡×¢½â
+        //è¿­ä»£ç±»æ‰€æœ‰å±æ€§æå–æ³¨è§£
         for (Field field : cl.getDeclaredFields()) {
             EsMark mark = field.getAnnotation(EsMark.class);
             if (mark != null) {
-                //¸ü¸ÄË½ÓĞÊôĞÔ»ñÈ¡È¨ÏŞ
+                //æ›´æ”¹ç§æœ‰å±æ€§è·å–æƒé™
                 field.setAccessible(true);
-                //ÌáÈ¡ÊôĞÔÖµ
+                //æå–å±æ€§å€¼
                 Object fieldValue = field.get(param);
-                //µ÷ÓÃ×¢½â¹ØÁª·½·¨¹¹½¨Ìõ¼ş
+                //è°ƒç”¨æ³¨è§£å…³è”æ–¹æ³•æ„å»ºæ¡ä»¶
                 mark.policy().build(this, mark, fieldValue);
             }
         }
@@ -493,10 +412,10 @@ public class EsCriteria {
 
     public static EsCriteria build(Object param) {
         EsCriteria criteria = new EsCriteria();
-        if(param != null){
+        if (param != null) {
             try {
                 criteria.autoBuild(param);
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -514,7 +433,6 @@ public class EsCriteria {
         parameters.remove("documentId");
         for (Entry<String, Object> entry : parameters.entrySet()) {
             Map<String, Object> param = new HashMap<>(2);
-//			param.put(entry.getKey(), Integer.parseInt(String.valueOf(entry.getValue())));
             param.put(entry.getKey(), entry.getValue());
             Script inline = new Script(ScriptType.INLINE, "painless",
                     getScript_singleFieldUpdate(entry), param);
@@ -525,8 +443,8 @@ public class EsCriteria {
     }
 
 
-    public EsCriteria addUpdateRequest(String documentId, Map<String, Object> parameters){
-        if(StringUtils.isEmpty(documentId) || MapUtils.isEmpty(parameters)){
+    public EsCriteria addUpdateRequest(String documentId, Map<String, Object> parameters) {
+        if (StringUtils.isEmpty(documentId) || MapUtils.isEmpty(parameters)) {
             return this;
         }
         for (Entry<String, Object> entry : parameters.entrySet()) {
@@ -545,5 +463,11 @@ public class EsCriteria {
         return script;
     }
 
+    public static String[] listToArray(List<String> list) {
+        if(list == null){
+            throw new IllegalArgumentException("å…¥å‚ä¸èƒ½ä¸ºç©º");
+        }
+        return list.toArray(new String[list.size()]);
+    }
 
 }

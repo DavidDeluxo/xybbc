@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ES¾ÛºÏ¹¤¾ßÀà
+ * ESèšåˆå·¥å…·ç±»
  */
 public class EsAggregations {
 
@@ -20,7 +20,7 @@ public class EsAggregations {
     public static final String SUBAGGREGATION_NAME = "subaggregation";
 
     /**
-     * Îª MultiBucketsAggregation ÌáÈ¡¾ÛºÏĞÅÏ¢
+     * ä¸º MultiBucketsAggregation æå–èšåˆä¿¡æ¯
      *
      * @param terms
      * @return
@@ -28,11 +28,11 @@ public class EsAggregations {
     public static List<Map<String, Object>> getAggregationList(MultiBucketsAggregation multiBucketsAggregation) {
         List<? extends MultiBucketsAggregation.Bucket> buckets = multiBucketsAggregation.getBuckets();
         List<Map<String, Object>> bucketLists = new LinkedList<>();
-        //µü´úbucket list, ÌáÈ¡¶ÔÓ¦¾ÛºÏĞÅÏ¢
+        //è¿­ä»£bucket list, æå–å¯¹åº”èšåˆä¿¡æ¯
         for (MultiBucketsAggregation.Bucket bucket : buckets) {
             Map<String, Object> map = new HashMap<>();
             map.put(AGGREGATION_KEY_NAME, bucket.getKey());
-            //ÌáÈ¡bucketÏÂ×Ó¾ÛºÏĞÅÏ¢
+            //æå–bucketä¸‹å­èšåˆä¿¡æ¯
             Map<String, Object> subAggregationMap = getAggregationMap(bucket.getAggregations());
             if (MapUtils.isNotEmpty(subAggregationMap)) {
                 map.put(SUBAGGREGATION_NAME, subAggregationMap);
@@ -43,13 +43,13 @@ public class EsAggregations {
     }
 
     /**
-     * Îª SingleBucketAggregation ÌáÈ¡¾ÛºÏĞÅÏ¢
+     * ä¸º SingleBucketAggregation æå–èšåˆä¿¡æ¯
      *
      * @param nested
      * @return
      */
     public static List<Map<String, Object>> getAggregationList(SingleBucketAggregation singleBucketAggregation) {
-        //ÌáÈ¡bucketÏÂ×Ó¾ÛºÏĞÅÏ¢
+        //æå–bucketä¸‹å­èšåˆä¿¡æ¯
         Map<String, Object> subAggregationMap = getAggregationMap(singleBucketAggregation.getAggregations());
         List<Map<String, Object>> bucketLists = new LinkedList<>();
         bucketLists.add(subAggregationMap);
@@ -57,28 +57,28 @@ public class EsAggregations {
     }
 
     /**
-     * ÌáÈ¡¾ÛºÏĞÅÏ¢, ·â×°³ÉMap<String, Object>·µ»Ø
+     * æå–èšåˆä¿¡æ¯, å°è£…æˆMap<String, Object>è¿”å›
      *
      * @param aggregations
      * @return
      */
     public static Map<String, Object> getAggregationMap(Aggregations aggregations) {
         Map<String, Object> resultMap = new HashMap<>();
-        //Èë²ÎÎª¿ÕÔò·µ»Ø¿ÕMap
+        //å…¥å‚ä¸ºç©ºåˆ™è¿”å›ç©ºMap
         if (MapUtils.isEmpty(aggregations.getAsMap())) {
             return resultMap;
         }
-        //µü´úËùÓĞ¾ÛºÏ,ÒÀ´ÎÌáÈ¡¶ÔÓ¦ĞÅÏ¢
+        //è¿­ä»£æ‰€æœ‰èšåˆ,ä¾æ¬¡æå–å¯¹åº”ä¿¡æ¯
         Map<String, Aggregation> aggMap = aggregations.getAsMap();
         aggMap.forEach((str, Agg) -> {
             List<Map<String, Object>> aggList;
-            //¸ù¾İ¾ÛºÏÀàĞÍµ÷ÓÃÏàÓ¦´¦Àí·½·¨
+            //æ ¹æ®èšåˆç±»å‹è°ƒç”¨ç›¸åº”å¤„ç†æ–¹æ³•
             if (Agg instanceof MultiBucketsAggregation) {
                 aggList = getAggregationList((MultiBucketsAggregation) Agg);
             } else if (Agg instanceof SingleBucketAggregation) {
                 aggList = getAggregationList((SingleBucketAggregation) Agg);
             } else {
-                throw new UnsupportedOperationException("²»Ö§³Ö¸ÃÀàĞÍµÄ¾ÛºÏ");
+                throw new UnsupportedOperationException("ä¸æ”¯æŒè¯¥ç±»å‹çš„èšåˆ");
             }
             resultMap.put(str, aggList);
         });

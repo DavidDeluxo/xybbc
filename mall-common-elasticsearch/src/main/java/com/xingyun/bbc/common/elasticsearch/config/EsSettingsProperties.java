@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
  * @version V1.0
  * @Title:
  * @Package com.xingyun.xyb2b.elasticsearch.config
- * @Description: (ÓÃÒ»¾ä»°ÃèÊö¸ÃÎÄ¼ş×öÊ²Ã´)
+ * @Description: (ç”¨ä¸€å¥è¯æè¿°è¯¥æ–‡ä»¶åšä»€ä¹ˆ)
  * @date 2018/12/12 20:35
  */
 @Component

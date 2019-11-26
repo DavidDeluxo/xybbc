@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mappings xmlns="http://dozer.sourceforge.net"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://dozer.sourceforge.net
+          http://dozer.sourceforge.net/schema/beanmapping.xsd">
+
+    <configuration>
+        <date-format>yyyy-MM-dd HH:mm:ss</date-format>
+        <map-null>false</map-null>
+    </configuration>
+
+    <mapping>
+        <class-a>com.xingyun.bbc.order.model.vo.cart.CartsVo</class-a>
+        <class-b>com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartGoodsVo</class-b>
+        <field>
+            <a>fqualityStartDate</a>
+            <b date-format="yyyy.MM">fqualityStartDate</b>
+        </field>
+        <field>
+            <a>fqualityEndDate</a>
+            <b date-format="yyyy.MM">fqualityEndDate</b>
+        </field>
+    </mapping>
+
+    <mapping>
+        <class-a>com.xingyun.bbc.mallpc.model.vo.account.InAndOutRecordsVo</class-a>
+        <class-b>com.xingyun.bbc.core.user.po.UserDetail</class-b>
+        <field>
+            <a>fpassedTime</a>
+            <b>fmodifyTime</b>
+        </field>
+
+    </mapping>
+</mappings>

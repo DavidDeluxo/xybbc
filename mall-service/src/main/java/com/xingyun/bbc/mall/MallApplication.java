@@ -8,7 +8,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
  * @author Thstone
@@ -21,21 +20,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @EnableAsync
 @SpringCloudApplication
 @EnableFeignClients("com.xingyun.bbc")
-@ComponentScan(value="com.xingyun.bbc")
+@ComponentScan("com.xingyun.bbc")
 public class MallApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(MallApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(MallApplication.class, args);
+    }
 
-	@Bean("threadPoolTaskExecutor")
-	public TaskExecutor getAsyncExcecutor(){
-		ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-		taskExecutor.setCorePoolSize(20);
-		taskExecutor.setMaxPoolSize(100);
-		taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
-		return taskExecutor;
-	}
+    @Bean("threadPoolTaskExecutor")
+    public TaskExecutor getAsyncExcecutor() {
+        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        taskExecutor.setCorePoolSize(20);
+        taskExecutor.setMaxPoolSize(100);
+        taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
+        return taskExecutor;
+    }
 
 
 }

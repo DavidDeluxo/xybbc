@@ -56,10 +56,6 @@ public class GoodsController {
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
         dto.setIsLogin(infoVo.getIsLogin());
         dto.setFuid(infoVo.getFuid());
-
-        log.info("查询筛选信息,请求参数:{}", JSON.toJSONString(dto));
-        if (Objects.nonNull(dto.getCouponId())) couponGoodsService.querySkuFilter(dto);
-
         return goodsService.searchSkuFilter(dto);
     }
 
@@ -84,6 +80,13 @@ public class GoodsController {
         return Result.success(true);
     }
 
-
+    @ApiOperation(value = "优惠券全量更新")
+    @PostMapping("/via/updateCouponListForAllSku")
+    public Result<Boolean> updateCouponListWhole(@RequestParam Long fcouponId){
+        Coupon param = new Coupon();
+        param.setFcouponId(fcouponId);
+        goodsService.updateCouponIdForAllSku(null);
+        return Result.success(true);
+    }
 
 }

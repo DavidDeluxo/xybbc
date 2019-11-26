@@ -116,7 +116,9 @@ public class IndexServiceImpl implements IndexService {
             Criteria<PageConfig, Object> pageConfigCriteria = Criteria.of(PageConfig.class);
             pageConfigCriteria.andEqualTo(PageConfig::getFposition, position);
             //查询未删除的
-            pageConfigCriteria.andEqualTo(PageConfig::getFisDelete, 0);
+           // pageConfigCriteria.andEqualTo(PageConfig::getFisDelete, 0);
+            //查询未删除,配置对象为0的数据
+            pageConfigCriteria.andEqualTo(PageConfig::getFisDelete, 0).andEqualTo(PageConfig::getFconfigType,0);
             //位置为0:Banner配置 1:ICON配置时用sortValue排序字段进行排序
             if (position == 0 || position == 1) {
                 pageConfigCriteria.sort(PageConfig::getFsortValue);
@@ -510,28 +512,35 @@ public class IndexServiceImpl implements IndexService {
      */
     @Override
     public Result<List<GuidePageVo>> selectGuidePageVos(Integer ftype) {
-        try {
-            Criteria<GuidePage, Object> pageCriteria = Criteria.of(GuidePage.class);
-            String redisKey = GuidePageContants.GUIDE_PAGE;
-            List<Object> result = xyRedisManager.hValues(redisKey);//先查缓存是否命中,没有命中则查询GuidePageVo
-            if (result == null) {
-                pageCriteria.andEqualTo(GuidePage::getFtype, ftype);
-                Result<List<GuidePage>> res = guidePageApi.queryByCriteria(pageCriteria);
-                if (!res.isSuccess()) {
-                    throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
-                } else {
-                    List<GuidePage> guidePageList = res.getData();
-                    List<GuidePageVo> convetVoList = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(guidePageList), GuidePageVo.class);
-                    return Result.success(convetVoList);
-                }
+      try 
+      {
+        Criteria<GuidePage, Object> pageCriteria = Criteria.of(GuidePage.class);
+        String redisKey = GuidePageContants.GUIDE_PAGE;
+        List<Object> result = xyRedisManager.hValues(redisKey);//先查缓存是否命中,没有命中则查询GuidePageVo
+        if (result == null) {
+            pageCriteria.andEqualTo(GuidePage::getFtype, ftype);
+            Result<List<GuidePage>> res = guidePageApi.queryByCriteria(pageCriteria.andEqualTo(GuidePage::getFguideType, 0));
+            if (!res.isSuccess()) {
+                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             } else {
-                List<GuidePage> guidePage = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(result), GuidePage.class);
-                List<GuidePageVo> convetVoList = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(guidePage), GuidePageVo.class);
-                List<GuidePageVo> tempList = convetVoList.stream().filter(index -> index.getFtype() == ftype).collect(Collectors.toList());
-                return Result.success(tempList);
+                List<GuidePage> guidePageList = res.getData();
+                List<GuidePageVo> convetVoList = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(guidePageList), GuidePageVo.class);
+                return Result.success(convetVoList);
             }
-        } catch (Exception e) {
-            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+        } else {
+            List<GuidePage> guidePage = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(result), GuidePage.class);
+            List<GuidePageVo> convetVoList = JacksonUtils.jsonTolist(JacksonUtils.objectTojson(guidePage), GuidePageVo.class);
+            List<GuidePageVo> tempList = convetVoList.stream().filter(index -> {
+              boolean  flag = false;
+              if(index.getFtype() == ftype && index.getFguideType()==0l) {
+                flag = index.getFtype() == ftype && index.getFguideType()==0l;
+              }
+              return  flag;
+            }).collect(Collectors.toList());
+            return Result.success(tempList);
         }
+    } catch (Exception e){
+        throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
     }
+  }
 }

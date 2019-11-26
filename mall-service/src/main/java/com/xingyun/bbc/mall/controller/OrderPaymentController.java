@@ -45,7 +45,6 @@ public class OrderPaymentController {
 		logger.info("查询订单列表" + orderPaymentDto.toString());
 		Long fuid = Long.parseLong(request.getHeader("xyid"));
 		orderPaymentDto.setFuid(fuid);
-		logger.info("查询订单列表" + orderPaymentApi.selectOrderList(orderPaymentDto).toString());
 		return orderPaymentApi.selectOrderList(orderPaymentDto);
 	}
 

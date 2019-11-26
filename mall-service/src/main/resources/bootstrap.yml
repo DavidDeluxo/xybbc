@@ -19,7 +19,7 @@ spring:
   application:
     # 配置名称, 注意顺序：后面配置的相同内容部分会替换前面的配置
     # common_*要排在前面
-    name: common_bbc,common_db,common_redis,common_amqp,xybbc-mall-service
+    name: common_bbc,common_db,common_redis,common_amqp,xybbc-mall-service-dev
   # 允许覆盖Bean实例
   main:
     allow-bean-definition-overriding: true
