@@ -338,7 +338,11 @@ public class UserAccountServiceImpl implements UserAccountService {
             accountDetailVo.setReson(UserWorkApplyReasons.getName(userWork.getFapplyReason()));
             accountDetailVo.setFremark(userWork.getFremark());
             accountDetailVo.setFapplyPic(userWork.getFapplyPic());
-
+            accountDetailVo.setFtransTypes(UserAccountTransTypesEnum.RECHARGE.getCode());
+            accountDetailVo.setType(5);
+            accountDetailVo.setFtransPoundage(null);
+            accountDetailVo.setFtransActualAmount(null);
+            accountDetailVo.setFpassedTime(userWork.getFmodifyTime());
         } else {
             Result<List<UserAccountTrans>> userAccountTransResult = userAccountTransApi.queryByCriteria(Criteria.of(UserAccountTrans.class)
                     .andEqualTo(UserAccountTrans::getFtransId, id));
@@ -346,38 +350,32 @@ public class UserAccountServiceImpl implements UserAccountService {
 
 
             accountDetailVo = dozerHolder.convert(userAccountTransResult.getData().get(0), AccountDetailVo.class);
-
-        }
-
-        if (accountDetailVo.getFtransTypes().compareTo(UserAccountTransTypesEnum.RECHARGE.getCode()) == 0) {
-            accountDetailVo.setType(accountDetailVo.getFrechargeType());
-            accountDetailVo.setFtransPoundage(null);
-            accountDetailVo.setFtransActualAmount(null);
-        } else if (accountDetailVo.getFtransTypes().compareTo(UserAccountTransTypesEnum.WITHDRAW.getCode()) == 0) {
-            accountDetailVo.setType(accountDetailVo.getFwithdrawType());
-            accountDetailVo.setFtransActualAmount(AccountUtil.divideOneHundred(accountDetailVo.getFtransActualAmount().longValue()));
-            accountDetailVo.setFtransPoundage(AccountUtil.divideOneHundred(accountDetailVo.getFtransPoundage().longValue()));
-        } else {
-            throw new BizException(MallPcExceptionCode.PARAM_ERROR);
-        }
-
-        if (accountDetailVo.getFtransStatus().compareTo(AccountTransType.WaitPayment.getCode()) == 0
-                || AccountTransType.WaitVerify.getCode().compareTo(accountDetailVo.getFtransStatus()) == 0) {
-            accountDetailVo.setFpassedTime(null);
-        } else {
-            if (initTime.compareTo(accountDetailVo.getFpassedTime()) == 0) {
-                if (initTime.compareTo(accountDetailVo.getFpayTime()) == 0) {
-                    accountDetailVo.setFpassedTime(accountDetailVo.getFmodifyTime());
-                } else {
-                    accountDetailVo.setFpassedTime(accountDetailVo.getFpayTime());
-                }
-
+            if (accountDetailVo.getFtransTypes().compareTo(UserAccountTransTypesEnum.RECHARGE.getCode()) == 0) {
+                accountDetailVo.setType(accountDetailVo.getFrechargeType());
+                accountDetailVo.setFtransPoundage(null);
+                accountDetailVo.setFtransActualAmount(null);
+            } else if (accountDetailVo.getFtransTypes().compareTo(UserAccountTransTypesEnum.WITHDRAW.getCode()) == 0) {
+                accountDetailVo.setType(accountDetailVo.getFwithdrawType());
+                accountDetailVo.setFtransActualAmount(AccountUtil.divideOneHundred(accountDetailVo.getFtransActualAmount().longValue()));
+                accountDetailVo.setFtransPoundage(AccountUtil.divideOneHundred(accountDetailVo.getFtransPoundage().longValue()));
+            } else {
+                throw new BizException(MallPcExceptionCode.PARAM_ERROR);
             }
+            if (accountDetailVo.getFtransStatus().compareTo(AccountTransType.WaitPayment.getCode()) == 0
+                    || AccountTransType.WaitVerify.getCode().compareTo(accountDetailVo.getFtransStatus()) == 0) {
+                accountDetailVo.setFpassedTime(null);
+            } else {
+                if (initTime.compareTo(accountDetailVo.getFpassedTime()) == 0) {
+                    if (initTime.compareTo(accountDetailVo.getFpayTime()) == 0) {
+                        accountDetailVo.setFpassedTime(accountDetailVo.getFmodifyTime());
+                    } else {
+                        accountDetailVo.setFpassedTime(accountDetailVo.getFpayTime());
+                    }
+
+                }
+            }
+            accountDetailVo.setFtransAmount(AccountUtil.divideOneHundred(accountDetailVo.getFtransAmount().longValue()));
         }
-        accountDetailVo.setFtransAmount(AccountUtil.divideOneHundred(accountDetailVo.getFtransAmount().longValue()));
-        ;
-
-
         return accountDetailVo;
     }
 
