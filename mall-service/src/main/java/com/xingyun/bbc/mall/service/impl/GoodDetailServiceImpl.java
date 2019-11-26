@@ -830,7 +830,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     @Override
     public Result<GoodStockSellVo> getGoodStock(GoodsDetailMallDto goodsDetailMallDto) {
-        //获取库存
+        //获取库存--库存前端查出来单件的库存--前端有除件装数展示
         GoodStockSellVo result = new GoodStockSellVo();
         //到批次
         if (null != goodsDetailMallDto.getFsupplierSkuBatchId()) {
