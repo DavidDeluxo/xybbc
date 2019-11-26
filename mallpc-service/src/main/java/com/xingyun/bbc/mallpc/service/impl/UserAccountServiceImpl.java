@@ -395,6 +395,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         }
         List<AccountDetailVo> accountDetails = new ArrayList<>();
         accountDetails.add(dozerHolder.convert(listResult.getData().get(0), AccountDetailVo.class));
+        accountDetails.get(0).setFpassedTime(listResult.getData().get(0).getFmodifyTime());
         switch (listResult.getData().get(0).getFdetailType()) {
             //充值提现
             case 1:
