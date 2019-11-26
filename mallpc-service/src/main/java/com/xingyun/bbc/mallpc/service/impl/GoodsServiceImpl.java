@@ -21,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.index.query.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -144,7 +143,6 @@ public class GoodsServiceImpl implements GoodsService {
     @Override
     public Result<SearchFilterVo> searchSkuFilter(SearchItemDto searchItemDto) {
         SearchFilterVo filterVo = new SearchFilterVo();
-
         //分类查询条件设置
         this.setCategoryCondition(searchItemDto);
         //扫描入参类属性注解, 自动构建搜索条件
@@ -164,7 +162,6 @@ public class GoodsServiceImpl implements GoodsService {
             //原产地
             List<Map<String, Object>> originAggs = (List<Map<String, Object>>) aggregationMap.get("forigin_id");
             List<OriginFilterVo> originFilterVoList = EsBeanUtil.getValueObjectList(OriginFilterVo.class, originAggs);
-
             filterVo.setOriginList(originFilterVoList);
 
             //贸易类型
@@ -172,32 +169,30 @@ public class GoodsServiceImpl implements GoodsService {
             List<TradeFilterVo> tradeFilterVoList = EsBeanUtil.getValueObjectList(TradeFilterVo.class, tradeAggs);
             filterVo.setTradeList(tradeFilterVoList);
 
-            //商品分类
+            //商品一级分类
             List<Map<String, Object>> categoryAggs = (List<Map<String, Object>>) aggregationMap.get("fcategory_id1");
             List<CategoryFilterVo> categoryFilterList = EsBeanUtil.getValueObjectList(CategoryFilterVo.class, categoryAggs);
-
-            //商品属性
-            List<Map<String, Object>> attributeAggs = (List<Map<String, Object>>) aggregationMap.get("attribute");
-            List<GoodsAttributeFilterVo> attributeFilterList = this.getGoodAttributeList(attributeAggs);
-            filterVo.setAttributeFilterList(attributeFilterList);
-
-            Result<List<GoodsCategory>> categoryResult = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class));
-            if (!categoryResult.isSuccess()) {
-                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
-            }
-            if (CollectionUtils.isNotEmpty(categoryResult.getData())) {
-                Map<Long, List<GoodsCategory>> categoryMap = categoryResult.getData().stream().collect(Collectors.groupingBy(GoodsCategory::getFcategoryId, Collectors.toList()));
-                for (CategoryFilterVo categoryFilterVo : categoryFilterList) {
-                    Integer fcategoryId = categoryFilterVo.getFcategoryId();
-                    List<GoodsCategory> categoryList = categoryMap.get(Long.parseLong(String.valueOf(fcategoryId)));
-                    if (CollectionUtils.isNotEmpty(categoryList)) {
-                        GoodsCategory category = categoryList.get(0);
-                        categoryFilterVo.setFcategorySort(category.getFcategorySort());
-                        categoryFilterVo.setFcreateTime(category.getFcreateTime());
+            if(!CollectionUtils.isEmpty(categoryFilterList)){
+                List<Integer> cateIds = categoryFilterList.stream().map(item->item.getFcategoryId()).collect(Collectors.toList());
+                Criteria<GoodsCategory,Object> criteriaCate = Criteria.of(GoodsCategory.class)
+                        .andIn(GoodsCategory::getFcategoryId,cateIds);
+                Result<List<GoodsCategory>> categoryResult = goodsCategoryApi.queryByCriteria(criteriaCate);
+                List<GoodsCategory> cateList = ResultUtils.getData(categoryResult);
+                if (CollectionUtils.isNotEmpty(cateList)) {
+                    Map<Long, GoodsCategory> categoryMap = categoryResult.getData().stream().collect(Collectors.toMap(GoodsCategory::getFcategoryId, cate -> cate));
+                    for (CategoryFilterVo categoryFilterVo : categoryFilterList) {
+                        Integer categoryId = categoryFilterVo.getFcategoryId();
+                        GoodsCategory category = categoryMap.get(Long.parseLong(String.valueOf(categoryId)));
+                        if (category != null) {
+                            categoryFilterVo.setFcategorySort(category.getFcategorySort());
+                            categoryFilterVo.setFcreateTime(category.getFcreateTime());
+                        }
                     }
                 }
             }
             filterVo.setCategoryList(categoryFilterList);
+
+            //赋值totalCount
             Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
             if (MapUtils.isNotEmpty(baseInfoMap) && baseInfoMap.get("totalHits") != null) {
                 filterVo.setTotalCount(Integer.parseInt(String.valueOf(baseInfoMap.get("totalHits"))));
@@ -356,21 +351,5 @@ public class GoodsServiceImpl implements GoodsService {
         }
         matcher.appendTail(sb);
         return sb.toString();
-    }
-
-    /**
-     * 提取商品属性聚合信息
-     *
-     * @param attributeAggs
-     * @return
-     */
-    private List<GoodsAttributeFilterVo> getGoodAttributeList(List<Map<String, Object>> attributeAggs) {
-        List<GoodsAttributeFilterVo> resultList = new LinkedList<>();
-        if (CollectionUtils.isEmpty(attributeAggs)) {
-            return resultList;
-        }
-        List<Map<String, Object>> aggList = (List<Map<String, Object>>) attributeAggs.get(0).get("attribute_id");
-        resultList = EsBeanUtil.getValueObjectList(GoodsAttributeFilterVo.class, aggList);
-        return resultList;
     }
 }
