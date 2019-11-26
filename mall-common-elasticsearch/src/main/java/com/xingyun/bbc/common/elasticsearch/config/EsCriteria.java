@@ -58,9 +58,7 @@ public class EsCriteria {
     private List<Tuple<String, Script>> updateScripts = new ArrayList<>();
 
     private List<SortBuilder> sorts = new ArrayList<>();
-
-
-
+    private String indexName;
 
     public EsCriteria page(int pageIndex, int pageSize) {
         if (pageIndex > 0) {
@@ -96,9 +94,9 @@ public class EsCriteria {
 
 
     public EsCriteria OrMust(Object fieldname, List<Object> fieldvalue) {
-        if(!CollectionUtils.isEmpty(fieldvalue ) && fieldname != null){
+        if (!CollectionUtils.isEmpty(fieldvalue) && fieldname != null) {
             DisMaxQueryBuilder disMaxQuerys = QueryBuilders.disMaxQuery();
-            for(Object value : fieldvalue){
+            for (Object value : fieldvalue) {
                 disMaxQuerys.add(QueryBuilders.termsQuery(String.valueOf(fieldname), value));
             }
             filterBuilder.must(disMaxQuerys);
@@ -414,10 +412,10 @@ public class EsCriteria {
 
     public static EsCriteria build(Object param) {
         EsCriteria criteria = new EsCriteria();
-        if(param != null){
+        if (param != null) {
             try {
                 criteria.autoBuild(param);
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -445,8 +443,8 @@ public class EsCriteria {
     }
 
 
-    public EsCriteria addUpdateRequest(String documentId, Map<String, Object> parameters){
-        if(StringUtils.isEmpty(documentId) || MapUtils.isEmpty(parameters)){
+    public EsCriteria addUpdateRequest(String documentId, Map<String, Object> parameters) {
+        if (StringUtils.isEmpty(documentId) || MapUtils.isEmpty(parameters)) {
             return this;
         }
         for (Entry<String, Object> entry : parameters.entrySet()) {
@@ -465,5 +463,11 @@ public class EsCriteria {
         return script;
     }
 
+    public static String[] listToArray(List<String> list) {
+        if(list == null){
+            throw new IllegalArgumentException("入参不能为空");
+        }
+        return list.toArray(new String[list.size()]);
+    }
 
 }

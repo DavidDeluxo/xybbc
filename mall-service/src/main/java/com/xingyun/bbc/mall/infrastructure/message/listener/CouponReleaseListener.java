@@ -27,14 +27,14 @@ public class CouponReleaseListener {
 
                 log.info("开始消费发布优惠券信息message={}", JSON.toJSONString(couponEvent));
                 Coupon coupon = couponEvent.getCoupon();
-                goodsService.updateEsSkuWithCouponInfo(coupon);
+                goodsService.updateCouponInfoToEsByAlias(coupon);
                 log.info("消费发布优惠券信息成功message={}", JSON.toJSONString(couponEvent));
 
             } else if (couponEvent instanceof CouponInvalidateEvent) {
 
                 log.info("开始消费失效优惠券信息message={}", JSON.toJSONString(couponEvent));
                 Coupon coupon = couponEvent.getCoupon();
-                goodsService.deleteCouponInfoFromEsSku(coupon);
+                goodsService.deleteCouponInfoFromEsByAlias(coupon);
                 log.info("消费发布失效优惠券信息成功message={}", JSON.toJSONString(couponEvent));
 
             }else if (couponEvent instanceof CouponUpdateBySkuEvent){

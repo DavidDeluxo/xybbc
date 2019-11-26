@@ -6,9 +6,18 @@ plugins {
     id "com.github.ManifestClasspath" version "0.1.0-RELEASE"
 }
 
+
+
+
 dependencyManagement {
+
     imports {
         mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+    dependencies {
+        dependency 'org.elasticsearch.client:elasticsearch-rest-high-level-client:6.5.3'
+        dependency 'org.elasticsearch:elasticsearch:6.5.3'
+        dependency 'org.elasticsearch.client:elasticsearch-rest-client:6.5.3'
     }
 }
 
