@@ -17,6 +17,7 @@ import com.xingyun.bbc.mallpc.model.dto.search.SearchItemDto;
 import com.xingyun.bbc.mallpc.model.vo.search.*;
 import com.xingyun.bbc.mallpc.service.GoodsService;
 import com.xingyun.bbc.mallpc.service.SearchRecordService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -38,6 +39,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class GoodsServiceImpl implements GoodsService {
 
@@ -82,6 +84,7 @@ public class GoodsServiceImpl implements GoodsService {
         pageVo.setList(voList);
         Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
         if (!CollectionUtils.isEmpty(resultList)) {
+            String priceName = this.getUserPriceType(searchItemDto);
             for (Map<String, Object> map : resultList) {
                 SearchItemVo vo = new SearchItemVo();
                 if (map.get("fskuId") != null) {
@@ -112,7 +115,6 @@ public class GoodsServiceImpl implements GoodsService {
                 if (map.get("flabelId") != null) {
                     vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
                 }
-                String priceName = this.getUserPriceType(searchItemDto);
                 if (map.get(priceName) != null && searchItemDto.getIsLogin()) {
                     Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
                     if (priceMap.get("min_price") != null) {
@@ -174,7 +176,7 @@ public class GoodsServiceImpl implements GoodsService {
             filterVo.setTradeList(tradeFilterVoList);
 
             //商品分类
-            List<Map<String, Object>> categoryAggs = (List<Map<String, Object>>) aggregationMap.get("fcategory_id3");
+            List<Map<String, Object>> categoryAggs = (List<Map<String, Object>>) aggregationMap.get("fcategory_id1");
             List<CategoryFilterVo> categoryFilterList = EsBeanUtil.getValueObjectList(CategoryFilterVo.class, categoryAggs);
 
             //商品属性
@@ -262,15 +264,16 @@ public class GoodsServiceImpl implements GoodsService {
         if (criteria == null) {
             return;
         }
-        criteria.termAggregate("fcategory_id3", "fcategory_id3").subAggregate("fcategory_name3", "fcategory_name3.keyword");
+        criteria.termAggregate("fcategory_id1", "fcategory_id1").subAggregate("fcategory_name1", "fcategory_name1.keyword");
+//        criteria.termAggregate("fcategory_id3", "fcategory_id3").subAggregate("fcategory_name3", "fcategory_name3.keyword");
         criteria.termAggregate("fbrand_id", "fbrand_id").subAggregate("fbrand_name", "fbrand_name.keyword");
         criteria.termAggregate("forigin_id", "forigin_id").subAggregate("forigin_name", "forigin_name.keyword");
         criteria.termAggregate("ftrade_id", "ftrade_id").subAggregate("ftrade_name", "ftrade_name.keyword");
 
         AggregationBuilder attributeAgg = AggregationBuilders.terms("attribute_id").field("attributes.fclass_attribute_id").order(BucketOrder.count(false))
                 .subAggregation(AggregationBuilders.terms("attribute_name").field("attributes.fclass_attribute_name.keyword").order(BucketOrder.count(false))
-                        .subAggregation(AggregationBuilders.terms("attribute_item_id").field("attributes.fclass_attribute_item_id").order(BucketOrder.count(false))
-                                .subAggregation(AggregationBuilders.terms("attribute_item_value").field("attributes.fclass_attribute_item_val.keyword").order(BucketOrder.count(false)))));
+                .subAggregation(AggregationBuilders.terms("attribute_item_id").field("attributes.fclass_attribute_item_id").order(BucketOrder.count(false))
+                .subAggregation(AggregationBuilders.terms("attribute_item_value").field("attributes.fclass_attribute_item_val.keyword").order(BucketOrder.count(false)))));
 
         AggregationBuilder nestedAgg = AggregationBuilders.nested("attribute", "attributes").subAggregation(attributeAgg);
         criteria.getAggBuilders().put("attribute", nestedAgg);
@@ -342,7 +345,10 @@ public class GoodsServiceImpl implements GoodsService {
         //默认为未认证
         String fuserTypeId = "0";
         if (searchItemDto.getIsLogin() && searchItemDto.getFuid() != null) {
-            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class).andEqualTo(User::getFuid, searchItemDto.getFuid()));
+            log.info("登录用户id：{}",searchItemDto.getFuid());
+            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
+                    .fields(User::getFuid,User::getFoperateType)
+                    .andEqualTo(User::getFuid, searchItemDto.getFuid()));
             if (!userResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }

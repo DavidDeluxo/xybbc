@@ -11,8 +11,7 @@ import java.util.Date;
  * 提现列表入口
  */
 @Data
-public class WithDrawRecordsVo extends AccountBaseInfoVo {
-
+public class WithDrawRecordsVo {
     /**
      * 申请时间
      */

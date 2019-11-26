@@ -24,6 +24,7 @@ import com.xingyun.bbc.mallpc.model.vo.address.CityRegionVo;
 import com.xingyun.bbc.mallpc.model.vo.address.UserAddressDetailsVo;
 import com.xingyun.bbc.mallpc.model.vo.address.UserAddressListVo;
 import com.xingyun.bbc.mallpc.service.UserAddressService;
+import io.seata.spring.annotation.GlobalTransactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -80,7 +81,7 @@ public class UserAddressServiceImpl implements UserAddressService {
             deliveryCondition.andEqualTo(UserDelivery::getFdeliveryMobile, fdeliveryMobile);
         }
         if (StringUtil.isNotBlank(fdeliveryName)) {
-            deliveryCondition.andEqualTo(UserDelivery::getFdeliveryName, fdeliveryName);
+            deliveryCondition.andLike(UserDelivery::getFdeliveryName, fdeliveryName + "%");
         }
         Result<Integer> integerResult = userDeliveryApi.countByCriteria(deliveryCondition);
         Ensure.that(integerResult).isNotNull(MallPcExceptionCode.SYSTEM_ERROR);
@@ -92,24 +93,26 @@ public class UserAddressServiceImpl implements UserAddressService {
         Result<List<UserDelivery>> userDeliveryResult = userDeliveryApi.queryByCriteria(deliveryCondition.page(userAddressListDto.getCurrentPage(), userAddressListDto.getPageSize()));
         Ensure.that(userDeliveryResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
         List<UserDelivery> userDeliveryList = userDeliveryResult.getData();
-        List<UserAddressListVo> vos = userDeliveryList.stream().map(userDelivery -> {
-            UserAddressListVo vo = convertor.convert(userDelivery, UserAddressListVo.class);
-            String deliveryArea = StringUtils.join(userDelivery.getFdeliveryProvinceName(), userDelivery.getFdeliveryCityName(), userDelivery.getFdeliveryAreaName());
-            if (Objects.equals(userDelivery.getFisDefualt(), 0)) {
-                vo.setIsDefualt("/");
-            } else if (Objects.equals(userDelivery.getFisDefualt(), 1)) {
-                vo.setIsDefualt("默认地址");
-            }
-            vo.setFdeliveryCardid(StringUtils.overlay(userDelivery.getFdeliveryCardid(), "****", 4, 7));
-            if (StringUtils.isNotBlank(userDelivery.getFdeliveryCardUrlBack()) && StringUtils.isNotBlank(userDelivery.getFdeliveryCardUrlFront())) {
-                vo.setIsCardUpload("已上传");
-            } else {
-                vo.setIsCardUpload("未上传");
-            }
-            vo.setDeliveryArea(deliveryArea);
-            return vo;
-        }).collect(toList());
+        List<UserAddressListVo> vos = userDeliveryList.stream().map(userDelivery -> convertAddress(userDelivery)).collect(toList());
         return Result.success(new PageVo<>(totalCount, userAddressListDto.getCurrentPage(), userAddressListDto.getPageSize(), vos));
+    }
+
+    private UserAddressListVo convertAddress(UserDelivery userDelivery) {
+        UserAddressListVo vo = convertor.convert(userDelivery, UserAddressListVo.class);
+        String deliveryArea = StringUtils.join(userDelivery.getFdeliveryProvinceName(), userDelivery.getFdeliveryCityName(), userDelivery.getFdeliveryAreaName());
+        if (Objects.equals(userDelivery.getFisDefualt(), 0)) {
+            vo.setIsDefualt("/");
+        } else if (Objects.equals(userDelivery.getFisDefualt(), 1)) {
+            vo.setIsDefualt("默认地址");
+        }
+        vo.setFdeliveryCardid(StringUtils.overlay(userDelivery.getFdeliveryCardid(), "****", 4, 7));
+        if (StringUtils.isNotBlank(userDelivery.getFdeliveryCardUrlBack()) && StringUtils.isNotBlank(userDelivery.getFdeliveryCardUrlFront())) {
+            vo.setIsCardUpload("已上传");
+        } else {
+            vo.setIsCardUpload("未上传");
+        }
+        vo.setDeliveryArea(deliveryArea);
+        return vo;
     }
 
     /**
@@ -119,19 +122,37 @@ public class UserAddressServiceImpl implements UserAddressService {
      * @version 1.0.0
      */
     @Override
-    public Result saveOrUpdate(UserAddressDto userAddressDto) {
+    @GlobalTransactional
+    public Result<UserAddressListVo> saveOrUpdate(UserAddressDto userAddressDto) {
+        Long userId = RequestHolder.getUserId();
         //校验身份证 手机号
         Ensure.that(StringUtilExtention.mobileCheck(userAddressDto.getFdeliveryMobile())).isTrue(MallPcExceptionCode.BIND_MOBILE_ERROR);
         if (StringUtil.isNotBlank(userAddressDto.getFdeliveryCardid())) {
             Ensure.that(StringUtilExtention.idCardCheck(userAddressDto.getFdeliveryCardid())).isTrue(MallPcExceptionCode.ID_CARD_NUMBER_ILLEGAL);
         }
-        UserDelivery userDelivery = convertor.convert(userAddressDto, UserDelivery.class);
-        if (StringUtil.isBlank(userAddressDto.getFdeliveryUserId())) {
-            Ensure.that(userDeliveryApi.create(userDelivery).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
-        } else {
-            Ensure.that(userDeliveryApi.updateNotNull(userDelivery).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+        if (Objects.equals(userAddressDto.getFisDefualt(), BooleanNum.TRUE.getCode())) {
+            Criteria<UserDelivery, Object> criteria = Criteria.of(UserDelivery.class)
+                    .andEqualTo(UserDelivery::getFuid, userId)
+                    .andEqualTo(UserDelivery::getFisDefualt, BooleanNum.TRUE.getCode())
+                    .andEqualTo(UserDelivery::getFisDelete, BooleanNum.FALSE.getCode());
+            UserDelivery defaultDelivery = ResultUtils.getData(userDeliveryApi.queryOneByCriteria(criteria));
+            if (Objects.nonNull(defaultDelivery)) {
+                // 修改默认地址为非默认
+                defaultDelivery.setFisDefualt(BooleanNum.FALSE.getCode());
+                Ensure.that(userDeliveryApi.updateNotNull(defaultDelivery).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+            }
         }
-        return Result.success();
+        UserDelivery userDelivery = convertor.convert(userAddressDto, UserDelivery.class);
+        userDelivery.setFuid(userId);
+        if (StringUtil.isBlank(userAddressDto.getFdeliveryUserId())) {
+            Result<UserDelivery> userDeliveryResult = userDeliveryApi.saveAndReturn(userDelivery);
+            Ensure.that(userDeliveryResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+            return Result.success(convertAddress(userDeliveryResult.getData()));
+        } else {
+            // 编辑
+            Ensure.that(userDeliveryApi.updateNotNull(userDelivery).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+            return Result.success();
+        }
     }
 
     /**

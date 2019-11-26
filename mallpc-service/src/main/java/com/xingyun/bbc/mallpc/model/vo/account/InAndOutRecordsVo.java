@@ -11,7 +11,8 @@ import java.util.Date;
  * 收支明细
  */
 @Data
-public class InAndOutRecordsVo extends AccountBaseInfoVo {
+public class InAndOutRecordsVo {
+
 
     @JsonIgnore
     private Date fcreateTime;
@@ -24,14 +25,13 @@ public class InAndOutRecordsVo extends AccountBaseInfoVo {
     private Integer fdetailType;
 
     //单号
-    private String fdetailId;
+    private String ftypeId;
 
     //支出
     private BigDecimal fexpenseAmount;
 
     //收入
     private BigDecimal fincomeAmount;
-
 
 
 }

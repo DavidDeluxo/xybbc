@@ -91,6 +91,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
      * @return: Boolean                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
+    @GlobalTransactional
     @Override
     public Result receiveCodeCoupon(String fcouponCode, Long fuid) {
         //校验参数
@@ -100,14 +101,16 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         //通过券码查询券id
         Result<CouponCode> couponCode = couponCodeApi.queryOneByCriteria(Criteria.of(CouponCode.class)
                 .andEqualTo(CouponCode::getFcouponCode, fcouponCode)
-                .andEqualTo(CouponCode::getFisUsed, 0)
-                .fields(CouponCode::getFcouponId));
+                .fields(CouponCode::getFcouponId,CouponCode::getFisUsed));
         if (!couponCode.isSuccess()) {
             logger.error("通过券码查询券id失败，fcouponCode{}", fcouponCode);
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         if (null == couponCode.getData()) {
             throw new BizException(MallExceptionCode.CODE_NOT_COUPON);
+        }
+        if(couponCode.getData().getFisUsed() == 1){
+            throw new BizException(MallExceptionCode.CODE_IS_USED);
         }
         //查询优惠券--状态（已发布）--类型（页面领取）--剩余数量--领取上限--有效期结束时间--发放结束时间
         Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
@@ -136,7 +139,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
             return Result.failure(MallExceptionCode.COUPON_IS_INVALID);
         }
         //校验该券领取时间
-        if (coupon.getFreleaseTimeType() == 2 && now.after(coupon.getFreleaseTimeEnd())) {
+        if (coupon.getFreleaseTimeType() == 2 && (now.after(coupon.getFreleaseTimeEnd()) || now.before(coupon.getFreleaseTimeStart()))) {
             throw new BizException(MallExceptionCode.COUPON_IS_NOT_TIME);
         }
         //查询用户已经领到的券张数
@@ -149,7 +152,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         }
         //校验该券领取上限
         if (null != countResult.getData() && countResult.getData().equals(coupon.getFperLimit())) {
-            throw new BizException(MallExceptionCode.COUPON_IS_MAX);
+            throw new BizException(MallExceptionCode.COUPON_IS_OUT_OF_LIMIT);
         }
         //校验券码对应的券和指定会员关系
         CouponQueryDto couponQueryDto = new CouponQueryDto();
@@ -176,7 +179,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         receiveCouponDto.setFcouponCode(fcouponCode);
         //调用聚合服务进行领券
         Result result = this.receiveCoupon(receiveCouponDto);
-        return Result.success(result.getData());
+        return result;
     }
 
 
@@ -188,7 +191,6 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
      * @return: Result                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
-    @GlobalTransactional
     public Result receiveCoupon(ReceiveCouponDto receiveCouponDto) {
         Long fuid = receiveCouponDto.getFuid();
         String fcouponCode = receiveCouponDto.getFcouponCode();
@@ -280,6 +282,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
      * @date 2019/11/12 13:49
      */
     @Override
+    @GlobalTransactional
     public Result addReceiveCoupon(Long fcouponId, Long fuid) {
         //校验入参
         if (null == fuid || null == fcouponId) {
@@ -311,7 +314,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
             return Result.failure(MallExceptionCode.COUPON_IS_INVALID);
         }
         //校验该券领取时间
-        if (coupon.getFreleaseTimeType() == 2 && now.after(coupon.getFreleaseTimeEnd())) {
+        if (coupon.getFreleaseTimeType() == 2 && (now.after(coupon.getFreleaseTimeEnd()) || now.before(coupon.getFreleaseTimeStart()))) {
             throw new BizException(MallExceptionCode.COUPON_IS_NOT_TIME);
         }
         //查询已经领到的券张数
@@ -330,7 +333,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         receiveCouponDto.setFuid(fuid);
         receiveCouponDto.setFcouponId(fcouponId);
         Result result = this.receiveCenterCoupon(receiveCouponDto);
-        return Result.success(result.getData());
+        return result;
     }
 
 
@@ -342,7 +345,6 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
      * @return: Result                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
-    @GlobalTransactional
     public Result receiveCenterCoupon(ReceiveCouponDto receiveCouponDto) {
         Long fcouponId = receiveCouponDto.getFcouponId();
         Long fuid = receiveCouponDto.getFuid();
@@ -363,12 +365,15 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
             //调用领券服务
             Result receiveReceive = couponProviderApi.receive(couponReleaseDto);
             Ensure.that(receiveReceive.isSuccess()).isTrue(new MallExceptionCode(receiveReceive.getCode(), receiveReceive.getMsg()));
+            return receiveReceive;
         } catch (Exception e) {
             e.printStackTrace();
+            BizException be = (BizException) e;
+            return Result.failure(be.getStatus());
         } finally {
             xybbcLock.releaseLock(lockKey, lockValue);
         }
-        return Result.success(true);
+
     }
 
 

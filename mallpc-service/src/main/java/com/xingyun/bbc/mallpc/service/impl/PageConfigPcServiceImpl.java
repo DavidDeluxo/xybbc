@@ -2,7 +2,6 @@ package com.xingyun.bbc.mallpc.service.impl;
 
 
 import com.google.common.collect.Lists;
-import com.xingyun.bbc.common.redis.XyRedisManager;
 import com.xingyun.bbc.core.operate.api.PageConfigApi;
 import com.xingyun.bbc.core.operate.enums.PageConfigPcEnum;
 import com.xingyun.bbc.core.operate.enums.PageConfigPositionEnum;
@@ -12,11 +11,11 @@ import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
+import com.xingyun.bbc.mallpc.model.vo.pageconfig.ModuleVo;
 import com.xingyun.bbc.mallpc.model.vo.pageconfig.PageConfigPcVo;
 import com.xingyun.bbc.mallpc.service.PageConfigPcService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -37,17 +36,23 @@ public class PageConfigPcServiceImpl implements PageConfigPcService {
     @Resource
     private PageConfigApi pageConfigApi;
 
-    @Resource
-    private XyRedisManager xyRedisManager;
 
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
-
-
-
-
-
-
+    @Override
+    public List<ModuleVo> selectModules() {
+        List<ModuleVo> modulesVos = Lists.newArrayList();
+        for (PageConfigPcEnum configIndex : PageConfigPcEnum.values()) {
+            ModuleVo modulesVo = new ModuleVo();
+            //这个版本暂不考虑这两个模块
+            if (configIndex.getKey().equals(PageConfigPcEnum.SKU.getKey())
+                    || configIndex.getKey().equals(PageConfigPcEnum.COUPON_CENTER.getKey())) {
+                continue;
+            }
+            modulesVo.setFconfigId(Long.valueOf(configIndex.getKey()));
+            modulesVo.setFconfigName(configIndex.getValue());
+            modulesVos.add(modulesVo);
+        }
+        return modulesVos;
+    }
 
     @Override
     public List<PageConfigPcVo> navigation() {

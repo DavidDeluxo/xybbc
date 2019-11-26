@@ -14,6 +14,8 @@ import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.CouponApi;
 import com.xingyun.bbc.core.market.api.CouponApplicableSkuApi;
 import com.xingyun.bbc.core.market.api.CouponApplicableSkuConditionApi;
+import com.xingyun.bbc.core.market.enums.CouponApplicableSkuEnum;
+import com.xingyun.bbc.core.market.enums.CouponStatusEnum;
 import com.xingyun.bbc.core.market.po.Coupon;
 import com.xingyun.bbc.core.market.po.CouponApplicableSku;
 import com.xingyun.bbc.core.market.po.CouponApplicableSkuCondition;
@@ -44,6 +46,8 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.search.join.ScoreMode;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
@@ -74,6 +78,7 @@ public class GoodsServiceImpl implements GoodsService {
     private static final String PRICE_TYPE_SUFFIX = ".min_price";
     private static Pattern humpPattern = Pattern.compile("[A-Z0-9]");
 
+    private static final String COUPON_ALIAS_PREFIX = "coupon_";
 
     @Autowired
     EsManager esManager;
@@ -108,12 +113,47 @@ public class GoodsServiceImpl implements GoodsService {
     @Resource
     private CouponApplicableSkuConditionApi couponApplicableSkuConditionApi;
 
+
+    @Override
+    public void testEsAlias() {
+        String aliasName = "coupon_one";
+        String fieldName = "fsku_id";
+        String indexName = "bbc_sku_beta_test_order3";
+        Result<List<GoodsSku>> skuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class).andEqualTo(GoodsSku::getFskuStatus, 1).page(1, 2));
+        if (!skuResult.isSuccess()) {
+            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+        }
+        IndicesAliasesRequest request = new IndicesAliasesRequest();
+        AliasActions actions = new AliasActions(AliasActions.Type.ADD);
+//        DisMaxQueryBuilder disMaxQueryBuilder = QueryBuilders.disMaxQuery();
+
+        List<String> skuids = skuResult.getData().stream().map(sku -> String.valueOf(sku.getFskuId())).collect(Collectors.toList());
+        IdsQueryBuilder a = new IdsQueryBuilder();
+        String[] idArray = new String[skuids.size()];
+        idArray = skuids.toArray(idArray);
+        a.addIds(idArray);
+
+        QueryBuilder builder = QueryBuilders.boolQuery().mustNot(a);
+
+
+//        for(GoodsSku goodsSku : skuResult.getData()){
+//            disMaxQueryBuilder.add(QueryBuilders.termQuery(fieldName, goodsSku.getFskuId()));
+//        }
+        actions.index(indexName).alias(aliasName).filter(builder);
+        request.addAliasAction(actions);
+        esManager.addAlias(request);
+    }
+
+
     @Override
     public Result<SearchFilterVo> searchSkuFilter(SearchItemDto searchItemDto) {
 
         SearchFilterVo filterVo = new SearchFilterVo();
         this.setCategoryCondition(searchItemDto);
         EsCriteria criteria = EsCriteria.build(searchItemDto);
+        if (searchItemDto.getCouponId() != null) {
+            criteria.setIndexName(this.getCouponAliasName(Long.parseLong(String.valueOf(searchItemDto.getCouponId()))));
+        }
         this.setSearchCondition(searchItemDto, criteria);
         this.setAggregation(criteria);
 
@@ -188,7 +228,7 @@ public class GoodsServiceImpl implements GoodsService {
         }
     }
 
-    private SkuIdVo queryApplicableSku(Long fcouponId, Integer pageIndex, Integer pageSize){
+    private SkuIdVo queryApplicableSku(Long fcouponId, Integer pageIndex, Integer pageSize) {
         pageIndex = pageIndex == null ? 1 : pageIndex;
         pageSize = pageSize == null ? 100 : pageSize;
         SkuIdVo skuIdVo = new SkuIdVo();
@@ -203,11 +243,11 @@ public class GoodsServiceImpl implements GoodsService {
         Ensure.that(couponResult.getData()).isNotNull(MallExceptionCode.COUPON_IS_NOT_EXIST);
         Coupon coupon = couponResult.getData();
         //全选
-        if(coupon.getFapplicableSku() == 1){
+        if (coupon.getFapplicableSku() == 1) {
             Criteria skuCriteria = Criteria.of(GoodsSku.class).fields(GoodsSku::getFskuId);
             Result<Integer> totalCountResult = goodsSkuApi.countByCriteria(skuCriteria);
             Ensure.that(totalCountResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
-            Result<List<GoodsSku>> goodsSkuResult  = goodsSkuApi.queryByCriteria(skuCriteria.page(pageIndex, pageSize));
+            Result<List<GoodsSku>> goodsSkuResult = goodsSkuApi.queryByCriteria(skuCriteria.page(pageIndex, pageSize));
             Ensure.that(goodsSkuResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
             skuIdVo.setTotalCount(totalCountResult.getData());
             List<String> SkuIdString = goodsSkuResult.getData().stream().map(sku -> String.valueOf(sku.getFskuId())).collect(Collectors.toList());
@@ -215,7 +255,7 @@ public class GoodsServiceImpl implements GoodsService {
             return skuIdVo;
         }
         //正选
-        if(coupon.getFapplicableSku() == 2){
+        if (coupon.getFapplicableSku() == 2) {
             Criteria<CouponApplicableSku, Object> criteria = Criteria.of(CouponApplicableSku.class)
                     .fields(CouponApplicableSku::getFskuId).andEqualTo(CouponApplicableSku::getFcouponId, fcouponId);
             Result<List<CouponApplicableSku>> couponApplicableSkuResult = couponApplicableSkuApi.queryByCriteria(criteria.page(pageIndex, pageSize));
@@ -232,10 +272,10 @@ public class GoodsServiceImpl implements GoodsService {
             }
             // 再查 t_bbc_coupon_assign_sku_condition
             Result<List<CouponApplicableSkuCondition>> conditionResult = couponApplicableSkuConditionApi.queryByCriteria(Criteria.of(CouponApplicableSkuCondition.class)
-                    .andEqualTo(CouponApplicableSkuCondition::getFcouponId,fcouponId));
+                    .andEqualTo(CouponApplicableSkuCondition::getFcouponId, fcouponId));
             Ensure.that(conditionResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
             List<CouponApplicableSkuCondition> conditionList = conditionResult.getData();
-            if(CollectionUtils.isNotEmpty(conditionList)){
+            if (CollectionUtils.isNotEmpty(conditionList)) {
                 List<CouponSkuQueryDto> couponSkuQueryDtos = Lists.newArrayList();
                 conditionList.stream().forEach(couponApplicableSkuCondition -> {
                     //对应字段转成java object
@@ -248,7 +288,7 @@ public class GoodsServiceImpl implements GoodsService {
             return skuIdVo;
         }
         //反选
-        if(coupon.getFapplicableSku() == 3){
+        if (coupon.getFapplicableSku() == 3) {
             Criteria<CouponApplicableSku, Object> criteria = Criteria.of(CouponApplicableSku.class)
                     .fields(CouponApplicableSku::getFskuId).andEqualTo(CouponApplicableSku::getFcouponId, fcouponId);
             Result<List<CouponApplicableSku>> couponApplicableSkuResult = couponApplicableSkuApi.queryByCriteria(criteria);
@@ -269,10 +309,10 @@ public class GoodsServiceImpl implements GoodsService {
             // 再查 t_bbc_coupon_assign_sku_
             // 再查 t_bbc_coupon_assign_sku_condition
             Result<List<CouponApplicableSkuCondition>> conditionResult = couponApplicableSkuConditionApi.queryByCriteria(Criteria.of(CouponApplicableSkuCondition.class)
-                    .andEqualTo(CouponApplicableSkuCondition::getFcouponId,fcouponId));
+                    .andEqualTo(CouponApplicableSkuCondition::getFcouponId, fcouponId));
             Ensure.that(conditionResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
             List<CouponApplicableSkuCondition> conditionList = conditionResult.getData();
-            if(CollectionUtils.isNotEmpty(conditionList)){
+            if (CollectionUtils.isNotEmpty(conditionList)) {
                 List<CouponSkuQueryDto> couponSkuQueryDtos = Lists.newArrayList();
                 conditionList.stream().forEach(couponApplicableSkuCondition -> {
                     //对应字段转成java object
@@ -288,15 +328,13 @@ public class GoodsServiceImpl implements GoodsService {
     }
 
 
-
-
     /**
      * @author
      * @date 2019-11-14
      * @description :  根据优惠券条件查商品
      * @version 1.0.0
      */
-    private SkuIdVo querySkuByCondition(List<CouponSkuQueryDto> couponSkuQueryDtos, Integer pageIndex, Integer pageSize, SkuIdVo skuIdVo){
+    private SkuIdVo querySkuByCondition(List<CouponSkuQueryDto> couponSkuQueryDtos, Integer pageIndex, Integer pageSize, SkuIdVo skuIdVo) {
         Criteria<GoodsSku, Object> skuObjectCriteria = Criteria.of(GoodsSku.class)
                 .fields(GoodsSku::getFskuId,
                         GoodsSku::getFgoodsId,
@@ -355,16 +393,16 @@ public class GoodsServiceImpl implements GoodsService {
             throw new BizException(ResultStatus.NOT_IMPLEMENTED);
         }
         List<GoodsSku> goodsSkus = goodsSkuResult.getData();
-        List<String> skuIds = goodsSkus.stream().map(sku->String.valueOf(sku.getFskuId())).collect(Collectors.toList());
+        List<String> skuIds = goodsSkus.stream().map(sku -> String.valueOf(sku.getFskuId())).collect(Collectors.toList());
         skuIdVo.setFskuIds(skuIds);
-        Result<Integer> totalCountResult =  goodsSkuApi.countByCriteria(skuObjectCriteria);
+        Result<Integer> totalCountResult = goodsSkuApi.countByCriteria(skuObjectCriteria);
         Ensure.that(totalCountResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
         skuIdVo.setTotalCount(totalCountResult.getData());
         return skuIdVo;
     }
 
 
-    private SkuIdVo querySkuByConditionReverse(List<CouponSkuQueryDto> couponSkuQueryDtos, Integer pageIndex, Integer pageSize, SkuIdVo skuIdVo){
+    private SkuIdVo querySkuByConditionReverse(List<CouponSkuQueryDto> couponSkuQueryDtos, Integer pageIndex, Integer pageSize, SkuIdVo skuIdVo) {
         Criteria<GoodsSku, Object> skuObjectCriteria = Criteria.of(GoodsSku.class)
                 .fields(GoodsSku::getFskuId,
                         GoodsSku::getFgoodsId,
@@ -423,9 +461,9 @@ public class GoodsServiceImpl implements GoodsService {
             throw new BizException(ResultStatus.NOT_IMPLEMENTED);
         }
         List<GoodsSku> goodsSkus = goodsSkuResult.getData();
-        List<String> skuIds = goodsSkus.stream().map(sku->String.valueOf(sku.getFskuId())).collect(Collectors.toList());
+        List<String> skuIds = goodsSkus.stream().map(sku -> String.valueOf(sku.getFskuId())).collect(Collectors.toList());
         skuIdVo.setFskuIds(skuIds);
-        Result<Integer> totalCountResult =  goodsSkuApi.countByCriteria(skuObjectCriteria);
+        Result<Integer> totalCountResult = goodsSkuApi.countByCriteria(skuObjectCriteria);
         Ensure.that(totalCountResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
         skuIdVo.setTotalCount(totalCountResult.getData());
         return skuIdVo;
@@ -466,7 +504,7 @@ public class GoodsServiceImpl implements GoodsService {
     }
 
     @Override
-    public Result<Boolean> updateCouponList(){
+    public Result<Boolean> updateCouponList() {
         EsCriteria criteria = new EsCriteria();
         List<Integer> couponIds = com.google.common.collect.Lists.newArrayList();
         couponIds.add(2);
@@ -478,7 +516,7 @@ public class GoodsServiceImpl implements GoodsService {
         criteria.addUpdateRequest("55719", updateParam);
         try {
             esManager.updateInBulk(criteria);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return Result.success(true);
@@ -550,36 +588,36 @@ public class GoodsServiceImpl implements GoodsService {
     }
 
     @Override
-    public void updateCouponIdForAllSku(RefreshCouponDto refreshCouponDto){
+    public void updateCouponIdForAllSku(RefreshCouponDto refreshCouponDto) {
         Integer pageSize = 2000;
         EsCriteria criteria = EsCriteria.build(null);
 //        DisMaxQueryBuilder disMaxQueryBuilder = new DisMaxQueryBuilder();
 
         criteria.setPageSize(pageSize);
         Map<String, Object> resultMap = esManager.queryWithBaseInfo(criteria);
-        if(resultMap.get("baseInfoMap") != null){
+        if (resultMap.get("baseInfoMap") != null) {
             Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
             Integer totalPage = 0;
-            if(baseInfoMap.get("totalPage") != null){
+            if (baseInfoMap.get("totalPage") != null) {
                 totalPage = Integer.parseInt(String.valueOf(baseInfoMap.get("totalPage")));
             }
-            for(int var = 1; var <= totalPage; var ++){
+            for (int var = 1; var <= totalPage; var++) {
                 log.info("处理第{}页, 共{}页开始", var, totalPage);
                 criteria.setPageIndex(var);
                 Map<String, Object> aresultMap = esManager.queryWithBaseInfo(criteria);
                 List<Map<String, Object>> aList = (List<Map<String, Object>>) aresultMap.get("resultList");
                 Map<String, Map<String, Object>> updateMap = new HashMap<>();
-                for(Map<String, Object> sourceMap : aList){
-                    if(sourceMap.get("fsku_id") != null){
+                for (Map<String, Object> sourceMap : aList) {
+                    if (sourceMap.get("fsku_id") != null) {
                         String fskuId = String.valueOf(sourceMap.get("fsku_id"));
                         List<Integer> couponList = getCouponListForSku(fskuId);
-                        sourceMap.put("fcoupon_ids",couponList);
+                        sourceMap.put("fcoupon_ids", couponList);
                         updateMap.put(fskuId, sourceMap);
                     }
                 }
                 try {
                     esManager.indexInBulk(updateMap);
-                }catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
                 log.info("处理第{}页, 共{}页结束", var, totalPage);
@@ -588,36 +626,36 @@ public class GoodsServiceImpl implements GoodsService {
     }
 
     @Override
-    public void deleteCouponInfoFromEsSku(Coupon coupon){
-        if(coupon == null || coupon.getFcouponId() == null){
+    public void deleteCouponInfoFromEsSku(Coupon coupon) {
+        if (coupon == null || coupon.getFcouponId() == null) {
             return;
         }
         Long fcouponId = coupon.getFcouponId();
         long startTimeTotal = System.currentTimeMillis();
         int pageSize = 2000;
-        SkuIdVo skuIdVo = queryApplicableSku(fcouponId, 1,9);
-        if(skuIdVo.getTotalCount() == 0){
+        SkuIdVo skuIdVo = queryApplicableSku(fcouponId, 1, 9);
+        if (skuIdVo.getTotalCount() == 0) {
             return;
         }
         int totalPage = 0;
-        if(skuIdVo.getTotalCount() % pageSize == 0){
+        if (skuIdVo.getTotalCount() % pageSize == 0) {
             totalPage = skuIdVo.getTotalCount() / pageSize;
-        }else{
+        } else {
             totalPage = skuIdVo.getTotalCount() / pageSize + 1;
         }
-        for(int i = 1; i<=totalPage; i++){
-            skuIdVo = queryApplicableSku(fcouponId, i,pageSize);
+        for (int i = 1; i <= totalPage; i++) {
+            skuIdVo = queryApplicableSku(fcouponId, i, pageSize);
             List<String> skuIds = skuIdVo.getFskuIds();
             try {
                 long startTime = System.currentTimeMillis();
-                Map<String, Map<String,Object>> multiSourceMap = new HashMap<>();
+                Map<String, Map<String, Object>> multiSourceMap = new HashMap<>();
                 List<Map<String, Object>> responseList = esManager.getInBulk(skuIds);
 //                log.info(JSON.toJSONString(responseList));
-                for(Map<String, Object> sourceMap : responseList){
-                    if(MapUtils.isNotEmpty(sourceMap)){
+                for (Map<String, Object> sourceMap : responseList) {
+                    if (MapUtils.isNotEmpty(sourceMap)) {
                         List<Integer> couponIdList = (List<Integer>) sourceMap.get("fcoupon_ids");
                         Set<Integer> set = Sets.newHashSet(couponIdList);
-                        if(couponIdList.contains(fcouponId.intValue())){
+                        if (couponIdList.contains(fcouponId.intValue())) {
                             set.remove(fcouponId.intValue());
                         }
                         sourceMap.put("fcoupon_ids", set);
@@ -625,100 +663,324 @@ public class GoodsServiceImpl implements GoodsService {
                     }
                 }
                 long endTime = System.currentTimeMillis();
-                float excTime = (float) (endTime-startTime) / 1000;
+                float excTime = (float) (endTime - startTime) / 1000;
                 log.info("get_exec_time:{}, pagesize:{}, pageIndex:{}, totalPages:{}", excTime, pageSize, i, totalPage);
 
                 long startTimeIndex = System.currentTimeMillis();
-                if(MapUtils.isNotEmpty(multiSourceMap)){
+                if (MapUtils.isNotEmpty(multiSourceMap)) {
                     BulkResponse bulkResponse = esManager.indexInBulk(multiSourceMap);
-                }else {
+                } else {
                     log.info("multisourceMap is empty!");
                 }
                 long endTimeIndex = System.currentTimeMillis();
-                float excTime_index = (float) (endTimeIndex-startTimeIndex) / 1000;
+                float excTime_index = (float) (endTimeIndex - startTimeIndex) / 1000;
                 log.info("index_exec_time:{}, pagesize:{}, pageIndex:{}, totalPages:{}", excTime_index, pageSize, i, totalPage);
 
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         long endTimeTotal = System.currentTimeMillis();
-        float excTimeTotal = (float) (endTimeTotal-startTimeTotal) / 1000;
+        float excTimeTotal = (float) (endTimeTotal - startTimeTotal) / 1000;
         log.info("total_exec_time:{}, totalPages:{}", excTimeTotal, totalPage);
     }
 
     @Override
-    public void updateEsSkuWithSkuUpdate(Map<String, Object> skuSourceMap){
-        if(MapUtils.isEmpty(skuSourceMap)){
+    public void updateEsSkuWithSkuUpdate(Map<String, Object> skuSourceMap) {
+        if (MapUtils.isEmpty(skuSourceMap)) {
             return;
         }
         String fskuId = String.valueOf(skuSourceMap.get("fsku_id"));
         try {
             GetResponse getResponse = esManager.getSourceById(fskuId);
-            if(getResponse.isExists()){
-                log.info("更新sku:{}",fskuId);
+            if (getResponse.isExists()) {
+                log.info("更新sku:{}", fskuId);
                 Map<String, Object> oldSourceMap = getResponse.getSourceAsMap();
-                if(oldSourceMap.get("fcoupon_ids") != null){
+                if (oldSourceMap.get("fcoupon_ids") != null) {
                     List<Integer> couponIdList = (List<Integer>) oldSourceMap.get("fcoupon_ids");
                     log.info("保留现有优惠券id列表:{}", couponIdList);
                     skuSourceMap.put("fcoupon_ids", couponIdList);
                 }
-            }else {
-                log.info("新增sku:{}",fskuId);
-                List<Integer> couponList = getCouponListForSku(fskuId);
-                log.info("新建sku对应优惠券id列表:{}", couponList);
-                skuSourceMap.put("fcoupon_ids", couponList);
+            } else {
+                log.info("新增sku:{}", fskuId);
+//                List<Integer> couponList = getCouponListForSku(fskuId);
+//                log.info("新建sku对应优惠券id列表:{}", couponList);
+//                skuSourceMap.put("fcoupon_ids", couponList);
             }
             Map<String, Map<String, Object>> indexMap = new HashMap<>();
             indexMap.put(fskuId, skuSourceMap);
             esManager.indexInBulk(indexMap);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private List<Integer> getCouponListForSku(String fskuId){
+    private List<Integer> getCouponListForSku(String fskuId) {
         CouponQueryDto couponQueryDto = new CouponQueryDto();
         couponQueryDto.setSkuId(Long.parseLong(fskuId));
         List<Coupon> couponList = couponService.queryBySkuId(couponQueryDto);
-        if(CollectionUtils.isEmpty(couponList)){
+        if (CollectionUtils.isEmpty(couponList)) {
             return Lists.newArrayList();
         }
         List<Integer> couponIdList = couponList.stream().map(coupon -> coupon.getFcouponId().intValue()).collect(Collectors.toList());
         return couponIdList;
     }
 
+    @Override
+    public void deleteCouponInfoFromEsByAlias(Coupon coupon) {
+        try {
+            Long fcouponId = coupon.getFcouponId();
+            String aliasName = this.getCouponAliasName(fcouponId);
+            if (esManager.isAliasExist(aliasName)) {
+                AliasActions deleteAction = new AliasActions(AliasActions.Type.REMOVE).alias(aliasName);
+                esManager.updateAlias(deleteAction);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @Override
-    public void updateEsSkuWithCouponInfo(Coupon coupon){
-        if(coupon == null || coupon.getFcouponId() == null){
+    public void updateCouponInfoToEsByAlias(Coupon coupon) throws Exception {
+        //查询优惠券信息
+        Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class).andEqualTo(Coupon::getFcouponId, coupon.getFcouponId()));
+        Ensure.that(couponResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
+        if (Objects.isNull(couponResult.getData())) {
+            log.error("查询不到优惠券信息, id:{}", coupon.getFcouponId());
+            return;
+        }
+        //校验优惠券状态
+        Coupon couponDataBase = couponResult.getData();
+        if (!couponDataBase.getFcouponStatus().equals(CouponStatusEnum.PUSHED.getCode())) {
+            log.error("优惠券不是已发布状态, id:{}, status:{}", coupon.getFcouponId(), couponDataBase.getFcouponStatus());
+            return;
+        }
+        //校验优惠券Alias是否存在
+        String aliasName = getCouponAliasName(coupon.getFcouponId());
+        AliasActions action = new AliasActions(AliasActions.Type.ADD).alias(aliasName);
+        if (esManager.isAliasExist(aliasName)) {
+            AliasActions deleteAction = new AliasActions(AliasActions.Type.REMOVE).alias(aliasName);
+            esManager.updateAlias(deleteAction);
+        }
+        this.setActionFilter(couponDataBase, action);
+        esManager.updateAlias(action);
+    }
+
+    private void setActionFilter(Coupon coupon, AliasActions action) {
+        //全部商品可用
+        if (coupon.getFapplicableSku().equals(CouponApplicableSkuEnum.ALL.getCode())) {
+            return;
+        }
+        //指定商品可用
+        if (coupon.getFapplicableSku().equals(CouponApplicableSkuEnum.SOME.getCode())) {
+            //指定sku
+            List<String> applicableSkuIds = this.getApplicableSkuIds(coupon);
+            if (CollectionUtils.isNotEmpty(applicableSkuIds)) {
+                IdsQueryBuilder queryBuilder = new IdsQueryBuilder();
+                queryBuilder.addIds(EsCriteria.listToArray(applicableSkuIds));
+                action.filter(queryBuilder);
+                return;
+            }
+            //指定sku条件
+            List<CouponSkuQueryDto> conditionList = this.getApplicableSkuCondition(coupon);
+            Ensure.that(!CollectionUtils.isEmpty(conditionList)).isTrue(MallExceptionCode.SYSTEM_ERROR);
+            DisMaxQueryBuilder orConditions = new DisMaxQueryBuilder();
+            for (CouponSkuQueryDto skuQueryDto : conditionList) {
+                BoolQueryBuilder condition = new BoolQueryBuilder();
+
+                List<Long> oneLevel = Lists.newArrayList();
+                List<Long> twoLevel = Lists.newArrayList();
+                List<Long> threeLevel = Lists.newArrayList();
+                if(skuQueryDto.getCategoryIds() != null){
+                    oneLevel = skuQueryDto.getCategoryIds().get("1");
+                    twoLevel = skuQueryDto.getCategoryIds().get("2");
+                    threeLevel = skuQueryDto.getCategoryIds().get("3");
+                }
+                // 品牌id
+                List<Long> brandIds = skuQueryDto.getBrandIds();
+                // 标签id
+                List<Long> labelIds = skuQueryDto.getLabelIds();
+                // 贸易类型
+                List<Long> tradeIds = skuQueryDto.getTradeIds();
+                // sku code
+                String skuCode = skuQueryDto.getSkuCode();
+                // 商品id
+                List<Long> goodsIds = null;
+                if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(tradeIds)) {
+                    List<Goods> goods = getGoodsByTradeIds(tradeIds);
+                    goodsIds = goods.stream().map(Goods::getFgoodsId).collect(Collectors.toList());
+                }
+                // 分类间或关系开始
+                if (CollectionUtils.isNotEmpty(oneLevel) || CollectionUtils.isNotEmpty(twoLevel) || CollectionUtils.isNotEmpty(threeLevel)) {
+                    DisMaxQueryBuilder orCategory = new DisMaxQueryBuilder();
+                    if (CollectionUtils.isNotEmpty(oneLevel)) {
+                        orCategory.add(QueryBuilders.termsQuery("fcategory_id1", oneLevel));
+                    }
+                    if (CollectionUtils.isNotEmpty(twoLevel)) {
+                        orCategory.add(QueryBuilders.termsQuery("fcategory_id2", twoLevel));
+                    }
+                    if (CollectionUtils.isNotEmpty(threeLevel)) {
+                        orCategory.add(QueryBuilders.termsQuery("fcategory_id3", threeLevel));
+                    }
+                    condition.must(orCategory);
+                }
+                //品牌
+                if (CollectionUtils.isNotEmpty(brandIds)) {
+                    condition.must(QueryBuilders.termsQuery("fbrand_id", brandIds));
+                }
+                //标签
+                if (CollectionUtils.isNotEmpty(labelIds)) {
+                    condition.must(QueryBuilders.termsQuery("flabel_id", labelIds));
+                }
+                //商品id
+                if (CollectionUtils.isNotEmpty(goodsIds)) {
+                    condition.must(QueryBuilders.termsQuery("fgoods_id", goodsIds));
+                }
+                orConditions.add(condition);
+            }
+            action.filter(orConditions);
+        }
+
+        //指定商品不可用
+        if (coupon.getFapplicableSku().equals(CouponApplicableSkuEnum.SOME_NOT.getCode())) {
+            //指定sku
+            List<String> applicableSkuIds = this.getApplicableSkuIds(coupon);
+            if (CollectionUtils.isNotEmpty(applicableSkuIds)) {
+                IdsQueryBuilder queryBuilder = new IdsQueryBuilder();
+                queryBuilder.addIds(EsCriteria.listToArray(applicableSkuIds));
+                QueryBuilder notIds = QueryBuilders.boolQuery().mustNot(queryBuilder);
+                action.filter(notIds);
+                return;
+            }
+            //指定sku条件
+            List<CouponSkuQueryDto> conditionList = this.getApplicableSkuCondition(coupon);
+            Ensure.that(!CollectionUtils.isEmpty(conditionList)).isTrue(MallExceptionCode.SYSTEM_ERROR);
+//            DisMaxQueryBuilder orConditions = new DisMaxQueryBuilder();
+            BoolQueryBuilder andCondition = new BoolQueryBuilder();
+            for (CouponSkuQueryDto skuQueryDto : conditionList) {
+                BoolQueryBuilder condition = new BoolQueryBuilder();
+
+                List<Long> oneLevel = skuQueryDto.getCategoryIds().get("1");
+                List<Long> twoLevel = skuQueryDto.getCategoryIds().get("2");
+                List<Long> threeLevel = skuQueryDto.getCategoryIds().get("3");
+                // 品牌id
+                List<Long> brandIds = skuQueryDto.getBrandIds();
+                // 标签id
+                List<Long> labelIds = skuQueryDto.getLabelIds();
+                // 贸易类型
+                List<Long> tradeIds = skuQueryDto.getTradeIds();
+                // sku code
+                String skuCode = skuQueryDto.getSkuCode();
+                // 商品id
+                List<Long> goodsIds = null;
+                if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(tradeIds)) {
+                    List<Goods> goods = getGoodsByTradeIds(tradeIds);
+                    goodsIds = goods.stream().map(Goods::getFgoodsId).collect(Collectors.toList());
+                }
+                // 分类间或关系开始
+                if (CollectionUtils.isNotEmpty(oneLevel) || CollectionUtils.isNotEmpty(twoLevel) || CollectionUtils.isNotEmpty(threeLevel)) {
+//                    DisMaxQueryBuilder orCategory = new DisMaxQueryBuilder();
+                    BoolQueryBuilder andCategory = QueryBuilders.boolQuery();
+                    if (CollectionUtils.isNotEmpty(oneLevel)) {
+                        andCategory.must(QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery("fcategory_id1", oneLevel)));
+                    }
+                    if (CollectionUtils.isNotEmpty(twoLevel)) {
+                        andCategory.must(QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery("fcategory_id2", twoLevel)));
+                    }
+                    if (CollectionUtils.isNotEmpty(threeLevel)) {
+                        andCategory.must(QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery("fcategory_id3", threeLevel)));
+                    }
+                    condition.must(andCategory);
+                }
+                //品牌
+                if (CollectionUtils.isNotEmpty(brandIds)) {
+                    condition.must(QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery("fbrand_id", brandIds)));
+                }
+                //标签
+                if (CollectionUtils.isNotEmpty(labelIds)) {
+                    condition.must(QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery("flabel_id", labelIds)));
+                }
+                //商品id
+                if (CollectionUtils.isNotEmpty(goodsIds)) {
+                    condition.must(QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery("fgoods_id", goodsIds)));
+                }
+                andCondition.must(condition);
+            }
+            action.filter(andCondition);
+        }
+    }
+
+    private List<CouponSkuQueryDto> getApplicableSkuCondition(Coupon coupon) {
+        List<CouponSkuQueryDto> couponSkuQueryDtos = Lists.newArrayList();
+        Result<List<CouponApplicableSkuCondition>> conditionResult = couponApplicableSkuConditionApi.queryByCriteria(Criteria.of(CouponApplicableSkuCondition.class)
+                .andEqualTo(CouponApplicableSkuCondition::getFcouponId, coupon.getFcouponId()));
+        Ensure.that(conditionResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
+        List<CouponApplicableSkuCondition> conditionList = conditionResult.getData();
+        if (CollectionUtils.isEmpty(conditionList)) {
+            return couponSkuQueryDtos;
+        }
+        conditionList.stream().forEach(couponApplicableSkuCondition -> {
+            //对应字段转成java object
+            CouponSkuQueryDto couponSkuQueryDto = new CouponSkuQueryDto();
+            parseJsonAndSetFields(couponSkuQueryDto, couponApplicableSkuCondition);
+            couponSkuQueryDtos.add(couponSkuQueryDto);
+        });
+        return couponSkuQueryDtos;
+    }
+
+    private List<String> getApplicableSkuIds(Coupon coupon) {
+        Criteria<CouponApplicableSku, Object> criteria = Criteria.of(CouponApplicableSku.class)
+                .fields(CouponApplicableSku::getFskuId).andEqualTo(CouponApplicableSku::getFcouponId, coupon.getFcouponId());
+        Result<List<CouponApplicableSku>> couponApplicableSkuResult = couponApplicableSkuApi.queryByCriteria(criteria);
+        Ensure.that(couponApplicableSkuResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
+        List<CouponApplicableSku> couponApplicableSkus = couponApplicableSkuResult.getData();
+        if (CollectionUtil.isNotEmpty(couponApplicableSkus)) {
+            List<String> skuIds = couponApplicableSkus.stream().map(CouponApplicableSku::getFskuId).map(String::valueOf).collect(toList());
+            return skuIds;
+        }
+        return Lists.newArrayList();
+    }
+
+
+    private String getCouponAliasName(Long fcouponId) {
+        if (Objects.isNull(fcouponId)) {
+            throw new IllegalArgumentException("优惠券id不能为空");
+        }
+        return COUPON_ALIAS_PREFIX + fcouponId;
+    }
+
+
+    @Override
+    public void updateEsSkuWithCouponInfo(Coupon coupon) {
+        if (coupon == null || coupon.getFcouponId() == null) {
             return;
         }
         Long fcouponId = coupon.getFcouponId();
         long startTimeTotal = System.currentTimeMillis();
         int pageSize = 2000;
-        SkuIdVo skuIdVo = queryApplicableSku(fcouponId, 1,9);
-        if(skuIdVo.getTotalCount() == 0){
+        SkuIdVo skuIdVo = queryApplicableSku(fcouponId, 1, 9);
+        if (skuIdVo.getTotalCount() == 0) {
             return;
         }
         int totalPage = 0;
-        if(skuIdVo.getTotalCount() % pageSize == 0){
+        if (skuIdVo.getTotalCount() % pageSize == 0) {
             totalPage = skuIdVo.getTotalCount() / pageSize;
-        }else{
+        } else {
             totalPage = skuIdVo.getTotalCount() / pageSize + 1;
         }
-        for(int i = 1; i<=totalPage; i++){
-            skuIdVo = queryApplicableSku(fcouponId, i,pageSize);
+        for (int i = 1; i <= totalPage; i++) {
+            skuIdVo = queryApplicableSku(fcouponId, i, pageSize);
             List<String> skuIds = skuIdVo.getFskuIds();
             try {
                 long startTime = System.currentTimeMillis();
-                Map<String, Map<String,Object>> multiSourceMap = new HashMap<>();
+                Map<String, Map<String, Object>> multiSourceMap = new HashMap<>();
                 List<Map<String, Object>> responseList = esManager.getInBulk(skuIds);
 //                log.info(JSON.toJSONString(responseList));
-                for(Map<String, Object> sourceMap : responseList){
-                    if(MapUtils.isNotEmpty(sourceMap)){
+                for (Map<String, Object> sourceMap : responseList) {
+                    if (MapUtils.isNotEmpty(sourceMap)) {
                         List<Integer> couponIdList = (List<Integer>) sourceMap.get("fcoupon_ids");
-                        if(!couponIdList.contains(fcouponId.intValue())){
+                        if (!couponIdList.contains(fcouponId.intValue())) {
                             couponIdList.add(fcouponId.intValue());
                         }
                         sourceMap.put("fcoupon_ids", couponIdList);
@@ -726,25 +988,25 @@ public class GoodsServiceImpl implements GoodsService {
                     }
                 }
                 long endTime = System.currentTimeMillis();
-                float excTime = (float) (endTime-startTime) / 1000;
+                float excTime = (float) (endTime - startTime) / 1000;
                 log.info("get_exec_time:{}, pagesize:{}, pageIndex:{}, totalPages:{}", excTime, pageSize, i, totalPage);
 
                 long startTimeIndex = System.currentTimeMillis();
-                if(MapUtils.isNotEmpty(multiSourceMap)){
+                if (MapUtils.isNotEmpty(multiSourceMap)) {
                     BulkResponse bulkResponse = esManager.indexInBulk(multiSourceMap);
-                }else {
+                } else {
                     log.info("multisourceMap is empty!");
                 }
                 long endTimeIndex = System.currentTimeMillis();
-                float excTime_index = (float) (endTimeIndex-startTimeIndex) / 1000;
+                float excTime_index = (float) (endTimeIndex - startTimeIndex) / 1000;
                 log.info("index_exec_time:{}, pagesize:{}, pageIndex:{}, totalPages:{}", excTime_index, pageSize, i, totalPage);
 
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         long endTimeTotal = System.currentTimeMillis();
-        float excTimeTotal = (float) (endTimeTotal-startTimeTotal) / 1000;
+        float excTimeTotal = (float) (endTimeTotal - startTimeTotal) / 1000;
         log.info("total_exec_time:{}, totalPages:{}", excTimeTotal, totalPage);
     }
 
@@ -761,14 +1023,18 @@ public class GoodsServiceImpl implements GoodsService {
         pageVo.setPageSize(1);
         this.setCategoryCondition(searchItemDto);
         EsCriteria criteria = EsCriteria.build(searchItemDto);
+        if (searchItemDto.getCouponId() != null) {
+            criteria.setIndexName(this.getCouponAliasName(Long.parseLong(String.valueOf(searchItemDto.getCouponId()))));
+        }
         this.setSearchCondition(searchItemDto, criteria);
         String soldAmountScript = "1-Math.pow(doc['fsell_total'].value + 1, -1)";
-
         Map<String, Object> resultMap = esManager.functionQueryForResponse(criteria, soldAmountScript, CombineFunction.SUM);
         List<Map<String, Object>> resultList = (List<Map<String, Object>>) resultMap.get("resultList");
         List<SearchItemVo> voList = new LinkedList<>();
         pageVo.setList(voList);
         Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
+        //价格名称
+        String priceName = this.getUserPriceType(searchItemDto);
         if (!CollectionUtils.isEmpty(resultList)) {
             for (Map<String, Object> map : resultList) {
                 SearchItemVo vo = new SearchItemVo();
@@ -799,11 +1065,10 @@ public class GoodsServiceImpl implements GoodsService {
                 if (map.get("flabelId") != null) {
                     vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
                 }
-                if(map.get("fcouponIds") != null){
+                if (map.get("fcouponIds") != null) {
                     List<Integer> fcouponIds = (List<Integer>) map.get("fcouponIds");
                     vo.setFcouponIds(fcouponIds);
                 }
-                String priceName = this.getUserPriceType(searchItemDto);
                 if (map.get(priceName) != null && searchItemDto.getIsLogin()) {
                     Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
                     if (priceMap.get("min_price") != null) {
@@ -838,7 +1103,9 @@ public class GoodsServiceImpl implements GoodsService {
         //默认为未认证
         String fuserTypeId = "0";
         if (searchItemDto.getIsLogin() && searchItemDto.getFuid() != null) {
-            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class).andEqualTo(User::getFuid, searchItemDto.getFuid()));
+            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
+                    .fields(User::getFuid,User::getFoperateType)
+                    .andEqualTo(User::getFuid, searchItemDto.getFuid()));
             if (!userResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }

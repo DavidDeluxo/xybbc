@@ -1,10 +1,10 @@
 package com.xingyun.bbc.mallpc.service;
 
-import com.xingyun.bbc.mallpc.model.vo.index.BannerVo;
-import com.xingyun.bbc.mallpc.model.vo.index.BrandVo;
-import com.xingyun.bbc.mallpc.model.vo.index.SpecialTopicVo;
+import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mallpc.model.vo.index.*;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author 陈翔
@@ -33,8 +33,16 @@ public interface IndexService {
     List<BrandVo> getBrands(Long cateId);
 
     /**
+     * 首页品牌列表
+     * @return
+     */
+    List<CateBrandVo> getBrandList(List<Long> cateIds);
+
+    /**
      * 查询用户数
      * @return
      */
     Integer getUserCount();
+
+    Result<Set<GoodsCategoryVo>> queryCategories();
 }

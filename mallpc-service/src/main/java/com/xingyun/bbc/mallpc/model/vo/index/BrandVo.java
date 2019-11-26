@@ -11,7 +11,6 @@ import java.io.Serializable;
  * @Description:
  * @date 2019年11月18日 14:21:50
  */
-
 @Data
 public class BrandVo implements Serializable {
 
