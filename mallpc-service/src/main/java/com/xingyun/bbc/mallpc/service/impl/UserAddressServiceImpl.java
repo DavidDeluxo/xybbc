@@ -130,26 +130,26 @@ public class UserAddressServiceImpl implements UserAddressService {
         if (StringUtil.isNotBlank(userAddressDto.getFdeliveryCardid())) {
             Ensure.that(StringUtilExtention.idCardCheck(userAddressDto.getFdeliveryCardid())).isTrue(MallPcExceptionCode.ID_CARD_NUMBER_ILLEGAL);
         }
+        if (Objects.equals(userAddressDto.getFisDefualt(), BooleanNum.TRUE.getCode())) {
+            Criteria<UserDelivery, Object> criteria = Criteria.of(UserDelivery.class)
+                    .andEqualTo(UserDelivery::getFuid, userId)
+                    .andEqualTo(UserDelivery::getFisDefualt, BooleanNum.TRUE.getCode())
+                    .andEqualTo(UserDelivery::getFisDelete, BooleanNum.FALSE.getCode());
+            UserDelivery defaultDelivery = ResultUtils.getData(userDeliveryApi.queryOneByCriteria(criteria));
+            if (Objects.nonNull(defaultDelivery)) {
+                // 修改默认地址为非默认
+                defaultDelivery.setFisDefualt(BooleanNum.FALSE.getCode());
+                Ensure.that(userDeliveryApi.updateNotNull(defaultDelivery).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+            }
+        }
         UserDelivery userDelivery = convertor.convert(userAddressDto, UserDelivery.class);
-        userDelivery.setFuid(RequestHolder.getUserId());
+        userDelivery.setFuid(userId);
         if (StringUtil.isBlank(userAddressDto.getFdeliveryUserId())) {
             Result<UserDelivery> userDeliveryResult = userDeliveryApi.saveAndReturn(userDelivery);
             Ensure.that(userDeliveryResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
             return Result.success(convertAddress(userDeliveryResult.getData()));
         } else {
             // 编辑
-            if (Objects.equals(userAddressDto.getFisDefualt(), BooleanNum.TRUE.getCode())) {
-                Criteria<UserDelivery, Object> criteria = Criteria.of(UserDelivery.class)
-                        .andEqualTo(UserDelivery::getFuid, userId)
-                        .andEqualTo(UserDelivery::getFisDefualt, BooleanNum.TRUE.getCode())
-                        .andEqualTo(UserDelivery::getFisDelete, BooleanNum.FALSE.getCode());
-                UserDelivery defaultDelivery = ResultUtils.getData(userDeliveryApi.queryOneByCriteria(criteria));
-                if (Objects.nonNull(defaultDelivery)) {
-                    // 修改默认地址为非默认
-                    defaultDelivery.setFisDefualt(BooleanNum.FALSE.getCode());
-                    Ensure.that(userDeliveryApi.updateNotNull(defaultDelivery).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
-                }
-            }
             Ensure.that(userDeliveryApi.updateNotNull(userDelivery).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
             return Result.success();
         }
