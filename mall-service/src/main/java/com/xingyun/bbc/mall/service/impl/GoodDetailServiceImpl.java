@@ -1262,14 +1262,14 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                                 }
                                 continue;
                             }
-                            if (null != fcategoryIds_coupon.get(2) && fcategoryIds_coupon.get(1).contains(categoryId2)) {
+                            if (null != fcategoryIds_coupon.get(2) && fcategoryIds_coupon.get(2).contains(categoryId2)) {
                                 receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
                                 if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
                                     removeCoupon.add(fcouponId);
                                 }
                                 continue;
                             }
-                            if (null != fcategoryIds_coupon.get(3) && fcategoryIds_coupon.get(1).contains(categoryId3)) {
+                            if (null != fcategoryIds_coupon.get(3) && fcategoryIds_coupon.get(3).contains(categoryId3)) {
                                 receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
                                 if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
                                     removeCoupon.add(fcouponId);
@@ -1311,8 +1311,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
                                 if (CollectionUtils.isNotEmpty(fbrandIds_coupon) && !fbrandIds_coupon.contains(brandId)) {
                                     if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get(1) && fcategoryIds_coupon.get(1).contains(categoryId1)) {
-                                        if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get(2) && fcategoryIds_coupon.get(1).contains(categoryId2)) {
-                                            if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get(3) && fcategoryIds_coupon.get(1).contains(categoryId3)) {
+                                        if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get(2) && fcategoryIds_coupon.get(2).contains(categoryId2)) {
+                                            if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get(3) && fcategoryIds_coupon.get(3).contains(categoryId3)) {
                                                 if (CollectionUtils.isNotEmpty(flabelIds_coupon) && flabelIds_coupon.contains(labelId)) {
                                                     receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
                                                     if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
