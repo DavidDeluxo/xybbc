@@ -90,7 +90,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         userRechargeQueryDTO.setUserIds(Lists.newArrayList(uid));
         userRechargeQueryDTO.setLimit((pageDto.getCurrentPage() - 1) * pageDto.getPageSize());
         userRechargeQueryDTO.setOffset(pageDto.getPageSize());
-        Result<Integer> countResult = userAccountTransApi.countRechargeList(userRechargeQueryDTO);
+        Result<Integer> countResult = userAccountTransApi.countRechargeListExcludeUserStatus4(userRechargeQueryDTO);
         Ensure.that(countResult).isSuccess(new MallPcExceptionCode(countResult.getCode(), countResult.getMsg()));
 
         if (countResult.getData() < 1) {
@@ -100,7 +100,9 @@ public class UserAccountServiceImpl implements UserAccountService {
         Result<List<UserAccountTrans>> rechargeRecordsResult = userAccountTransApi.queryRechargeListByCreateTimeDesc(userRechargeQueryDTO);
         Ensure.that(rechargeRecordsResult).isSuccess(new MallPcExceptionCode(rechargeRecordsResult.getCode(), rechargeRecordsResult.getMsg()));
 
+
         List<AccountRechargeRecordsVo> data = new ArrayList<>(rechargeRecordsResult.getData().size());
+
         rechargeRecordsResult.getData().forEach(item -> {
             AccountRechargeRecordsVo convert = dozerHolder.convert(item, AccountRechargeRecordsVo.class);
 
@@ -127,12 +129,10 @@ public class UserAccountServiceImpl implements UserAccountService {
                     convert.setFpassedTime(item.getFmodifyTime());
                 }
             }
+            convert.setFtransAmount(AccountUtil.divideOneHundred(convert.getFtransAmount().longValue()));
             data.add(convert);
         });
 
-        data.forEach(item -> {
-            item.setFtransAmount(AccountUtil.divideOneHundred(item.getFtransAmount().longValue()));
-        });
         return new PageVo<>(countResult.getData(), pageDto.getCurrentPage(), pageDto.getPageSize(), data);
 
     }
