@@ -41,7 +41,7 @@ public class RequestHolder {
             String header = getRequest().getHeader(headName);
             log.info("headName:{}  headVal:{}\r\n", headName, header);
         }
-        System.out.println("=========end============");
+        log.info("==========end===========");
         Ensure.that(adminId).isNotBlank(MallPcExceptionCode.USER_NOT_LOGGED_IN);
         return Long.valueOf(adminId);
     }
