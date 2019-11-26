@@ -305,6 +305,7 @@ public class MyCouponServiceImpl implements MyCouponService {
                     receiveCenterCouponVo.setFvalidityDays(couponQueryVo.getFvalidityDays());
                     receiveCenterCouponVo.setFthresholdAmount(PriceUtil.toYuan(couponQueryVo.getFthresholdAmount()));
                     receiveCenterCouponVo.setFapplicableSku(couponQueryVo.getFapplicableSku());
+                    receiveCenterCouponVo.setFreleaseType(couponQueryVo.getFreleaseType());
                     //优惠券类型，1满减券需要除以100、2折扣券需要除以10
                     if (couponQueryVo.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
                         receiveCenterCouponVo.setFdeductionValue(PriceUtil.toYuan(couponQueryVo.getFdeductionValue()));
