@@ -3,12 +3,14 @@ package com.xingyun.bbc.mallpc.common.utils;
 import com.xingyun.bbc.common.jwt.XyUserJwtManager;
 import com.xingyun.bbc.mallpc.model.vo.TokenInfoVo;
 import io.jsonwebtoken.Claims;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
 
+@Slf4j
 @Component
 public class JwtParser {
 
@@ -23,6 +25,7 @@ public class JwtParser {
         }
 
         String token = request.getHeader(ACCESS_TOKEN);
+        log.info("-------------商城PC，token : ",token);
         Claims claims = userJwtManager.parseJwt(token);
         TokenInfoVo infoVo = new TokenInfoVo();
         if (claims == null) {

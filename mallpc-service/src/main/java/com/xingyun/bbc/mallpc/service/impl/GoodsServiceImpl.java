@@ -12,7 +12,7 @@ import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
-import com.xingyun.bbc.mallpc.common.utils.FileUtils;
+import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
 import com.xingyun.bbc.mallpc.model.dto.search.SearchItemDto;
 import com.xingyun.bbc.mallpc.model.vo.search.*;
 import com.xingyun.bbc.mallpc.service.GoodsService;
@@ -24,9 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.index.query.*;
-import org.elasticsearch.search.aggregations.AggregationBuilder;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.BucketOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -84,6 +81,7 @@ public class GoodsServiceImpl implements GoodsService {
         pageVo.setList(voList);
         Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
         if (!CollectionUtils.isEmpty(resultList)) {
+            String priceName = this.getUserPriceType(searchItemDto);
             for (Map<String, Object> map : resultList) {
                 SearchItemVo vo = new SearchItemVo();
                 if (map.get("fskuId") != null) {
@@ -114,7 +112,6 @@ public class GoodsServiceImpl implements GoodsService {
                 if (map.get("flabelId") != null) {
                     vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
                 }
-                String priceName = this.getUserPriceType(searchItemDto);
                 if (map.get(priceName) != null && searchItemDto.getIsLogin()) {
                     Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
                     if (priceMap.get("min_price") != null) {
@@ -212,6 +209,7 @@ public class GoodsServiceImpl implements GoodsService {
 
     /**
      * 分类查询条件设置
+     *
      * @param searchItemDto
      */
     private void setCategoryCondition(SearchItemDto searchItemDto) {
@@ -240,15 +238,6 @@ public class GoodsServiceImpl implements GoodsService {
             MatchQueryBuilder pinyinMatch = QueryBuilders.matchQuery("fsku_name.pinyin", searchItemDto.getSearchFullText());
             criteria.getFilterBuilder().should(pinyinMatch);
         }
-        // 商品属性条件
-        if (CollectionUtils.isNotEmpty(searchItemDto.getFattributeItemId())) {
-            String fieldname = "attributes.fclass_attribute_item_id";
-            DisMaxQueryBuilder disMaxQuerys = QueryBuilders.disMaxQuery();
-            for (Object value : searchItemDto.getFattributeItemId()) {
-                disMaxQuerys.add(QueryBuilders.termsQuery(fieldname, value));
-            }
-            criteria.getFilterBuilder().must(QueryBuilders.nestedQuery("attributes", disMaxQuerys, ScoreMode.None));
-        }
         // 库存条件
         this.setStockCondition(searchItemDto, criteria);
         // 价格条件
@@ -264,19 +253,10 @@ public class GoodsServiceImpl implements GoodsService {
         if (criteria == null) {
             return;
         }
-        criteria.termAggregate("fcategory_id1", "fcategory_id1").subAggregate("fcategory_name1", "fcategory_name1.keyword");
-//        criteria.termAggregate("fcategory_id3", "fcategory_id3").subAggregate("fcategory_name3", "fcategory_name3.keyword");
         criteria.termAggregate("fbrand_id", "fbrand_id").subAggregate("fbrand_name", "fbrand_name.keyword");
+        criteria.termAggregate("fcategory_id1", "fcategory_id1").subAggregate("fcategory_name1", "fcategory_name1.keyword");
         criteria.termAggregate("forigin_id", "forigin_id").subAggregate("forigin_name", "forigin_name.keyword");
         criteria.termAggregate("ftrade_id", "ftrade_id").subAggregate("ftrade_name", "ftrade_name.keyword");
-
-        AggregationBuilder attributeAgg = AggregationBuilders.terms("attribute_id").field("attributes.fclass_attribute_id").order(BucketOrder.count(false))
-                .subAggregation(AggregationBuilders.terms("attribute_name").field("attributes.fclass_attribute_name.keyword").order(BucketOrder.count(false))
-                .subAggregation(AggregationBuilders.terms("attribute_item_id").field("attributes.fclass_attribute_item_id").order(BucketOrder.count(false))
-                .subAggregation(AggregationBuilders.terms("attribute_item_value").field("attributes.fclass_attribute_item_val.keyword").order(BucketOrder.count(false)))));
-
-        AggregationBuilder nestedAgg = AggregationBuilders.nested("attribute", "attributes").subAggregation(attributeAgg);
-        criteria.getAggBuilders().put("attribute", nestedAgg);
     }
 
     /**
@@ -346,7 +326,9 @@ public class GoodsServiceImpl implements GoodsService {
         String fuserTypeId = "0";
         if (searchItemDto.getIsLogin() && searchItemDto.getFuid() != null) {
             log.info("登录用户id：{}",searchItemDto.getFuid());
-            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class).andEqualTo(User::getFuid, searchItemDto.getFuid()));
+            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
+                    .fields(User::getFuid,User::getFoperateType)
+                    .andEqualTo(User::getFuid, searchItemDto.getFuid()));
             if (!userResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
