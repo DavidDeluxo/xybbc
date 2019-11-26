@@ -8,7 +8,7 @@ package com.xingyun.bbc.mallpc.common.enums;
  */
 public enum PermissionEnums {
     ACCESS_TOKEN("accessToken", "系统登录token"),
-    ACCESS_TOKEN_XYID("xyid", "本次回话的用户id"),
+    ACCESS_TOKEN_XYID("xyId", "本次回话的用户id"),
     ACCESS_TOKEN_XYSUBJECT("xySubject", "本次回话的用户对象");
     private String code;
     private String desc;
