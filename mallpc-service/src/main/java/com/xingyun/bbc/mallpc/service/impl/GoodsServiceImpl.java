@@ -84,6 +84,7 @@ public class GoodsServiceImpl implements GoodsService {
         pageVo.setList(voList);
         Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
         if (!CollectionUtils.isEmpty(resultList)) {
+            String priceName = this.getUserPriceType(searchItemDto);
             for (Map<String, Object> map : resultList) {
                 SearchItemVo vo = new SearchItemVo();
                 if (map.get("fskuId") != null) {
@@ -114,7 +115,6 @@ public class GoodsServiceImpl implements GoodsService {
                 if (map.get("flabelId") != null) {
                     vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
                 }
-                String priceName = this.getUserPriceType(searchItemDto);
                 if (map.get(priceName) != null && searchItemDto.getIsLogin()) {
                     Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
                     if (priceMap.get("min_price") != null) {
