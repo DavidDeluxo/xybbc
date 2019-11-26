@@ -330,7 +330,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public Result<List<UserRegisterCouponVo>> queryRegisterCoupon() {
-        Long uid = Long.parseLong(RequestHolder.getRequest().getHeader("xyid"));
+        Long uid = RequestHolder.getUserId();
         Result<List<CouponReceive>> couponReceiveResult = couponReceiveApi.queryByCriteria(Criteria.of(CouponReceive.class)
                 .andEqualTo(CouponReceive::getFuserCouponStatus, CouponReceiveStatusEnum.NOT_USED.getCode())
                 .andEqualTo(CouponReceive::getFuid, uid));

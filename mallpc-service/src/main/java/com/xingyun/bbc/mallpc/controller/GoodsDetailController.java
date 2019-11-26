@@ -3,6 +3,7 @@ package com.xingyun.bbc.mallpc.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mallpc.common.utils.RequestHolder;
 import com.xingyun.bbc.mallpc.model.dto.detail.GoodsDetailMallDto;
 import com.xingyun.bbc.mallpc.model.vo.address.CityRegionAllVO;
 import com.xingyun.bbc.mallpc.model.vo.detail.*;
@@ -59,7 +60,7 @@ public class GoodsDetailController {
     @ApiOperation(value = "获取价格", httpMethod = "POST")
     @PostMapping("/getGoodPrice")
     public Result<GoodsPriceVo> getGoodPrice(@RequestBody GoodsDetailMallDto goodsDetailMallDto, HttpServletRequest request) {
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        Long xyid = RequestHolder.getUserId();
         goodsDetailMallDto.setFuid(xyid);
 //      goodsDetailMallDto.setFuid(1l);
         logger.info("获取价格 {}", JSON.toJSONString(goodsDetailMallDto));
@@ -83,7 +84,7 @@ public class GoodsDetailController {
     @ApiOperation(value = "获取是否加入常购清单", httpMethod = "GET")
     @GetMapping("/getIsRegular")
     public Result<Integer> getIsRegular(@RequestParam Long fgoodsId, HttpServletRequest request) {
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        Long xyid = RequestHolder.getUserId();
         logger.info("获取是否加入常购清单 fgoodsId {} fuid {}", fgoodsId, xyid);
         return goodDetailService.getIsRegular(fgoodsId, xyid);
     }
@@ -91,7 +92,7 @@ public class GoodsDetailController {
     @ApiOperation(value = "商品详情查询可领取优惠券--未点击", httpMethod = "GET")
     @GetMapping("/getSkuUserCouponLight")
     public Result<List<CouponVo>> getSkuUserCouponLight(@RequestParam Long fskuId, HttpServletRequest request) {
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        Long xyid = RequestHolder.getUserId();
         logger.info("商品详情查询可领取优惠券--未点击 fskuId {} fuid {}", fskuId, xyid);
         return goodDetailService.getSkuUserCouponLight(fskuId, xyid);
     }
@@ -99,7 +100,7 @@ public class GoodsDetailController {
     @ApiOperation(value = "商品详情查询可领取优惠券--点击", httpMethod = "GET")
     @GetMapping("/getSkuUserCoupon")
     public Result<GoodsDetailCouponVo> getSkuUserCoupon(@RequestParam Long fskuId, HttpServletRequest request) {
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        Long xyid = RequestHolder.getUserId();
         logger.info("商品详情查询可领取优惠券--点击 fskuId {} fuid {}", fskuId, xyid);
         return goodDetailService.getSkuUserCoupon(fskuId, xyid);
     }
@@ -114,7 +115,7 @@ public class GoodsDetailController {
     @ApiOperation(value = "商品详情领取优惠券", httpMethod = "GET")
     @GetMapping("/addReceiveCoupon")
     public Result<Boolean> addReceiveCoupon(@RequestParam Long fcouponId, HttpServletRequest request) {
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        Long xyid = RequestHolder.getUserId();
         logger.info("商品详情领取优惠券 fcouponId {} fuid {}", fcouponId, xyid);
         return goodDetailService.addReceiveCoupon(fcouponId, xyid);
     }
@@ -133,7 +134,7 @@ public class GoodsDetailController {
     @ApiOperation(value = "获取分类根据sku id", httpMethod = "GET")
     @GetMapping("/getCategoryBySkuId")
     public Result<Map<String, Long>> getCategoryBySkuId(@RequestParam Long skuId, HttpServletRequest request) {
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        Long xyid = RequestHolder.getUserId();
         logger.info("获取分类根据skuId skuId {} fuid {}", skuId, xyid);
         return goodDetailService.getCategoryBySkuId(skuId, xyid);
     }
