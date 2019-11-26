@@ -111,15 +111,13 @@ public class SearchItemDto {
     @ApiModelProperty(value = "sku_id", hidden = true)
     private List<Long> fskuIds;
 
-    @EsMark(policy = BuildPolicy.MUST, field = "fcoupon_ids")
+//    @EsMark(policy = BuildPolicy.MUST, field = "fcoupon_ids")
     @ApiModelProperty("优惠券ID")
     private Long couponId;
 
     @EsMark(policy = BuildPolicy.MUST_KEY_WORD, field = "fsku_code")
     @ApiModelProperty("商品编码")
     private String fskuCode;
-
-
 
     //----------------------------------------------
     //   banner icon 专题位 配置分类id时使用, 用来区分分类id等级
