@@ -160,8 +160,13 @@ public class UserAccountServiceImpl implements UserAccountService {
             if (status.contains(item.getFtransStatus())
             ) {
                 if (initTime.compareTo(item.getFpassedTime()) == 0) {
-                    convert.setFpassedTime(item.getFmodifyTime());
-                } else {
+                    if (initTime.compareTo(item.getFpayTime()) == 0) {
+                        convert.setFpassedTime(item.getFmodifyTime());
+                    } else {
+                        convert.setFpassedTime(item.getFpayTime());
+                    }
+
+                }else{
                     convert.setFpassedTime(item.getFpassedTime());
                 }
             }
