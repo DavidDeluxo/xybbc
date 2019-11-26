@@ -34,13 +34,13 @@ public class RequestHolder {
         String adminId = getRequest().getHeader(PermissionEnums.ACCESS_TOKEN_XYID.getCode());
         //获取所有的头部参数
         Enumeration<String> headerNames = getRequest().getHeaderNames();
+        log.info("==========start===========");
         while (headerNames.hasMoreElements()) {
             String headName = headerNames.nextElement();
             String header = getRequest().getHeader(headName);
-            log.info("=====================");
             log.info("headName:{}  headVal:{}\r\n", headName, header);
-            System.out.println("=====================");
         }
+        System.out.println("=========end============");
         Ensure.that(adminId).isNotBlank(MallPcExceptionCode.USER_NOT_LOGGED_IN);
         return Long.valueOf(adminId);
     }

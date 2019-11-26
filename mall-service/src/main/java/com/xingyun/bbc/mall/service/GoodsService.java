@@ -21,12 +21,26 @@ public interface GoodsService {
 
     Result<Boolean> updateCouponList();
 
+    /**
+     * 更新ES的优惠券信息 (更新优惠券id列表)
+     * @param coupon
+     */
     void updateEsSkuWithCouponInfo(Coupon coupon);
+
+    /**
+     * 更新ES的优惠券信息 (更新Alias)
+     * @param coupon
+     */
+    void updateCouponInfoToEsByAlias(Coupon coupon) throws Exception;
+
+    void deleteCouponInfoFromEsByAlias(Coupon coupon);
 
     void deleteCouponInfoFromEsSku(Coupon coupon);
 
     void updateEsSkuWithSkuUpdate(Map<String, Object> skuSourceMap);
 
     void updateCouponIdForAllSku(RefreshCouponDto refreshCouponDto);
+
+    void testEsAlias();
 
 }

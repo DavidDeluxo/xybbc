@@ -26,8 +26,10 @@ import com.xingyun.bbc.core.sku.enums.SkuBatchEnums;
 import com.xingyun.bbc.core.sku.po.GoodsSku;
 import com.xingyun.bbc.core.sku.po.*;
 import com.xingyun.bbc.core.supplier.api.SupplierSkuBatchApi;
+import com.xingyun.bbc.core.supplier.api.SupplierSkuBatchPackageApi;
 import com.xingyun.bbc.core.supplier.api.SupplierWarehouseApi;
 import com.xingyun.bbc.core.supplier.po.SupplierSkuBatch;
+import com.xingyun.bbc.core.supplier.po.SupplierSkuBatchPackage;
 import com.xingyun.bbc.core.supplier.po.SupplierWarehouse;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.api.UserDeliveryApi;
@@ -147,6 +149,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     private SupplierWarehouseApi warehouseApi;
 
     @Resource
+    private SupplierSkuBatchPackageApi batchPackageApi;
+
+    @Resource
     private UserDeliveryApi userDeliveryApi;
 
     @Resource
@@ -236,13 +241,14 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         if (null != fskuId) {
             GoodsSku goodSkuDesc = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
                     .andEqualTo(GoodsSku::getFskuId, fskuId)
-                    .fields(GoodsSku::getFskuDesc, GoodsSku::getFskuThumbImage)).getData();
-            if (null != goodSkuDesc && null != goodSkuDesc.getFskuDesc()) {
+                    .fields(GoodsSku::getFskuDesc,
+                            GoodsSku::getFskuThumbImage,
+                            GoodsSku::getFskuName)).getData();
+            if (null != goodSkuDesc) {
                 goodsVo.setFskuDesc(goodSkuDesc.getFskuDesc());
-            }
-            //之前取spu表列表缩略图后改成sku表主图
-            if (null != goodSkuDesc && null != goodSkuDesc.getFskuThumbImage()) {
+                //之前取spu表列表缩略图后改成sku表主图
                 goodsVo.setFgoodsImgUrl(goodSkuDesc.getFskuThumbImage());
+                goodsVo.setFgoodsName(goodSkuDesc.getFskuName());
             }
         }
 
@@ -529,7 +535,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     private SupplierWarehouse getSupplierWarehouseById(Long warehouseId) {
         Result<SupplierWarehouse> warehouseResult = warehouseApi.queryById(warehouseId);
-        if(!warehouseResult.isSuccess()){
+        if (!warehouseResult.isSuccess()) {
             throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
         }
         return warehouseResult.getData();
@@ -882,6 +888,16 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         if (null != goodsDetailMallDto.getFgoodsId() && null == goodsDetailMallDto.getFskuId() && null == goodsDetailMallDto.getFsupplierSkuBatchId()) {
             result = this.getSpuStock(goodsDetailMallDto);
         }
+        if (goodsDetailMallDto.getFbatchPackageId() != null) {
+            Result<SupplierSkuBatchPackage> packageResult = batchPackageApi.queryById(goodsDetailMallDto.getFbatchPackageId());
+            if (!packageResult.isSuccess()) {
+                throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
+            }
+            SupplierSkuBatchPackage batchPackage = packageResult.getData();
+            if (batchPackage != null) {
+                result.setFbatchNum(batchPackage.getFbatchNum());
+            }
+        }
         return Result.success(result);
     }
 
@@ -1081,7 +1097,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         Map<String, Object> userCondition = new HashMap<>(5);
         try {
             res = goodsService.searchSkuList(searchItemDto);
-            logger.info("es获取sku满足的页面领取类型券{}， skuid ={}" ,JSON.toJSONString(res.getData()), fskuId);
+            logger.info("es获取sku满足的页面领取类型券{}， skuid ={}", JSON.toJSONString(res.getData()), fskuId);
             if (!res.isSuccess()) {
                 throw new Exception();
             }
