@@ -1028,7 +1028,6 @@ public class GoodsServiceImpl implements GoodsService {
         }
         this.setSearchCondition(searchItemDto, criteria);
         String soldAmountScript = "1-Math.pow(doc['fsell_total'].value + 1, -1)";
-
         Map<String, Object> resultMap = esManager.functionQueryForResponse(criteria, soldAmountScript, CombineFunction.SUM);
         List<Map<String, Object>> resultList = (List<Map<String, Object>>) resultMap.get("resultList");
         List<SearchItemVo> voList = new LinkedList<>();
@@ -1104,7 +1103,9 @@ public class GoodsServiceImpl implements GoodsService {
         //默认为未认证
         String fuserTypeId = "0";
         if (searchItemDto.getIsLogin() && searchItemDto.getFuid() != null) {
-            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class).andEqualTo(User::getFuid, searchItemDto.getFuid()));
+            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
+                    .fields(User::getFuid,User::getFoperateType)
+                    .andEqualTo(User::getFuid, searchItemDto.getFuid()));
             if (!userResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
