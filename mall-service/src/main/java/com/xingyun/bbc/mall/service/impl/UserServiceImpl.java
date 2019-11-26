@@ -42,6 +42,7 @@ import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.UserService;
 import io.jsonwebtoken.Claims;
 import io.seata.spring.annotation.GlobalTransactional;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -252,10 +253,10 @@ public class UserServiceImpl implements UserService {
     private boolean CheckMobileExist(String mobile) {
         //查询手机号是否已注册
         Criteria<User, Object> criteria = Criteria.of(User.class);
-        criteria.andEqualTo(User::getFisDelete,"0")
+        criteria.andEqualTo(User::getFisDelete, "0")
                 .andLeft()
-                .orEqualTo(User::getFmobile,mobile)
-                .orEqualTo(User::getFuname,mobile).addRight();
+                .orEqualTo(User::getFmobile, mobile)
+                .orEqualTo(User::getFuname, mobile).addRight();
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
         if (userResult.getData() != null) {
             return false;
@@ -455,15 +456,26 @@ public class UserServiceImpl implements UserService {
         if (dto.getFoperateType() == UserVerifyEnums.Type.WeiMerchantBuy.getValue()) {
             dto.setFshopName(dto.getFname());
         }
+
         // TODO: 2019/11/26 对营业执照号校验是否已被认证, 排重
-        List<UserVerify> list = userVerifyApi.queryByCriteria(Criteria.of(UserVerify.class).fields(UserVerify::getFuid).andEqualTo(UserVerify::getFbusinessLicenseNo, dto.getFbusinessLicenseNo())).getData();
-        if (list.size() > 0) {
-            List<Long> fuids = list.stream().map(UserVerify::getFuid).collect(Collectors.toList());
-            List<User> users = userApi.queryByCriteria(Criteria.of(User.class).andIn(User::getFuid, fuids)).getData();
-            Optional<User> first = users.stream().filter(user -> user.getFverifyStatus().equals(3)).findFirst();
-            if (first.isPresent()) {
-                return Result.failure(UserVerifyResultStatus.BUSINESS_LICENSE_PIC_NO_CERTIFICATION.getCode().toString(),
-                    UserVerifyResultStatus.BUSINESS_LICENSE_PIC_NO_CERTIFICATION.getMsg());
+        if (StringUtils.isNotBlank(dto.getFbusinessLicenseNo())) {
+            Result<List<UserVerify>> listResult = userVerifyApi.queryByCriteria(Criteria.of(UserVerify.class).fields(UserVerify::getFuid).andEqualTo(UserVerify::getFbusinessLicenseNo, dto.getFbusinessLicenseNo()));
+            logger.info("返回listResult: {}", listResult);
+            if (!listResult.isSuccess()) throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            List<UserVerify> userVerifies = listResult.getData();
+            if (userVerifies.size() > 0) {
+                List<Long> fuids = userVerifies.stream().map(UserVerify::getFuid).collect(Collectors.toList());
+                Result<List<User>> resultUsers = userApi.queryByCriteria(Criteria.of(User.class).andIn(User::getFuid, fuids));
+                logger.info("返回resultUsers: {}", resultUsers);
+                if (!resultUsers.isSuccess()) throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+                List<User> users = resultUsers.getData();
+                if (users.size() > 0) {
+                    Optional<User> first = users.stream().filter(user -> user.getFverifyStatus().equals(3)).findFirst();
+                    if (first.isPresent()) {
+                        return Result.failure(UserVerifyResultStatus.BUSINESS_LICENSE_PIC_NO_CERTIFICATION.getCode().toString(),
+                                UserVerifyResultStatus.BUSINESS_LICENSE_PIC_NO_CERTIFICATION.getMsg());
+                    }
+                }
             }
         }
 
@@ -657,7 +669,7 @@ public class UserServiceImpl implements UserService {
             userVo.setIsPopupWindows(0);
             if (userResult.getData().getFlastloginTime().compareTo(userResult.getData().getFuserValidTime()) < 0) {
                 couponAuthenticationNum = queryAuthenticationCoupon(userResult.getData().getFuid());
-                if(!couponAuthenticationNum.equals(0)){
+                if (!couponAuthenticationNum.equals(0)) {
                     userVo.setIsPopupWindows(1);
                 }
                 //更新最近登录时间
@@ -674,7 +686,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Result couponLinkReceive(CouponLinkDto dto) {
-        if(dto.getCouponLink() == null || dto.getCouponLink().equals("")){
+        if (dto.getCouponLink() == null || dto.getCouponLink().equals("")) {
             return Result.failure(MallExceptionCode.COUPON_LINK_INEXUSTENCE);
         }
         Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)

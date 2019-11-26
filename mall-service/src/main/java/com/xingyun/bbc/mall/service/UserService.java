@@ -67,5 +67,6 @@ public interface UserService {
     * @throws
      */
     Result<Integer>getUnusedCouponCount(Long fuid);
+
 }
 

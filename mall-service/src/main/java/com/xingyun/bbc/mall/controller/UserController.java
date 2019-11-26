@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.controller;
 
+import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.po.UserVerify;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.model.dto.*;
@@ -7,11 +8,9 @@ import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.GoodDetailService;
 import com.xingyun.bbc.mall.service.UserService;
 import io.swagger.annotations.ApiOperation;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
