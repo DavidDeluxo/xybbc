@@ -107,7 +107,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 
             convert.setFpassedTime(null);
             //工单类型的只要不是待审核 都要设置时间
-            if (convert.getFrechargeType() == 5 &&convert.getFtransStatus().compareTo(UserWorkStatus.WAITVERIFY.getCode()) != 0 ) {
+            if (convert.getFrechargeType() == 5 && convert.getFtransStatus().compareTo(UserWorkStatus.WAITVERIFY.getCode()) != 0) {
                 if (convert.getFtransStatus().compareTo(UserWorkStatus.SUCCEED.getCode()) == 0) {
                     convert.setFpassedTime(item.getFpassedTime());
                 } else {
@@ -165,12 +165,10 @@ public class UserAccountServiceImpl implements UserAccountService {
                     convert.setFpassedTime(item.getFpassedTime());
                 }
             }
+            convert.setFtransAmount(AccountUtil.divideOneHundred(convert.getFtransAmount().longValue()));
+            convert.setFtransActualAmount(AccountUtil.divideOneHundred(convert.getFtransActualAmount().longValue()));
+            convert.setFtransPoundage(AccountUtil.divideOneHundred(convert.getFtransPoundage().longValue()));
             data.add(convert);
-        });
-        data.forEach(item -> {
-            item.setFtransAmount(AccountUtil.divideOneHundred(item.getFtransAmount().longValue()));
-            item.setFtransActualAmount(AccountUtil.divideOneHundred(item.getFtransActualAmount().longValue()));
-            item.setFtransPoundage(AccountUtil.divideOneHundred(item.getFtransPoundage().longValue()));
         });
         return new PageVo<>(countResult.getData(), pageDto.getCurrentPage(), pageDto.getPageSize(), data);
     }
