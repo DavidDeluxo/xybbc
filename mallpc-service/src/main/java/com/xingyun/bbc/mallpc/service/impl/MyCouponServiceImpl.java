@@ -44,9 +44,7 @@ import org.springframework.stereotype.Service;
 
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class MyCouponServiceImpl implements MyCouponService {
@@ -280,9 +278,17 @@ public class MyCouponServiceImpl implements MyCouponService {
         Result<List<CouponQueryVo>> couponQueryVos = couponProviderApi.queryByUserId(couponQueryDto);
         List<ReceiveCenterCouponVo> receiveCenterCouponVoList = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(couponQueryVos.getData())) {
+            //按时间倒序
+            Collections.sort(couponQueryVos.getData(), new Comparator<CouponQueryVo>() {
+                @Override
+                public int compare(CouponQueryVo o1, CouponQueryVo o2) {
+                    return o2.getFmodifyTime().compareTo(o1.getFmodifyTime());
+                }
+            });
             for (CouponQueryVo couponQueryVo : couponQueryVos.getData()) {
                 //查询已经领到的券张数
                 Result<Integer> countResult = couponReceiveApi.countByCriteria(Criteria.of(CouponReceive.class)
+                        .fields(CouponReceive::getFcouponId)
                         .andEqualTo(CouponReceive::getFuid, couponQueryDto.getUserId())
                         .andEqualTo(CouponReceive::getFcouponId, couponQueryVo.getFcouponId()));
                 if (!countResult.isSuccess()) {
