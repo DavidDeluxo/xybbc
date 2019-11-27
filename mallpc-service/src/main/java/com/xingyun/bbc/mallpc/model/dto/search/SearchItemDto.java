@@ -129,4 +129,9 @@ public class SearchItemDto {
     @ApiModelProperty(value = "类目等级")
     private Integer fcategoryLevel;
 
+    /**
+     * 判断是否查询用户表中转用
+     */
+    private String priceName;
+
 }
