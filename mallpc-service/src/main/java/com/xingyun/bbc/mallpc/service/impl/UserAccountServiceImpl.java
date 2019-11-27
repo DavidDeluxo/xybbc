@@ -435,7 +435,7 @@ public class UserAccountServiceImpl implements UserAccountService {
                 UserWork userWork = userWorks(id);
                 accountDetail.setFcreateTime(userWork.getFcreateTime());
                 accountDetail.setOrderId(userWork.getForderId());
-                accountDetail.setFtransStatus(userWork.getFstatus());
+                accountDetail.setFtransStatus(userWorkStatusConventTransSttaus(userWork.getFstatus()));
                 accountDetail.setReson(UserWorkApplyReasons.getName(userWork.getFapplyReason()));
                 accountDetail.setFremark(userWork.getFremark());
                 accountDetail.setFapplyPic(userWork.getFapplyPic());
