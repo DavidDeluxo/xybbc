@@ -408,6 +408,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         AccountDetailVo accountDetail = (dozerHolder.convert(listResult.getData().get(0), AccountDetailVo.class));
         accountDetail.setFpassedTime(listResult.getData().get(0).getFmodifyTime());
         accountDetail.setFtransId(id);
+        accountDetail.setFtransTypes(listResult.getData().get(0).getFdetailType());
         if(listResult.getData().get(0).getFexpenseAmount().compareTo(0L)==0){
             accountDetail.setFtransAmount(AccountUtil.divideOneHundred(listResult.getData().get(0).getFincomeAmount()));
         }else{
