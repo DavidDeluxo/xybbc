@@ -26,9 +26,8 @@ public class PageConfigController {
      */
     @GetMapping("/via/navigation")
     public Result<List<PageConfigPcVo>> navigation() {
-//        log.info("请求pcmall首页导航内容");
-        return null;
-//        return Result.success(pageConfigPcService.navigation());
+        log.info("请求pcmall首页导航内容");
+        return Result.success(pageConfigPcService.navigation());
     }
 
     @GetMapping("/module")
