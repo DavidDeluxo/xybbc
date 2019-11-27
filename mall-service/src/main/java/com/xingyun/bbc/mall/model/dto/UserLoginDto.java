@@ -39,6 +39,9 @@ public class UserLoginDto {
     @ApiModelProperty("设备识别码 IMEI")
     private String imei;
 
+    @ApiModelProperty("MAC地址")
+    private String mac;
+
     @ApiModelProperty("是否触发滑块验证 0否 1是")
     private Integer isCheck;
 
