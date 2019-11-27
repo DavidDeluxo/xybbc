@@ -96,4 +96,10 @@ public class ReceiveCenterCouponVo implements Serializable {
     @ApiModelProperty("适用商品范围，1全部商品、2指定商品可用、3指定商品不可用")
     private Integer fapplicableSku;
 
+    /**
+     * 发放类型
+     */
+    @ApiModelProperty("发放类型--1系统赠送、2页面领取、3新人注册、4会员认证、5首单完成、6订单满赠、7好友邀请、8券码激活")
+    private Integer freleaseType;
+
 }

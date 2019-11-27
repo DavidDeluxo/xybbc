@@ -30,8 +30,7 @@ public class AftersaleController {
     @ApiOperation(value = "获取售后列表", httpMethod = "GET")
     @GetMapping("/getAftersaleLis")
     public Result<PageVo<AftersaleListVo>> getAftersaleLis(@ModelAttribute AftersaleLisDto aftersaleLisDto, HttpServletRequest request) {
-        Long userId = RequestHolder.getUserId();
-        aftersaleLisDto.setFuid(userId);
+        aftersaleLisDto.setFuid(RequestHolder.getUserId());
         return aftersaleService.getAftersaleLis(aftersaleLisDto);
     }
 

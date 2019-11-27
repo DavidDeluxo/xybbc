@@ -12,25 +12,25 @@ import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
-import com.xingyun.bbc.mallpc.common.utils.FileUtils;
+import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
 import com.xingyun.bbc.mallpc.model.dto.search.SearchItemDto;
+import com.xingyun.bbc.mallpc.model.vo.TokenInfoVo;
+import com.xingyun.bbc.mallpc.model.vo.index.CateSearchItemListVo;
 import com.xingyun.bbc.mallpc.model.vo.search.*;
 import com.xingyun.bbc.mallpc.service.GoodsService;
 import com.xingyun.bbc.mallpc.service.SearchRecordService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.index.query.*;
-import org.elasticsearch.search.aggregations.AggregationBuilder;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.BucketOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class GoodsServiceImpl implements GoodsService {
 
@@ -82,50 +83,12 @@ public class GoodsServiceImpl implements GoodsService {
         pageVo.setList(voList);
         Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
         if (!CollectionUtils.isEmpty(resultList)) {
+            String priceName = searchItemDto.getPriceName();
+            if(StringUtils.isEmpty(priceName)){
+                priceName = this.getUserPriceType(searchItemDto.getIsLogin(), searchItemDto.getFuid());
+            }
             for (Map<String, Object> map : resultList) {
-                SearchItemVo vo = new SearchItemVo();
-                if (map.get("fskuId") != null) {
-                    vo.setFskuId(Integer.parseInt(String.valueOf(map.get("fskuId"))));
-                }
-                if (map.get("fskuName") != null) {
-                    vo.setFskuName(String.valueOf(map.get("fskuName")));
-                }
-                if (map.get("ftradeId") != null) {
-                    vo.setFtradedId(Integer.parseInt(String.valueOf(map.get("ftradeId"))));
-                }
-                if (map.get("ftradeName") != null) {
-                    vo.setFtradeName(String.valueOf(map.get("ftradeName")));
-                }
-                if (map.get("fsellTotal") != null) {
-                    vo.setFsellNum(Long.parseLong(String.valueOf(map.get("fsellTotal"))));
-                }
-                if (map.get("fskuThumbImage") != null) {
-                    vo.setFimgUrl(String.valueOf(map.get("fskuThumbImage")));
-//                    vo.setFimgUrl(FileUtils.getFileUrl(String.valueOf(map.get("fskuThumbImage"))));
-                }
-                if (map.get("fgoodsId") != null) {
-                    vo.setFgoodsId(Integer.parseInt(String.valueOf(map.get("fgoodsId"))));
-                }
-                if (map.get("fskuStatus") != null) {
-                    vo.setFskuStatus(Integer.parseInt(String.valueOf(map.get("fskuStatus"))));
-                }
-                if (map.get("flabelId") != null) {
-                    vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
-                }
-                String priceName = this.getUserPriceType(searchItemDto);
-                if (map.get(priceName) != null && searchItemDto.getIsLogin()) {
-                    Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
-                    if (priceMap.get("min_price") != null) {
-                        BigDecimal min_price_penny = new BigDecimal(String.valueOf(priceMap.get("min_price")));
-                        BigDecimal min_price_yuan = min_price_penny.divide(ONE_HUNDRED).setScale(2, BigDecimal.ROUND_HALF_UP);
-                        vo.setFbatchSellPrice(min_price_yuan);
-                    } else {
-                        vo.setFbatchSellPrice(BigDecimal.ZERO);
-                    }
-                }
-                if (map.get("fstockRemainNumTotal") != null) {
-                    vo.setFremainTotal(Integer.parseInt(String.valueOf(map.get("fstockRemainNumTotal"))));
-                }
+                SearchItemVo vo = getSearchItemVo(map, priceName, searchItemDto.getIsLogin());
                 voList.add(vo);
             }
             pageVo.setPageSize(searchItemDto.getPageSize());
@@ -145,7 +108,6 @@ public class GoodsServiceImpl implements GoodsService {
     @Override
     public Result<SearchFilterVo> searchSkuFilter(SearchItemDto searchItemDto) {
         SearchFilterVo filterVo = new SearchFilterVo();
-
         //分类查询条件设置
         this.setCategoryCondition(searchItemDto);
         //扫描入参类属性注解, 自动构建搜索条件
@@ -165,7 +127,6 @@ public class GoodsServiceImpl implements GoodsService {
             //原产地
             List<Map<String, Object>> originAggs = (List<Map<String, Object>>) aggregationMap.get("forigin_id");
             List<OriginFilterVo> originFilterVoList = EsBeanUtil.getValueObjectList(OriginFilterVo.class, originAggs);
-
             filterVo.setOriginList(originFilterVoList);
 
             //贸易类型
@@ -173,32 +134,30 @@ public class GoodsServiceImpl implements GoodsService {
             List<TradeFilterVo> tradeFilterVoList = EsBeanUtil.getValueObjectList(TradeFilterVo.class, tradeAggs);
             filterVo.setTradeList(tradeFilterVoList);
 
-            //商品分类
+            //商品一级分类
             List<Map<String, Object>> categoryAggs = (List<Map<String, Object>>) aggregationMap.get("fcategory_id1");
             List<CategoryFilterVo> categoryFilterList = EsBeanUtil.getValueObjectList(CategoryFilterVo.class, categoryAggs);
-
-            //商品属性
-            List<Map<String, Object>> attributeAggs = (List<Map<String, Object>>) aggregationMap.get("attribute");
-            List<GoodsAttributeFilterVo> attributeFilterList = this.getGoodAttributeList(attributeAggs);
-            filterVo.setAttributeFilterList(attributeFilterList);
-
-            Result<List<GoodsCategory>> categoryResult = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class));
-            if (!categoryResult.isSuccess()) {
-                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
-            }
-            if (CollectionUtils.isNotEmpty(categoryResult.getData())) {
-                Map<Long, List<GoodsCategory>> categoryMap = categoryResult.getData().stream().collect(Collectors.groupingBy(GoodsCategory::getFcategoryId, Collectors.toList()));
-                for (CategoryFilterVo categoryFilterVo : categoryFilterList) {
-                    Integer fcategoryId = categoryFilterVo.getFcategoryId();
-                    List<GoodsCategory> categoryList = categoryMap.get(Long.parseLong(String.valueOf(fcategoryId)));
-                    if (CollectionUtils.isNotEmpty(categoryList)) {
-                        GoodsCategory category = categoryList.get(0);
-                        categoryFilterVo.setFcategorySort(category.getFcategorySort());
-                        categoryFilterVo.setFcreateTime(category.getFcreateTime());
+            if(!CollectionUtils.isEmpty(categoryFilterList)){
+                List<Integer> cateIds = categoryFilterList.stream().map(item->item.getFcategoryId()).collect(Collectors.toList());
+                Criteria<GoodsCategory,Object> criteriaCate = Criteria.of(GoodsCategory.class)
+                        .andIn(GoodsCategory::getFcategoryId,cateIds);
+                Result<List<GoodsCategory>> categoryResult = goodsCategoryApi.queryByCriteria(criteriaCate);
+                List<GoodsCategory> cateList = ResultUtils.getData(categoryResult);
+                if (CollectionUtils.isNotEmpty(cateList)) {
+                    Map<Long, GoodsCategory> categoryMap = categoryResult.getData().stream().collect(Collectors.toMap(GoodsCategory::getFcategoryId, cate -> cate));
+                    for (CategoryFilterVo categoryFilterVo : categoryFilterList) {
+                        Integer categoryId = categoryFilterVo.getFcategoryId();
+                        GoodsCategory category = categoryMap.get(Long.parseLong(String.valueOf(categoryId)));
+                        if (category != null) {
+                            categoryFilterVo.setFcategorySort(category.getFcategorySort());
+                            categoryFilterVo.setFcreateTime(category.getFcreateTime());
+                        }
                     }
                 }
             }
             filterVo.setCategoryList(categoryFilterList);
+
+            //赋值totalCount
             Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
             if (MapUtils.isNotEmpty(baseInfoMap) && baseInfoMap.get("totalHits") != null) {
                 filterVo.setTotalCount(Integer.parseInt(String.valueOf(baseInfoMap.get("totalHits"))));
@@ -208,8 +167,88 @@ public class GoodsServiceImpl implements GoodsService {
         return Result.success(filterVo);
     }
 
+    @Override
+    public Result<List<CateSearchItemListVo>> floorSkus(List<Integer> cateIds, TokenInfoVo infoVo) {
+        if(CollectionUtils.isEmpty(cateIds)){
+            return Result.success(new ArrayList<>());
+        }
+        List<CateSearchItemListVo> resultList = new ArrayList<>();
+        String priceName = this.getUserPriceType(infoVo.getIsLogin(), infoVo.getFuid());
+        for(Integer cateId : cateIds){
+            SearchItemDto searchItemDto = new SearchItemDto();
+            List<Integer> cateIdList = new ArrayList<>();
+            cateIdList.add(cateId);
+            searchItemDto.setFcategoryIdL1(cateIdList);
+            searchItemDto.setIsLogin(infoVo.getIsLogin());
+            searchItemDto.setFuid(infoVo.getFuid());
+            searchItemDto.setSellAmountOrderBy("desc");
+            searchItemDto.setPriceName(priceName);
+            Result<SearchItemListVo<SearchItemVo>> result = searchSkuList(searchItemDto);
+
+            CateSearchItemListVo vo = new CateSearchItemListVo();
+            vo.setCateId(cateId);
+            vo.setSkus(result.getData().getList());
+            resultList.add(vo);
+        }
+        return Result.success(resultList);
+    }
+
+    /**
+     * 单个skuVo的封装
+     * @param map
+     * @param priceName
+     * @param isLogin
+     * @return
+     */
+    private SearchItemVo getSearchItemVo(Map<String, Object> map, String priceName, Boolean isLogin){
+        SearchItemVo vo = new SearchItemVo();
+        if (map.get("fskuId") != null) {
+            vo.setFskuId(Integer.parseInt(String.valueOf(map.get("fskuId"))));
+        }
+        if (map.get("fskuName") != null) {
+            vo.setFskuName(String.valueOf(map.get("fskuName")));
+        }
+        if (map.get("ftradeId") != null) {
+            vo.setFtradedId(Integer.parseInt(String.valueOf(map.get("ftradeId"))));
+        }
+        if (map.get("ftradeName") != null) {
+            vo.setFtradeName(String.valueOf(map.get("ftradeName")));
+        }
+        if (map.get("fsellTotal") != null) {
+            vo.setFsellNum(Long.parseLong(String.valueOf(map.get("fsellTotal"))));
+        }
+        if (map.get("fskuThumbImage") != null) {
+            vo.setFimgUrl(String.valueOf(map.get("fskuThumbImage")));
+        }
+        if (map.get("fgoodsId") != null) {
+            vo.setFgoodsId(Integer.parseInt(String.valueOf(map.get("fgoodsId"))));
+        }
+        if (map.get("fskuStatus") != null) {
+            vo.setFskuStatus(Integer.parseInt(String.valueOf(map.get("fskuStatus"))));
+        }
+        if (map.get("flabelId") != null) {
+            vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
+        }
+        if (map.get(priceName) != null && isLogin) {
+            Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
+            if (priceMap.get("min_price") != null) {
+                BigDecimal min_price_penny = new BigDecimal(String.valueOf(priceMap.get("min_price")));
+                BigDecimal min_price_yuan = min_price_penny.divide(ONE_HUNDRED).setScale(2, BigDecimal.ROUND_HALF_UP);
+                vo.setFbatchSellPrice(min_price_yuan);
+            } else {
+                vo.setFbatchSellPrice(BigDecimal.ZERO);
+            }
+        }
+        if (map.get("fstockRemainNumTotal") != null) {
+            vo.setFremainTotal(Integer.parseInt(String.valueOf(map.get("fstockRemainNumTotal"))));
+        }
+        return vo;
+    }
+
+
     /**
      * 分类查询条件设置
+     *
      * @param searchItemDto
      */
     private void setCategoryCondition(SearchItemDto searchItemDto) {
@@ -238,15 +277,6 @@ public class GoodsServiceImpl implements GoodsService {
             MatchQueryBuilder pinyinMatch = QueryBuilders.matchQuery("fsku_name.pinyin", searchItemDto.getSearchFullText());
             criteria.getFilterBuilder().should(pinyinMatch);
         }
-        // 商品属性条件
-        if (CollectionUtils.isNotEmpty(searchItemDto.getFattributeItemId())) {
-            String fieldname = "attributes.fclass_attribute_item_id";
-            DisMaxQueryBuilder disMaxQuerys = QueryBuilders.disMaxQuery();
-            for (Object value : searchItemDto.getFattributeItemId()) {
-                disMaxQuerys.add(QueryBuilders.termsQuery(fieldname, value));
-            }
-            criteria.getFilterBuilder().must(QueryBuilders.nestedQuery("attributes", disMaxQuerys, ScoreMode.None));
-        }
         // 库存条件
         this.setStockCondition(searchItemDto, criteria);
         // 价格条件
@@ -262,19 +292,10 @@ public class GoodsServiceImpl implements GoodsService {
         if (criteria == null) {
             return;
         }
-        criteria.termAggregate("fcategory_id1", "fcategory_id1").subAggregate("fcategory_name1", "fcategory_name1.keyword");
-//        criteria.termAggregate("fcategory_id3", "fcategory_id3").subAggregate("fcategory_name3", "fcategory_name3.keyword");
         criteria.termAggregate("fbrand_id", "fbrand_id").subAggregate("fbrand_name", "fbrand_name.keyword");
+        criteria.termAggregate("fcategory_id1", "fcategory_id1").subAggregate("fcategory_name1", "fcategory_name1.keyword");
         criteria.termAggregate("forigin_id", "forigin_id").subAggregate("forigin_name", "forigin_name.keyword");
         criteria.termAggregate("ftrade_id", "ftrade_id").subAggregate("ftrade_name", "ftrade_name.keyword");
-
-        AggregationBuilder attributeAgg = AggregationBuilders.terms("attribute_id").field("attributes.fclass_attribute_id").order(BucketOrder.count(false))
-                .subAggregation(AggregationBuilders.terms("attribute_name").field("attributes.fclass_attribute_name.keyword").order(BucketOrder.count(false))
-                .subAggregation(AggregationBuilders.terms("attribute_item_id").field("attributes.fclass_attribute_item_id").order(BucketOrder.count(false))
-                .subAggregation(AggregationBuilders.terms("attribute_item_value").field("attributes.fclass_attribute_item_val.keyword").order(BucketOrder.count(false)))));
-
-        AggregationBuilder nestedAgg = AggregationBuilders.nested("attribute", "attributes").subAggregation(attributeAgg);
-        criteria.getAggBuilders().put("attribute", nestedAgg);
     }
 
     /**
@@ -314,7 +335,7 @@ public class GoodsServiceImpl implements GoodsService {
             return;
         }
 
-        String priceFieldName = this.getUserPriceType(searchItemDto);
+        String priceFieldName = this.getUserPriceType(searchItemDto.getIsLogin(), searchItemDto.getFuid());
         String fieldName = humpToLine2(priceFieldName) + PRICE_TYPE_SUFFIX;
         if (searchItemDto.getPriceOrderBy() != null) {
             criteria.sortBy(fieldName, searchItemDto.getPriceOrderBy());
@@ -336,14 +357,16 @@ public class GoodsServiceImpl implements GoodsService {
     /**
      * 根据用户身份选择价格类型
      *
-     * @param searchItemDto
      * @return
      */
-    private String getUserPriceType(SearchItemDto searchItemDto) {
+    private String getUserPriceType(Boolean isLogin, Integer fuid) {
         //默认为未认证
         String fuserTypeId = "0";
-        if (searchItemDto.getIsLogin() && searchItemDto.getFuid() != null) {
-            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class).andEqualTo(User::getFuid, searchItemDto.getFuid()));
+        if (isLogin && fuid != null) {
+            log.info("登录用户id：{}",fuid);
+            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
+                    .fields(User::getFuid,User::getFoperateType)
+                    .andEqualTo(User::getFuid, fuid));
             if (!userResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
@@ -371,21 +394,5 @@ public class GoodsServiceImpl implements GoodsService {
         }
         matcher.appendTail(sb);
         return sb.toString();
-    }
-
-    /**
-     * 提取商品属性聚合信息
-     *
-     * @param attributeAggs
-     * @return
-     */
-    private List<GoodsAttributeFilterVo> getGoodAttributeList(List<Map<String, Object>> attributeAggs) {
-        List<GoodsAttributeFilterVo> resultList = new LinkedList<>();
-        if (CollectionUtils.isEmpty(attributeAggs)) {
-            return resultList;
-        }
-        List<Map<String, Object>> aggList = (List<Map<String, Object>>) attributeAggs.get(0).get("attribute_id");
-        resultList = EsBeanUtil.getValueObjectList(GoodsAttributeFilterVo.class, aggList);
-        return resultList;
     }
 }

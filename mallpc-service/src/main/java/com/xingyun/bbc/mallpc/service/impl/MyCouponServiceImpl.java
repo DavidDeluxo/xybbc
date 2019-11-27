@@ -92,7 +92,7 @@ public class MyCouponServiceImpl implements MyCouponService {
         criteria.fields(CouponReceive::getFcouponId, CouponReceive::getFvalidityStart,
                 CouponReceive::getFvalidityEnd,CouponReceive::getFuserCouponStatus)
                 .page(myCouponDto.getCurrentPage(), myCouponDto.getPageSize())
-                .sortDesc(CouponReceive::getFcreateTime);
+                .sortDesc(CouponReceive::getFmodifyTime);
         Result<List<CouponReceive>> listResult = couponReceiveApi.queryByCriteria(criteria);
         if (!listResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -305,6 +305,7 @@ public class MyCouponServiceImpl implements MyCouponService {
                     receiveCenterCouponVo.setFvalidityDays(couponQueryVo.getFvalidityDays());
                     receiveCenterCouponVo.setFthresholdAmount(PriceUtil.toYuan(couponQueryVo.getFthresholdAmount()));
                     receiveCenterCouponVo.setFapplicableSku(couponQueryVo.getFapplicableSku());
+                    receiveCenterCouponVo.setFreleaseType(couponQueryVo.getFreleaseType());
                     //优惠券类型，1满减券需要除以100、2折扣券需要除以10
                     if (couponQueryVo.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
                         receiveCenterCouponVo.setFdeductionValue(PriceUtil.toYuan(couponQueryVo.getFdeductionValue()));

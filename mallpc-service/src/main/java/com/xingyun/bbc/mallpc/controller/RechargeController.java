@@ -1,7 +1,6 @@
 package com.xingyun.bbc.mallpc.controller;
 
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mallpc.model.dto.recharge.GetQRCodeDTO;
 import com.xingyun.bbc.mallpc.model.dto.recharge.OfflineRechargeVoucherDTO;
 import com.xingyun.bbc.mallpc.model.dto.recharge.RechargeSubmitDTO;
 import com.xingyun.bbc.mallpc.service.RechargeService;
@@ -40,10 +39,10 @@ public class RechargeController {
         return Result.success();
     }
 
-    @ApiOperation("获取支付二维码")
-    @PostMapping("/getQRCode")
-    public Result<?> getQRCode(@RequestBody @Valid GetQRCodeDTO dto) {
-        return Result.success(rechargeService.getQRCode(dto.getFtransId()));
-    }
+//    @ApiOperation("获取支付二维码")
+//    @PostMapping("/getQRCode")
+//    public Result<?> getQRCode(@RequestBody @Valid GetQRCodeDTO dto) {
+//        return Result.success(rechargeService.getQRCode(dto.getFtransId()));
+//    }
 
 }

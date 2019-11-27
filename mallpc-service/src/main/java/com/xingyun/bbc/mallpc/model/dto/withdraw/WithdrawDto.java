@@ -31,7 +31,7 @@ public class WithdrawDto implements Serializable {
     @ApiModelProperty("提现密码")
     private String withdrawPwd;
 
-    @ApiModelProperty("提现方式|1:支付宝|2:银行卡")
+    @ApiModelProperty("提现方式|1:支付宝|2:线下汇款")
     @Range(min = 1,max = 2,message = "目前不支持此提现方式")
     @NotNull(message = "提现方式不能为空")
     private Integer way;

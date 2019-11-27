@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.service;
 
+import com.xingyun.bbc.core.user.po.UserVerify;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.model.dto.*;
 import com.xingyun.bbc.mall.model.vo.*;
@@ -66,5 +67,6 @@ public interface UserService {
     * @throws
      */
     Result<Integer>getUnusedCouponCount(Long fuid);
+
 }
 
