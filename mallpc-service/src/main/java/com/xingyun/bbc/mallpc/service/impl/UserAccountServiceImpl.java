@@ -408,6 +408,11 @@ public class UserAccountServiceImpl implements UserAccountService {
         AccountDetailVo accountDetail = (dozerHolder.convert(listResult.getData().get(0), AccountDetailVo.class));
         accountDetail.setFpassedTime(listResult.getData().get(0).getFmodifyTime());
         accountDetail.setFtransId(id);
+        if(listResult.getData().get(0).getFexpenseAmount().compareTo(0L)==0){
+            accountDetail.setFtransAmount(AccountUtil.divideOneHundred(listResult.getData().get(0).getFincomeAmount()));
+        }else{
+            accountDetail.setFtransAmount(AccountUtil.divideOneHundred(listResult.getData().get(0).getFexpenseAmount()));
+        }
         switch (listResult.getData().get(0).getFdetailType()) {
             //充值提现
             case 1:
@@ -422,7 +427,6 @@ public class UserAccountServiceImpl implements UserAccountService {
                 OrderPayment orderPayment = orderPayments.get(0);
                 accountDetail.setFcreateTime(orderPayment.getFcreateTime());
                 accountDetail.setFpassedTime(orderPayment.getFpayTime());
-                accountDetail.setFtransAmount(AccountUtil.divideOneHundred(listResult.getData().get(0).getFexpenseAmount()));
                 break;
             //售后工单
             case 13:
