@@ -31,10 +31,10 @@ public class UserLoginDto {
     private String ipAddress;
 
     @ApiModelProperty("设备型号")
-    private String funitType;
+    private String deviceName;
 
     @ApiModelProperty("操作系统")
-    private String foperatingSystem;
+    private String osVersion;
 
     @ApiModelProperty("设备识别码 IMEI")
     private String imei;
