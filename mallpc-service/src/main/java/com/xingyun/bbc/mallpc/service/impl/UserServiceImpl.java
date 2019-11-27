@@ -125,9 +125,9 @@ public class UserServiceImpl implements UserService {
         Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
                 .andEqualTo(User::getFisDelete, "0")
                 .andEqualTo(User::getFpasswd, passWord)
-                .andLeft().orLike(User::getFmobile, userLoginDto.getUserAccount())
-                .orLike(User::getFmail, userLoginDto.getUserAccount())
-                .orLike(User::getFuname, userLoginDto.getUserAccount()).addRight());
+                .andLeft().orEqualTo(User::getFmobile, userLoginDto.getUserAccount())
+                .orEqualTo(User::getFmail, userLoginDto.getUserAccount())
+                .orEqualTo(User::getFuname, userLoginDto.getUserAccount()).addRight());
         Ensure.that(userResult).isNotNullData(MallPcExceptionCode.LOGIN_FAILED);
         Ensure.that(userResult.getData().getFfreezeStatus()).isEqual(1, MallPcExceptionCode.ACCOUNT_FREEZE);
         UserLoginVo userLoginVo = createToken(userResult.getData());
