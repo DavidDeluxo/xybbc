@@ -30,6 +30,12 @@ public class UserLoginDto {
     @ApiModelProperty("客户端IP")
     private String ipAddress;
 
+    @ApiModelProperty("设备型号")
+    private String funitType;
+
+    @ApiModelProperty("操作系统")
+    private String foperatingSystem;
+
     @ApiModelProperty("设备识别码 IMEI")
     private String imei;
 
