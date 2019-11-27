@@ -405,6 +405,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         Ensure.that(listResult).isNotEmptyData(new MallPcExceptionCode(listResult.getCode(), listResult.getMsg()));
         AccountDetailVo accountDetail = (dozerHolder.convert(listResult.getData().get(0), AccountDetailVo.class));
         accountDetail.setFpassedTime(listResult.getData().get(0).getFmodifyTime());
+        accountDetail.setFtransId(id);
         switch (listResult.getData().get(0).getFdetailType()) {
             //充值提现
             case 1:
@@ -417,11 +418,6 @@ public class UserAccountServiceImpl implements UserAccountService {
             case 5:
                 List<OrderPayment> orderPayments = orderPayments(id);
                 OrderPayment orderPayment = orderPayments.get(0);
-                Result<List<Order>> orderListResult = orderApi.queryByCriteria(Criteria.of(Order.class)
-                        .andEqualTo(Order::getForderPaymentId, orderPayment.getForderPaymentId()));
-                Ensure.that(orderListResult).isNotEmptyData(new MallPcExceptionCode(orderListResult.getCode(), orderListResult.getMsg()));
-
-                accountDetail.setOrderId(orderListResult.getData().stream().map(Order::getForderId).collect(Collectors.joining(",")));
                 accountDetail.setFcreateTime(orderPayment.getFcreateTime());
                 accountDetail.setFpassedTime(orderPayment.getFpayTime());
                 accountDetail.setFtransAmount(AccountUtil.divideOneHundred(listResult.getData().get(0).getFexpenseAmount()));
