@@ -351,6 +351,7 @@ public class UserAccountServiceImpl implements UserAccountService {
             accountDetailVo.setType(RECHARGE_WORK_ADJUSTMENT_BALANCE.getCode());
             accountDetailVo.setFtransPoundage(null);
             accountDetailVo.setFtransActualAmount(null);
+            accountDetailVo.setFapplyPic(userWork.getFapplyPic());
             accountDetailVo.setFpassedTime(userWork.getFmodifyTime());
         } else {
             Result<List<UserAccountTrans>> userAccountTransResult = userAccountTransApi.queryByCriteria(Criteria.of(UserAccountTrans.class)
@@ -358,6 +359,7 @@ public class UserAccountServiceImpl implements UserAccountService {
             Ensure.that(userAccountTransResult).isNotEmptyData(new MallPcExceptionCode(userAccountTransResult.getCode(), userAccountTransResult.getMsg()));
 
             accountDetailVo = dozerHolder.convert(userAccountTransResult.getData().get(0), AccountDetailVo.class);
+            accountDetailVo.setFapplyPic(userAccountTransResult.getData().get(0).getFpayVoucher());
             if (accountDetailVo.getFtransTypes().compareTo(UserAccountTransTypesEnum.RECHARGE.getCode()) == 0) {
                 accountDetailVo.setType(accountDetailVo.getFrechargeType());
                 accountDetailVo.setFtransPoundage(null);
