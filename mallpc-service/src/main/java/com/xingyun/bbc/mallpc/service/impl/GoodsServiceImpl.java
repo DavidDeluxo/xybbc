@@ -88,48 +88,7 @@ public class GoodsServiceImpl implements GoodsService {
                 priceName = this.getUserPriceType(searchItemDto);
             }
             for (Map<String, Object> map : resultList) {
-                SearchItemVo vo = new SearchItemVo();
-                if (map.get("fskuId") != null) {
-                    vo.setFskuId(Integer.parseInt(String.valueOf(map.get("fskuId"))));
-                }
-                if (map.get("fskuName") != null) {
-                    vo.setFskuName(String.valueOf(map.get("fskuName")));
-                }
-                if (map.get("ftradeId") != null) {
-                    vo.setFtradedId(Integer.parseInt(String.valueOf(map.get("ftradeId"))));
-                }
-                if (map.get("ftradeName") != null) {
-                    vo.setFtradeName(String.valueOf(map.get("ftradeName")));
-                }
-                if (map.get("fsellTotal") != null) {
-                    vo.setFsellNum(Long.parseLong(String.valueOf(map.get("fsellTotal"))));
-                }
-                if (map.get("fskuThumbImage") != null) {
-                    vo.setFimgUrl(String.valueOf(map.get("fskuThumbImage")));
-//                    vo.setFimgUrl(FileUtils.getFileUrl(String.valueOf(map.get("fskuThumbImage"))));
-                }
-                if (map.get("fgoodsId") != null) {
-                    vo.setFgoodsId(Integer.parseInt(String.valueOf(map.get("fgoodsId"))));
-                }
-                if (map.get("fskuStatus") != null) {
-                    vo.setFskuStatus(Integer.parseInt(String.valueOf(map.get("fskuStatus"))));
-                }
-                if (map.get("flabelId") != null) {
-                    vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
-                }
-                if (map.get(priceName) != null && searchItemDto.getIsLogin()) {
-                    Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
-                    if (priceMap.get("min_price") != null) {
-                        BigDecimal min_price_penny = new BigDecimal(String.valueOf(priceMap.get("min_price")));
-                        BigDecimal min_price_yuan = min_price_penny.divide(ONE_HUNDRED).setScale(2, BigDecimal.ROUND_HALF_UP);
-                        vo.setFbatchSellPrice(min_price_yuan);
-                    } else {
-                        vo.setFbatchSellPrice(BigDecimal.ZERO);
-                    }
-                }
-                if (map.get("fstockRemainNumTotal") != null) {
-                    vo.setFremainTotal(Integer.parseInt(String.valueOf(map.get("fstockRemainNumTotal"))));
-                }
+                SearchItemVo vo = getSearchItemVo(map, priceName, searchItemDto.getIsLogin());
                 voList.add(vo);
             }
             pageVo.setPageSize(searchItemDto.getPageSize());
@@ -233,6 +192,59 @@ public class GoodsServiceImpl implements GoodsService {
         }
         return Result.success(resultList);
     }
+
+    /**
+     * 单个skuVo的封装
+     * @param map
+     * @param priceName
+     * @param isLogin
+     * @return
+     */
+    private SearchItemVo getSearchItemVo(Map<String, Object> map, String priceName, Boolean isLogin){
+        SearchItemVo vo = new SearchItemVo();
+        if (map.get("fskuId") != null) {
+            vo.setFskuId(Integer.parseInt(String.valueOf(map.get("fskuId"))));
+        }
+        if (map.get("fskuName") != null) {
+            vo.setFskuName(String.valueOf(map.get("fskuName")));
+        }
+        if (map.get("ftradeId") != null) {
+            vo.setFtradedId(Integer.parseInt(String.valueOf(map.get("ftradeId"))));
+        }
+        if (map.get("ftradeName") != null) {
+            vo.setFtradeName(String.valueOf(map.get("ftradeName")));
+        }
+        if (map.get("fsellTotal") != null) {
+            vo.setFsellNum(Long.parseLong(String.valueOf(map.get("fsellTotal"))));
+        }
+        if (map.get("fskuThumbImage") != null) {
+            vo.setFimgUrl(String.valueOf(map.get("fskuThumbImage")));
+        }
+        if (map.get("fgoodsId") != null) {
+            vo.setFgoodsId(Integer.parseInt(String.valueOf(map.get("fgoodsId"))));
+        }
+        if (map.get("fskuStatus") != null) {
+            vo.setFskuStatus(Integer.parseInt(String.valueOf(map.get("fskuStatus"))));
+        }
+        if (map.get("flabelId") != null) {
+            vo.setFlabelId(Integer.parseInt(String.valueOf(map.get("flabelId"))));
+        }
+        if (map.get(priceName) != null && isLogin) {
+            Map<String, Object> priceMap = (Map<String, Object>) map.get(priceName);
+            if (priceMap.get("min_price") != null) {
+                BigDecimal min_price_penny = new BigDecimal(String.valueOf(priceMap.get("min_price")));
+                BigDecimal min_price_yuan = min_price_penny.divide(ONE_HUNDRED).setScale(2, BigDecimal.ROUND_HALF_UP);
+                vo.setFbatchSellPrice(min_price_yuan);
+            } else {
+                vo.setFbatchSellPrice(BigDecimal.ZERO);
+            }
+        }
+        if (map.get("fstockRemainNumTotal") != null) {
+            vo.setFremainTotal(Integer.parseInt(String.valueOf(map.get("fstockRemainNumTotal"))));
+        }
+        return vo;
+    }
+
 
     /**
      * 分类查询条件设置
