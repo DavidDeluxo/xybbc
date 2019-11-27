@@ -58,7 +58,7 @@ public interface MallPcRedisConstant {
     String PC_MALL_PAGECONFIG_TOPIC_UPDATE = "pc_mall_topic_update";
 
 
-    String VERIFY_CODE_PREFIX = "SMS_";
+    String VERIFY_CODE_PREFIX = "SMS:";
 
     String ADD_USER_WITHDRAW_LOCK = KEY_PREFIX + "add_user_withdraw_lock";
 }
