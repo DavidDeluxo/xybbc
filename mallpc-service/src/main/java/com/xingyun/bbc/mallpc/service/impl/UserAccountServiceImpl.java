@@ -175,8 +175,11 @@ public class UserAccountServiceImpl implements UserAccountService {
         //过滤掉明细类型为6支付宝下单，7微信下单， 14售后工单调整信用额度，18信用额度-可用余额，19信用额度下单
         Criteria<UserDetail, Object> criteria = Criteria.of(UserDetail.class)
                 .andEqualTo(UserDetail::getFuid, uid)
-                .andNotIn(UserDetail::getFdetailType, Lists.newArrayList(ALI_ORDER.getCode(),
-                        WECHAT_ORDER.getCode(), AFTERSALE_WORK_CREDIT.getCode(), CREDIT_LIMIT_AVAILABLE_BALANCE.getCode(), CREDIT_LIMIT_ORDER.getCode()))
+                .andNotEqualTo(UserDetail::getFdetailType, ALI_ORDER.getCode())
+                .andNotEqualTo(UserDetail::getFdetailType, WECHAT_ORDER.getCode())
+                .andNotEqualTo(UserDetail::getFdetailType, AFTERSALE_WORK_CREDIT.getCode())
+                .andNotEqualTo(UserDetail::getFdetailType, CREDIT_LIMIT_AVAILABLE_BALANCE.getCode())
+                .andNotEqualTo(UserDetail::getFdetailType, CREDIT_LIMIT_ORDER.getCode())
                 .sortDesc(UserDetail::getFcreateTime)
                 .page(pageDto.getCurrentPage(), pageDto.getPageSize());
 
@@ -348,7 +351,6 @@ public class UserAccountServiceImpl implements UserAccountService {
             Result<List<UserAccountTrans>> userAccountTransResult = userAccountTransApi.queryByCriteria(Criteria.of(UserAccountTrans.class)
                     .andEqualTo(UserAccountTrans::getFtransId, id));
             Ensure.that(userAccountTransResult).isNotEmptyData(new MallPcExceptionCode(userAccountTransResult.getCode(), userAccountTransResult.getMsg()));
-
 
             accountDetailVo = dozerHolder.convert(userAccountTransResult.getData().get(0), AccountDetailVo.class);
             if (accountDetailVo.getFtransTypes().compareTo(UserAccountTransTypesEnum.RECHARGE.getCode()) == 0) {
