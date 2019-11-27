@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -174,23 +175,49 @@ public class GoodsServiceImpl implements GoodsService {
         }
         List<CateSearchItemListVo> resultList = new ArrayList<>();
         String priceName = this.getUserPriceType(infoVo.getIsLogin(), infoVo.getFuid());
-        for(Integer cateId : cateIds){
-            SearchItemDto searchItemDto = new SearchItemDto();
-            List<Integer> cateIdList = new ArrayList<>();
-            cateIdList.add(cateId);
-            searchItemDto.setFcategoryIdL1(cateIdList);
-            searchItemDto.setIsLogin(infoVo.getIsLogin());
-            searchItemDto.setFuid(infoVo.getFuid());
-            searchItemDto.setSellAmountOrderBy("desc");
-            searchItemDto.setPriceName(priceName);
-            Result<SearchItemListVo<SearchItemVo>> result = searchSkuList(searchItemDto);
 
-            CateSearchItemListVo vo = new CateSearchItemListVo();
-            vo.setCateId(cateId);
-            vo.setSkus(result.getData().getList());
-            resultList.add(vo);
+
+        List<CompletableFuture<CateSearchItemListVo>> completableFutureList = new ArrayList<>();
+
+        for (Integer cateId : cateIds) {
+            CompletableFuture<CateSearchItemListVo> result = CompletableFuture.supplyAsync(()->getSkuList(cateId, infoVo, priceName));
+            completableFutureList.add(result);
+        }
+        CompletableFuture
+                .allOf(completableFutureList.toArray(new CompletableFuture[completableFutureList.size()]))
+                .join();
+        for(CompletableFuture completableFuture : completableFutureList){
+            try {
+                resultList.add((CateSearchItemListVo) completableFuture.get());
+            } catch (Exception e) {
+                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            }
         }
         return Result.success(resultList);
+    }
+
+    /**
+     * 封装查询条件查询
+     * @param cateId
+     * @param infoVo
+     * @param priceName
+     * @return
+     */
+    private CateSearchItemListVo getSkuList(Integer cateId, TokenInfoVo infoVo, String priceName){
+        SearchItemDto searchItemDto = new SearchItemDto();
+        List<Integer> cateIdList = new ArrayList<>();
+        cateIdList.add(cateId);
+        searchItemDto.setFcategoryIdL1(cateIdList);
+        searchItemDto.setIsLogin(infoVo.getIsLogin());
+        searchItemDto.setFuid(infoVo.getFuid());
+        searchItemDto.setSellAmountOrderBy("desc");
+        searchItemDto.setPriceName(priceName);
+        Result<SearchItemListVo<SearchItemVo>> result = searchSkuList(searchItemDto);
+
+        CateSearchItemListVo vo = new CateSearchItemListVo();
+        vo.setCateId(cateId);
+        vo.setSkus(result.getData().getList());
+        return vo;
     }
 
     /**
