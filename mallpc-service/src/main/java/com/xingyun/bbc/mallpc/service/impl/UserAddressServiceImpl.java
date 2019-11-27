@@ -70,6 +70,7 @@ public class UserAddressServiceImpl implements UserAddressService {
         String fdeliveryMobile = userAddressListDto.getFdeliveryMobile();
         String fdeliveryName = userAddressListDto.getFdeliveryName();
         Criteria<UserDelivery, Object> deliveryCondition = Criteria.of(UserDelivery.class)
+                .sortDesc(UserDelivery::getFmodifyTime)
                 .andEqualTo(UserDelivery::getFuid, RequestHolder.getUserId())
                 .andEqualTo(UserDelivery::getFisDelete, 0);
         if (StringUtil.isNotBlank(fdeliveryCardid)) {
@@ -105,7 +106,9 @@ public class UserAddressServiceImpl implements UserAddressService {
         } else if (Objects.equals(userDelivery.getFisDefualt(), 1)) {
             vo.setIsDefualt("默认地址");
         }
-        vo.setFdeliveryCardid(StringUtils.overlay(userDelivery.getFdeliveryCardid(), "****", 4, 7));
+        if (StringUtil.isNotBlank(userDelivery.getFdeliveryCardid())) {
+            vo.setFdeliveryCardid(StringUtils.overlay(userDelivery.getFdeliveryCardid(), "****", 4, 7));
+        }
         if (StringUtils.isNotBlank(userDelivery.getFdeliveryCardUrlBack()) && StringUtils.isNotBlank(userDelivery.getFdeliveryCardUrlFront())) {
             vo.setIsCardUpload("已上传");
         } else {
