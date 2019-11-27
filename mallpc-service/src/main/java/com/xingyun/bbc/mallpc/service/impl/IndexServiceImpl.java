@@ -103,43 +103,43 @@ public class IndexServiceImpl implements IndexService {
                 .get(INDEX_USER_COUNT, INDEX_USER_COUNT_UPDATE, USER_COUNT_EXPIRE, () -> ResultUtils.getData(userApi.count(new User())));
     }
 
-    @Override
-    public List<BrandVo> getBrands(Long cateId) {
-        List<GoodsBrand> result = (List<GoodsBrand>) cacheTemplate
-                .get(INDEX_BRAND + cateId, INDEX_BRAND_UPDATE + cateId, BRAND_EXPIRE, () -> {
-                    //查询热门品牌
-                    Criteria<GoodsBrand, Object> brandCriteria = Criteria.of(GoodsBrand.class)
-                            .andEqualTo(GoodsBrand::getFisDelete, 0)
-                            .andEqualTo(GoodsBrand::getFisDisplay, 1)
-                            .andEqualTo(GoodsBrand::getFisHot, 1);
-                    List<GoodsBrand> brandList = ResultUtils.getData(goodsBrandApi.queryByCriteria(brandCriteria));
-                    if (CollectionUtils.isEmpty(brandList)) {
-                        return new ArrayList();
-                    }
-
-                    //查询入参一级分类id下的Goods的brandIds
-                    Criteria<Goods, Object> goodsCriteria = Criteria.of(Goods.class)
-                            .andEqualTo(Goods::getFcategoryId1, cateId)
-                            .fields(Goods::getFbrandId);
-                    List<Goods> goodsList = ResultUtils.getData(goodsApi.queryByCriteria(goodsCriteria));
-                    if (CollectionUtils.isEmpty(goodsList)) {
-                        return new ArrayList();
-                    }
-                    List<Long> brandIds = goodsList.stream().map(Goods::getFbrandId).distinct().collect(Collectors.toList());
-
-                    //筛选出符合条件的品牌信息
-                    List<GoodsBrand> goodsBrands = brandList.stream().filter(hotBrand -> brandIds.contains(hotBrand.getFbrandId())).collect(Collectors.toList());
-                    int endIndex = goodsBrands.size() > BRAND_MAX ? BRAND_MAX : goodsBrands.size();
-                    List<GoodsBrand> returnBrands = goodsBrands.subList(0, endIndex);
-                    return returnBrands;
-                });
-        List<BrandVo> vos = dozerHolder.convert(result, BrandVo.class);
-        vos.forEach(vo -> {
-            vo.setFbrandLogo(FileUtils.getFileUrl(vo.getFbrandLogo()));
-            vo.setFbrandPoster(FileUtils.getFileUrl(vo.getFbrandPoster()));
-        });
-        return vos;
-    }
+//    @Override
+//    public List<BrandVo> getBrands(Long cateId) {
+//        List<GoodsBrand> result = (List<GoodsBrand>) cacheTemplate
+//                .get(INDEX_BRAND + cateId, INDEX_BRAND_UPDATE + cateId, BRAND_EXPIRE, () -> {
+//                    //查询热门品牌
+//                    Criteria<GoodsBrand, Object> brandCriteria = Criteria.of(GoodsBrand.class)
+//                            .andEqualTo(GoodsBrand::getFisDelete, 0)
+//                            .andEqualTo(GoodsBrand::getFisDisplay, 1)
+//                            .andEqualTo(GoodsBrand::getFisHot, 1);
+//                    List<GoodsBrand> brandList = ResultUtils.getData(goodsBrandApi.queryByCriteria(brandCriteria));
+//                    if (CollectionUtils.isEmpty(brandList)) {
+//                        return new ArrayList();
+//                    }
+//
+//                    //查询入参一级分类id下的Goods的brandIds
+//                    Criteria<Goods, Object> goodsCriteria = Criteria.of(Goods.class)
+//                            .andEqualTo(Goods::getFcategoryId1, cateId)
+//                            .fields(Goods::getFbrandId);
+//                    List<Goods> goodsList = ResultUtils.getData(goodsApi.queryByCriteria(goodsCriteria));
+//                    if (CollectionUtils.isEmpty(goodsList)) {
+//                        return new ArrayList();
+//                    }
+//                    List<Long> brandIds = goodsList.stream().map(Goods::getFbrandId).distinct().collect(Collectors.toList());
+//
+//                    //筛选出符合条件的品牌信息
+//                    List<GoodsBrand> goodsBrands = brandList.stream().filter(hotBrand -> brandIds.contains(hotBrand.getFbrandId())).collect(Collectors.toList());
+//                    int endIndex = goodsBrands.size() > BRAND_MAX ? BRAND_MAX : goodsBrands.size();
+//                    List<GoodsBrand> returnBrands = goodsBrands.subList(0, endIndex);
+//                    return returnBrands;
+//                });
+//        List<BrandVo> vos = dozerHolder.convert(result, BrandVo.class);
+//        vos.forEach(vo -> {
+//            vo.setFbrandLogo(FileUtils.getFileUrl(vo.getFbrandLogo()));
+//            vo.setFbrandPoster(FileUtils.getFileUrl(vo.getFbrandPoster()));
+//        });
+//        return vos;
+//    }
 
     @Override
     public List<CateBrandVo> getBrandList(List<Long> cateIds){
