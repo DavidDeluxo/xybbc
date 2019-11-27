@@ -457,7 +457,7 @@ public class UserAccountServiceImpl implements UserAccountService {
                         .andEqualTo(OrderAftersalePic::getFpicType, 2));
                 Ensure.that(orderAftersaleListResult).isSuccess(new MallPcExceptionCode(orderAftersaleListResult.getCode(), orderAftersaleListResult.getMsg()));
                 if (CollectionUtil.isNotEmpty(orderAftersaleListResult.getData())) {
-                    accountDetail.setFapplyPic(orderAftersaleListResult.getData().get(0).getFaftersalePic());
+                    accountDetail.setFapplyPic(orderAftersaleListResult.getData().stream().map(OrderAftersalePic::getFaftersalePic).collect(Collectors.joining(",","","")));
                 }
 
             case 9:
