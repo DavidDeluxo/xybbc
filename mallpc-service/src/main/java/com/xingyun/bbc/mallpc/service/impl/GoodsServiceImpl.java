@@ -85,7 +85,7 @@ public class GoodsServiceImpl implements GoodsService {
         if (!CollectionUtils.isEmpty(resultList)) {
             String priceName = searchItemDto.getPriceName();
             if(StringUtils.isEmpty(priceName)){
-                priceName = this.getUserPriceType(searchItemDto);
+                priceName = this.getUserPriceType(searchItemDto.getIsLogin(), searchItemDto.getFuid());
             }
             for (Map<String, Object> map : resultList) {
                 SearchItemVo vo = getSearchItemVo(map, priceName, searchItemDto.getIsLogin());
@@ -173,6 +173,7 @@ public class GoodsServiceImpl implements GoodsService {
             return Result.success(new ArrayList<>());
         }
         List<CateSearchItemListVo> resultList = new ArrayList<>();
+        String priceName = this.getUserPriceType(infoVo.getIsLogin(), infoVo.getFuid());
         for(Integer cateId : cateIds){
             SearchItemDto searchItemDto = new SearchItemDto();
             List<Integer> cateIdList = new ArrayList<>();
@@ -181,7 +182,6 @@ public class GoodsServiceImpl implements GoodsService {
             searchItemDto.setIsLogin(infoVo.getIsLogin());
             searchItemDto.setFuid(infoVo.getFuid());
             searchItemDto.setSellAmountOrderBy("desc");
-            String priceName = this.getUserPriceType(searchItemDto);
             searchItemDto.setPriceName(priceName);
             Result<SearchItemListVo<SearchItemVo>> result = searchSkuList(searchItemDto);
 
@@ -335,7 +335,7 @@ public class GoodsServiceImpl implements GoodsService {
             return;
         }
 
-        String priceFieldName = this.getUserPriceType(searchItemDto);
+        String priceFieldName = this.getUserPriceType(searchItemDto.getIsLogin(), searchItemDto.getFuid());
         String fieldName = humpToLine2(priceFieldName) + PRICE_TYPE_SUFFIX;
         if (searchItemDto.getPriceOrderBy() != null) {
             criteria.sortBy(fieldName, searchItemDto.getPriceOrderBy());
@@ -357,17 +357,16 @@ public class GoodsServiceImpl implements GoodsService {
     /**
      * 根据用户身份选择价格类型
      *
-     * @param searchItemDto
      * @return
      */
-    private String getUserPriceType(SearchItemDto searchItemDto) {
+    private String getUserPriceType(Boolean isLogin, Integer fuid) {
         //默认为未认证
         String fuserTypeId = "0";
-        if (searchItemDto.getIsLogin() && searchItemDto.getFuid() != null) {
-            log.info("登录用户id：{}",searchItemDto.getFuid());
+        if (isLogin && fuid != null) {
+            log.info("登录用户id：{}",fuid);
             Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
                     .fields(User::getFuid,User::getFoperateType)
-                    .andEqualTo(User::getFuid, searchItemDto.getFuid()));
+                    .andEqualTo(User::getFuid, fuid));
             if (!userResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
             }
