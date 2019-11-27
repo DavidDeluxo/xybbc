@@ -424,6 +424,7 @@ public class UserAccountServiceImpl implements UserAccountService {
                 accountDetail.setOrderId(orderListResult.getData().stream().map(Order::getForderId).collect(Collectors.joining(",")));
                 accountDetail.setFcreateTime(orderPayment.getFcreateTime());
                 accountDetail.setFpassedTime(orderPayment.getFpayTime());
+                accountDetail.setFtransAmount(AccountUtil.divideOneHundred(listResult.getData().get(0).getFexpenseAmount()));
                 break;
             //售后工单
             case 13:
