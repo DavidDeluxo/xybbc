@@ -1049,11 +1049,14 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             }
             SearchItemVo o = (SearchItemVo) res.getData().getList().get(0);
             List<Integer> fcouponIds = o.getFcouponIds();
+            Date now = new Date();
             for (Integer fcouponId : fcouponIds) {
                 Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
                         .andEqualTo(Coupon::getFcouponId, fcouponId)
                         .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
                         .andEqualTo(Coupon::getFreleaseType, CouponReleaseTypeEnum.PAGE_RECEIVE.getCode())
+                        .andLessThanOrEqualTo(Coupon::getFreleaseTimeStart, now)
+                        .andGreaterThanOrEqualTo(Coupon::getFreleaseTimeEnd, now)
                         .andEqualTo(Coupon::getFisShow, 1)
                         .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType, Coupon::getFthresholdAmount,
                                 Coupon::getFdeductionValue, Coupon::getFvalidityStart, Coupon::getFvalidityEnd, Coupon::getFassignUser,
@@ -1062,7 +1065,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 //不满足券条件的先排除
                 if (couponResult.isSuccess() && null != coupon) {
                     if (coupon.getFvalidityType().equals(CouponValidityTypeEnum.TIME_SLOT.getCode())) {
-                        Date now = new Date();
                         Date fvalidityStart = coupon.getFvalidityStart();
                         Date fvalidityEnd = coupon.getFvalidityEnd();
                         String fvalidityStartStr = sdf.format(fvalidityStart);
