@@ -50,11 +50,11 @@ public class UserAccountServiceImpl implements UserAccountService {
     private static Set<Integer> status = new HashSet<>(5);
 
     //充值明细表查询状态
-    private static List<UserDetailType> detailStatus = Arrays.stream(values()).filter(item -> item.getCode().compareTo(ALI_ORDER.getCode()) != 0
+    private static List<Integer> detailStatus = Arrays.stream(values()).filter(item -> item.getCode().compareTo(ALI_ORDER.getCode()) != 0
             || item.getCode().compareTo(WECHAT_ORDER.getCode()) != 0
             || item.getCode().compareTo(AFTERSALE_WORK_CREDIT.getCode()) != 0
             || item.getCode().compareTo(CREDIT_LIMIT_AVAILABLE_BALANCE.getCode()) != 0
-            || item.getCode().compareTo(CREDIT_LIMIT_ORDER.getCode()) != 0).collect(Collectors.toList());
+            || item.getCode().compareTo(CREDIT_LIMIT_ORDER.getCode()) != 0).map(UserDetailType::getCode).collect(Collectors.toList());
 
     static {
         status.add(AccountTransType.Passed.getCode());
