@@ -1199,10 +1199,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                         .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
                         .andEqualTo(Coupon::getFisShow, 1)
                         .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType, Coupon::getFthresholdAmount,
-                                Coupon::getFdeductionValue, Coupon::getFvalidityStart, Coupon::getFvalidityEnd,
-                                Coupon::getFapplicableSku, Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFperLimit));
+                                Coupon::getFdeductionValue, Coupon::getFapplicableSku,  Coupon::getFperLimit));
                 Coupon coupon = couponResult.getData();
-
+                coupon.setFvalidityStart(couponReceive.getFvalidityStart());
+                coupon.setFvalidityEnd(couponReceive.getFvalidityEnd());
                 if (couponResult.isSuccess() && null != coupon) {
                     Long fcouponId = coupon.getFcouponId();
                     Integer fperLimit = coupon.getFperLimit();
