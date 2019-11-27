@@ -56,11 +56,11 @@ public class IndexController {
         return Result.success(indexService.getBanners());
     }
 
-    @ApiOperation(value = "查询品牌", httpMethod = "GET")
-    @GetMapping(value = "/via/getBrands")
-    public Result<List<BrandVo>> getBrands(@RequestParam Long cateId) {
-        return Result.success(indexService.getBrands(cateId));
-    }
+//    @ApiOperation(value = "查询品牌", httpMethod = "GET")
+//    @GetMapping(value = "/via/getBrands")
+//    public Result<List<BrandVo>> getBrands(@RequestParam Long cateId) {
+//        return Result.success(indexService.getBrands(cateId));
+//    }
 
     @ApiOperation(value = "查询品牌", httpMethod = "GET")
     @GetMapping(value = "/via/getBrandList")
