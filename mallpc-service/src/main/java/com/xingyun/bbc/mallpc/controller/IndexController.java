@@ -80,7 +80,7 @@ public class IndexController {
     }
 
     @ApiOperation("查询楼层商品列表")
-    @PostMapping("/via/floorSkus")
+    @GetMapping("/via/floorSkus")
     public Result<List<CateSearchItemListVo>> floorSkus(@RequestParam List<Integer> cateIds, HttpServletRequest request) {
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
         Result<List<CateSearchItemListVo>> result = goodsService.floorSkus(cateIds, infoVo);
