@@ -20,5 +20,5 @@ public class CateSearchItemListVo implements Serializable {
 
     private Integer cateId;
 
-    private SearchItemListVo<SearchItemVo> skus;
+    private List<SearchItemVo> skus;
 }

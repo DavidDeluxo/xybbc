@@ -187,7 +187,7 @@ public class GoodsServiceImpl implements GoodsService {
 
             CateSearchItemListVo vo = new CateSearchItemListVo();
             vo.setCateId(cateId);
-            vo.setSkus(result.getData());
+            vo.setSkus(result.getData().getList());
             resultList.add(vo);
         }
         return Result.success(resultList);
