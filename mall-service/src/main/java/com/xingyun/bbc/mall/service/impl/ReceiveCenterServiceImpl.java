@@ -232,17 +232,19 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         list.add(2);
         couponQueryDto.setReleaseTypes(list);
         Result<List<CouponQueryVo>> couponQueryVos = couponProviderApi.queryByUserId(couponQueryDto);
-        Collections.sort(couponQueryVos.getData(), new Comparator<CouponQueryVo>() {
-            @Override
-            public int compare(CouponQueryVo o1, CouponQueryVo o2) {
-                return o2.getFmodifyTime().compareTo(o1.getFmodifyTime());
-            }
-        });
         List<ReceiveCenterCouponVo> receiveCenterCouponVoList = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(couponQueryVos.getData())) {
+            //按时间倒序
+            Collections.sort(couponQueryVos.getData(), new Comparator<CouponQueryVo>() {
+                @Override
+                public int compare(CouponQueryVo o1, CouponQueryVo o2) {
+                    return o2.getFmodifyTime().compareTo(o1.getFmodifyTime());
+                }
+            });
             for (CouponQueryVo couponQueryVo : couponQueryVos.getData()) {
                 //查询已经领到的券张数
                 Result<Integer> countResult = couponReceiveApi.countByCriteria(Criteria.of(CouponReceive.class)
+                        .fields(CouponReceive::getFcouponId)
                         .andEqualTo(CouponReceive::getFuid, couponQueryDto.getUserId())
                         .andEqualTo(CouponReceive::getFcouponId, couponQueryVo.getFcouponId()));
                 if (!countResult.isSuccess()) {
