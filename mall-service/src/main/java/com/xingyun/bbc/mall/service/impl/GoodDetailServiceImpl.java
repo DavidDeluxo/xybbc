@@ -1488,14 +1488,17 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             return result;
         }
         StringBuffer resBf = new StringBuffer();
-        if (!StringUtils.isEmpty(conditionData.getFtradeName())) {
-            resBf.append("贸易类型：").append(conditionData.getFtradeName()).append("\n");
+        String ftradeName = conditionData.getFtradeName();
+        if (!StringUtils.isEmpty(ftradeName)) {
+            resBf.append("贸易类型：").append("\n").append("仅可以购买 ").append(ftradeName.substring(1, ftradeName.length() - 1)).append("\n");
         }
-        if (!StringUtils.isEmpty(conditionData.getFcategoryName())) {
-            resBf.append("品类：").append(conditionData.getFcategoryName()).append("\n");
+        String fcategoryName = conditionData.getFcategoryName();
+        if (!StringUtils.isEmpty(fcategoryName)) {
+            resBf.append("品类：").append("\n").append("仅可以购买 ").append(fcategoryName.substring(1, fcategoryName.length() - 1)).append("\n");
         }
-        if (!StringUtils.isEmpty(conditionData.getFbrandName())) {
-            resBf.append("品牌：").append(conditionData.getFbrandName()).append("\n");
+        String fbrandName = conditionData.getFbrandName();
+        if (!StringUtils.isEmpty(fbrandName)) {
+            resBf.append("品牌：").append("\n").append("仅可以购买 ").append(fbrandName.substring(1, fbrandName.length() - 1)).append("\n");
         }
         result = resBf.toString();
         return result;
