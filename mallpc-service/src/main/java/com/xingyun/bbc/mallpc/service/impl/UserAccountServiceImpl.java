@@ -19,6 +19,7 @@ import com.xingyun.bbc.core.user.dto.UserRechargeQueryDTO;
 import com.xingyun.bbc.core.user.enums.AccountTransType;
 import com.xingyun.bbc.core.user.enums.AccountWithdrawType;
 import com.xingyun.bbc.core.user.enums.UserAccountTransTypesEnum;
+import com.xingyun.bbc.core.user.enums.UserDetailType;
 import com.xingyun.bbc.core.user.po.UserAccount;
 import com.xingyun.bbc.core.user.po.UserAccountTrans;
 import com.xingyun.bbc.core.user.po.UserDetail;
@@ -47,6 +48,13 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     //充值提现状态
     private static Set<Integer> status = new HashSet<>(5);
+
+    //充值明细表查询状态
+    private static List<UserDetailType> detailStatus = Arrays.stream(values()).filter(item -> item.getCode().compareTo(ALI_ORDER.getCode()) != 0
+            || item.getCode().compareTo(WECHAT_ORDER.getCode()) != 0
+            || item.getCode().compareTo(AFTERSALE_WORK_CREDIT.getCode()) != 0
+            || item.getCode().compareTo(CREDIT_LIMIT_AVAILABLE_BALANCE.getCode()) != 0
+            || item.getCode().compareTo(CREDIT_LIMIT_ORDER.getCode()) != 0).collect(Collectors.toList());
 
     static {
         status.add(AccountTransType.Passed.getCode());
@@ -172,14 +180,11 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     @Override
     public PageVo<InAndOutRecordsVo> inAndOutRecords(PageDto pageDto, Long uid) {
+
         //过滤掉明细类型为6支付宝下单，7微信下单， 14售后工单调整信用额度，18信用额度-可用余额，19信用额度下单
         Criteria<UserDetail, Object> criteria = Criteria.of(UserDetail.class)
                 .andEqualTo(UserDetail::getFuid, uid)
-                .andNotEqualTo(UserDetail::getFdetailType, ALI_ORDER.getCode())
-                .andNotEqualTo(UserDetail::getFdetailType, WECHAT_ORDER.getCode())
-                .andNotEqualTo(UserDetail::getFdetailType, AFTERSALE_WORK_CREDIT.getCode())
-                .andNotEqualTo(UserDetail::getFdetailType, CREDIT_LIMIT_AVAILABLE_BALANCE.getCode())
-                .andNotEqualTo(UserDetail::getFdetailType, CREDIT_LIMIT_ORDER.getCode())
+                .andIn(UserDetail::getFdetailType, detailStatus)
                 .sortDesc(UserDetail::getFcreateTime)
                 .page(pageDto.getCurrentPage(), pageDto.getPageSize());
 
