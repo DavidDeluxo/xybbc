@@ -14,6 +14,8 @@ import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
 import com.xingyun.bbc.mallpc.model.dto.search.SearchItemDto;
+import com.xingyun.bbc.mallpc.model.vo.TokenInfoVo;
+import com.xingyun.bbc.mallpc.model.vo.index.CateSearchItemListVo;
 import com.xingyun.bbc.mallpc.model.vo.search.*;
 import com.xingyun.bbc.mallpc.service.GoodsService;
 import com.xingyun.bbc.mallpc.service.SearchRecordService;
@@ -28,6 +30,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -80,7 +83,10 @@ public class GoodsServiceImpl implements GoodsService {
         pageVo.setList(voList);
         Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
         if (!CollectionUtils.isEmpty(resultList)) {
-            String priceName = this.getUserPriceType(searchItemDto);
+            String priceName = searchItemDto.getPriceName();
+            if(StringUtils.isEmpty(priceName)){
+                priceName = this.getUserPriceType(searchItemDto);
+            }
             for (Map<String, Object> map : resultList) {
                 SearchItemVo vo = new SearchItemVo();
                 if (map.get("fskuId") != null) {
@@ -200,6 +206,32 @@ public class GoodsServiceImpl implements GoodsService {
         }
 
         return Result.success(filterVo);
+    }
+
+    @Override
+    public Result<List<CateSearchItemListVo>> floorSkus(List<Integer> cateIds, TokenInfoVo infoVo) {
+        if(CollectionUtils.isEmpty(cateIds)){
+            return Result.success(new ArrayList<>());
+        }
+        List<CateSearchItemListVo> resultList = new ArrayList<>();
+        for(Integer cateId : cateIds){
+            SearchItemDto searchItemDto = new SearchItemDto();
+            List<Integer> cateIdList = new ArrayList<>();
+            cateIdList.add(cateId);
+            searchItemDto.setFcategoryIdL1(cateIdList);
+            searchItemDto.setIsLogin(infoVo.getIsLogin());
+            searchItemDto.setFuid(infoVo.getFuid());
+            searchItemDto.setSellAmountOrderBy("desc");
+            String priceName = this.getUserPriceType(searchItemDto);
+            searchItemDto.setPriceName(priceName);
+            Result<SearchItemListVo<SearchItemVo>> result = searchSkuList(searchItemDto);
+
+            CateSearchItemListVo vo = new CateSearchItemListVo();
+            vo.setCateId(cateId);
+            vo.setSkus(result.getData());
+            resultList.add(vo);
+        }
+        return Result.success(resultList);
     }
 
     /**
