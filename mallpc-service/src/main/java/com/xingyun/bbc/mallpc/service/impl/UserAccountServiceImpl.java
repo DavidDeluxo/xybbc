@@ -351,6 +351,7 @@ public class UserAccountServiceImpl implements UserAccountService {
             accountDetailVo.setType(RECHARGE_WORK_ADJUSTMENT_BALANCE.getCode());
             accountDetailVo.setFtransPoundage(null);
             accountDetailVo.setFtransActualAmount(null);
+            accountDetailVo.setFapplyPic(userWork.getFapplyPic());
             accountDetailVo.setFpassedTime(userWork.getFmodifyTime());
         } else {
             Result<List<UserAccountTrans>> userAccountTransResult = userAccountTransApi.queryByCriteria(Criteria.of(UserAccountTrans.class)
@@ -358,6 +359,7 @@ public class UserAccountServiceImpl implements UserAccountService {
             Ensure.that(userAccountTransResult).isNotEmptyData(new MallPcExceptionCode(userAccountTransResult.getCode(), userAccountTransResult.getMsg()));
 
             accountDetailVo = dozerHolder.convert(userAccountTransResult.getData().get(0), AccountDetailVo.class);
+            accountDetailVo.setFapplyPic(userAccountTransResult.getData().get(0).getFpayVoucher());
             if (accountDetailVo.getFtransTypes().compareTo(UserAccountTransTypesEnum.RECHARGE.getCode()) == 0) {
                 accountDetailVo.setType(accountDetailVo.getFrechargeType());
                 accountDetailVo.setFtransPoundage(null);
@@ -405,6 +407,13 @@ public class UserAccountServiceImpl implements UserAccountService {
         Ensure.that(listResult).isNotEmptyData(new MallPcExceptionCode(listResult.getCode(), listResult.getMsg()));
         AccountDetailVo accountDetail = (dozerHolder.convert(listResult.getData().get(0), AccountDetailVo.class));
         accountDetail.setFpassedTime(listResult.getData().get(0).getFmodifyTime());
+        accountDetail.setFtransId(id);
+        accountDetail.setType(listResult.getData().get(0).getFdetailType());
+        if(listResult.getData().get(0).getFexpenseAmount().compareTo(0L)==0){
+            accountDetail.setFtransAmount(AccountUtil.divideOneHundred(listResult.getData().get(0).getFincomeAmount()));
+        }else{
+            accountDetail.setFtransAmount(AccountUtil.divideOneHundred(listResult.getData().get(0).getFexpenseAmount()));
+        }
         switch (listResult.getData().get(0).getFdetailType()) {
             //充值提现
             case 1:
@@ -417,11 +426,6 @@ public class UserAccountServiceImpl implements UserAccountService {
             case 5:
                 List<OrderPayment> orderPayments = orderPayments(id);
                 OrderPayment orderPayment = orderPayments.get(0);
-                Result<List<Order>> orderListResult = orderApi.queryByCriteria(Criteria.of(Order.class)
-                        .andEqualTo(Order::getForderPaymentId, orderPayment.getForderPaymentId()));
-                Ensure.that(orderListResult).isNotEmptyData(new MallPcExceptionCode(orderListResult.getCode(), orderListResult.getMsg()));
-
-                accountDetail.setOrderId(orderListResult.getData().stream().map(Order::getForderId).collect(Collectors.joining(",")));
                 accountDetail.setFcreateTime(orderPayment.getFcreateTime());
                 accountDetail.setFpassedTime(orderPayment.getFpayTime());
                 break;
@@ -431,7 +435,7 @@ public class UserAccountServiceImpl implements UserAccountService {
                 UserWork userWork = userWorks(id);
                 accountDetail.setFcreateTime(userWork.getFcreateTime());
                 accountDetail.setOrderId(userWork.getForderId());
-                accountDetail.setFtransStatus(userWork.getFstatus());
+                accountDetail.setFtransStatus(userWorkStatusConventTransSttaus(userWork.getFstatus()));
                 accountDetail.setReson(UserWorkApplyReasons.getName(userWork.getFapplyReason()));
                 accountDetail.setFremark(userWork.getFremark());
                 accountDetail.setFapplyPic(userWork.getFapplyPic());
@@ -458,7 +462,7 @@ public class UserAccountServiceImpl implements UserAccountService {
                         .andEqualTo(OrderAftersalePic::getFpicType, 2));
                 Ensure.that(orderAftersaleListResult).isSuccess(new MallPcExceptionCode(orderAftersaleListResult.getCode(), orderAftersaleListResult.getMsg()));
                 if (CollectionUtil.isNotEmpty(orderAftersaleListResult.getData())) {
-                    accountDetail.setFapplyPic(orderAftersaleListResult.getData().get(0).getFaftersalePic());
+                    accountDetail.setFapplyPic(orderAftersaleListResult.getData().stream().map(OrderAftersalePic::getFaftersalePic).collect(Collectors.joining(",","","")));
                 }
 
             case 9:
