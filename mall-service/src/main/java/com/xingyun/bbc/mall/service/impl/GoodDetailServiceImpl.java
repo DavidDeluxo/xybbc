@@ -1015,27 +1015,11 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         return Result.success(result);
     }
 
-    //获取sku-user满足的所有已领取和未领取的页面领取类型券
-    private List<CouponVo> getAllReceiveCoupon(Long fskuId, Long fuid) {
-        CouponQueryDto couponQueryDto = new CouponQueryDto();
-        couponQueryDto.setReleaseTypes(Lists.newArrayList(CouponReleaseTypeEnum.PAGE_RECEIVE.getCode()));
-        couponQueryDto.setSkuId(fskuId);
-        couponQueryDto.setUserId(fuid);
-        Result<List<CouponQueryVo>> listResult = couponProviderApi.queryBySkuAndUserId(couponQueryDto);
-        List<CouponQueryVo> apiCouponLis = listResult.getData();
-        List<CouponVo> convert = new ArrayList<>();
-        if (!CollectionUtils.isEmpty(apiCouponLis)) {
-            convert = dozerHolder.convert(apiCouponLis, CouponVo.class);
-        }
-        return convert;
-    }
-
     //获取sku满足的所有已领取和未领取的页面领取类型券
     private List<CouponVo> getAllSkuUserCoupon(Long fskuId, Long fuid) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         List<CouponVo> result = new ArrayList<>();
         Map<String, Object> userCondition = new HashMap<>(5);
-        try {
             CouponQueryDto couponQueryDto = new CouponQueryDto();
             couponQueryDto.setReleaseTypes(Lists.newArrayList(CouponReleaseTypeEnum.PAGE_RECEIVE.getCode()));
             couponQueryDto.setSkuId(fskuId);
@@ -1044,7 +1028,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             List<CouponQueryVo> couponQueryVos = couponQueryResult.getData();
             logger.info("获取sku满足的页面领取类型券{}， skuid ={}" ,JSON.toJSONString(couponQueryVos), fskuId);
             if (!couponQueryResult.isSuccess()) {
-                throw new Exception();
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
             Date now = new Date();
             for (CouponQueryVo couponQueryVo : couponQueryVos) {
@@ -1053,12 +1037,11 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                         .andEqualTo(Coupon::getFcouponId, fcouponId)
                         .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
                         .andEqualTo(Coupon::getFreleaseType, CouponReleaseTypeEnum.PAGE_RECEIVE.getCode())
-                        .andLessThanOrEqualTo(Coupon::getFreleaseTimeStart, now)
-                        .andGreaterThanOrEqualTo(Coupon::getFreleaseTimeEnd, now)
                         .andEqualTo(Coupon::getFisShow, 1)
                         .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType, Coupon::getFthresholdAmount,
                                 Coupon::getFdeductionValue, Coupon::getFvalidityStart, Coupon::getFvalidityEnd, Coupon::getFassignUser,
-                                Coupon::getFapplicableSku, Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFperLimit));
+                                Coupon::getFapplicableSku, Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFperLimit,
+                                Coupon::getFreleaseTimeStart, Coupon::getFreleaseTimeEnd));
                 Coupon coupon = couponResult.getData();
                 //不满足券条件的先排除
                 if (couponResult.isSuccess() && null != coupon) {
@@ -1067,6 +1050,12 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                         Date fvalidityEnd = coupon.getFvalidityEnd();
                         String fvalidityStartStr = sdf.format(fvalidityStart);
                         if (!fvalidityStartStr.equals("1970-01-01 00:00:00") && (now.before(fvalidityStart) || now.after(fvalidityEnd))) {
+                            continue;
+                        }
+                        Date freleaseTimeStart = coupon.getFreleaseTimeStart();
+                        Date freleaseTimeEnd = coupon.getFreleaseTimeEnd();
+                        String freleaseTimeStartStr = sdf.format(freleaseTimeStart);
+                        if (!freleaseTimeStartStr.equals("1970-01-01 00:00:00") && (now.before(freleaseTimeStart) || now.after(freleaseTimeEnd))) {
                             continue;
                         }
                     }
@@ -1165,10 +1154,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     }
                 }
             }
-        } catch (Exception e) {
-            logger.warn("商品详情--获取sku满足的所有券失败--转查获取sku-user满足的所有券fskuId={} fuid={}!...", fskuId, fuid);
-            result = this.getAllReceiveCoupon(fskuId, fuid);
-        }
         return result;
     }
 
