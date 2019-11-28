@@ -409,9 +409,9 @@ public class UserAccountServiceImpl implements UserAccountService {
         accountDetail.setFpassedTime(listResult.getData().get(0).getFmodifyTime());
         accountDetail.setFtransId(id);
         accountDetail.setType(listResult.getData().get(0).getFdetailType());
-        if(listResult.getData().get(0).getFexpenseAmount().compareTo(0L)==0){
+        if (listResult.getData().get(0).getFexpenseAmount().compareTo(0L) == 0) {
             accountDetail.setFtransAmount(AccountUtil.divideOneHundred(listResult.getData().get(0).getFincomeAmount()));
-        }else{
+        } else {
             accountDetail.setFtransAmount(AccountUtil.divideOneHundred(listResult.getData().get(0).getFexpenseAmount()));
         }
         switch (listResult.getData().get(0).getFdetailType()) {
@@ -462,16 +462,16 @@ public class UserAccountServiceImpl implements UserAccountService {
                         .andEqualTo(OrderAftersalePic::getFpicType, 2));
                 Ensure.that(orderAftersaleListResult).isSuccess(new MallPcExceptionCode(orderAftersaleListResult.getCode(), orderAftersaleListResult.getMsg()));
                 if (CollectionUtil.isNotEmpty(orderAftersaleListResult.getData())) {
-                    accountDetail.setFapplyPic(orderAftersaleListResult.getData().stream().map(OrderAftersalePic::getFaftersalePic).collect(Collectors.joining(",","","")));
+                    accountDetail.setFapplyPic(orderAftersaleListResult.getData().stream().map(OrderAftersalePic::getFaftersalePic).collect(Collectors.joining(",", "", "")));
                 }
-
+                break;
             case 9:
             case 11:
             case 12:
                 List<Order> orders = orders(id);
                 Order order = orders.get(0);
                 accountDetail.setFpassedTime(order.getFmodifyTime());
-
+                break;
             default:
                 break;
         }
