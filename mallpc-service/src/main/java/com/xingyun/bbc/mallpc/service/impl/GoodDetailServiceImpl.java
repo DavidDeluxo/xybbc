@@ -502,7 +502,11 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     }
                 }
             }
-
+            // 校验是否支持发货地区
+            if (freightPrice == null) {
+                priceResult.setShowFreightPrice(false);
+                freightPrice = BigDecimal.ZERO;
+            }
             //查询税率
             Long fskuTaxRate = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
                     .andEqualTo(GoodsSku::getFskuId, goodsDetailMallDto.getFskuId())
@@ -551,6 +555,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     private BigDecimal getFreight(Long fbatchPackageId, Long ffreightId, Long fdeliveryCityId, String fsupplierSkuBatchId, Long fnum) {
         BigDecimal freightPrice = BigDecimal.ZERO;
+        final String exceptionCode = "1012";
         //查询相应规格的件装数
         Result<SkuBatchPackage> skuBatchPackageResult = skuBatchPackageApi.queryOneByCriteria(Criteria.of(SkuBatchPackage.class)
                 .andEqualTo(SkuBatchPackage::getFbatchPackageId, fbatchPackageId)
@@ -567,9 +572,13 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         freightDto.setFbuyNum(fnum * fbatchPackageNum);
         logger.info("商品详情--查询运费入参{}", JSON.toJSONString(freightDto));
         Result<BigDecimal> bigDecimalResult = freightApi.queryFreight(freightDto);
-        if (bigDecimalResult.isSuccess() && null != bigDecimalResult.getData()) {
-            freightPrice = bigDecimalResult.getData().divide(MallPcConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP);
+        if (!bigDecimalResult.isSuccess()) {
+            if (exceptionCode.equals(bigDecimalResult.getCode())) {
+                return null;
+            }
+            throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
         }
+        freightPrice = bigDecimalResult.getData().divide(MallPcConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP);
         return freightPrice;
     }
 
