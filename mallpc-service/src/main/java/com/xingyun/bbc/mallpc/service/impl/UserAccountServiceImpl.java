@@ -403,11 +403,11 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     private AccountDetailVo getInOutDetail(String id) {
         Result<List<UserDetail>> listResult = userDetailApi.queryByCriteria(Criteria.of(UserDetail.class)
-                .andEqualTo(UserDetail::getFtypeId, id));
+                .andEqualTo(UserDetail::getFdetailId, id));
         Ensure.that(listResult).isNotEmptyData(new MallPcExceptionCode(listResult.getCode(), listResult.getMsg()));
         AccountDetailVo accountDetail = (dozerHolder.convert(listResult.getData().get(0), AccountDetailVo.class));
         accountDetail.setFpassedTime(listResult.getData().get(0).getFmodifyTime());
-        accountDetail.setFtransId(id);
+        accountDetail.setFtransId(listResult.getData().get(0).getFtypeId());
         accountDetail.setType(listResult.getData().get(0).getFdetailType());
         if (listResult.getData().get(0).getFexpenseAmount().compareTo(0L) == 0) {
             accountDetail.setFtransAmount(AccountUtil.divideOneHundred(listResult.getData().get(0).getFincomeAmount()));
@@ -421,10 +421,10 @@ public class UserAccountServiceImpl implements UserAccountService {
             case 3:
             case 4:
             case 8:
-                accountDetail = getTransDetail(id);
+                accountDetail = getTransDetail(listResult.getData().get(0).getFtypeId());
                 break;
             case 5:
-                List<OrderPayment> orderPayments = orderPayments(id);
+                List<OrderPayment> orderPayments = orderPayments(listResult.getData().get(0).getFtypeId());
                 OrderPayment orderPayment = orderPayments.get(0);
                 accountDetail.setFcreateTime(orderPayment.getFcreateTime());
                 accountDetail.setFpassedTime(orderPayment.getFpayTime());
@@ -432,7 +432,7 @@ public class UserAccountServiceImpl implements UserAccountService {
             //售后工单
             case 13:
             case 17:
-                UserWork userWork = userWorks(id);
+                UserWork userWork = userWorks(listResult.getData().get(0).getFtypeId());
                 accountDetail.setFcreateTime(userWork.getFcreateTime());
                 accountDetail.setOrderId(userWork.getForderId());
                 accountDetail.setFtransStatus(userWorkStatusConventTransSttaus(userWork.getFstatus()));
@@ -443,7 +443,7 @@ public class UserAccountServiceImpl implements UserAccountService {
                 break;
             //售后单
             case 10:
-                OrderAftersale orderAftersale = orderAftersales(id);
+                OrderAftersale orderAftersale = orderAftersales(listResult.getData().get(0).getFtypeId());
 
                 accountDetail.setFcreateTime(orderAftersale.getFcreateTime());
                 accountDetail.setAfterType(orderAftersale.getFaftersaleType());
@@ -469,7 +469,7 @@ public class UserAccountServiceImpl implements UserAccountService {
             case 9:
             case 11:
             case 12:
-                List<Order> orders = orders(id);
+                List<Order> orders = orders(listResult.getData().get(0).getFtypeId());
                 Order order = orders.get(0);
                 accountDetail.setFpassedTime(order.getFmodifyTime());
                 break;
