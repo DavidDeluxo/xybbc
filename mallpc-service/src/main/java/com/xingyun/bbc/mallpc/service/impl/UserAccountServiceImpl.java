@@ -449,17 +449,18 @@ public class UserAccountServiceImpl implements UserAccountService {
                 accountDetail.setAfterType(orderAftersale.getFaftersaleType());
                 accountDetail.setOrderId(orderAftersale.getForderId());
                 accountDetail.setReson(OrderAftersaleReasonType.getName(orderAftersale.getFaftersaleReason()));
-                Result<List<OrderAftersaleVerify>> orderAftersaleVerifyResult = orderAftersaleVerifyApi.queryByCriteria(Criteria.of(OrderAftersaleVerify.class)
-                        .andEqualTo(OrderAftersaleVerify::getForderAftersaleId, orderAftersale.getForderAftersaleId())
-                        .andEqualTo(OrderAftersaleVerify::getFroleType, 1));
-                Ensure.that(orderAftersaleVerifyResult).isSuccess(new MallPcExceptionCode(orderAftersaleVerifyResult.getCode(), orderAftersaleVerifyResult.getMsg()));
-                if (CollectionUtil.isNotEmpty(orderAftersaleVerifyResult.getData())) {
-                    accountDetail.setFremark(orderAftersaleVerifyResult.getData().get(0).getFremark());
-                }
+//                Result<List<OrderAftersaleVerify>> orderAftersaleVerifyResult = orderAftersaleVerifyApi.queryByCriteria(Criteria.of(OrderAftersaleVerify.class)
+//                        .andEqualTo(OrderAftersaleVerify::getForderAftersaleId, orderAftersale.getForderAftersaleId())
+//                        .andEqualTo(OrderAftersaleVerify::getFroleType, 1));
+//                Ensure.that(orderAftersaleVerifyResult).isSuccess(new MallPcExceptionCode(orderAftersaleVerifyResult.getCode(), orderAftersaleVerifyResult.getMsg()));
+//                if (CollectionUtil.isNotEmpty(orderAftersaleVerifyResult.getData())) {
+//                    accountDetail.setFremark(orderAftersaleVerifyResult.getData().get(0).getFremark());
+//                }
 
-                Result<List<OrderAftersalePic>> orderAftersaleListResult = orderAftersalePicApi.queryByCriteria(Criteria.of(OrderAftersalePic.class)
+                Result<List<OrderAftersalePic>> orderAftersaleListResult = orderAftersalePicApi.queryByCriteria(
+                        Criteria.of(OrderAftersalePic.class)
                         .andEqualTo(OrderAftersalePic::getForderAftersaleId, orderAftersale.getForderAftersaleId())
-                        .andEqualTo(OrderAftersalePic::getFpicType, 2));
+                        .andEqualTo(OrderAftersalePic::getFpicType, 1));
                 Ensure.that(orderAftersaleListResult).isSuccess(new MallPcExceptionCode(orderAftersaleListResult.getCode(), orderAftersaleListResult.getMsg()));
                 if (CollectionUtil.isNotEmpty(orderAftersaleListResult.getData())) {
                     accountDetail.setFapplyPic(orderAftersaleListResult.getData().stream().map(OrderAftersalePic::getFaftersalePic).collect(Collectors.joining(",", "", "")));
