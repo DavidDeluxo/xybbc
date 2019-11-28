@@ -1,15 +1,11 @@
 package com.xingyun.bbc.mallpc.controller;
 
 
-import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.utils.JwtParser;
 import com.xingyun.bbc.mallpc.config.system.SystemConfig;
-import com.xingyun.bbc.mallpc.model.dto.search.SearchItemDto;
 import com.xingyun.bbc.mallpc.model.vo.TokenInfoVo;
 import com.xingyun.bbc.mallpc.model.vo.index.*;
-import com.xingyun.bbc.mallpc.model.vo.search.SearchItemListVo;
-import com.xingyun.bbc.mallpc.model.vo.search.SearchItemVo;
 import com.xingyun.bbc.mallpc.service.GoodsService;
 import com.xingyun.bbc.mallpc.service.IndexService;
 import io.swagger.annotations.Api;
@@ -18,11 +14,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -56,18 +58,12 @@ public class IndexController {
         return Result.success(indexService.getBanners());
     }
 
-//    @ApiOperation(value = "查询品牌", httpMethod = "GET")
-//    @GetMapping(value = "/via/getBrands")
-//    public Result<List<BrandVo>> getBrands(@RequestParam Long cateId) {
-//        return Result.success(indexService.getBrands(cateId));
-//    }
-
     @ApiOperation(value = "查询品牌", httpMethod = "GET")
     @GetMapping(value = "/via/getBrandList")
     public Result<List<CateBrandVo>> getBrandList(@RequestParam List<Long> cateIds) {
         Result<List<CateBrandVo>> result = Result.success(indexService.getBrandList(cateIds));
         //设置图片路径
-        Map<String,Object> extra = new HashMap<>();
+        Map<String, Object> extra = new HashMap<>();
         extra.put("fdfsHost", StringUtils.join(SystemConfig.fdfsHost, File.separator));
         result.setExtra(extra);
         return result;
@@ -84,7 +80,7 @@ public class IndexController {
     public Result<List<CateSearchItemListVo>> floorSkus(@RequestParam List<Integer> cateIds, HttpServletRequest request) {
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
         Result<List<CateSearchItemListVo>> result = goodsService.floorSkus(cateIds, infoVo);
-        Map<String,Object> extra = new HashMap<>();
+        Map<String, Object> extra = new HashMap<>();
         extra.put("fdfsHost", StringUtils.join(SystemConfig.fdfsHost, File.separator));
         result.setExtra(extra);
         return result;
@@ -92,7 +88,7 @@ public class IndexController {
 
     @ApiOperation(value = "商品分类查询接口")
     @GetMapping("/via/category")
-    public Result<Set<GoodsCategoryVo>> queryCategories(){
+    public Result<Set<GoodsCategoryVo>> queryCategories() {
         return indexService.queryCategories();
     }
 

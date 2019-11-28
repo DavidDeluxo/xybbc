@@ -1,11 +1,11 @@
 package com.xingyun.bbc.mallpc.service.impl;
 
 import com.google.common.collect.Lists;
-import com.xingyun.bbc.core.activity.api.CouponProviderApi;
-import com.xingyun.bbc.core.activity.enums.CouponScene;
-import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
-import com.xingyun.bbc.core.activity.model.dto.CouponReleaseDto;
-import com.xingyun.bbc.core.activity.model.vo.CouponQueryVo;
+import com.xingyun.bbc.activity.api.CouponProviderApi;
+import com.xingyun.bbc.activity.enums.CouponScene;
+import com.xingyun.bbc.activity.model.dto.CouponQueryDto;
+import com.xingyun.bbc.activity.model.dto.CouponReleaseDto;
+import com.xingyun.bbc.activity.model.vo.CouponQueryVo;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.CouponApi;

@@ -3,49 +3,35 @@ package com.xingyun.bbc.mall.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
-import com.xingyun.bbc.core.activity.api.CouponProviderApi;
-import com.xingyun.bbc.core.activity.enums.CouponScene;
-import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
-import com.xingyun.bbc.core.activity.model.dto.CouponReleaseDto;
-
-import com.xingyun.bbc.core.activity.model.vo.CouponQueryVo;
+import com.xingyun.bbc.activity.api.CouponProviderApi;
+import com.xingyun.bbc.activity.enums.CouponScene;
+import com.xingyun.bbc.activity.model.dto.CouponQueryDto;
+import com.xingyun.bbc.activity.model.dto.CouponReleaseDto;
+import com.xingyun.bbc.activity.model.vo.CouponQueryVo;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
-
 import com.xingyun.bbc.core.market.api.CouponApi;
-
 import com.xingyun.bbc.core.market.api.CouponCodeApi;
-
 import com.xingyun.bbc.core.market.api.CouponReceiveApi;
-
 import com.xingyun.bbc.core.market.enums.CouponReleaseTypeEnum;
 import com.xingyun.bbc.core.market.enums.CouponStatusEnum;
 import com.xingyun.bbc.core.market.enums.CouponTypeEnum;
 import com.xingyun.bbc.core.market.po.Coupon;
-
 import com.xingyun.bbc.core.market.po.CouponCode;
 import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.utils.Result;
-
 import com.xingyun.bbc.mall.base.utils.PriceUtil;
 import com.xingyun.bbc.mall.base.utils.RandomUtils;
 import com.xingyun.bbc.mall.common.constans.MallConstants;
 import com.xingyun.bbc.mall.common.ensure.Ensure;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
-
-
 import com.xingyun.bbc.mall.common.lock.XybbcLock;
 import com.xingyun.bbc.mall.model.dto.ReceiveCouponDto;
-
 import com.xingyun.bbc.mall.model.vo.ReceiveCenterCouponVo;
-import com.xingyun.bbc.mall.model.vo.SearchItemVo;
 import com.xingyun.bbc.mall.service.GoodDetailService;
 import com.xingyun.bbc.mall.service.ReceiveCenterService;
-
 import io.seata.spring.annotation.GlobalTransactional;
-
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -100,7 +86,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         //通过券码查询券id
         Result<CouponCode> couponCode = couponCodeApi.queryOneByCriteria(Criteria.of(CouponCode.class)
                 .andEqualTo(CouponCode::getFcouponCode, fcouponCode)
-                .fields(CouponCode::getFcouponId,CouponCode::getFisUsed));
+                .fields(CouponCode::getFcouponId, CouponCode::getFisUsed));
         if (!couponCode.isSuccess()) {
             logger.error("通过券码查询券id失败，fcouponCode{}", fcouponCode);
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -108,7 +94,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
         if (null == couponCode.getData()) {
             throw new BizException(MallExceptionCode.CODE_NOT_COUPON);
         }
-        if(couponCode.getData().getFisUsed() == 1){
+        if (couponCode.getData().getFisUsed() == 1) {
             throw new BizException(MallExceptionCode.CODE_IS_USED);
         }
         //查询优惠券--状态（已发布）--类型（页面领取）--剩余数量--领取上限--有效期结束时间--发放结束时间

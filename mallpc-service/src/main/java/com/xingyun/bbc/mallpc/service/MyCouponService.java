@@ -1,9 +1,8 @@
 package com.xingyun.bbc.mallpc.service;
 
 
-import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
+import com.xingyun.bbc.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.core.utils.Result;
-
 import com.xingyun.bbc.mallpc.model.dto.coupon.MyCouponDto;
 import com.xingyun.bbc.mallpc.model.vo.coupon.MyCouponVo;
 import com.xingyun.bbc.mallpc.model.vo.coupon.ReceiveCenterCouponVo;
