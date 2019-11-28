@@ -468,7 +468,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     }
                 }
             }
-
+            //起始价格都转成元---下面计算都以元算
             //查询税率
             Long fskuTaxRate = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
                     .andEqualTo(GoodsSku::getFskuId, goodsDetailMallDto.getFskuId())
@@ -498,6 +498,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         return Result.success(priceResult);
     }
 
+    //获取运费单位元
     private BigDecimal getFreight(Long fbatchPackageId, Long ffreightId, Long fdeliveryCityId, String fsupplierSkuBatchId, Long fnum) {
         BigDecimal freightPrice = BigDecimal.ZERO;
         //查询相应规格的件装数
@@ -515,11 +516,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         freightDto.setFbatchId(fsupplierSkuBatchId);
         freightDto.setFbuyNum(fnum * fbatchPackageNum);
         logger.info("商品详情--查询运费入参{}", JSON.toJSONString(freightDto));
-        Result<BigDecimal> bigDecimalResult = freightApi.queryFreight(freightDto);
-        if (bigDecimalResult.isSuccess() && null != bigDecimalResult.getData()) {
-            freightPrice = bigDecimalResult.getData().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP);
-        }
-        return freightPrice;
+        Result<BigDecimal> freightResult = freightApi.queryFreight(freightDto);
+        Ensure.that(freightResult.isSuccess()).isTrue(new MallExceptionCode(freightResult.getCode(), freightResult.getMsg()));
+        return null == freightResult.getData() ? freightPrice : PriceUtil.toYuan(freightResult.getData());
     }
 
     private void dealGoodDetailPriceToYuan(GoodsPriceVo goodsPriceVo) {
