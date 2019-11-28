@@ -23,10 +23,12 @@ import com.xingyun.bbc.core.operate.po.CityRegion;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserAccountApi;
 import com.xingyun.bbc.core.user.api.UserApi;
+import com.xingyun.bbc.core.user.api.UserLoginInformationApi;
 import com.xingyun.bbc.core.user.api.UserVerifyApi;
 import com.xingyun.bbc.core.user.enums.UserVerifyEnums;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.user.po.UserAccount;
+import com.xingyun.bbc.core.user.po.UserLoginInformation;
 import com.xingyun.bbc.core.user.po.UserVerify;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.enums.*;
@@ -100,7 +102,8 @@ public class UserServiceImpl implements UserService {
     private DozerHolder dozerHolder;
     @Autowired
     private XybbcLock xybbcLock;
-
+    @Autowired
+    private UserLoginInformationApi userLoginInformationApi;
 
     @Override
     public Result<UserLoginVo> userLogin(UserLoginDto dto) {
@@ -128,7 +131,37 @@ public class UserServiceImpl implements UserService {
         user.setFuid(userLoginVo.getFuid());
         user.setFlastloginTime(new Date());
         userApi.updateNotNull(user);
+        //更新用户登录信息
+        updateUserLoginInformation(dto,userResult.getData().getFuid());
         return Result.success(userLoginVo);
+    }
+
+    private void updateUserLoginInformation(UserLoginDto dto, Long fuid) {
+        UserLoginInformation information = new UserLoginInformation();
+        information.setFuid(fuid);
+        information.setFloginMethod("手机端");
+        information.setFloginSite("");
+        if(dto.getOsVersion() != null){
+            information.setFoperatingSystem(dto.getOsVersion());
+        }else{
+            information.setFoperatingSystem("");
+        }
+        if(dto.getDeviceName() != null){
+            information.setFunitType(dto.getDeviceName());
+        }else{
+            information.setFunitType("");
+        }
+        if(dto.getImei() != null){
+            information.setFuniqueIdentificationCode(dto.getImei());
+        }else{
+            information.setFuniqueIdentificationCode("");
+        }
+        if(dto.getMac() != null){
+            information.setFphysicalAddress(dto.getMac());
+        }else{
+            information.setFphysicalAddress("");
+        }
+        userLoginInformationApi.create(information);
     }
 
     //生成token信息
