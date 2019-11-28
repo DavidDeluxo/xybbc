@@ -291,7 +291,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         Result<OrderAftersaleBack> aftersaleBackResult = orderAftersaleBackApi.queryOneByCriteria(Criteria.of(OrderAftersaleBack.class)
                 .andEqualTo(OrderAftersaleBack::getForderAftersaleId, aftersaleBackDto.getForderAftersaleId())
                 .fields(OrderAftersaleBack::getFaftersaleBackId));
-        if (!aftersaleBackResult.isSuccess()) {
+        if (!aftersaleBackResult.isSuccess() || null == aftersaleBackResult.getData()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         OrderAftersaleBack aftersaleBack = mapper.map(aftersaleBackDto, OrderAftersaleBack.class);
@@ -354,7 +354,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         if (!shippingCompanyResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        aftersaleBackVo.setFlogisticsCompanyName(shippingCompanyResult.getData().getFshippingName());
+        aftersaleBackVo.setFlogisticsCompanyName(null != shippingCompanyResult.getData() ? shippingCompanyResult.getData().getFshippingName() : "");
         Result<List<OrderAftersalePic>> picResult = orderAftersalePicApi.queryByCriteria(Criteria.of(OrderAftersalePic.class)
                 .andEqualTo(OrderAftersalePic::getFpicType, 2)
                 .andEqualTo(OrderAftersalePic::getForderAftersaleId, faftersaleId)

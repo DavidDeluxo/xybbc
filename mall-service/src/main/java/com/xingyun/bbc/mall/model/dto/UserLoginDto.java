@@ -30,8 +30,17 @@ public class UserLoginDto {
     @ApiModelProperty("客户端IP")
     private String ipAddress;
 
+    @ApiModelProperty("设备型号")
+    private String deviceName;
+
+    @ApiModelProperty("操作系统")
+    private String osVersion;
+
     @ApiModelProperty("设备识别码 IMEI")
     private String imei;
+
+    @ApiModelProperty("MAC地址")
+    private String mac;
 
     @ApiModelProperty("是否触发滑块验证 0否 1是")
     private Integer isCheck;

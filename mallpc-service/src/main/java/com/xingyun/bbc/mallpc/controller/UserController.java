@@ -5,6 +5,7 @@ import com.xingyun.bbc.mallpc.model.dto.user.ResetPasswordDto;
 import com.xingyun.bbc.mallpc.model.dto.user.SendSmsCodeDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserLoginDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserRegisterDto;
+import com.xingyun.bbc.mallpc.model.vo.coupon.MyCouponVo;
 import com.xingyun.bbc.mallpc.model.vo.user.SendSmsCodeVo;
 import com.xingyun.bbc.mallpc.model.vo.user.UserLoginVo;
 import com.xingyun.bbc.mallpc.service.UserService;
@@ -71,7 +72,7 @@ public class UserController {
 
     @ApiOperation("查询新人注册优惠券")
     @GetMapping("/queryRegisterCoupon")
-    public Result queryRegisterCoupon() {
+    public Result<MyCouponVo> queryRegisterCoupon() {
         return userService.queryRegisterCoupon();
     }
 

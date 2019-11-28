@@ -70,8 +70,12 @@ public class UserAddressServiceImpl implements UserAddressService {
         String fdeliveryMobile = userAddressListDto.getFdeliveryMobile();
         String fdeliveryName = userAddressListDto.getFdeliveryName();
         Criteria<UserDelivery, Object> deliveryCondition = Criteria.of(UserDelivery.class)
+                .sortDesc(UserDelivery::getFmodifyTime)
                 .andEqualTo(UserDelivery::getFuid, RequestHolder.getUserId())
-                .andEqualTo(UserDelivery::getFisDelete, 0);
+                .andEqualTo(UserDelivery::getFisDelete,  BooleanNum.FALSE.getCode());
+        if (Objects.nonNull(userAddressListDto.getIsDefault()) && Objects.equals(userAddressListDto.getIsDefault(), BooleanNum.TRUE.getCode())) {
+            deliveryCondition.andEqualTo(UserDelivery::getFisDefualt,  BooleanNum.TRUE.getCode());
+        }
         if (StringUtil.isNotBlank(fdeliveryCardid)) {
             Ensure.that(StringUtilExtention.idCardCheck(fdeliveryCardid)).isTrue(MallPcExceptionCode.ID_CARD_NUMBER_ILLEGAL);
             deliveryCondition.andEqualTo(UserDelivery::getFdeliveryCardid, fdeliveryCardid);
@@ -105,7 +109,9 @@ public class UserAddressServiceImpl implements UserAddressService {
         } else if (Objects.equals(userDelivery.getFisDefualt(), 1)) {
             vo.setIsDefualt("默认地址");
         }
-        vo.setFdeliveryCardid(StringUtils.overlay(userDelivery.getFdeliveryCardid(), "****", 4, 7));
+        if (StringUtil.isNotBlank(userDelivery.getFdeliveryCardid())) {
+            vo.setFdeliveryCardid(StringUtils.overlay(userDelivery.getFdeliveryCardid(), "****", 4, 7));
+        }
         if (StringUtils.isNotBlank(userDelivery.getFdeliveryCardUrlBack()) && StringUtils.isNotBlank(userDelivery.getFdeliveryCardUrlFront())) {
             vo.setIsCardUpload("已上传");
         } else {

@@ -22,13 +22,13 @@ import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.sku.api.*;
 import com.xingyun.bbc.core.sku.enums.GoodsSkuEnums;
 import com.xingyun.bbc.core.sku.enums.SkuBatchEnums;
-import com.xingyun.bbc.core.sku.po.*;
 import com.xingyun.bbc.core.sku.po.GoodsSku;
 import com.xingyun.bbc.core.sku.po.GoodsSkuBatchPrice;
 import com.xingyun.bbc.core.sku.po.SkuBatch;
 import com.xingyun.bbc.core.sku.po.SkuBatchPackage;
 import com.xingyun.bbc.core.sku.po.SkuBatchUserPrice;
 import com.xingyun.bbc.core.sku.po.SkuUserDiscountConfig;
+import com.xingyun.bbc.core.sku.po.*;
 import com.xingyun.bbc.core.supplier.enums.TradeTypeEnums;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.api.UserDeliveryApi;
@@ -46,7 +46,6 @@ import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.common.lock.XybbcLock;
 import com.xingyun.bbc.mall.model.dto.GoodsDetailMallDto;
 import com.xingyun.bbc.mall.model.dto.ReceiveCouponDto;
-import com.xingyun.bbc.mall.model.dto.SearchItemDto;
 import com.xingyun.bbc.mall.model.dto.SkuDiscountTaxDto;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.GoodDetailService;
@@ -991,7 +990,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     @Override
     public Result<List<CouponVo>> getSkuUserCouponLight(Long fskuId, Long fuid) {
         //所有券
-        List<CouponVo> allReceiveCoupon = this.getEsAllReceiveCoupon(fskuId, fuid);
+        List<CouponVo> allReceiveCoupon = this.getAllSkuUserCoupon(fskuId, fuid);
         List<CouponVo> collect = allReceiveCoupon.stream().sorted(Comparator.comparing(CouponVo::getFthresholdAmount).reversed()).limit(3).collect(toList());
         this.dealAmount(collect);
         return Result.success(collect);
@@ -1001,7 +1000,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     public Result<GoodsDetailCouponVo> getSkuUserCoupon(Long fskuId, Long fuid) {
         GoodsDetailCouponVo result = new GoodsDetailCouponVo();
         //所有券
-        List<CouponVo> allCoupon = this.getEsAllReceiveCoupon(fskuId, fuid);
+        List<CouponVo> allCoupon = this.getAllSkuUserCoupon(fskuId, fuid);
         //已领取券
         List<CouponVo> receiveCoupon = (List<CouponVo>) this.getAlreadyReceiveCoupon(fskuId, fuid).get("receiveCoupon");
         List<Long> alCouponIds = (List<Long>) this.getAlreadyReceiveCoupon(fskuId, fuid).get("removeCoupon");
@@ -1017,39 +1016,23 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     }
 
     //获取sku满足的所有已领取和未领取的页面领取类型券
-    private List<CouponVo> getAllReceiveCoupon(Long fskuId, Long fuid) {
-        CouponQueryDto couponQueryDto = new CouponQueryDto();
-        couponQueryDto.setReleaseTypes(Lists.newArrayList(CouponReleaseTypeEnum.PAGE_RECEIVE.getCode()));
-        couponQueryDto.setSkuId(fskuId);
-        couponQueryDto.setUserId(fuid);
-        Result<List<CouponQueryVo>> listResult = couponProviderApi.queryBySkuAndUserId(couponQueryDto);
-        List<CouponQueryVo> apiCouponLis = listResult.getData();
-        List<CouponVo> convert = new ArrayList<>();
-        if (!CollectionUtils.isEmpty(apiCouponLis)) {
-            convert = dozerHolder.convert(apiCouponLis, CouponVo.class);
-        }
-        return convert;
-    }
-
-    //es获取sku满足的所有已领取和未领取的页面领取类型券
-    private List<CouponVo> getEsAllReceiveCoupon(Long fskuId, Long fuid) {
+    private List<CouponVo> getAllSkuUserCoupon(Long fskuId, Long fuid) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-        Result<SearchItemListVo<SearchItemVo>> res;
-        SearchItemDto searchItemDto = new SearchItemDto();
-        searchItemDto.setPageSize(10000);
-        searchItemDto.setFskuIds(Lists.newArrayList(fskuId));
         List<CouponVo> result = new ArrayList<>();
         Map<String, Object> userCondition = new HashMap<>(5);
-        try {
-            res = goodsService.searchSkuList(searchItemDto);
-            logger.info("es获取sku满足的页面领取类型券{}， skuid ={}" ,JSON.toJSONString(res.getData()), fskuId);
-            if (!res.isSuccess()) {
-                throw new Exception();
+            CouponQueryDto couponQueryDto = new CouponQueryDto();
+            couponQueryDto.setReleaseTypes(Lists.newArrayList(CouponReleaseTypeEnum.PAGE_RECEIVE.getCode()));
+            couponQueryDto.setSkuId(fskuId);
+            Result<List<CouponQueryVo>> couponQueryResult = couponProviderApi.queryBySkuId(couponQueryDto);
+
+            List<CouponQueryVo> couponQueryVos = couponQueryResult.getData();
+            logger.info("获取sku满足的页面领取类型券{}， skuid ={}" ,JSON.toJSONString(couponQueryVos), fskuId);
+            if (!couponQueryResult.isSuccess()) {
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
-            SearchItemVo o = (SearchItemVo) res.getData().getList().get(0);
-            List<Integer> fcouponIds = o.getFcouponIds();
-            for (Integer fcouponId : fcouponIds) {
+            Date now = new Date();
+            for (CouponQueryVo couponQueryVo : couponQueryVos) {
+                Long fcouponId = couponQueryVo.getFcouponId();
                 Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
                         .andEqualTo(Coupon::getFcouponId, fcouponId)
                         .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
@@ -1057,16 +1040,22 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                         .andEqualTo(Coupon::getFisShow, 1)
                         .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType, Coupon::getFthresholdAmount,
                                 Coupon::getFdeductionValue, Coupon::getFvalidityStart, Coupon::getFvalidityEnd, Coupon::getFassignUser,
-                                Coupon::getFapplicableSku, Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFperLimit));
+                                Coupon::getFapplicableSku, Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFperLimit,
+                                Coupon::getFreleaseTimeStart, Coupon::getFreleaseTimeEnd));
                 Coupon coupon = couponResult.getData();
                 //不满足券条件的先排除
                 if (couponResult.isSuccess() && null != coupon) {
                     if (coupon.getFvalidityType().equals(CouponValidityTypeEnum.TIME_SLOT.getCode())) {
-                        Date now = new Date();
                         Date fvalidityStart = coupon.getFvalidityStart();
                         Date fvalidityEnd = coupon.getFvalidityEnd();
                         String fvalidityStartStr = sdf.format(fvalidityStart);
                         if (!fvalidityStartStr.equals("1970-01-01 00:00:00") && (now.before(fvalidityStart) || now.after(fvalidityEnd))) {
+                            continue;
+                        }
+                        Date freleaseTimeStart = coupon.getFreleaseTimeStart();
+                        Date freleaseTimeEnd = coupon.getFreleaseTimeEnd();
+                        String freleaseTimeStartStr = sdf.format(freleaseTimeStart);
+                        if (!freleaseTimeStartStr.equals("1970-01-01 00:00:00") && (now.before(freleaseTimeStart) || now.after(freleaseTimeEnd))) {
                             continue;
                         }
                     }
@@ -1165,10 +1154,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     }
                 }
             }
-        } catch (Exception e) {
-            logger.warn("ES商品详情搜索优惠券失败--转SQL查询fskuId={} fuid={}!...", fskuId, fuid);
-            result = this.getAllReceiveCoupon(fskuId, fuid);
-        }
         return result;
     }
 
@@ -1199,13 +1184,13 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                         .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
                         .andEqualTo(Coupon::getFisShow, 1)
                         .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType, Coupon::getFthresholdAmount,
-                                Coupon::getFdeductionValue, Coupon::getFvalidityStart, Coupon::getFvalidityEnd,
-                                Coupon::getFapplicableSku, Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFperLimit));
+                                Coupon::getFdeductionValue, Coupon::getFapplicableSku,  Coupon::getFperLimit));
                 Coupon coupon = couponResult.getData();
-
                 if (couponResult.isSuccess() && null != coupon) {
                     Long fcouponId = coupon.getFcouponId();
                     Integer fperLimit = coupon.getFperLimit();
+                    coupon.setFvalidityStart(couponReceive.getFvalidityStart());
+                    coupon.setFvalidityEnd(couponReceive.getFvalidityEnd());
                     //1全部商品、2指定商品可用、3指定商品不可用
                     int ableSku = coupon.getFapplicableSku().intValue();
                     if (ableSku == 1) {
@@ -1488,14 +1473,17 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             return result;
         }
         StringBuffer resBf = new StringBuffer();
-        if (!StringUtils.isEmpty(conditionData.getFtradeName())) {
-            resBf.append("贸易类型：").append(conditionData.getFtradeName()).append("\n");
+        String ftradeName = conditionData.getFtradeName();
+        if (!StringUtils.isEmpty(ftradeName)) {
+            resBf.append("贸易类型：").append("\n").append("仅可以购买 ").append(ftradeName.substring(1, ftradeName.length() - 1)).append("\n");
         }
-        if (!StringUtils.isEmpty(conditionData.getFcategoryName())) {
-            resBf.append("品类：").append(conditionData.getFcategoryName()).append("\n");
+        String fcategoryName = conditionData.getFcategoryName();
+        if (!StringUtils.isEmpty(fcategoryName)) {
+            resBf.append("品类：").append("\n").append("仅可以购买 ").append(fcategoryName.substring(1, fcategoryName.length() - 1)).append("\n");
         }
-        if (!StringUtils.isEmpty(conditionData.getFbrandName())) {
-            resBf.append("品牌：").append(conditionData.getFbrandName()).append("\n");
+        String fbrandName = conditionData.getFbrandName();
+        if (!StringUtils.isEmpty(fbrandName)) {
+            resBf.append("品牌：").append("\n").append("仅可以购买 ").append(fbrandName.substring(1, fbrandName.length() - 1)).append("\n");
         }
         result = resBf.toString();
         return result;

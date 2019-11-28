@@ -51,7 +51,7 @@ dependencies {
     compile group: 'com.xuxueli', name: 'xxl-job-core', version: '2.1.0'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-common', version: '1.0'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-market-api', version: '1.0.29'
-    compile group: 'com.xingyun.bbc', name: 'xybbc-center-activity-api', version: '1.0.13'
+    compile group: 'com.xingyun.bbc', name: 'xybbc-center-activity-api', version: '1.0.14'
     compile group: 'com.xingyun.bbc', name: 'xybbc-center-order-api', version: '1.1.34'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-helper-api', version: '1.0.4'
     compile group: 'com.xingyun.bbc', name: 'xybbc-jwt-common', version: '1.0'

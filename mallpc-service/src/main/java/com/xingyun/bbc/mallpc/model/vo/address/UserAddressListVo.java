@@ -17,7 +17,7 @@ public class UserAddressListVo implements Serializable {
     private static final long serialVersionUID = -2385931050753770845L;
 
     @ApiModelProperty("用户收货地址ID")
-    private String fdeliveryUserId;
+    private Long fdeliveryUserId;
 
     @ApiModelProperty("收件人姓名")
     private String fdeliveryName;

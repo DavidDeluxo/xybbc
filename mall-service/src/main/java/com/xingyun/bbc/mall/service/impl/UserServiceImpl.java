@@ -113,9 +113,9 @@ public class UserServiceImpl implements UserService {
         Criteria<User, Object> criteria = Criteria.of(User.class);
         criteria.andEqualTo(User::getFisDelete, "0")
                 .andEqualTo(User::getFpasswd, passWord)
-                .andLeft().orLike(User::getFmobile, dto.getUserAccount())
-                .orLike(User::getFmail, dto.getUserAccount())
-                .orLike(User::getFuname, dto.getUserAccount()).addRight();
+                .andLeft().orEqualTo(User::getFmobile, dto.getUserAccount())
+                .orEqualTo(User::getFmail, dto.getUserAccount())
+                .orEqualTo(User::getFuname, dto.getUserAccount()).addRight();
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
         if (userResult.getData() == null) {
             return Result.failure(MallResultStatus.LOGIN_FAILURE);
