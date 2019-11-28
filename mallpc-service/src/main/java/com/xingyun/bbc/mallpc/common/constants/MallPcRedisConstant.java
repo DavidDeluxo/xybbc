@@ -13,7 +13,7 @@ public interface MallPcRedisConstant {
      */
     long DEFAULT_LOCK_EXPIRING = 5L;
 
-    String KEY_PREFIX = "mall_pc:";
+    String KEY_PREFIX = "pc_mall:";
 
     /**
      * 默认分布式锁value
@@ -32,12 +32,12 @@ public interface MallPcRedisConstant {
     /**
      * 首页一级分类下热门品牌数据
      */
-    String INDEX_BRAND = KEY_PREFIX + "index_brand_";
+    String INDEX_BRAND = KEY_PREFIX + "index_brand:";
 
     /**
      * 首页一级分类下热门品牌数据
      */
-    String INDEX_BRAND_UPDATE = INDEX_BRAND + "lock_";
+    String INDEX_BRAND_UPDATE = KEY_PREFIX + "index_brand_lock:";
 
     /**
      * 首页配置 Banner key
@@ -65,5 +65,5 @@ public interface MallPcRedisConstant {
     /**
      * 首页一级分类楼层商品数据,一级分类id
      */
-    String PC_MALL_CATE_SKU = "pcmall_index_cate_sku_";
+    String PC_MALL_CATE_SKU = KEY_PREFIX + "index_cate_sku:";
 }
