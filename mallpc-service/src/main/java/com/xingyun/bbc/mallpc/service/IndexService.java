@@ -26,12 +26,6 @@ public interface IndexService {
      */
     List<BannerVo> getBanners();
 
-//    /**
-//     * 首页品牌列表
-//     * @return
-//     */
-//    List<BrandVo> getBrands(Long cateId);
-
     /**
      * 首页品牌列表
      * @return
