@@ -383,6 +383,7 @@ public class UserServiceImpl implements UserService {
     private Integer receiveCoupon(Long fuid) {
         Integer couponNum = 0;
         //查询可用注册优惠券
+        Date date = new Date();
         Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)
                 .andEqualTo(Coupon::getFcouponStatus, 2)
                 .andEqualTo(Coupon::getFreleaseType, 3)
@@ -390,6 +391,15 @@ public class UserServiceImpl implements UserService {
         Result<List<Coupon>> listResult = couponApi.queryByCriteria(couponCriteria);
         if (listResult.isSuccess()) {
             for (Coupon coupon : listResult.getData()) {
+                if(coupon.getFsurplusReleaseQty().equals(0)){
+                    continue;
+                }
+                if(coupon.getFvalidityType().equals(1)){
+                    //判断是否在有效期内
+                    if(date.compareTo(coupon.getFvalidityEnd()) > 0){
+                        continue;
+                    }
+                }
                 Integer fperLimit = coupon.getFperLimit();
                 CouponReleaseDto couponDto = new CouponReleaseDto();
                 couponDto.setCouponScene(CouponScene.REGISTER);
