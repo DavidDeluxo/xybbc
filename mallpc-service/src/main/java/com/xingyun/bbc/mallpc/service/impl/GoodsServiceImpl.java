@@ -212,8 +212,10 @@ public class GoodsServiceImpl implements GoodsService {
     private CateSearchItemListVo getSkuList(Integer cateId, TokenInfoVo infoVo, String priceName) {
         String key = new StringBuilder().append(PC_MALL_CATE_SKU).append(cateId).append("_").append(priceName).toString();
         List<SearchItemVo> voList;
+        long start = System.currentTimeMillis();
         if (redisHolder.exists(key)) {
             voList = (List<SearchItemVo>) redisHolder.getObject(key);
+            log("缓存",cateId,System.currentTimeMillis()-start);
         } else {
             SearchItemDto searchItemDto = new SearchItemDto();
             List<Integer> cateIdList = new ArrayList<>();
@@ -228,12 +230,26 @@ public class GoodsServiceImpl implements GoodsService {
             //缓存有效期随机数10到40秒之间
             long timeout = RandomUtils.randomLong(30) + 10;
             redisHolder.set(key,voList,timeout);
+            log("搜索引擎",cateId,System.currentTimeMillis()-start);
         }
 
         CateSearchItemListVo vo = new CateSearchItemListVo();
         vo.setCateId(cateId);
         vo.setSkus(voList);
         return vo;
+    }
+
+    /**
+     * 首页耗时日志记录
+     * @param model
+     * @param cateId
+     * @param time
+     */
+    private void log(String model, Integer cateId, long time){
+        if(log.isDebugEnabled()){
+            String info = new StringBuilder().append("一级分类").append(cateId).append(model).append("，首页楼层商品耗时: ").append(time).toString();
+            log.debug(info);
+        }
     }
 
     /**
