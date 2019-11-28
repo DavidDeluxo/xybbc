@@ -61,4 +61,9 @@ public interface MallPcRedisConstant {
     String VERIFY_CODE_PREFIX = "SMS:";
 
     String ADD_USER_WITHDRAW_LOCK = KEY_PREFIX + "add_user_withdraw_lock";
+
+    /**
+     * 首页一级分类楼层商品数据,一级分类id
+     */
+    String PC_MALL_CATE_SKU = "pcmall_index_cate_sku_";
 }
