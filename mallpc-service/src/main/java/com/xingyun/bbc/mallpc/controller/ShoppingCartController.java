@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * 进货单相关接口
  *
@@ -91,6 +93,17 @@ public class ShoppingCartController {
     @PostMapping("checkout")
     public Result checkout(@RequestBody @Validated(ShoppingCartValidator.Checkout.class) ShoppingCartDto shoppingCartDto) {
         return shoppingCartService.checkout(shoppingCartDto);
+    }
+
+    /**
+     * 刷新商品
+     *
+     * @param shoppingCartDto
+     * @return
+     */
+    @PostMapping("refresh")
+    public Result<List<ShoppingCartVo>> refresh(@RequestBody @Validated(ShoppingCartValidator.Refresh.class) ShoppingCartDto shoppingCartDto) {
+        return shoppingCartService.refresh(shoppingCartDto);
     }
 
 }

@@ -172,4 +172,15 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         return orderSettleSplitApi.launchSettle(orderSettleDto);
     }
 
+    /**
+     * 刷新商品
+     *
+     * @param shoppingCartDto
+     * @return
+     */
+    @Override
+    public Result<List<ShoppingCartVo>> refresh(ShoppingCartDto shoppingCartDto) {
+        return Result.success(Lists.newArrayList());
+    }
+
 }

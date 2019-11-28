@@ -51,7 +51,7 @@ public class ShoppingCartDto extends BaseDto {
     /**
      * 进货单商品ID列表
      */
-    @NotEmpty(message = "进货单商品ID不能为空", groups = {ShoppingCartValidator.Checkout.class})
+    @NotEmpty(message = "进货单商品ID不能为空", groups = {ShoppingCartValidator.Checkout.class, ShoppingCartValidator.Refresh.class})
     private List<Long> ids;
 
     /**

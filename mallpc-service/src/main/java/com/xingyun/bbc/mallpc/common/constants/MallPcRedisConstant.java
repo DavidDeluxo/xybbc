@@ -27,7 +27,7 @@ public interface MallPcRedisConstant {
     /**
      * 首页用户数缓存更新分布式锁前缀
      */
-    String INDEX_USER_COUNT_UPDATE = INDEX_USER_COUNT+"_update";
+    String INDEX_USER_COUNT_UPDATE = INDEX_USER_COUNT+"_lock";
 
     /**
      * 首页一级分类下热门品牌数据
@@ -37,7 +37,7 @@ public interface MallPcRedisConstant {
     /**
      * 首页一级分类下热门品牌数据
      */
-    String INDEX_BRAND_UPDATE = INDEX_BRAND + "update_";
+    String INDEX_BRAND_UPDATE = INDEX_BRAND + "lock_";
 
     /**
      * 首页配置 Banner key
@@ -46,7 +46,7 @@ public interface MallPcRedisConstant {
     /**
      * pc首页banner更新时redis分布式锁前缀
      */
-    String PC_MALL_PAGECONFIG_BANNER_UPDATE = "pc_mall_banner_update";
+    String PC_MALL_PAGECONFIG_BANNER_UPDATE = "pc_mall_banner_lock";
 
     /**
      * 首页配置 专题位 key
@@ -55,10 +55,15 @@ public interface MallPcRedisConstant {
     /**
      * pc首页专题位更新时redis分布式锁前缀
      */
-    String PC_MALL_PAGECONFIG_TOPIC_UPDATE = "pc_mall_topic_update";
+    String PC_MALL_PAGECONFIG_TOPIC_UPDATE = "pc_mall_topic_lock";
 
 
     String VERIFY_CODE_PREFIX = "SMS:";
 
     String ADD_USER_WITHDRAW_LOCK = KEY_PREFIX + "add_user_withdraw_lock";
+
+    /**
+     * 首页一级分类楼层商品数据,一级分类id
+     */
+    String PC_MALL_CATE_SKU = "pcmall_index_cate_sku_";
 }
