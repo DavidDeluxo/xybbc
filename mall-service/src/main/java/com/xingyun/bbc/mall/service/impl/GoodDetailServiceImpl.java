@@ -2,11 +2,11 @@ package com.xingyun.bbc.mall.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
-import com.xingyun.bbc.core.activity.api.CouponProviderApi;
-import com.xingyun.bbc.core.activity.enums.CouponScene;
-import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
-import com.xingyun.bbc.core.activity.model.dto.CouponReleaseDto;
-import com.xingyun.bbc.core.activity.model.vo.CouponQueryVo;
+import com.xingyun.bbc.activity.api.CouponProviderApi;
+import com.xingyun.bbc.activity.enums.CouponScene;
+import com.xingyun.bbc.activity.model.dto.CouponQueryDto;
+import com.xingyun.bbc.activity.model.dto.CouponReleaseDto;
+import com.xingyun.bbc.activity.model.vo.CouponQueryVo;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.*;
@@ -1019,57 +1019,100 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         List<CouponVo> result = new ArrayList<>();
         Map<String, Object> userCondition = new HashMap<>(5);
-            CouponQueryDto couponQueryDto = new CouponQueryDto();
-            couponQueryDto.setReleaseTypes(Lists.newArrayList(CouponReleaseTypeEnum.PAGE_RECEIVE.getCode()));
-            couponQueryDto.setSkuId(fskuId);
-            Result<List<CouponQueryVo>> couponQueryResult = couponProviderApi.queryBySkuId(couponQueryDto);
+        CouponQueryDto couponQueryDto = new CouponQueryDto();
+        couponQueryDto.setReleaseTypes(Lists.newArrayList(CouponReleaseTypeEnum.PAGE_RECEIVE.getCode()));
+        couponQueryDto.setSkuId(fskuId);
+        Result<List<CouponQueryVo>> couponQueryResult = couponProviderApi.queryBySkuId(couponQueryDto);
 
-            List<CouponQueryVo> couponQueryVos = couponQueryResult.getData();
-            logger.info("获取sku满足的页面领取类型券{}， skuid ={}" ,JSON.toJSONString(couponQueryVos), fskuId);
-            if (!couponQueryResult.isSuccess()) {
-                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-            }
-            Date now = new Date();
-            for (CouponQueryVo couponQueryVo : couponQueryVos) {
-                Long fcouponId = couponQueryVo.getFcouponId();
-                Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
-                        .andEqualTo(Coupon::getFcouponId, fcouponId)
-                        .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
-                        .andEqualTo(Coupon::getFreleaseType, CouponReleaseTypeEnum.PAGE_RECEIVE.getCode())
-                        .andEqualTo(Coupon::getFisShow, 1)
-                        .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType, Coupon::getFthresholdAmount,
-                                Coupon::getFdeductionValue, Coupon::getFvalidityStart, Coupon::getFvalidityEnd, Coupon::getFassignUser,
-                                Coupon::getFapplicableSku, Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFperLimit,
-                                Coupon::getFreleaseTimeStart, Coupon::getFreleaseTimeEnd));
-                Coupon coupon = couponResult.getData();
-                //不满足券条件的先排除
-                if (couponResult.isSuccess() && null != coupon) {
-                    if (coupon.getFvalidityType().equals(CouponValidityTypeEnum.TIME_SLOT.getCode())) {
-                        Date fvalidityStart = coupon.getFvalidityStart();
-                        Date fvalidityEnd = coupon.getFvalidityEnd();
-                        String fvalidityStartStr = sdf.format(fvalidityStart);
-                        if (!fvalidityStartStr.equals("1970-01-01 00:00:00") && (now.before(fvalidityStart) || now.after(fvalidityEnd))) {
-                            continue;
-                        }
-                        Date freleaseTimeStart = coupon.getFreleaseTimeStart();
-                        Date freleaseTimeEnd = coupon.getFreleaseTimeEnd();
-                        String freleaseTimeStartStr = sdf.format(freleaseTimeStart);
-                        if (!freleaseTimeStartStr.equals("1970-01-01 00:00:00") && (now.before(freleaseTimeStart) || now.after(freleaseTimeEnd))) {
-                            continue;
-                        }
+        List<CouponQueryVo> couponQueryVos = couponQueryResult.getData();
+        logger.info("获取sku满足的页面领取类型券{}， skuid ={}", JSON.toJSONString(couponQueryVos), fskuId);
+        if (!couponQueryResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        Date now = new Date();
+        for (CouponQueryVo couponQueryVo : couponQueryVos) {
+            Long fcouponId = couponQueryVo.getFcouponId();
+            Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
+                    .andEqualTo(Coupon::getFcouponId, fcouponId)
+                    .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
+                    .andEqualTo(Coupon::getFreleaseType, CouponReleaseTypeEnum.PAGE_RECEIVE.getCode())
+                    .andEqualTo(Coupon::getFisShow, 1)
+                    .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType, Coupon::getFthresholdAmount,
+                            Coupon::getFdeductionValue, Coupon::getFvalidityStart, Coupon::getFvalidityEnd, Coupon::getFassignUser,
+                            Coupon::getFapplicableSku, Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFperLimit,
+                            Coupon::getFreleaseTimeStart, Coupon::getFreleaseTimeEnd));
+            Coupon coupon = couponResult.getData();
+            //不满足券条件的先排除
+            if (couponResult.isSuccess() && null != coupon) {
+                if (coupon.getFvalidityType().equals(CouponValidityTypeEnum.TIME_SLOT.getCode())) {
+                    Date fvalidityStart = coupon.getFvalidityStart();
+                    Date fvalidityEnd = coupon.getFvalidityEnd();
+                    String fvalidityStartStr = sdf.format(fvalidityStart);
+                    if (!fvalidityStartStr.equals("1970-01-01 00:00:00") && (now.before(fvalidityStart) || now.after(fvalidityEnd))) {
+                        continue;
                     }
-                    // 指定会员，1全部会员、2指定会员可用、3指定会员不可用'
-                    int fassignUser = coupon.getFassignUser().intValue();
-                    if (fassignUser == 1) {
+                    Date freleaseTimeStart = coupon.getFreleaseTimeStart();
+                    Date freleaseTimeEnd = coupon.getFreleaseTimeEnd();
+                    String freleaseTimeStartStr = sdf.format(freleaseTimeStart);
+                    if (!freleaseTimeStartStr.equals("1970-01-01 00:00:00") && (now.before(freleaseTimeStart) || now.after(freleaseTimeEnd))) {
+                        continue;
+                    }
+                }
+                // 指定会员，1全部会员、2指定会员可用、3指定会员不可用'
+                int fassignUser = coupon.getFassignUser().intValue();
+                if (fassignUser == 1) {
+                    result.add(dozerMapper.map(coupon, CouponVo.class));
+                    continue;
+                } else if (fassignUser == 2) {
+                    //如果是单独存的是fuid
+                    Result<Integer> couponUserCount = this.getCouponUserCount(fcouponId.longValue(), fuid);
+                    if (couponUserCount.isSuccess() && couponUserCount.getData() > 0) {
                         result.add(dozerMapper.map(coupon, CouponVo.class));
                         continue;
-                    } else if (fassignUser == 2) {
-                        //如果是单独存的是fuid
-                        Result<Integer> couponUserCount = this.getCouponUserCount(fcouponId.longValue(), fuid);
-                        if (couponUserCount.isSuccess() && couponUserCount.getData() > 0) {
-                            result.add(dozerMapper.map(coupon, CouponVo.class));
-                            continue;
-                        }
+                    }
+                    //如果存的是条件
+                    Result<CouponReleaseCondition> couponUserAbleResult = this.getCouponUserAble(fcouponId.longValue());
+                    if (!couponUserAbleResult.isSuccess()) {
+                        throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+                    }
+                    CouponReleaseCondition couponCondition = couponUserAbleResult.getData();
+                    if (null == couponCondition) {
+                        continue;
+                    }
+                    this.setUserCondition(userCondition, fuid);
+
+                    //优惠券存的条件
+                    List<Integer> foperate_coupon = (List<Integer>) JSON.parse(couponCondition.getFoperateType());
+                    List<Long> fuserLevelId_coupon = (List<Long>) JSON.parse(couponCondition.getFuserLevelId());
+                    List<Long> fmarketBdId_coupon = (List<Long>) JSON.parse(couponCondition.getFmarketBdId());
+                    Date fuserRegisterTimeStart = couponCondition.getFuserRegisterTimeStart();
+                    Date fuserRegisterTimeEnd = couponCondition.getFuserRegisterTimeEnd();
+                    Date fuserValidTimeStart = couponCondition.getFuserValidTimeStart();
+                    Date fuserValidTimeEnd = couponCondition.getFuserValidTimeEnd();
+
+                    //fuid反推的条件
+                    Integer operateType = (Integer) userCondition.get("operateType");
+                    Long userLevelId = (Long) userCondition.get("userLevelId");
+                    Long marketBdId = (Long) userCondition.get("marketBdId");
+                    Date createTime = (Date) userCondition.get("createTime");
+                    Date userValidTime = (Date) userCondition.get("userValidTime");
+                    if ((CollectionUtils.isNotEmpty(foperate_coupon) && foperate_coupon.contains(operateType)) || (CollectionUtils.isNotEmpty(fuserLevelId_coupon) && fuserLevelId_coupon.contains(userLevelId)) || (CollectionUtils.isNotEmpty(fmarketBdId_coupon) && fmarketBdId_coupon.contains(marketBdId))) {
+                        result.add(dozerMapper.map(coupon, CouponVo.class));
+                        continue;
+                    }
+                    if (createTime.after(fuserRegisterTimeStart) && createTime.before(fuserRegisterTimeEnd)) {
+                        result.add(dozerMapper.map(coupon, CouponVo.class));
+                        continue;
+                    }
+                    if (!sdf.format(userValidTime).equals("1970-01-01 00:00:00") && userValidTime.after(fuserValidTimeStart) && userValidTime.before(fuserValidTimeEnd)) {
+                        result.add(dozerMapper.map(coupon, CouponVo.class));
+                        continue;
+                    }
+                } else {
+                    //指定用户不可用--所有条件都不满足才可以
+                    //如果是单独存的是fuid
+                    Result<Integer> couponUserCount = this.getCouponUserCount(fcouponId.longValue(), fuid);
+                    if (couponUserCount.isSuccess() && couponUserCount.getData() == 0) {
                         //如果存的是条件
                         Result<CouponReleaseCondition> couponUserAbleResult = this.getCouponUserAble(fcouponId.longValue());
                         if (!couponUserAbleResult.isSuccess()) {
@@ -1080,72 +1123,28 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                             continue;
                         }
                         this.setUserCondition(userCondition, fuid);
+                        if (null != couponCondition) {
+                            //优惠券存的条件
+                            List<Integer> foperate_coupon = (List<Integer>) JSON.parse(couponCondition.getFoperateType());
+                            List<Long> fuserLevelId_coupon = (List<Long>) JSON.parse(couponCondition.getFuserLevelId());
+                            List<Long> fmarketBdId_coupon = (List<Long>) JSON.parse(couponCondition.getFmarketBdId());
+                            Date fuserRegisterTimeStart = couponCondition.getFuserRegisterTimeStart();
+                            Date fuserRegisterTimeEnd = couponCondition.getFuserRegisterTimeEnd();
+                            Date fuserValidTimeStart = couponCondition.getFuserValidTimeStart();
+                            Date fuserValidTimeEnd = couponCondition.getFuserValidTimeEnd();
 
-                        //优惠券存的条件
-                        List<Integer> foperate_coupon = (List<Integer>) JSON.parse(couponCondition.getFoperateType());
-                        List<Long> fuserLevelId_coupon = (List<Long>) JSON.parse(couponCondition.getFuserLevelId());
-                        List<Long> fmarketBdId_coupon = (List<Long>) JSON.parse(couponCondition.getFmarketBdId());
-                        Date fuserRegisterTimeStart = couponCondition.getFuserRegisterTimeStart();
-                        Date fuserRegisterTimeEnd = couponCondition.getFuserRegisterTimeEnd();
-                        Date fuserValidTimeStart = couponCondition.getFuserValidTimeStart();
-                        Date fuserValidTimeEnd = couponCondition.getFuserValidTimeEnd();
+                            //fuid反推的条件
+                            Integer operateType = (Integer) userCondition.get("operateType");
+                            Long userLevelId = (Long) userCondition.get("userLevelId");
+                            Long marketBdId = (Long) userCondition.get("marketBdId");
+                            Date createTime = (Date) userCondition.get("createTime");
+                            Date userValidTime = (Date) userCondition.get("userValidTime");
 
-                        //fuid反推的条件
-                        Integer operateType = (Integer) userCondition.get("operateType");
-                        Long userLevelId = (Long) userCondition.get("userLevelId");
-                        Long marketBdId = (Long) userCondition.get("marketBdId");
-                        Date createTime = (Date) userCondition.get("createTime");
-                        Date userValidTime = (Date) userCondition.get("userValidTime");
-                        if ((CollectionUtils.isNotEmpty(foperate_coupon) && foperate_coupon.contains(operateType)) || (CollectionUtils.isNotEmpty(fuserLevelId_coupon ) && fuserLevelId_coupon.contains(userLevelId)) || (CollectionUtils.isNotEmpty(fmarketBdId_coupon) && fmarketBdId_coupon.contains(marketBdId))) {
-                            result.add(dozerMapper.map(coupon, CouponVo.class));
-                            continue;
-                        }
-                        if (createTime.after(fuserRegisterTimeStart) && createTime.before(fuserRegisterTimeEnd)) {
-                            result.add(dozerMapper.map(coupon, CouponVo.class));
-                            continue;
-                        }
-                        if (!sdf.format(userValidTime).equals("1970-01-01 00:00:00") && userValidTime.after(fuserValidTimeStart) && userValidTime.before(fuserValidTimeEnd)) {
-                            result.add(dozerMapper.map(coupon, CouponVo.class));
-                            continue;
-                        }
-                    } else {
-                        //指定用户不可用--所有条件都不满足才可以
-                        //如果是单独存的是fuid
-                        Result<Integer> couponUserCount = this.getCouponUserCount(fcouponId.longValue(), fuid);
-                        if (couponUserCount.isSuccess() && couponUserCount.getData() == 0) {
-                            //如果存的是条件
-                            Result<CouponReleaseCondition> couponUserAbleResult = this.getCouponUserAble(fcouponId.longValue());
-                            if (!couponUserAbleResult.isSuccess()) {
-                                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-                            }
-                            CouponReleaseCondition couponCondition = couponUserAbleResult.getData();
-                            if (null == couponCondition) {
-                                continue;
-                            }
-                            this.setUserCondition(userCondition, fuid);
-                            if (null != couponCondition) {
-                                //优惠券存的条件
-                                List<Integer> foperate_coupon = (List<Integer>) JSON.parse(couponCondition.getFoperateType());
-                                List<Long> fuserLevelId_coupon = (List<Long>) JSON.parse(couponCondition.getFuserLevelId());
-                                List<Long> fmarketBdId_coupon = (List<Long>) JSON.parse(couponCondition.getFmarketBdId());
-                                Date fuserRegisterTimeStart = couponCondition.getFuserRegisterTimeStart();
-                                Date fuserRegisterTimeEnd = couponCondition.getFuserRegisterTimeEnd();
-                                Date fuserValidTimeStart = couponCondition.getFuserValidTimeStart();
-                                Date fuserValidTimeEnd = couponCondition.getFuserValidTimeEnd();
-
-                                //fuid反推的条件
-                                Integer operateType = (Integer) userCondition.get("operateType");
-                                Long userLevelId = (Long) userCondition.get("userLevelId");
-                                Long marketBdId = (Long) userCondition.get("marketBdId");
-                                Date createTime = (Date) userCondition.get("createTime");
-                                Date userValidTime = (Date) userCondition.get("userValidTime");
-
-                                if ((CollectionUtils.isNotEmpty(foperate_coupon) && !foperate_coupon.contains(operateType)) && (CollectionUtils.isNotEmpty(fuserLevelId_coupon) && !fuserLevelId_coupon.contains(userLevelId)) && (CollectionUtils.isNotEmpty(fmarketBdId_coupon) && !fmarketBdId_coupon.contains(marketBdId))) {
-                                    if (createTime.before(fuserRegisterTimeStart) || createTime.after(fuserRegisterTimeEnd)) {
-                                        if (sdf.format(userValidTime).equals("1970-01-01 00:00:00") || userValidTime.before(fuserValidTimeStart) || userValidTime.after(fuserValidTimeEnd)) {
-                                            result.add(dozerMapper.map(coupon, CouponVo.class));
-                                            continue;
-                                        }
+                            if ((CollectionUtils.isNotEmpty(foperate_coupon) && !foperate_coupon.contains(operateType)) && (CollectionUtils.isNotEmpty(fuserLevelId_coupon) && !fuserLevelId_coupon.contains(userLevelId)) && (CollectionUtils.isNotEmpty(fmarketBdId_coupon) && !fmarketBdId_coupon.contains(marketBdId))) {
+                                if (createTime.before(fuserRegisterTimeStart) || createTime.after(fuserRegisterTimeEnd)) {
+                                    if (sdf.format(userValidTime).equals("1970-01-01 00:00:00") || userValidTime.before(fuserValidTimeStart) || userValidTime.after(fuserValidTimeEnd)) {
+                                        result.add(dozerMapper.map(coupon, CouponVo.class));
+                                        continue;
                                     }
                                 }
                             }
@@ -1153,6 +1152,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     }
                 }
             }
+        }
         return result;
     }
 
@@ -1183,7 +1183,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                         .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
                         .andEqualTo(Coupon::getFisShow, 1)
                         .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType, Coupon::getFthresholdAmount,
-                                Coupon::getFdeductionValue, Coupon::getFapplicableSku,  Coupon::getFperLimit));
+                                Coupon::getFdeductionValue, Coupon::getFapplicableSku, Coupon::getFperLimit));
                 Coupon coupon = couponResult.getData();
                 if (couponResult.isSuccess() && null != coupon) {
                     Long fcouponId = coupon.getFcouponId();
