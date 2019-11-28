@@ -4,6 +4,8 @@ import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.dto.shoppingcart.ShoppingCartDto;
 import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartVo;
 
+import java.util.List;
+
 /**
  * @author penglu
  * @version 1.0.0
@@ -59,6 +61,14 @@ public interface ShoppingCartService {
      * @return
      */
     Result checkout(ShoppingCartDto shoppingCartDto);
+
+    /**
+     * 刷新商品
+     *
+     * @param shoppingCartDto
+     * @return
+     */
+    Result<List<ShoppingCartVo>> refresh(ShoppingCartDto shoppingCartDto);
 
 
 }
