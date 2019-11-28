@@ -1,14 +1,15 @@
 package com.xingyun.bbc.mallpc.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.utils.RequestHolder;
 import com.xingyun.bbc.order.api.OrderPaymentCenterApi;
 import com.xingyun.bbc.order.model.dto.order.OrderCanelDto;
 import com.xingyun.bbc.order.model.dto.order.OrderDetailDto;
-import com.xingyun.bbc.order.model.dto.order.OrderPaymentDto;
+import com.xingyun.bbc.order.model.dto.order.QueryOrderListForPCDto;
 import com.xingyun.bbc.order.model.vo.order.OrderCancelVo;
 import com.xingyun.bbc.order.model.vo.order.OrderDetailVo;
-import com.xingyun.bbc.order.model.vo.order.OrderPaymentVo;
+import com.xingyun.bbc.order.model.vo.order.OrderListBaseVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
@@ -19,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author Administrator
@@ -41,11 +41,11 @@ public class OrderPaymentController {
 
     @ApiOperation("查询订单列表")
     @PostMapping("/selectOrderList")
-    public Result<OrderPaymentVo> selectOrderList(@RequestBody OrderPaymentDto orderPaymentDto, HttpServletRequest request) {
-        logger.info("查询订单列表" + orderPaymentDto.toString());
+    public Result<OrderListBaseVo> selectOrderList(@RequestBody QueryOrderListForPCDto queryOrderListForPCDto) {
+        logger.info("查询订单列表：{}", JSON.toJSONString(queryOrderListForPCDto));
         Long fuid = RequestHolder.getUserId();
-        orderPaymentDto.setFuid(fuid);
-        return orderPaymentApi.selectOrderList(orderPaymentDto);
+        queryOrderListForPCDto.setFuid(fuid);
+        return orderPaymentApi.selectPCOrderList(queryOrderListForPCDto);
     }
 
     @ApiOperation("查询订单详情")
