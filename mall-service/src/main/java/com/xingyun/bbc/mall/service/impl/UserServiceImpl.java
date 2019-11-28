@@ -141,6 +141,7 @@ public class UserServiceImpl implements UserService {
         information.setFuid(fuid);
         information.setFloginMethod("手机端");
         information.setFloginSite("");
+        information.setFipAdress("");
         if(dto.getOsVersion() != null){
             information.setFoperatingSystem(dto.getOsVersion());
         }else{
