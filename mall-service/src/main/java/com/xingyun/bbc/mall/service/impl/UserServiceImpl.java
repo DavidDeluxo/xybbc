@@ -2,6 +2,10 @@ package com.xingyun.bbc.mall.service.impl;
 
 import com.google.common.base.Strings;
 import com.xingyun.bbc.activity.api.CouponProviderApi;
+import com.xingyun.bbc.activity.enums.CouponScene;
+import com.xingyun.bbc.activity.model.dto.CouponQueryDto;
+import com.xingyun.bbc.activity.model.dto.CouponReleaseDto;
+import com.xingyun.bbc.activity.model.vo.CouponQueryVo;
 import com.xingyun.bbc.common.jwt.XyUserJwtManager;
 import com.xingyun.bbc.common.redis.XyRedisManager;
 import com.xingyun.bbc.core.enums.ResultStatus;
