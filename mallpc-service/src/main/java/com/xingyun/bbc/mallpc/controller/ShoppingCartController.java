@@ -3,6 +3,7 @@ package com.xingyun.bbc.mallpc.controller;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.dto.shoppingcart.ShoppingCartDto;
 import com.xingyun.bbc.mallpc.model.validation.ShoppingCartValidator;
+import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartGoodsVo;
 import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartVo;
 import com.xingyun.bbc.mallpc.service.ShoppingCartService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,7 +103,7 @@ public class ShoppingCartController {
      * @return
      */
     @PostMapping("refresh")
-    public Result<List<ShoppingCartVo>> refresh(@RequestBody @Validated(ShoppingCartValidator.Refresh.class) ShoppingCartDto shoppingCartDto) {
+    public Result<List<ShoppingCartGoodsVo>> refresh(@RequestBody @Validated(ShoppingCartValidator.Refresh.class) ShoppingCartDto shoppingCartDto) {
         return shoppingCartService.refresh(shoppingCartDto);
     }
 

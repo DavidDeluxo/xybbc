@@ -2,6 +2,7 @@ package com.xingyun.bbc.mallpc.service;
 
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.dto.shoppingcart.ShoppingCartDto;
+import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartGoodsVo;
 import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartVo;
 
 import java.util.List;
@@ -68,7 +69,7 @@ public interface ShoppingCartService {
      * @param shoppingCartDto
      * @return
      */
-    Result<List<ShoppingCartVo>> refresh(ShoppingCartDto shoppingCartDto);
+    Result<List<ShoppingCartGoodsVo>> refresh(ShoppingCartDto shoppingCartDto);
 
 
 }
