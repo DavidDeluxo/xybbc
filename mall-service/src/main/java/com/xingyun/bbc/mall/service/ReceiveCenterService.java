@@ -1,11 +1,8 @@
 package com.xingyun.bbc.mall.service;
 
-import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
+import com.xingyun.bbc.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.core.utils.Result;
-
 import com.xingyun.bbc.mall.model.vo.ReceiveCenterCouponVo;
-
-
 
 import java.util.List;
 

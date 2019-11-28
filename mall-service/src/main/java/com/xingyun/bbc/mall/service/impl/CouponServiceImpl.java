@@ -1,7 +1,7 @@
 package com.xingyun.bbc.mall.service.impl;
 
 import com.google.common.collect.Lists;
-import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
+import com.xingyun.bbc.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.CouponApi;
 import com.xingyun.bbc.core.market.api.CouponApplicableSkuApi;
@@ -426,7 +426,6 @@ public class CouponServiceImpl implements CouponService {
         }
         return size;
     }
-
 
 
 }

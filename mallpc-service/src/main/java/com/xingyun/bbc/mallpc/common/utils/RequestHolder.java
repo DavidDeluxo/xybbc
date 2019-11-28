@@ -9,7 +9,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Enumeration;
 
 /**
  * @author nick
@@ -32,16 +31,6 @@ public class RequestHolder {
      */
     public static Long getUserId() {
         String adminId = getRequest().getHeader(PermissionEnums.ACCESS_TOKEN_XYID.getCode());
-        log.info("request real type=====>{}",getRequest().getClass().getName());
-        //获取所有的头部参数
-        Enumeration<String> headerNames = getRequest().getHeaderNames();
-        log.info("==========start===========");
-        while (headerNames.hasMoreElements()) {
-            String headName = headerNames.nextElement();
-            String header = getRequest().getHeader(headName);
-            log.info("headName:{}  headVal:{}\r\n", headName, header);
-        }
-        log.info("==========end===========");
         Ensure.that(adminId).isNotBlank(MallPcExceptionCode.USER_NOT_LOGGED_IN);
         return Long.valueOf(adminId);
     }

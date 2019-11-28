@@ -1,11 +1,11 @@
 package com.xingyun.bbc.mallpc.service.impl;
 
 import cn.hutool.http.HttpUtil;
+import com.xingyun.bbc.activity.api.CouponProviderApi;
+import com.xingyun.bbc.activity.enums.CouponScene;
+import com.xingyun.bbc.activity.model.dto.CouponReleaseDto;
 import com.xingyun.bbc.common.jwt.XyUserJwtManager;
 import com.xingyun.bbc.common.redis.XyRedisManager;
-import com.xingyun.bbc.core.activity.api.CouponProviderApi;
-import com.xingyun.bbc.core.activity.enums.CouponScene;
-import com.xingyun.bbc.core.activity.model.dto.CouponReleaseDto;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.helper.api.SMSApi;
@@ -396,7 +396,7 @@ public class UserServiceImpl implements UserService {
         return Result.success(myCouponVo);
     }
 
-    private Integer getCouponByStatus(Long userId,Integer fuserCouponStatus) {
+    private Integer getCouponByStatus(Long userId, Integer fuserCouponStatus) {
         Criteria<CouponReceive, Object> criteriaStatus = Criteria.of(CouponReceive.class)
                 .andEqualTo(CouponReceive::getFuid, userId)
                 .andEqualTo(CouponReceive::getFuserCouponStatus, fuserCouponStatus);

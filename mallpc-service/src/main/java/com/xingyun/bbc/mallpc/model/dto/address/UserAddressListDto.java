@@ -24,4 +24,7 @@ public class UserAddressListDto extends PageDto {
     @ApiModelProperty("身份证号码")
     private String fdeliveryCardid;
 
+    @ApiModelProperty("是否为默认地址0 不是 1是")
+    private Integer isDefault;
+
 }
