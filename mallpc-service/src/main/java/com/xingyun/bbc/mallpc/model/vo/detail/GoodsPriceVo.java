@@ -55,4 +55,6 @@ public class GoodsPriceVo implements Serializable {
     @ApiModelProperty("发货仓")
     private String fwarehouseName;
 
+    @ApiModelProperty("是否展示运费")
+    private boolean showFreightPrice = true;
 }
