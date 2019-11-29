@@ -17,6 +17,7 @@ import com.xingyun.bbc.order.model.dto.cart.*;
 import com.xingyun.bbc.order.model.dto.order.OrderSettleDto;
 import com.xingyun.bbc.order.model.vo.PageVo;
 import com.xingyun.bbc.order.model.vo.cart.CartsVo;
+import com.xingyun.bbc.order.model.vo.order.OrderSettleVo;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -163,7 +164,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
      * @return
      */
     @Override
-    public Result checkout(ShoppingCartDto shoppingCartDto) {
+    public Result<OrderSettleVo> checkout(ShoppingCartDto shoppingCartDto) {
         OrderSettleDto orderSettleDto = new OrderSettleDto();
         orderSettleDto.setFuid(RequestHolder.getUserId());
         orderSettleDto.setFshopcarIds(StringUtils.join(shoppingCartDto.getIds(), ","));
