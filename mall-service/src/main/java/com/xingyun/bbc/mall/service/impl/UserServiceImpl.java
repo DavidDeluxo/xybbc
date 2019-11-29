@@ -427,7 +427,7 @@ public class UserServiceImpl implements UserService {
     /**
      * 更新用户注册总数
      */
-    @Async("taskExecutor")
+    @Async("threadPoolTaskExecutor")
     void incrUserCount() {
         if (redisHolder.exists(USER_COUNT)) {
             redisHolder.incr(USER_COUNT);
