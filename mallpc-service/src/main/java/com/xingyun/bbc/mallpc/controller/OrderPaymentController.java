@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mallpc.controller;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.utils.RequestHolder;
 import com.xingyun.bbc.order.api.OrderPaymentCenterApi;
@@ -9,7 +10,6 @@ import com.xingyun.bbc.order.model.dto.order.OrderDetailDto;
 import com.xingyun.bbc.order.model.dto.order.QueryOrderListForPCDto;
 import com.xingyun.bbc.order.model.vo.order.OrderCancelVo;
 import com.xingyun.bbc.order.model.vo.order.OrderDetailVo;
-import com.xingyun.bbc.order.model.vo.order.OrderListBaseVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
@@ -41,7 +41,7 @@ public class OrderPaymentController {
 
     @ApiOperation("查询订单列表")
     @PostMapping("/selectOrderList")
-    public Result<OrderListBaseVo> selectOrderList(@RequestBody QueryOrderListForPCDto queryOrderListForPCDto) {
+    public Result<JSONObject> selectOrderList(@RequestBody QueryOrderListForPCDto queryOrderListForPCDto) {
         logger.info("查询订单列表：{}", JSON.toJSONString(queryOrderListForPCDto));
         Long fuid = RequestHolder.getUserId();
         queryOrderListForPCDto.setFuid(fuid);
