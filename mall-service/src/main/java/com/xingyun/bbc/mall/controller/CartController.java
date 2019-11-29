@@ -56,7 +56,9 @@ public class CartController {
         Long fuid = UserUtil.uid(request);
         log.info("|接口:|查询购物车|请求参数:{}|", JSON.toJSONString(queryCartDto));
         try {
-            Result<List<Shopcar>> idsRes = shopcarApi.queryByCriteria(Criteria.of(Shopcar.class).andEqualTo(Shopcar::getFuid, fuid).fields(Shopcar::getFshopcarId));
+            Result<List<Shopcar>> idsRes = shopcarApi.queryByCriteria(Criteria.of(Shopcar.class)
+                    .andEqualTo(Shopcar::getFuid, fuid).fields(Shopcar::getFshopcarId)
+                    .sortDesc(Shopcar::getFcreateTime).page(queryCartDto.getPageNum(),queryCartDto.getPageSize()));
             if (idsRes.isSuccess()&& CollectionUtils.isNotEmpty(idsRes.getData())){
                 List<Long> ids = idsRes.getData().stream().map(Shopcar::getFshopcarId).collect(Collectors.toList());
                 cartApi.refresh(new CartRefreshDto().setShopCarIds(ids).setUserId(fuid));
