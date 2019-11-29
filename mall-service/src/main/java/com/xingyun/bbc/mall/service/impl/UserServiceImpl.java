@@ -454,7 +454,8 @@ public class UserServiceImpl implements UserService {
         Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)
                 .andEqualTo(Coupon::getFcouponStatus, 2)
                 .andEqualTo(Coupon::getFreleaseType, 3)
-                .andNotEqualTo(Coupon::getFsurplusReleaseQty, 0);
+                .andNotEqualTo(Coupon::getFsurplusReleaseQty, 0)
+                .fields(Coupon::getFsurplusReleaseQty,Coupon::getFvalidityType,Coupon::getFvalidityEnd,Coupon::getFperLimit,Coupon::getFcouponId);
         Result<List<Coupon>> listResult = couponApi.queryByCriteria(couponCriteria);
         if (listResult.isSuccess()) {
             for (Coupon coupon : listResult.getData()) {
