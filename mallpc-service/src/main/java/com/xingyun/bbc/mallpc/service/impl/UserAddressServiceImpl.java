@@ -233,4 +233,23 @@ public class UserAddressServiceImpl implements UserAddressService {
             return convertor.convert(userDelivery, UserAddressDetailsVo.class);
         }
     }
+
+    @Override
+    public Result<List<UserAddressListVo>> queryAddress(UserAddressListDto userAddressListDto) {
+        String keyword = userAddressListDto.getKeyword();
+        Criteria<UserDelivery, Object> deliveryCondition = Criteria.of(UserDelivery.class)
+                .sortDesc(UserDelivery::getFmodifyTime)
+                .andEqualTo(UserDelivery::getFuid, RequestHolder.getUserId())
+                .andEqualTo(UserDelivery::getFisDelete,  BooleanNum.FALSE.getCode());
+        if (StringUtil.isNotBlank(keyword)) {
+            deliveryCondition.andLeft().andLike(UserDelivery::getFdeliveryName, keyword+"%").orLike(UserDelivery::getFdeliveryMobile,keyword+"%").addRight();
+        }
+        System.out.println(deliveryCondition.buildSql());
+        // 分页
+        Result<List<UserDelivery>> userDeliveryResult = userDeliveryApi.queryByCriteria(deliveryCondition.page(userAddressListDto.getCurrentPage(), userAddressListDto.getPageSize()));
+        Ensure.that(userDeliveryResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+        List<UserDelivery> userDeliveryList = userDeliveryResult.getData();
+        List<UserAddressListVo> vos = userDeliveryList.stream().map(userDelivery -> convertAddress(userDelivery)).collect(toList());
+        return Result.success(vos);
+    }
 }
