@@ -4,10 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.UserUtil;
 import com.xingyun.bbc.order.api.CartApi;
-import com.xingyun.bbc.order.model.dto.cart.AddCartDto;
-import com.xingyun.bbc.order.model.dto.cart.CartClearDto;
-import com.xingyun.bbc.order.model.dto.cart.CartNumDto;
-import com.xingyun.bbc.order.model.dto.cart.QueryCartDto;
+import com.xingyun.bbc.order.model.dto.cart.*;
 import com.xingyun.bbc.order.model.vo.PageVo;
 import com.xingyun.bbc.order.model.vo.cart.CartsVo;
 import io.swagger.annotations.Api;
@@ -19,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.List;
 
 /**
  * @author hekaijin
@@ -74,4 +72,10 @@ public class CartController {
     }
 
 
+    @ApiOperation("刷新商品")
+    @PostMapping("refresh")
+    public Result<List<CartsVo>> refresh(@RequestBody CartClearDto refreshDto,HttpServletRequest request) {
+        Long fuid = UserUtil.uid(request);
+        return cartApi.refresh(new CartRefreshDto().setShopCarIds(refreshDto.getFshopcarIds()).setUserId(fuid));
+    }
 }
