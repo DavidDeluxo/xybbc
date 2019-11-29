@@ -28,8 +28,10 @@ import com.xingyun.bbc.core.operate.po.MarketUserStatistics;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserAccountApi;
 import com.xingyun.bbc.core.user.api.UserApi;
+import com.xingyun.bbc.core.user.api.UserLoginInformationApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.user.po.UserAccount;
+import com.xingyun.bbc.core.user.po.UserLoginInformation;
 import com.xingyun.bbc.core.utils.DateUtil;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.core.utils.StringUtil;
@@ -52,11 +54,13 @@ import com.xingyun.bbc.mallpc.model.vo.coupon.MyCouponVo;
 import com.xingyun.bbc.mallpc.model.vo.user.SendSmsCodeVo;
 import com.xingyun.bbc.mallpc.model.vo.user.UserLoginVo;
 import com.xingyun.bbc.mallpc.service.UserService;
+import eu.bitwalker.useragentutils.UserAgent;
 import io.seata.spring.annotation.GlobalTransactional;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -129,6 +133,9 @@ public class UserServiceImpl implements UserService {
     @Resource
     private XybbcLock xybbcLock;
 
+    @Autowired
+    private UserLoginInformationApi userLoginInformationApi;
+
     /**
      * @author nick
      * @date 2019-11-19
@@ -154,7 +161,24 @@ public class UserServiceImpl implements UserService {
         user.setFuid(userLoginVo.getFuid());
         user.setFlastloginTime(new Date());
         userApi.updateNotNull(user);
+        //更新用户登录信息
+        updateUserLoginInformation(userLoginVo.getFuid());
         return Result.success(userLoginVo);
+    }
+
+    private void updateUserLoginInformation(Long fuid) {
+        UserLoginInformation information = new UserLoginInformation();
+        information.setFuid(fuid);
+        information.setFloginMethod("PC端");
+        information.setFloginSite("");
+        information.setFipAdress(HttpUtil.getClientIP(RequestHolder.getRequest()));
+        String ua = RequestHolder.getRequest().getHeader("User-Agent");
+        UserAgent userAgent = UserAgent.parseUserAgentString(ua);
+        information.setFunitType(userAgent.getBrowser().getName());
+        information.setFoperatingSystem(userAgent.getOperatingSystem().getName());
+        information.setFuniqueIdentificationCode("");
+        information.setFphysicalAddress("");
+        userLoginInformationApi.create(information);
     }
 
     private UserLoginVo createToken(User user) {
