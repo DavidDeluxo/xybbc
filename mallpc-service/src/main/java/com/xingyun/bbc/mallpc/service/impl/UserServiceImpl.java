@@ -168,9 +168,7 @@ public class UserServiceImpl implements UserService {
         information.setFuid(fuid);
         information.setFloginMethod("PC端");
         information.setFloginSite("");
-        if(RequestHolder.getRequest().getHeader("x-real-ip") != null){
-            information.setFipAdress(RequestHolder.getRequest().getHeader("x-real-ip"));
-        }
+        information.setFipAdress(HttpUtil.getClientIP(RequestHolder.getRequest()));
         String ua = RequestHolder.getRequest().getHeader("user-agent");
         UserAgent userAgent = UserAgent.parseUserAgentString(ua);
         information.setFunitType(userAgent.getBrowser().getName());
