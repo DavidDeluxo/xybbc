@@ -1466,23 +1466,28 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 .andEqualTo(CouponApplicableSkuCondition::getFcouponId, fcouponId)
                 .fields(CouponApplicableSkuCondition::getFbrandName,
                         CouponApplicableSkuCondition::getFcategoryName,
-                        CouponApplicableSkuCondition::getFtradeName));
+                        CouponApplicableSkuCondition::getFtradeName,
+                        CouponApplicableSkuCondition::getFlabelName));
         CouponApplicableSkuCondition conditionData = conditionResult.getData();
         if (!conditionResult.isSuccess() || null == conditionData) {
             return result;
         }
         StringBuffer resBf = new StringBuffer();
-        String ftradeName = conditionData.getFtradeName();
-        if (!StringUtils.isEmpty(ftradeName)) {
-            resBf.append("贸易类型：").append("\n").append("仅可以购买 ").append(ftradeName.substring(1, ftradeName.length() - 1)).append("\n");
-        }
         String fcategoryName = conditionData.getFcategoryName();
         if (!StringUtils.isEmpty(fcategoryName)) {
-            resBf.append("品类：").append("\n").append("仅可以购买 ").append(fcategoryName.substring(1, fcategoryName.length() - 1)).append("\n");
+            resBf.append("分类：").append("\n").append("仅可以购买 ").append(fcategoryName.substring(1, fcategoryName.length() - 1)).append("\n");
         }
         String fbrandName = conditionData.getFbrandName();
         if (!StringUtils.isEmpty(fbrandName)) {
             resBf.append("品牌：").append("\n").append("仅可以购买 ").append(fbrandName.substring(1, fbrandName.length() - 1)).append("\n");
+        }
+        String ftradeName = conditionData.getFtradeName();
+        if (!StringUtils.isEmpty(ftradeName)) {
+            resBf.append("贸易类型：").append("\n").append("仅可以购买 ").append(ftradeName.substring(1, ftradeName.length() - 1)).append("\n");
+        }
+        String flabelName = conditionData.getFlabelName();
+        if (!StringUtils.isEmpty(flabelName)) {
+            resBf.append("标签：").append("\n").append("仅可以购买 ").append(flabelName.substring(1, flabelName.length() - 1));
         }
         result = resBf.toString();
         return result;
@@ -1543,7 +1548,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         String lockValue = RandomUtils.getUUID();
         try {
 //            //绑定用户和优惠券关系
-//            Ensure.that(xybbcLock.tryLockTimes(lockKey, lockValue, 3, 6)).isTrue(MallExceptionCode.SYSTEM_BUSY_ERROR);
+            Ensure.that(xybbcLock.tryLockTimes(lockKey, lockValue, 3, 6)).isTrue(MallExceptionCode.SYSTEM_BUSY_ERROR);
 //            CouponBindUser couponBindUser = new CouponBindUser();
 //            couponBindUser.setFcouponId(fcouponId);
 //            couponBindUser.setFuid(fuid);

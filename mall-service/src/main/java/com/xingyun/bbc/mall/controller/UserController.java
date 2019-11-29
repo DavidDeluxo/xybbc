@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.controller;
 
+import cn.hutool.http.HttpUtil;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.po.UserVerify;
 import com.xingyun.bbc.core.utils.Result;
@@ -31,7 +32,7 @@ public class UserController {
     @ApiOperation("登陆")
     @PostMapping("/via/userLogin")
     public Result<UserLoginVo> userLogin(@RequestBody UserLoginDto dto,HttpServletRequest request) {
-        dto.setIpAddress(getUserIpAddress(request));
+        dto.setIpAddress(HttpUtil.getClientIP(request));
         return userService.userLogin(dto);
     }
 
@@ -185,23 +186,5 @@ public class UserController {
     public Result<Integer> getUnusedCouponCount(HttpServletRequest request){
         Long fuid = Long.parseLong(request.getHeader("xyid"));
         return userService.getUnusedCouponCount(fuid);
-    }
-
-    private String getUserIpAddress(HttpServletRequest request) {
-        String ip = request.getHeader("x-forwarded-for");
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        if (ip.contains(",")) {
-            return ip.split(",")[0];
-        } else {
-            return ip;
-        }
     }
 }
