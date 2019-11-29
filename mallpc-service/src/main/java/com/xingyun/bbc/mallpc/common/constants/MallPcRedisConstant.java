@@ -23,11 +23,11 @@ public interface MallPcRedisConstant {
     /**
      * 首页用户数
      */
-    String INDEX_USER_COUNT = KEY_PREFIX+"index_user_count";
+    String USER_COUNT = "user_count";
     /**
      * 首页用户数缓存更新分布式锁前缀
      */
-    String INDEX_USER_COUNT_UPDATE = INDEX_USER_COUNT+"_lock";
+    String USER_COUNT_LOCK = "user_count_lock";
 
     /**
      * 首页一级分类下热门品牌数据

@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mallpc.common.components.lock.impl;
 
+import com.xingyun.bbc.mallpc.common.components.lock.Execute;
 import com.xingyun.bbc.mallpc.common.components.lock.XybbcLock;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
@@ -77,6 +78,35 @@ public class RedisLock implements XybbcLock {
         try {
             success = this.tryLock(key, value, expiring);
             consumer.accept(success);
+        } finally {
+            if (success) {
+                this.releaseLock(key, value);
+            }
+        }
+    }
+
+    /**
+     * 重试20次，最多锁10秒
+     * @param key
+     * @param execute
+     */
+    @Override
+    public void tryLock(String key, Execute execute) {
+        String value = RandomUtils.getUUID();
+        boolean success = false;
+        try {
+            for (int i = 0; i < 20; i++) {
+                success = this.tryLock(key, value, 10);
+                if (success) {
+                    execute.execute();
+                    break;
+                }
+                try {
+                    TimeUnit.MILLISECONDS.sleep(RandomUtils.randomInt(100) + 1);
+                } catch (InterruptedException e) {
+                    log.error("tryLockTimes sleep error...", e);
+                }
+            }
         } finally {
             if (success) {
                 this.releaseLock(key, value);

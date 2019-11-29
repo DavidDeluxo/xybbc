@@ -35,6 +35,8 @@ import com.xingyun.bbc.mall.base.enums.*;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.EncryptUtils;
 import com.xingyun.bbc.mall.base.utils.Md5Utils;
+import com.xingyun.bbc.mall.common.RedisHolder;
+import com.xingyun.bbc.mall.common.constans.MallRedisConstant;
 import com.xingyun.bbc.mall.common.constans.UserConstants;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.common.lock.XybbcLock;
@@ -48,6 +50,7 @@ import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -55,6 +58,9 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.xingyun.bbc.mall.common.constans.MallRedisConstant.USER_COUNT;
+import static com.xingyun.bbc.mall.common.constans.MallRedisConstant.USER_COUNT_LOCK;
 
 /**
  * @author ZSY
@@ -102,6 +108,9 @@ public class UserServiceImpl implements UserService {
     private DozerHolder dozerHolder;
     @Autowired
     private XybbcLock xybbcLock;
+    @Autowired
+    private RedisHolder redisHolder;
+
     @Autowired
     private UserLoginInformationApi userLoginInformationApi;
 
@@ -411,7 +420,31 @@ public class UserServiceImpl implements UserService {
         couponNum = receiveCoupon(userLoginVo.getFuid());
         //当couponNum大于0时,前端提示"你获得+couponNum+张优惠券"
         userLoginVo.setCouponRegisterNum(couponNum);
+        incrUserCount();
         return Result.success(userLoginVo);
+    }
+
+    /**
+     * 更新用户注册总数
+     */
+    @Async("taskExecutor")
+    void incrUserCount() {
+        if (redisHolder.exists(USER_COUNT)) {
+            redisHolder.incr(USER_COUNT);
+        } else {
+            xybbcLock.tryLock(USER_COUNT_LOCK, () -> {
+                if (redisHolder.exists(USER_COUNT)) {
+                    redisHolder.incr(USER_COUNT);
+                    return;
+                }
+                User user = new User();
+                Result<Integer> result = userApi.count(user);
+                if (result.getData() != null && result.getData() > 0) {
+                    redisHolder.setnx(USER_COUNT, result.getData());
+                    redisHolder.incr(USER_COUNT);
+                }
+            });
+        }
     }
 
     private Integer receiveCoupon(Long fuid) {

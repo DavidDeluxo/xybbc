@@ -34,6 +34,8 @@ import com.xingyun.bbc.core.utils.DateUtil;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.core.utils.StringUtil;
 import com.xingyun.bbc.mallpc.common.components.DozerHolder;
+import com.xingyun.bbc.mallpc.common.components.RedisHolder;
+import com.xingyun.bbc.mallpc.common.components.lock.XybbcLock;
 import com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant;
 import com.xingyun.bbc.mallpc.common.constants.UserConstants;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
@@ -55,6 +57,7 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -63,6 +66,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+
+import static com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant.USER_COUNT;
+import static com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant.USER_COUNT_LOCK;
 
 /**
  * @author nick
@@ -116,6 +122,12 @@ public class UserServiceImpl implements UserService {
 
     @Resource
     private PageUtils pageUtils;
+
+    @Resource
+    private RedisHolder redisHolder;
+
+    @Resource
+    private XybbcLock xybbcLock;
 
     /**
      * @author nick
@@ -230,7 +242,32 @@ public class UserServiceImpl implements UserService {
         }
         // 注册成功系统赠送优惠券
         receiveCoupon(fuid);
+        // 异步更新用户数量
+        incrUserCount();
         return Result.success(userLoginVo);
+    }
+
+    /**
+     * 更新用户注册总数
+     */
+    @Async("taskExecutor")
+    void incrUserCount() {
+        if (redisHolder.exists(USER_COUNT)) {
+            redisHolder.incr(USER_COUNT);
+        } else {
+            xybbcLock.tryLock(USER_COUNT_LOCK, () -> {
+                if (redisHolder.exists(USER_COUNT)) {
+                    redisHolder.incr(USER_COUNT);
+                    return;
+                }
+                User user = new User();
+                Result<Integer> result = userApi.count(user);
+                if (result.getData() != null && result.getData() > 0) {
+                    redisHolder.setnx(USER_COUNT, result.getData());
+                    redisHolder.incr(USER_COUNT);
+                }
+            });
+        }
     }
 
     private boolean checkVerifyCode(String fmobile, String verifyCode) {

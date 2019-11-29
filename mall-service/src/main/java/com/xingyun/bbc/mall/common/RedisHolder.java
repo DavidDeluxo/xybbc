@@ -1,9 +1,9 @@
-package com.xingyun.bbc.mallpc.common.components;
+package com.xingyun.bbc.mall.common;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
-import com.xingyun.bbc.mallpc.common.utils.DateUtils;
+import com.xingyun.bbc.mall.base.utils.DateUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -44,12 +44,6 @@ public class CacheTemplate {
         boolean getLock = false;
         String value = RandomUtils.getUUID();
         try {
-            //分布式锁
-//            getLock = xybbcLock.tryLock(updateKey, DEFAULT_LOCK_VALUE, DEFAULT_LOCK_EXPIRING);
-//            if (!getLock) {
-//                log.info("分布式锁获取失败，直接从数据库查询");
-//                return cacheCallBack.callBack();
-//            }
             Ensure.that(getLock = xybbcLock.tryLockTimes(updateKey, value, TRY_TIMES, DEFAULT_LOCK_EXPIRING)).isTrue(MallPcExceptionCode.SYSTEM_BUSY_ERROR);
             //获取锁后再查询一次缓存是否有值，有直接返回
             if (redisHolder.exists(key)) {
