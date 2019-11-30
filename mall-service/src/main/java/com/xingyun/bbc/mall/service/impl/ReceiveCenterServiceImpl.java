@@ -105,7 +105,8 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
                 .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
                 .andEqualTo(Coupon::getFreleaseType, CouponReleaseTypeEnum.COUPON_CODE_ACTIVATION.getCode())
                 .fields(Coupon::getFperLimit, Coupon::getFsurplusReleaseQty, Coupon::getFvalidityType,
-                        Coupon::getFvalidityEnd, Coupon::getFreleaseTimeEnd, Coupon::getFreleaseTimeType, Coupon::getFcouponId
+                        Coupon::getFvalidityEnd, Coupon::getFreleaseTimeEnd, Coupon::getFreleaseTimeStart,
+                        Coupon::getFreleaseTimeType, Coupon::getFcouponId
                 ));
         if (!couponResult.isSuccess()) {
             logger.error("查询优惠券失败，fcouponId{}", couponCode.getData().getFcouponId());
@@ -138,8 +139,10 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         //校验该券领取上限
-        if (null != countResult.getData() && countResult.getData().equals(coupon.getFperLimit())) {
-            throw new BizException(MallExceptionCode.COUPON_IS_OUT_OF_LIMIT);
+        if (null != countResult.getData()) {
+            if (countResult.getData().equals(coupon.getFperLimit())) {
+                throw new BizException(MallExceptionCode.COUPON_IS_MAX);
+            }
         }
         //校验券码对应的券和指定会员关系
         CouponQueryDto couponQueryDto = new CouponQueryDto();
