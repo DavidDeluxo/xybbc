@@ -19,7 +19,11 @@ import com.xingyun.bbc.core.market.po.Coupon;
 import com.xingyun.bbc.core.market.po.CouponBindUser;
 import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
+import com.xingyun.bbc.core.operate.api.MarketUserApi;
+import com.xingyun.bbc.core.operate.api.MarketUserStatisticsApi;
 import com.xingyun.bbc.core.operate.po.CityRegion;
+import com.xingyun.bbc.core.operate.po.MarketUser;
+import com.xingyun.bbc.core.operate.po.MarketUserStatistics;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserAccountApi;
 import com.xingyun.bbc.core.user.api.UserApi;
@@ -36,7 +40,6 @@ import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.EncryptUtils;
 import com.xingyun.bbc.mall.base.utils.Md5Utils;
 import com.xingyun.bbc.mall.common.RedisHolder;
-import com.xingyun.bbc.mall.common.constans.MallRedisConstant;
 import com.xingyun.bbc.mall.common.constans.UserConstants;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.common.lock.XybbcLock;
@@ -110,7 +113,10 @@ public class UserServiceImpl implements UserService {
     private XybbcLock xybbcLock;
     @Autowired
     private RedisHolder redisHolder;
-
+    @Autowired
+    private MarketUserApi marketUserApi;
+    @Autowired
+    private MarketUserStatisticsApi marketUserStatisticsApi;
     @Autowired
     private UserLoginInformationApi userLoginInformationApi;
 
@@ -373,6 +379,7 @@ public class UserServiceImpl implements UserService {
     @GlobalTransactional
     public Result<UserLoginVo> registerUser(UserRegisterDto dto) {
         User user = new User();
+        MarketUser marketUser = null;
         String mobile = dto.getFmobile();
         //手机号是否注册校验
         boolean CheckExist = CheckMobileExist(mobile);
@@ -384,6 +391,17 @@ public class UserServiceImpl implements UserService {
             throw new BizException(MallResultStatus.LOGIN_FAILURE);
         }
         passWord = Md5Utils.toMd5(passWord);
+        if(dto.getFinviter() != null && !dto.getFinviter().equals("")){
+            Result<MarketUser> marketUserResult = marketUserApi.queryOneByCriteria(Criteria.of(MarketUser.class)
+                    .fields(MarketUser::getFuid, MarketUser::getFextensionCode)
+                    .andEqualTo(MarketUser::getFextensionCode, dto.getFinviter()));
+            if(marketUserResult.getData() != null){
+                marketUser = marketUserResult.getData();
+            }else {
+                return Result.failure(MallResultStatus.EXTENSION_CODE_NOT_EXIST);
+            }
+            user.setFinviter(dto.getFinviter());
+        }
         user.setFregisterFrom(dto.getFregisterFrom());
         user.setFmobile(dto.getFmobile());
         user.setFuname(dto.getFmobile());
@@ -415,13 +433,48 @@ public class UserServiceImpl implements UserService {
         if (userLoginVo == null) {
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
         }
+        if(marketUser != null){
+            updateMarketUserStatistics(marketUser,userAccount.getFuid());
+        }
         //领取注册优惠券和新人邀请券
         Integer couponNum = 0;
-        couponNum = receiveCoupon(userLoginVo.getFuid());
-        //当couponNum大于0时,前端提示"你获得+couponNum+张优惠券"
+        couponNum = queryRegistCoupon(userLoginVo.getFuid());
+        //当couponNum大于0时,前端提示"你有注册优惠券发放到账户"
         userLoginVo.setCouponRegisterNum(couponNum);
         incrUserCount();
         return Result.success(userLoginVo);
+    }
+
+    private void updateMarketUserStatistics(MarketUser marketUser, Long fuid) {
+        // 保存统计表
+        MarketUserStatistics marketUserStatistics = new MarketUserStatistics();
+        marketUserStatistics.setFextensionCode(marketUser.getFextensionCode());
+        marketUserStatistics.setFuid(marketUser.getFuid());
+        marketUserStatistics.setFinvitorUid(fuid);
+        marketUserStatisticsApi.create(marketUserStatistics);
+    }
+
+    private Integer queryRegistCoupon(Long fuid) {
+        Integer count = 0;
+        Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)
+                .andEqualTo(Coupon::getFcouponStatus, 2)
+                .andEqualTo(Coupon::getFreleaseType, 3)
+                .andGreaterThan(Coupon::getFsurplusReleaseQty, 0)
+                .andLeft()
+                .andEqualTo(Coupon::getFvalidityType,2)
+                .orLeft()
+                .orEqualTo(Coupon::getFvalidityType,1)
+                .andGreaterThan(Coupon::getFvalidityEnd,0)
+                .addRight()
+                .addRight();
+        Result<Integer> integerResult = couponApi.countByCriteria(couponCriteria);
+        if(integerResult.getData() != null){
+            if(!integerResult.getData().equals(count)){
+                count = integerResult.getData();
+            }
+        }
+        receiveCoupon(fuid);
+        return count;
     }
 
     /**
@@ -447,8 +500,7 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private Integer receiveCoupon(Long fuid) {
-        Integer couponNum = 0;
+    private void receiveCoupon(Long fuid) {
         //查询可用注册优惠券
         Date date = new Date();
         Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)
@@ -476,10 +528,8 @@ public class UserServiceImpl implements UserService {
                 //每人限领张数
                 couponDto.setReceiveQty(fperLimit);
                 couponProviderApi.receive(couponDto);
-                couponNum = couponNum + fperLimit;
             }
         }
-        return couponNum;
     }
 
     @Override

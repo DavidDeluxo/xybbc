@@ -318,6 +318,7 @@ public class UserAccountServiceImpl implements UserAccountService {
     @Override
     public AccountBaseInfoVo accountInfo(Long uid) {
         Result<List<UserAccount>> listResult = userAccountApi.queryByCriteria(Criteria.of(UserAccount.class)
+                .fields(UserAccount::getFbalance,UserAccount::getFfreezeWithdraw)
                 .andEqualTo(UserAccount::getFuid, uid));
         Ensure.that(listResult).isNotEmptyData(MallPcExceptionCode.PARAM_ERROR);
 
@@ -355,7 +356,13 @@ public class UserAccountServiceImpl implements UserAccountService {
             accountDetailVo.setFpassedTime(userWork.getFmodifyTime());
         } else {
             Result<List<UserAccountTrans>> userAccountTransResult = userAccountTransApi.queryByCriteria(Criteria.of(UserAccountTrans.class)
-                    .andEqualTo(UserAccountTrans::getFtransId, id));
+                    .andEqualTo(UserAccountTrans::getFtransId, id)
+            .fields(UserAccountTrans::getFcreateTime,UserAccountTrans::getFrechargeType,UserAccountTrans::getFaccountHolder,UserAccountTrans::getFaid
+            ,UserAccountTrans::getFcheckAid,UserAccountTrans::getFmodifyTime,UserAccountTrans::getFpassedTime,UserAccountTrans::getFpayTime,UserAccountTrans::getFpayVoucher
+            ,UserAccountTrans::getFreceiptOrderId,UserAccountTrans::getFremark,UserAccountTrans::getFtransActualAmount,UserAccountTrans::getFtransAmount
+            ,UserAccountTrans::getFtransCreditType,UserAccountTrans::getFtransId,UserAccountTrans::getFtransMethod,UserAccountTrans::getFtransPoundage,UserAccountTrans::getFtransReason
+            ,UserAccountTrans::getFtransStatus,UserAccountTrans::getFtransThdDetail,UserAccountTrans::getFtransThdUid,UserAccountTrans::getFtransTypes
+            ,UserAccountTrans::getFuid,UserAccountTrans::getFwithdrawAccount,UserAccountTrans::getFwithdrawBank,UserAccountTrans::getFwithdrawType));
             Ensure.that(userAccountTransResult).isNotEmptyData(new MallPcExceptionCode(userAccountTransResult.getCode(), userAccountTransResult.getMsg()));
 
             accountDetailVo = dozerHolder.convert(userAccountTransResult.getData().get(0), AccountDetailVo.class);
@@ -403,7 +410,9 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     private AccountDetailVo getInOutDetail(String id) {
         Result<List<UserDetail>> listResult = userDetailApi.queryByCriteria(Criteria.of(UserDetail.class)
-                .andEqualTo(UserDetail::getFdetailId, id));
+                .andEqualTo(UserDetail::getFdetailId, id)
+        .fields(UserDetail::getFcreateTime,UserDetail::getFaccountDate,UserDetail::getFbalance,UserDetail::getFcreditBalance,UserDetail::getFdetailId
+        ,UserDetail::getFdetailType,UserDetail::getFexpenseAmount,UserDetail::getFincomeAmount,UserDetail::getFmodifyTime,UserDetail::getFremark,UserDetail::getFtypeId,UserDetail::getFuid));
         Ensure.that(listResult).isNotEmptyData(new MallPcExceptionCode(listResult.getCode(), listResult.getMsg()));
         AccountDetailVo accountDetail = (dozerHolder.convert(listResult.getData().get(0), AccountDetailVo.class));
         accountDetail.setFpassedTime(listResult.getData().get(0).getFmodifyTime());
@@ -459,6 +468,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 
                 Result<List<OrderAftersalePic>> orderAftersaleListResult = orderAftersalePicApi.queryByCriteria(
                         Criteria.of(OrderAftersalePic.class)
+                                .fields(OrderAftersalePic::getFaftersalePic)
                         .andEqualTo(OrderAftersalePic::getForderAftersaleId, orderAftersale.getForderAftersaleId())
                         .andEqualTo(OrderAftersalePic::getFpicType, 1));
                 Ensure.that(orderAftersaleListResult).isSuccess(new MallPcExceptionCode(orderAftersaleListResult.getCode(), orderAftersaleListResult.getMsg()));
@@ -483,7 +493,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     private List<OrderPayment> orderPayments(String id) {
         Result<List<OrderPayment>> listResult1 = orderPaymentApi.queryByCriteria(Criteria.of(OrderPayment.class)
-                .andEqualTo(OrderPayment::getForderPaymentId, id));
+                .andEqualTo(OrderPayment::getForderPaymentId, id).fields(OrderPayment::getFcreateTime,OrderPayment::getFpayTime));
         Ensure.that(listResult1).isNotNullData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
         return listResult1.getData();
     }
@@ -491,6 +501,9 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     private UserWork userWorks(String id) {
         Result<List<UserWork>> listResult1 = userWorkApi.queryByCriteria(Criteria.of(UserWork.class)
+                .fields(UserWork::getFadminId,UserWork::getFapplyAmount,UserWork::getFapplyPic,UserWork::getFapplyReason,UserWork::getFcreateTime
+                ,UserWork::getFmodifyTime,UserWork::getForderAftersaleId,UserWork::getForderId,UserWork::getFrejectReason,UserWork::getFremark,UserWork::getFstatus,UserWork::getFuid
+                ,UserWork::getFuserWorkOrder,UserWork::getFworkType)
                 .andEqualTo(UserWork::getFuserWorkOrder, id));
         Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
         return listResult1.getData().get(0);
@@ -499,6 +512,9 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     private OrderAftersale orderAftersales(String id) {
         Result<List<OrderAftersale>> listResult1 = orderAftersaleApi.queryByCriteria(Criteria.of(OrderAftersale.class)
+                .fields(OrderAftersale::getFaftersaleStatus,OrderAftersale::getFaftersaleReason,OrderAftersale::getFaftersaleType
+                ,OrderAftersale::getFcheckTime,OrderAftersale::getFcreateTime,OrderAftersale::getFdealType,OrderAftersale::getFmodifyTime,OrderAftersale::getForderAftersaleId
+                ,OrderAftersale::getForderId)
                 .andEqualTo(OrderAftersale::getForderAftersaleId, id));
         Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
 
@@ -506,7 +522,7 @@ public class UserAccountServiceImpl implements UserAccountService {
     }
 
     private List<Order> orders(String id) {
-        Result<List<Order>> listResult1 = orderApi.queryByCriteria(Criteria.of(Order.class).andEqualTo(Order::getForderId, id));
+        Result<List<Order>> listResult1 = orderApi.queryByCriteria(Criteria.of(Order.class).andEqualTo(Order::getForderId, id).fields(Order::getFmodifyTime));
         Ensure.that(listResult1).isNotNullData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
         return listResult1.getData();
     }
