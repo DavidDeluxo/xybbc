@@ -132,7 +132,11 @@ public class UserServiceImpl implements UserService {
                 .andEqualTo(User::getFpasswd, passWord)
                 .andLeft().orEqualTo(User::getFmobile, dto.getUserAccount())
                 .orEqualTo(User::getFmail, dto.getUserAccount())
-                .orEqualTo(User::getFuname, dto.getUserAccount()).addRight();
+                .orEqualTo(User::getFuname, dto.getUserAccount()).addRight()
+                .fields(User::getFuid,User::getFfreezeStatus,User::getFheadpic,
+                        User::getFnickname,User::getFoperateType,User::getFuname,User::getFregisterFrom,
+                        User::getFverifyStatus,User::getFverifyStatus,User::getFmobile,User::getFmail,
+                        User::getFwithdrawPasswd);
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
         if (userResult.getData() == null) {
             return Result.failure(MallResultStatus.LOGIN_FAILURE);
@@ -411,21 +415,24 @@ public class UserServiceImpl implements UserService {
         Date date = new Date();
         user.setFlastloginTime(date);
         user.setFmobileValidTime(date);
-        Result<Integer> result = userApi.create(user);
-        if (!result.isSuccess()) {
+        Result<User> idResult = userApi.saveAndReturn(user);
+        if (!idResult.isSuccess()) {
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
         }
         Criteria<User, Object> criteria = Criteria.of(User.class);
-        criteria.andEqualTo(User::getFmobile, dto.getFmobile())
-                .andEqualTo(User::getFpasswd, passWord)
-                .andEqualTo(User::getFisDelete, "0");
+        criteria.andEqualTo(User::getFuid, idResult.getData().getFuid())
+                .andEqualTo(User::getFisDelete, "0")
+                .fields(User::getFuid,User::getFfreezeStatus,User::getFheadpic,
+                User::getFnickname,User::getFoperateType,User::getFuname,User::getFregisterFrom,
+                User::getFverifyStatus,User::getFverifyStatus,User::getFmobile,User::getFmail,
+                User::getFwithdrawPasswd);
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
         if (userResult.getData() == null) {
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
         }
         UserAccount userAccount = new UserAccount();
         userAccount.setFuid(userResult.getData().getFuid());
-        result = userAccountApi.create(userAccount);
+        Result<Integer> result = userAccountApi.create(userAccount);
         if (!result.isSuccess()) {
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
         }
