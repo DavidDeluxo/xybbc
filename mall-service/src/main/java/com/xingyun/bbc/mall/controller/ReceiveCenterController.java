@@ -2,9 +2,10 @@ package com.xingyun.bbc.mall.controller;
 
 
 
-import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
+
 import com.xingyun.bbc.core.utils.Result;
 
+import com.xingyun.bbc.mall.model.dto.QueryCouponDto;
 import com.xingyun.bbc.mall.model.dto.ReceiveCouponDto;
 
 import com.xingyun.bbc.mall.model.vo.ReceiveCenterCouponVo;
@@ -75,10 +76,10 @@ public class ReceiveCenterController {
      */
     @ApiOperation(value = "查询领券中心优惠券", httpMethod = "POST")
     @PostMapping("/getCoupon")
-    public Result<List<ReceiveCenterCouponVo>> getCoupon(HttpServletRequest request, @RequestBody CouponQueryDto couponQueryDto){
+    public Result<List<ReceiveCenterCouponVo>> getCoupon(HttpServletRequest request, @RequestBody QueryCouponDto queryCouponDto){
         Long xyid = Long.parseLong(request.getHeader("xyid"));
-        couponQueryDto.setUserId(xyid);
+        queryCouponDto.setUserId(xyid);
         logger.info("查询领券中心优惠券 fuid {}",  xyid);
-        return receiveCenterService.getCoupon(couponQueryDto);
+        return receiveCenterService.getCoupon(queryCouponDto);
     }
 }
