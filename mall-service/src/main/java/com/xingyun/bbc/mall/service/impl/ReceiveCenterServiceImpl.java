@@ -239,7 +239,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
                         .andEqualTo(CouponReceive::getFcouponId, couponQueryVo.getFcouponId()));
                 if (!countResult.isSuccess()) {
                     logger.error("查询已经领到的券张数失败，userid{} couponId{}", couponQueryDto.getUserId(), couponQueryVo.getFcouponId());
-                    throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR); 
+                    throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
                 }
                 //当领券上限未达到限领次数时
                 if (countResult.getData() < couponQueryVo.getFperLimit()) {
@@ -291,7 +291,8 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
                 .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
                 .andEqualTo(Coupon::getFreleaseType, CouponReleaseTypeEnum.PAGE_RECEIVE.getCode())
                 .fields(Coupon::getFperLimit, Coupon::getFsurplusReleaseQty, Coupon::getFvalidityType,
-                        Coupon::getFvalidityEnd, Coupon::getFreleaseTimeEnd, Coupon::getFreleaseTimeType
+                        Coupon::getFvalidityEnd, Coupon::getFreleaseTimeEnd, Coupon::getFreleaseTimeStart,
+                        Coupon::getFreleaseTimeType
                 ));
         if (!couponResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -323,8 +324,10 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         //校验该券领取上限
-        if (null != countResult.getData() && countResult.getData().equals(coupon.getFperLimit())) {
-            throw new BizException(MallExceptionCode.COUPON_IS_MAX);
+        if (null != countResult.getData()) {
+            if (countResult.getData().equals(coupon.getFperLimit())) {
+                throw new BizException(MallExceptionCode.COUPON_IS_MAX);
+            }
         }
         ReceiveCouponDto receiveCouponDto = new ReceiveCouponDto();
         receiveCouponDto.setFuid(fuid);
