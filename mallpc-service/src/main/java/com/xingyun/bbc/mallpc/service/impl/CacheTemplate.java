@@ -4,6 +4,7 @@ import com.xingyun.bbc.mallpc.common.components.RedisHolder;
 import com.xingyun.bbc.mallpc.common.components.lock.XybbcLock;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
+import com.xingyun.bbc.mallpc.common.utils.RandomUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -41,14 +42,9 @@ public class CacheTemplate {
             return redisHolder.getObject(key);
         }
         boolean getLock = false;
+        String value = RandomUtils.getUUID();
         try {
-            //分布式锁
-//            getLock = xybbcLock.tryLock(updateKey, DEFAULT_LOCK_VALUE, DEFAULT_LOCK_EXPIRING);
-//            if (!getLock) {
-//                log.info("分布式锁获取失败，直接从数据库查询");
-//                return cacheCallBack.callBack();
-//            }
-            Ensure.that(getLock = xybbcLock.tryLockTimes(updateKey, DEFAULT_LOCK_VALUE, TRY_TIMES, DEFAULT_LOCK_EXPIRING)).isTrue(MallPcExceptionCode.SYSTEM_BUSY_ERROR);
+            Ensure.that(getLock = xybbcLock.tryLockTimes(updateKey, value, TRY_TIMES, DEFAULT_LOCK_EXPIRING)).isTrue(MallPcExceptionCode.SYSTEM_BUSY_ERROR);
             //获取锁后再查询一次缓存是否有值，有直接返回
             if (redisHolder.exists(key)) {
                 return redisHolder.getObject(key);
@@ -61,7 +57,7 @@ public class CacheTemplate {
         } finally {
             if (getLock) {
                 log.info("redis分布式锁释放：{}",updateKey);
-                xybbcLock.releaseLock(updateKey, DEFAULT_LOCK_VALUE);
+                xybbcLock.releaseLock(updateKey, value);
             }
         }
     }
@@ -82,6 +78,7 @@ public class CacheTemplate {
             return value;
         }
         boolean getLock = false;
+        String value = RandomUtils.getUUID();
         try {
             //分布式锁
 //            getLock = xybbcLock.tryLock(updateKey, DEFAULT_LOCK_VALUE, DEFAULT_LOCK_EXPIRING);
@@ -90,7 +87,7 @@ public class CacheTemplate {
 //                Object[] result = cacheCallBack.callBack();
 //                return Arrays.asList(result);
 //            }
-            Ensure.that(getLock = xybbcLock.tryLockTimes(updateKey, DEFAULT_LOCK_VALUE, TRY_TIMES, DEFAULT_LOCK_EXPIRING)).isTrue(MallPcExceptionCode.SYSTEM_BUSY_ERROR);
+            Ensure.that(getLock = xybbcLock.tryLockTimes(updateKey, value, TRY_TIMES, DEFAULT_LOCK_EXPIRING)).isTrue(MallPcExceptionCode.SYSTEM_BUSY_ERROR);
 
             //获取锁后再查询一次缓存是否有值，有直接返回
             if (redisHolder.exists(key)) {
@@ -103,7 +100,7 @@ public class CacheTemplate {
             return Arrays.asList(result);
         } finally {
             if (getLock) {
-                xybbcLock.releaseLock(updateKey, DEFAULT_LOCK_VALUE);
+                xybbcLock.releaseLock(updateKey, value);
             }
         }
     }

@@ -1,14 +1,15 @@
 package com.xingyun.bbc.mall.service.impl;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
+import com.xingyun.bbc.activity.api.CouponProviderApi;
+import com.xingyun.bbc.activity.enums.CouponScene;
+import com.xingyun.bbc.activity.model.dto.CouponQueryDto;
+import com.xingyun.bbc.activity.model.dto.CouponReleaseDto;
+import com.xingyun.bbc.activity.model.vo.CouponQueryVo;
+import com.xingyun.bbc.common.jwt.XyUserJwtManager;
 import com.xingyun.bbc.common.redis.XyRedisManager;
-import com.xingyun.bbc.core.activity.api.CouponProviderApi;
-import com.xingyun.bbc.core.activity.enums.CouponScene;
-import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
-import com.xingyun.bbc.core.activity.model.dto.CouponReleaseDto;
-import com.xingyun.bbc.core.activity.model.vo.CouponQueryVo;
 import com.xingyun.bbc.core.enums.ResultStatus;
+import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.helper.api.EmailApi;
 import com.xingyun.bbc.core.helper.api.SMSApi;
 import com.xingyun.bbc.core.market.api.CouponApi;
@@ -19,21 +20,23 @@ import com.xingyun.bbc.core.market.po.CouponBindUser;
 import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
 import com.xingyun.bbc.core.operate.po.CityRegion;
+import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserAccountApi;
+import com.xingyun.bbc.core.user.api.UserApi;
+import com.xingyun.bbc.core.user.api.UserLoginInformationApi;
 import com.xingyun.bbc.core.user.api.UserVerifyApi;
 import com.xingyun.bbc.core.user.enums.UserVerifyEnums;
+import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.user.po.UserAccount;
+import com.xingyun.bbc.core.user.po.UserLoginInformation;
 import com.xingyun.bbc.core.user.po.UserVerify;
+import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.enums.*;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.EncryptUtils;
-import com.xingyun.bbc.common.jwt.XyUserJwtManager;
-import com.xingyun.bbc.core.exception.BizException;
-import com.xingyun.bbc.core.query.Criteria;
-import com.xingyun.bbc.core.user.api.UserApi;
-import com.xingyun.bbc.core.user.po.User;
-import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.Md5Utils;
+import com.xingyun.bbc.mall.common.RedisHolder;
+import com.xingyun.bbc.mall.common.constans.MallRedisConstant;
 import com.xingyun.bbc.mall.common.constans.UserConstants;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.common.lock.XybbcLock;
@@ -47,6 +50,7 @@ import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -54,6 +58,9 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.xingyun.bbc.mall.common.constans.MallRedisConstant.USER_COUNT;
+import static com.xingyun.bbc.mall.common.constans.MallRedisConstant.USER_COUNT_LOCK;
 
 /**
  * @author ZSY
@@ -101,7 +108,11 @@ public class UserServiceImpl implements UserService {
     private DozerHolder dozerHolder;
     @Autowired
     private XybbcLock xybbcLock;
+    @Autowired
+    private RedisHolder redisHolder;
 
+    @Autowired
+    private UserLoginInformationApi userLoginInformationApi;
 
     @Override
     public Result<UserLoginVo> userLogin(UserLoginDto dto) {
@@ -113,9 +124,9 @@ public class UserServiceImpl implements UserService {
         Criteria<User, Object> criteria = Criteria.of(User.class);
         criteria.andEqualTo(User::getFisDelete, "0")
                 .andEqualTo(User::getFpasswd, passWord)
-                .andLeft().orLike(User::getFmobile, dto.getUserAccount())
-                .orLike(User::getFmail, dto.getUserAccount())
-                .orLike(User::getFuname, dto.getUserAccount()).addRight();
+                .andLeft().orEqualTo(User::getFmobile, dto.getUserAccount())
+                .orEqualTo(User::getFmail, dto.getUserAccount())
+                .orEqualTo(User::getFuname, dto.getUserAccount()).addRight();
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
         if (userResult.getData() == null) {
             return Result.failure(MallResultStatus.LOGIN_FAILURE);
@@ -129,7 +140,38 @@ public class UserServiceImpl implements UserService {
         user.setFuid(userLoginVo.getFuid());
         user.setFlastloginTime(new Date());
         userApi.updateNotNull(user);
+        //更新用户登录信息
+        updateUserLoginInformation(dto,userResult.getData().getFuid());
         return Result.success(userLoginVo);
+    }
+
+    private void updateUserLoginInformation(UserLoginDto dto, Long fuid) {
+        UserLoginInformation information = new UserLoginInformation();
+        information.setFuid(fuid);
+        information.setFloginMethod("手机端");
+        information.setFloginSite("");
+        information.setFipAdress(dto.getIpAddress());
+        if(dto.getOsVersion() != null){
+            information.setFoperatingSystem(dto.getOsVersion());
+        }else{
+            information.setFoperatingSystem("");
+        }
+        if(dto.getDeviceName() != null){
+            information.setFunitType(dto.getDeviceName());
+        }else{
+            information.setFunitType("");
+        }
+        if(dto.getImei() != null){
+            information.setFuniqueIdentificationCode(dto.getImei());
+        }else{
+            information.setFuniqueIdentificationCode("");
+        }
+        if(dto.getMac() != null){
+            information.setFphysicalAddress(dto.getMac());
+        }else{
+            information.setFphysicalAddress("");
+        }
+        userLoginInformationApi.create(information);
     }
 
     //生成token信息
@@ -378,19 +420,54 @@ public class UserServiceImpl implements UserService {
         couponNum = receiveCoupon(userLoginVo.getFuid());
         //当couponNum大于0时,前端提示"你获得+couponNum+张优惠券"
         userLoginVo.setCouponRegisterNum(couponNum);
+        incrUserCount();
         return Result.success(userLoginVo);
+    }
+
+    /**
+     * 更新用户注册总数
+     */
+    @Async("threadPoolTaskExecutor")
+    void incrUserCount() {
+        if (redisHolder.exists(USER_COUNT)) {
+            redisHolder.incr(USER_COUNT);
+        } else {
+            xybbcLock.tryLock(USER_COUNT_LOCK, () -> {
+                if (redisHolder.exists(USER_COUNT)) {
+                    redisHolder.incr(USER_COUNT);
+                    return;
+                }
+                User user = new User();
+                Result<Integer> result = userApi.count(user);
+                if (result.getData() != null && result.getData() > 0) {
+                    redisHolder.setnx(USER_COUNT, result.getData());
+                    redisHolder.incr(USER_COUNT);
+                }
+            });
+        }
     }
 
     private Integer receiveCoupon(Long fuid) {
         Integer couponNum = 0;
         //查询可用注册优惠券
+        Date date = new Date();
         Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)
                 .andEqualTo(Coupon::getFcouponStatus, 2)
                 .andEqualTo(Coupon::getFreleaseType, 3)
-                .andNotEqualTo(Coupon::getFsurplusReleaseQty, 0);
+                .andNotEqualTo(Coupon::getFsurplusReleaseQty, 0)
+                .fields(Coupon::getFsurplusReleaseQty,Coupon::getFvalidityType,Coupon::getFvalidityEnd,Coupon::getFperLimit,Coupon::getFcouponId);
         Result<List<Coupon>> listResult = couponApi.queryByCriteria(couponCriteria);
         if (listResult.isSuccess()) {
             for (Coupon coupon : listResult.getData()) {
+                if(coupon.getFsurplusReleaseQty().equals(0)){
+                    continue;
+                }
+                if(coupon.getFvalidityType().equals(1)){
+                    //判断是否在有效期内
+                    if(date.compareTo(coupon.getFvalidityEnd()) > 0){
+                        continue;
+                    }
+                }
                 Integer fperLimit = coupon.getFperLimit();
                 CouponReleaseDto couponDto = new CouponReleaseDto();
                 couponDto.setCouponScene(CouponScene.REGISTER);

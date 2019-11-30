@@ -72,7 +72,10 @@ public class UserAddressServiceImpl implements UserAddressService {
         Criteria<UserDelivery, Object> deliveryCondition = Criteria.of(UserDelivery.class)
                 .sortDesc(UserDelivery::getFmodifyTime)
                 .andEqualTo(UserDelivery::getFuid, RequestHolder.getUserId())
-                .andEqualTo(UserDelivery::getFisDelete, 0);
+                .andEqualTo(UserDelivery::getFisDelete,  BooleanNum.FALSE.getCode());
+        if (Objects.nonNull(userAddressListDto.getIsDefault()) && Objects.equals(userAddressListDto.getIsDefault(), BooleanNum.TRUE.getCode())) {
+            deliveryCondition.andEqualTo(UserDelivery::getFisDefualt,  BooleanNum.TRUE.getCode());
+        }
         if (StringUtil.isNotBlank(fdeliveryCardid)) {
             Ensure.that(StringUtilExtention.idCardCheck(fdeliveryCardid)).isTrue(MallPcExceptionCode.ID_CARD_NUMBER_ILLEGAL);
             deliveryCondition.andEqualTo(UserDelivery::getFdeliveryCardid, fdeliveryCardid);

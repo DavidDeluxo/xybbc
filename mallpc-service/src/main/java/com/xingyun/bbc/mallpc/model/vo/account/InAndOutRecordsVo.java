@@ -13,6 +13,7 @@ import java.util.Date;
 @Data
 public class InAndOutRecordsVo {
 
+    private Long fdetailId;
 
     @JsonIgnore
     private Date fcreateTime;

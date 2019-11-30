@@ -1,3 +1,4 @@
+/*
 package com.xingyun.bbc.mallpc.config.aspect;
 
 import com.xingyun.bbc.core.exception.BizException;
@@ -14,12 +15,14 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
+*/
 /**
  * @author penglu
  * @version 1.0.0
  * @date 2019-10-22
  * @copyright 本内容仅限于深圳市天行云供应链有限公司内部传阅，禁止外泄以及用于其他的商业目的
- */
+ *//*
+
 @Aspect
 @Component
 @Slf4j
@@ -53,3 +56,4 @@ public class MallPcLogAspect {
     }
 
 }
+*/

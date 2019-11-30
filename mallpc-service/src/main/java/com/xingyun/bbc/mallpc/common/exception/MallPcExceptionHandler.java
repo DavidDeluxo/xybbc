@@ -24,7 +24,6 @@ public class MallPcExceptionHandler {
 
     @ExceptionHandler(value = Throwable.class)
     public Object returnErrorCode(Throwable exception) {
-        log.error("catch global exception", exception);
         if (exception instanceof MissingServletRequestParameterException) {
             return Result.failure(MallPcExceptionCode.REQUIRED_PARAM_MISSING.getCode(), MallPcExceptionCode.REQUIRED_PARAM_MISSING.getMsg());
         } else if (exception instanceof IllegalArgumentException) {
@@ -38,6 +37,7 @@ public class MallPcExceptionHandler {
         } else if (exception instanceof BizException) {
             return Result.failure(((BizException) exception).getStatus());
         } else {
+            log.error("catch global exception", exception);
             return Result.failure(MallPcExceptionCode.SYSTEM_ERROR);
         }
     }

@@ -11,7 +11,9 @@ import com.xingyun.bbc.core.sku.po.GoodsCategory;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mallpc.common.components.RedisHolder;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
+import com.xingyun.bbc.mallpc.common.utils.RandomUtils;
 import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
 import com.xingyun.bbc.mallpc.model.dto.search.SearchItemDto;
 import com.xingyun.bbc.mallpc.model.vo.TokenInfoVo;
@@ -39,6 +41,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant.PC_MALL_CATE_SKU;
+
 @Slf4j
 @Service
 public class GoodsServiceImpl implements GoodsService {
@@ -56,6 +60,8 @@ public class GoodsServiceImpl implements GoodsService {
     private GoodsCategoryApi goodsCategoryApi;
     @Autowired
     private SearchRecordService searchRecordService;
+    @Autowired
+    private RedisHolder redisHolder;
 
     /**
      * 查询商品列表
@@ -85,7 +91,7 @@ public class GoodsServiceImpl implements GoodsService {
         Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
         if (!CollectionUtils.isEmpty(resultList)) {
             String priceName = searchItemDto.getPriceName();
-            if(StringUtils.isEmpty(priceName)){
+            if (StringUtils.isEmpty(priceName)) {
                 priceName = this.getUserPriceType(searchItemDto.getIsLogin(), searchItemDto.getFuid());
             }
             for (Map<String, Object> map : resultList) {
@@ -138,10 +144,10 @@ public class GoodsServiceImpl implements GoodsService {
             //商品一级分类
             List<Map<String, Object>> categoryAggs = (List<Map<String, Object>>) aggregationMap.get("fcategory_id1");
             List<CategoryFilterVo> categoryFilterList = EsBeanUtil.getValueObjectList(CategoryFilterVo.class, categoryAggs);
-            if(!CollectionUtils.isEmpty(categoryFilterList)){
-                List<Integer> cateIds = categoryFilterList.stream().map(item->item.getFcategoryId()).collect(Collectors.toList());
-                Criteria<GoodsCategory,Object> criteriaCate = Criteria.of(GoodsCategory.class)
-                        .andIn(GoodsCategory::getFcategoryId,cateIds);
+            if (!CollectionUtils.isEmpty(categoryFilterList)) {
+                List<Integer> cateIds = categoryFilterList.stream().map(item -> item.getFcategoryId()).collect(Collectors.toList());
+                Criteria<GoodsCategory, Object> criteriaCate = Criteria.of(GoodsCategory.class)
+                        .andIn(GoodsCategory::getFcategoryId, cateIds);
                 Result<List<GoodsCategory>> categoryResult = goodsCategoryApi.queryByCriteria(criteriaCate);
                 List<GoodsCategory> cateList = ResultUtils.getData(categoryResult);
                 if (CollectionUtils.isNotEmpty(cateList)) {
@@ -170,23 +176,22 @@ public class GoodsServiceImpl implements GoodsService {
 
     @Override
     public Result<List<CateSearchItemListVo>> floorSkus(List<Integer> cateIds, TokenInfoVo infoVo) {
-        if(CollectionUtils.isEmpty(cateIds)){
+        if (CollectionUtils.isEmpty(cateIds)) {
             return Result.success(new ArrayList<>());
         }
         List<CateSearchItemListVo> resultList = new ArrayList<>();
         String priceName = this.getUserPriceType(infoVo.getIsLogin(), infoVo.getFuid());
 
-
         List<CompletableFuture<CateSearchItemListVo>> completableFutureList = new ArrayList<>();
 
         for (Integer cateId : cateIds) {
-            CompletableFuture<CateSearchItemListVo> result = CompletableFuture.supplyAsync(()->getSkuList(cateId, infoVo, priceName));
+            CompletableFuture<CateSearchItemListVo> result = CompletableFuture.supplyAsync(() -> getSkuList(cateId, infoVo, priceName));
             completableFutureList.add(result);
         }
         CompletableFuture
                 .allOf(completableFutureList.toArray(new CompletableFuture[completableFutureList.size()]))
                 .join();
-        for(CompletableFuture completableFuture : completableFutureList){
+        for (CompletableFuture completableFuture : completableFutureList) {
             try {
                 resultList.add((CateSearchItemListVo) completableFuture.get());
             } catch (Exception e) {
@@ -198,36 +203,64 @@ public class GoodsServiceImpl implements GoodsService {
 
     /**
      * 封装查询条件查询
+     *
      * @param cateId
      * @param infoVo
      * @param priceName
      * @return
      */
-    private CateSearchItemListVo getSkuList(Integer cateId, TokenInfoVo infoVo, String priceName){
-        SearchItemDto searchItemDto = new SearchItemDto();
-        List<Integer> cateIdList = new ArrayList<>();
-        cateIdList.add(cateId);
-        searchItemDto.setFcategoryIdL1(cateIdList);
-        searchItemDto.setIsLogin(infoVo.getIsLogin());
-        searchItemDto.setFuid(infoVo.getFuid());
-        searchItemDto.setSellAmountOrderBy("desc");
-        searchItemDto.setPriceName(priceName);
-        Result<SearchItemListVo<SearchItemVo>> result = searchSkuList(searchItemDto);
+    private CateSearchItemListVo getSkuList(Integer cateId, TokenInfoVo infoVo, String priceName) {
+        String key = new StringBuilder().append(PC_MALL_CATE_SKU).append(cateId).append("_").append(priceName).toString();
+        List<SearchItemVo> voList;
+        long start = System.currentTimeMillis();
+        if (redisHolder.exists(key)) {
+            voList = (List<SearchItemVo>) redisHolder.getObject(key);
+            log("缓存",cateId,System.currentTimeMillis()-start);
+        } else {
+            SearchItemDto searchItemDto = new SearchItemDto();
+            List<Integer> cateIdList = new ArrayList<>();
+            cateIdList.add(cateId);
+            searchItemDto.setFcategoryIdL1(cateIdList);
+            searchItemDto.setIsLogin(infoVo.getIsLogin());
+            searchItemDto.setFuid(infoVo.getFuid());
+            searchItemDto.setSellAmountOrderBy("desc");
+            searchItemDto.setPriceName(priceName);
+            Result<SearchItemListVo<SearchItemVo>> result = searchSkuList(searchItemDto);
+            voList = result.getData().getList();
+            //缓存有效期随机数10到40秒之间
+            long timeout = RandomUtils.randomLong(30) + 10;
+            redisHolder.set(key,voList,timeout);
+            log("搜索引擎",cateId,System.currentTimeMillis()-start);
+        }
 
         CateSearchItemListVo vo = new CateSearchItemListVo();
         vo.setCateId(cateId);
-        vo.setSkus(result.getData().getList());
+        vo.setSkus(voList);
         return vo;
     }
 
     /**
+     * 首页耗时日志记录
+     * @param model
+     * @param cateId
+     * @param time
+     */
+    private void log(String model, Integer cateId, long time){
+        if(log.isDebugEnabled()){
+            String info = new StringBuilder().append("一级分类").append(cateId).append(model).append("，首页楼层商品耗时: ").append(time).toString();
+            log.debug(info);
+        }
+    }
+
+    /**
      * 单个skuVo的封装
+     *
      * @param map
      * @param priceName
      * @param isLogin
      * @return
      */
-    private SearchItemVo getSearchItemVo(Map<String, Object> map, String priceName, Boolean isLogin){
+    private SearchItemVo getSearchItemVo(Map<String, Object> map, String priceName, Boolean isLogin) {
         SearchItemVo vo = new SearchItemVo();
         if (map.get("fskuId") != null) {
             vo.setFskuId(Integer.parseInt(String.valueOf(map.get("fskuId"))));
@@ -390,9 +423,9 @@ public class GoodsServiceImpl implements GoodsService {
         //默认为未认证
         String fuserTypeId = "0";
         if (isLogin && fuid != null) {
-            log.info("登录用户id：{}",fuid);
+            log.info("登录用户id：{}", fuid);
             Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
-                    .fields(User::getFuid,User::getFoperateType)
+                    .fields(User::getFuid, User::getFoperateType)
                     .andEqualTo(User::getFuid, fuid));
             if (!userResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);

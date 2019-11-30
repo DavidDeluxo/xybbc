@@ -5,6 +5,7 @@ import com.xingyun.bbc.mallpc.model.dto.user.ResetPasswordDto;
 import com.xingyun.bbc.mallpc.model.dto.user.SendSmsCodeDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserLoginDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserRegisterDto;
+import com.xingyun.bbc.mallpc.model.vo.coupon.MyCouponVo;
 import com.xingyun.bbc.mallpc.model.vo.user.SendSmsCodeVo;
 import com.xingyun.bbc.mallpc.model.vo.user.UserLoginVo;
 import com.xingyun.bbc.mallpc.model.vo.user.UserRegisterCouponVo;
@@ -65,7 +66,7 @@ public interface UserService {
      * @description :  查询新人注册优惠券
      * @version 1.0.0
      */
-    Result<List<UserRegisterCouponVo>> queryRegisterCoupon();
+    Result<MyCouponVo> queryRegisterCoupon();
 
 
     /**

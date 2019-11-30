@@ -5,10 +5,10 @@ import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONException;
 import com.google.common.collect.Sets;
+import com.xingyun.bbc.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.common.elasticsearch.config.EsBeanUtil;
 import com.xingyun.bbc.common.elasticsearch.config.EsCriteria;
 import com.xingyun.bbc.common.elasticsearch.config.EsManager;
-import com.xingyun.bbc.core.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.CouponApi;
@@ -792,7 +792,7 @@ public class GoodsServiceImpl implements GoodsService {
                 List<Long> oneLevel = Lists.newArrayList();
                 List<Long> twoLevel = Lists.newArrayList();
                 List<Long> threeLevel = Lists.newArrayList();
-                if(skuQueryDto.getCategoryIds() != null){
+                if (skuQueryDto.getCategoryIds() != null) {
                     oneLevel = skuQueryDto.getCategoryIds().get("1");
                     twoLevel = skuQueryDto.getCategoryIds().get("2");
                     threeLevel = skuQueryDto.getCategoryIds().get("3");
@@ -1104,7 +1104,7 @@ public class GoodsServiceImpl implements GoodsService {
         String fuserTypeId = "0";
         if (searchItemDto.getIsLogin() && searchItemDto.getFuid() != null) {
             Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
-                    .fields(User::getFuid,User::getFoperateType)
+                    .fields(User::getFuid, User::getFoperateType)
                     .andEqualTo(User::getFuid, searchItemDto.getFuid()));
             if (!userResult.isSuccess()) {
                 throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
