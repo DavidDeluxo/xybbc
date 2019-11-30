@@ -1,9 +1,11 @@
 package com.xingyun.bbc.mallpc.service;
 
 
-import com.xingyun.bbc.activity.model.dto.CouponQueryDto;
+
 import com.xingyun.bbc.core.utils.Result;
+
 import com.xingyun.bbc.mallpc.model.dto.coupon.MyCouponDto;
+import com.xingyun.bbc.mallpc.model.dto.coupon.QueryCouponDto;
 import com.xingyun.bbc.mallpc.model.vo.coupon.MyCouponVo;
 import com.xingyun.bbc.mallpc.model.vo.coupon.ReceiveCenterCouponVo;
 
@@ -41,6 +43,6 @@ public interface MyCouponService {
      * @return: List<CouponCenterVo>                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
      * @date 2019/11/12 13:49
      */
-    Result<List<ReceiveCenterCouponVo>> getCoupon(CouponQueryDto couponQueryDto);
+    Result<List<ReceiveCenterCouponVo>> getCoupon(QueryCouponDto queryCouponDto);
 
 }

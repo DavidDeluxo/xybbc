@@ -1,10 +1,14 @@
 package com.xingyun.bbc.mallpc.controller;
 
 
-import com.xingyun.bbc.activity.model.dto.CouponQueryDto;
+
+
 import com.xingyun.bbc.core.utils.Result;
+
+
 import com.xingyun.bbc.mallpc.common.utils.RequestHolder;
 import com.xingyun.bbc.mallpc.model.dto.coupon.MyCouponDto;
+import com.xingyun.bbc.mallpc.model.dto.coupon.QueryCouponDto;
 import com.xingyun.bbc.mallpc.model.dto.coupon.ReceiveCouponDto;
 import com.xingyun.bbc.mallpc.model.vo.coupon.MyCouponVo;
 import com.xingyun.bbc.mallpc.model.vo.coupon.ReceiveCenterCouponVo;
@@ -56,7 +60,7 @@ public class MyCouponController {
      */
     @ApiOperation(value = "领取优惠券", httpMethod = "POST")
     @PostMapping("/receiveCoupon")
-    public Result<Boolean> receiveCoupon(@RequestBody ReceiveCouponDto receiveCouponDto, HttpServletRequest request) {
+    public Result<Boolean> receiveCoupon(@RequestBody ReceiveCouponDto receiveCouponDto, HttpServletRequest request){
         Long xyid = RequestHolder.getUserId();
         logger.info("领取优惠券 fcouponId {} fuid {}", receiveCouponDto.getFcouponId(), xyid);
         return myCouponService.addReceiveCoupon(receiveCouponDto.getFcouponId(), xyid);
@@ -72,9 +76,9 @@ public class MyCouponController {
      */
     @ApiOperation(value = "查询可领优惠券", httpMethod = "POST")
     @PostMapping("/getCoupon")
-    public Result<List<ReceiveCenterCouponVo>> getCoupon(HttpServletRequest request, @RequestBody CouponQueryDto couponQueryDto) {
-        couponQueryDto.setUserId(RequestHolder.getUserId());
-        logger.info("查询可领优惠券 fuid {}", RequestHolder.getUserId());
-        return myCouponService.getCoupon(couponQueryDto);
+    public Result<List<ReceiveCenterCouponVo>> getCoupon(HttpServletRequest request, @RequestBody QueryCouponDto queryCouponDto){
+        queryCouponDto.setUserId(RequestHolder.getUserId());
+        logger.info("查询可领优惠券 fuid {}",  RequestHolder.getUserId());
+        return myCouponService.getCoupon(queryCouponDto);
     }
 }
