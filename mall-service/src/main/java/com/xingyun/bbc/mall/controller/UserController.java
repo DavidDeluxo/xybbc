@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.controller;
 
+import cn.hutool.http.HttpUtil;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.po.UserVerify;
 import com.xingyun.bbc.core.utils.Result;
@@ -30,7 +31,8 @@ public class UserController {
 
     @ApiOperation("登陆")
     @PostMapping("/via/userLogin")
-    public Result<UserLoginVo> userLogin(@RequestBody UserLoginDto dto) {
+    public Result<UserLoginVo> userLogin(@RequestBody UserLoginDto dto,HttpServletRequest request) {
+        dto.setIpAddress(HttpUtil.getClientIP(request));
         return userService.userLogin(dto);
     }
 

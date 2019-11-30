@@ -1,5 +1,8 @@
 package com.xingyun.bbc.mall.common.lock;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 /**
  * 分布式锁
  *
@@ -39,5 +42,44 @@ public interface XybbcLock {
      * @return
      */
     boolean tryLockTimes(String key, String value, int times, long expiring);
+
+    /**
+     * 尝试获取分布式锁，执行业务逻辑后自动释放锁
+     * <p>
+     * this.tryLock(key, 10, lock -> {
+     * if (lock) {
+     * 处理业务逻辑......
+     * } else {
+     * throw Exception
+     * }
+     * });
+     *
+     * @param key
+     * @param expiring
+     * @param consumer
+     */
+    void tryLock(String key, long expiring, Consumer<Boolean> consumer);
+
+    /**
+     * 尝试获取分布式锁，重试20次，最多锁10秒执行业务逻辑后自动释放锁
+     * <p>
+     * this.tryLock(key, () -> {})
+     * @param key
+     * @param execute
+     */
+    void tryLock(String key, Execute execute);
+
+    /**
+     * 尝试获取分布式锁成功后，执行业务逻辑后自动释放锁
+     * <p>
+     * this.tryLock(key, 10, lock -> {
+     * 处理业务逻辑......
+     * });
+     *
+     * @param key
+     * @param expiring
+     * @param supplier
+     */
+    <T> T tryLock(String key, long expiring, Supplier<T> supplier);
 
 }

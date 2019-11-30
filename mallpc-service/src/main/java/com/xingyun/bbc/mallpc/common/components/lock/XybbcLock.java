@@ -61,6 +61,15 @@ public interface XybbcLock {
     void tryLock(String key, long expiring, Consumer<Boolean> consumer);
 
     /**
+     * 尝试获取分布式锁，重试20次，最多锁10秒执行业务逻辑后自动释放锁
+     * <p>
+     * this.tryLock(key, () -> {})
+     * @param key
+     * @param execute
+     */
+    void tryLock(String key, Execute execute);
+
+    /**
      * 尝试获取分布式锁成功后，执行业务逻辑后自动释放锁
      * <p>
      * this.tryLock(key, 10, lock -> {

@@ -8,6 +8,7 @@ import com.xingyun.bbc.activity.enums.CouponScene;
 import com.xingyun.bbc.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.activity.model.dto.CouponReleaseDto;
 import com.xingyun.bbc.activity.model.vo.CouponQueryVo;
+
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.CouponApi;
@@ -27,6 +28,7 @@ import com.xingyun.bbc.mall.common.constans.MallConstants;
 import com.xingyun.bbc.mall.common.ensure.Ensure;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.common.lock.XybbcLock;
+import com.xingyun.bbc.mall.model.dto.QueryCouponDto;
 import com.xingyun.bbc.mall.model.dto.ReceiveCouponDto;
 import com.xingyun.bbc.mall.model.vo.ReceiveCenterCouponVo;
 import com.xingyun.bbc.mall.service.GoodDetailService;
@@ -208,15 +210,17 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
      * @date 2019/11/12 13:49
      */
     @Override
-    public Result<List<ReceiveCenterCouponVo>> getCoupon(CouponQueryDto couponQueryDto) {
+    public Result<List<ReceiveCenterCouponVo>> getCoupon(QueryCouponDto queryCouponDto) {
         //校验用户id
-        if (null == couponQueryDto.getUserId()) {
+        if (null == queryCouponDto.getUserId()) {
             throw new BizException(MallExceptionCode.PARAM_ERROR);
         }
         List<Integer> list = new ArrayList<>();
+        CouponQueryDto couponQueryDto = new CouponQueryDto();
         //查出发放类型为2：页面领取的数据
         list.add(2);
         couponQueryDto.setReleaseTypes(list);
+        couponQueryDto.setUserId(queryCouponDto.getUserId());
         Result<List<CouponQueryVo>> couponQueryVos = couponProviderApi.queryByUserId(couponQueryDto);
         List<ReceiveCenterCouponVo> receiveCenterCouponVoList = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(couponQueryVos.getData())) {
@@ -235,7 +239,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
                         .andEqualTo(CouponReceive::getFcouponId, couponQueryVo.getFcouponId()));
                 if (!countResult.isSuccess()) {
                     logger.error("查询已经领到的券张数失败，userid{} couponId{}", couponQueryDto.getUserId(), couponQueryVo.getFcouponId());
-                    throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+                    throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR); 
                 }
                 //当领券上限未达到限领次数时
                 if (countResult.getData() < couponQueryVo.getFperLimit()) {

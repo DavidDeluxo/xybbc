@@ -100,7 +100,7 @@ public class IndexServiceImpl implements IndexService {
     @Override
     public Integer getUserCount() {
         return (Integer) cacheTemplate
-                .get(INDEX_USER_COUNT, INDEX_USER_COUNT_UPDATE, USER_COUNT_EXPIRE, () -> ResultUtils.getData(userApi.count(new User())));
+                .get(USER_COUNT, USER_COUNT_LOCK, null, () -> ResultUtils.getData(userApi.count(new User())));
     }
 
     @Override
