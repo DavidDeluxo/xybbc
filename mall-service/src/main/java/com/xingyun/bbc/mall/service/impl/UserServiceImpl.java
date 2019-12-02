@@ -841,8 +841,10 @@ public class UserServiceImpl implements UserService {
         }
         //优惠券状态 1待发布、2已发布、3已过期、4已结束、5已作废
         Integer couponStatus = couponResult.getData().getFcouponStatus();
-        if (!couponStatus.equals(2)) {
+        if (couponStatus.equals(3)) {
             return Result.failure(MallExceptionCode.COUPON_IS_INVALID);
+        }else if(!couponStatus.equals(2)){
+            return Result.failure(MallExceptionCode.COUPON_LINK_INEXUSTENCE);
         }
         Long couponId = couponResult.getData().getFcouponId();
         //查询用户是否有领取资格
