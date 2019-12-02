@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mallpc.service.impl;
 
 import cn.hutool.http.HttpUtil;
+import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.activity.api.CouponProviderApi;
 import com.xingyun.bbc.activity.enums.CouponScene;
 import com.xingyun.bbc.activity.model.dto.CouponReleaseDto;
@@ -49,6 +50,7 @@ import com.xingyun.bbc.mallpc.model.dto.user.SendSmsCodeDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserLoginDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserRegisterDto;
 import com.xingyun.bbc.mallpc.model.vo.PageVo;
+import com.xingyun.bbc.mallpc.model.vo.TokenInfoVo;
 import com.xingyun.bbc.mallpc.model.vo.coupon.CouponVo;
 import com.xingyun.bbc.mallpc.model.vo.coupon.MyCouponVo;
 import com.xingyun.bbc.mallpc.model.vo.user.SendSmsCodeVo;
@@ -181,7 +183,9 @@ public class UserServiceImpl implements UserService {
     private UserLoginVo createToken(User user) {
         UserLoginVo userLoginVo = convertor.convert(user, UserLoginVo.class);
         long expire = UserConstants.Token.TOKEN_AUTO_LOGIN_EXPIRATION;
-        String token = xyUserJwtManager.createJwt(user.getFuid().toString(), user.getFmobile(), expire);
+        TokenInfoVo tokenInfoVo = new TokenInfoVo();
+        tokenInfoVo.setFverifyStatus(user.getFverifyStatus()).setFoperateType(user.getFoperateType());
+        String token = xyUserJwtManager.createJwt(user.getFuid().toString(), JSON.toJSONString(tokenInfoVo), expire);
         userLoginVo.setExpire(expire);
         userLoginVo.setToken(token);
         if (StringUtils.isBlank(userLoginVo.getFnickname())) {

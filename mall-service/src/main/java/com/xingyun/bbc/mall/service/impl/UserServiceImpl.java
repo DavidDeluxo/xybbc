@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.google.common.base.Strings;
 import com.xingyun.bbc.activity.api.CouponProviderApi;
 import com.xingyun.bbc.activity.enums.CouponScene;
@@ -188,7 +189,9 @@ public class UserServiceImpl implements UserService {
     private UserLoginVo createToken(User user) {
         UserLoginVo userLoginVo = new UserLoginVo();
         long expire = UserConstants.Token.TOKEN_AUTO_LOGIN_EXPIRATION;
-        String token = xyUserJwtManager.createJwt(user.getFuid().toString(), user.getFmobile(), expire);
+        TokenInfoVo tokenInfoVo = new TokenInfoVo();
+        tokenInfoVo.setFverifyStatus(user.getFverifyStatus()).setFoperateType(user.getFoperateType());
+        String token = xyUserJwtManager.createJwt(user.getFuid().toString(), JSON.toJSONString(tokenInfoVo), expire);
         userLoginVo.setExpire(expire);
         userLoginVo.setToken(token);
         userLoginVo.setFuid(user.getFuid());

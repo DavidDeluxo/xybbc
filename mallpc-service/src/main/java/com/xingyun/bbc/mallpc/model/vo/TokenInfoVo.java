@@ -1,8 +1,10 @@
 package com.xingyun.bbc.mallpc.model.vo;
 
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 @Data
+@Accessors(chain = true)
 public class TokenInfoVo {
 
     Boolean isLogin;
