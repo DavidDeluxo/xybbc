@@ -6,7 +6,6 @@ import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-
 /**
  * @author nick
  * @version 1.0.0
@@ -20,7 +19,7 @@ public class SendSmsCodeDto {
     @NotBlank(message = "手机号不能为空")
     private String fmobile;
 
-    @ApiModelProperty("事件类型 0注册 1重置密码")
+    @ApiModelProperty("事件类型 0注册 1重置密码,充值支付密码")
     @NumberRange(values = {0,1},message = "事件类型参数值非法")
     @NotNull(message = "事件类型参数值非法")
     private Integer sourceType;
