@@ -43,19 +43,16 @@ public class GoodsController {
     @ApiOperation("查询商品列表")
     @PostMapping("/via/skuSearch")
     public Result<SearchItemListVo<SearchItemVo>> skuSearch(@RequestBody SearchItemDto dto, HttpServletRequest request) {
-        TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
-        dto.setIsLogin(infoVo.getIsLogin());
-        dto.setFuid(infoVo.getFuid());
-
+        setDto(dto, request);
         log.info("查询商品列表,请求参数:{}", JSON.toJSONString(dto));
 
         Result<SearchItemListVo<SearchItemVo>> result;
         if (Objects.nonNull(dto.getFcouponId())) {
             result = couponGoodsService.queryGoodsList(dto);
-        }else{
+        } else {
             result = goodsService.searchSkuList(dto);
         }
-        Map<String,Object> extra = new HashMap<>();
+        Map<String, Object> extra = new HashMap<>();
         extra.put("fdfsHost", StringUtils.join(SystemConfig.fdfsHost, File.separator));
         result.setExtra(extra);
         return result;
@@ -64,10 +61,16 @@ public class GoodsController {
     @ApiOperation("查询筛选信息")
     @PostMapping("/via/skuSearchFilter")
     public Result<SearchFilterVo> skuSearchFilter(@RequestBody SearchItemDto dto, HttpServletRequest request) {
+        setDto(dto, request);
+        return goodsService.searchSkuFilter(dto);
+    }
+
+    private void setDto(SearchItemDto dto, HttpServletRequest request) {
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
         dto.setIsLogin(infoVo.getIsLogin());
         dto.setFuid(infoVo.getFuid());
-        return goodsService.searchSkuFilter(dto);
+        dto.setFverifyStatus(infoVo.getFverifyStatus());
+        dto.setFoperateType(infoVo.getFoperateType());
     }
 
 }

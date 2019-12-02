@@ -9,6 +9,7 @@ import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.sku.api.GoodsCategoryApi;
 import com.xingyun.bbc.core.sku.po.GoodsCategory;
 import com.xingyun.bbc.core.user.api.UserApi;
+import com.xingyun.bbc.core.user.enums.UserVerifyStatusEnum;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.components.RedisHolder;
@@ -32,10 +33,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -92,7 +90,7 @@ public class GoodsServiceImpl implements GoodsService {
         if (!CollectionUtils.isEmpty(resultList)) {
             String priceName = searchItemDto.getPriceName();
             if (StringUtils.isEmpty(priceName)) {
-                priceName = this.getUserPriceType(searchItemDto.getIsLogin(), searchItemDto.getFuid());
+                priceName = this.getUserPriceType(searchItemDto.getIsLogin(), searchItemDto.getFuid(), searchItemDto.getFoperateType(), searchItemDto.getFverifyStatus());
             }
             for (Map<String, Object> map : resultList) {
                 SearchItemVo vo = getSearchItemVo(map, priceName, searchItemDto.getIsLogin());
@@ -180,7 +178,7 @@ public class GoodsServiceImpl implements GoodsService {
             return Result.success(new ArrayList<>());
         }
         List<CateSearchItemListVo> resultList = new ArrayList<>();
-        String priceName = this.getUserPriceType(infoVo.getIsLogin(), infoVo.getFuid());
+        String priceName = this.getUserPriceType(infoVo.getIsLogin(), infoVo.getFuid(), infoVo.getFoperateType(), infoVo.getFverifyStatus());
 
         List<CompletableFuture<CateSearchItemListVo>> completableFutureList = new ArrayList<>();
 
@@ -395,7 +393,7 @@ public class GoodsServiceImpl implements GoodsService {
             return;
         }
 
-        String priceFieldName = this.getUserPriceType(searchItemDto.getIsLogin(), searchItemDto.getFuid());
+        String priceFieldName = this.getUserPriceType(searchItemDto.getIsLogin(), searchItemDto.getFuid(), searchItemDto.getFoperateType(), searchItemDto.getFverifyStatus());
         String fieldName = humpToLine2(priceFieldName) + PRICE_TYPE_SUFFIX;
         if (searchItemDto.getPriceOrderBy() != null) {
             criteria.sortBy(fieldName, searchItemDto.getPriceOrderBy());
@@ -419,22 +417,22 @@ public class GoodsServiceImpl implements GoodsService {
      *
      * @return
      */
-    private String getUserPriceType(Boolean isLogin, Integer fuid) {
+    private String getUserPriceType(Boolean isLogin, Integer fuid, Integer foperateType, Integer fverifyStatus) {
         //默认为未认证
         String fuserTypeId = "0";
         if (isLogin && fuid != null) {
-            log.info("登录用户id：{}", fuid);
-            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
-                    .fields(User::getFuid, User::getFoperateType)
-                    .andEqualTo(User::getFuid, fuid));
-            if (!userResult.isSuccess()) {
-                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            //若登录信息里面存的用户认证类型和认证状态可用，不用查库
+            if(Objects.equals(UserVerifyStatusEnum.AUTHENTICATED.getCode(), fverifyStatus)){
+                fuserTypeId = String.valueOf(foperateType);
+            }else{
+                Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
+                        .fields(User::getFuid, User::getFoperateType, User::getFverifyStatus)
+                        .andEqualTo(User::getFuid, fuid));
+                User user = ResultUtils.getDataNotNull(userResult, MallPcExceptionCode.USER_NOT_EXIST);
+                if(Objects.equals(UserVerifyStatusEnum.AUTHENTICATED.getCode(), user.getFverifyStatus())){
+                    fuserTypeId = String.valueOf(user.getFoperateType());
+                }
             }
-            if (userResult.getData() == null) {
-                throw new BizException(MallPcExceptionCode.USER_NOT_EXIST);
-            }
-            User user = userResult.getData();
-            fuserTypeId = String.valueOf(user.getFoperateType());
         }
         String priceName = PRICE_TYPE_PREFIX_CAMEL + fuserTypeId;
         return priceName;
