@@ -43,7 +43,11 @@ public class GoodsController {
     @ApiOperation("查询商品列表")
     @PostMapping("/via/skuSearch")
     public Result<SearchItemListVo<SearchItemVo>> skuSearch(@RequestBody SearchItemDto dto, HttpServletRequest request) {
-        setDto(dto, request);
+        TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
+        dto.setIsLogin(infoVo.getIsLogin());
+        dto.setFuid(infoVo.getFuid());
+        dto.setFverifyStatus(infoVo.getFverifyStatus());
+        dto.setFoperateType(infoVo.getFoperateType());
         log.info("查询商品列表,请求参数:{}", JSON.toJSONString(dto));
 
         Result<SearchItemListVo<SearchItemVo>> result;
@@ -61,16 +65,10 @@ public class GoodsController {
     @ApiOperation("查询筛选信息")
     @PostMapping("/via/skuSearchFilter")
     public Result<SearchFilterVo> skuSearchFilter(@RequestBody SearchItemDto dto, HttpServletRequest request) {
-        setDto(dto, request);
-        return goodsService.searchSkuFilter(dto);
-    }
-
-    private void setDto(SearchItemDto dto, HttpServletRequest request) {
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
         dto.setIsLogin(infoVo.getIsLogin());
         dto.setFuid(infoVo.getFuid());
-        dto.setFverifyStatus(infoVo.getFverifyStatus());
-        dto.setFoperateType(infoVo.getFoperateType());
+        return goodsService.searchSkuFilter(dto);
     }
 
 }

@@ -43,7 +43,8 @@ public class GoodsController {
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
         dto.setIsLogin(infoVo.getIsLogin());
         dto.setFuid(infoVo.getFuid());
-
+        dto.setFverifyStatus(infoVo.getFverifyStatus());
+        dto.setFoperateType(infoVo.getFoperateType());
         log.info("查询商品列表,请求参数:{}", JSON.toJSONString(dto));
         if (Objects.nonNull(dto.getCouponId())) return couponGoodsService.queryGoodsList(dto);
 

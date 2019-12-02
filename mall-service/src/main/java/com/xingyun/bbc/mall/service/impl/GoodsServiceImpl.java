@@ -28,9 +28,11 @@ import com.xingyun.bbc.core.sku.po.GoodsBrand;
 import com.xingyun.bbc.core.sku.po.GoodsCategory;
 import com.xingyun.bbc.core.sku.po.GoodsSku;
 import com.xingyun.bbc.core.user.api.UserApi;
+import com.xingyun.bbc.core.user.enums.UserVerifyStatusEnum;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.enums.MallResultStatus;
+import com.xingyun.bbc.mall.base.utils.ResultUtils;
 import com.xingyun.bbc.mall.common.ensure.Ensure;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.CouponSkuQueryDto;
@@ -1103,17 +1105,21 @@ public class GoodsServiceImpl implements GoodsService {
         //默认为未认证
         String fuserTypeId = "0";
         if (searchItemDto.getIsLogin() && searchItemDto.getFuid() != null) {
-            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
-                    .fields(User::getFuid, User::getFoperateType)
-                    .andEqualTo(User::getFuid, searchItemDto.getFuid()));
-            if (!userResult.isSuccess()) {
-                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            //若登录信息里面存的用户认证类型和认证状态可用，不用查库
+            if(Objects.equals(UserVerifyStatusEnum.AUTHENTICATED.getCode(), searchItemDto.getFverifyStatus())){
+                fuserTypeId = String.valueOf(searchItemDto.getFoperateType());
+            }else{
+                Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
+                        .fields(User::getFuid, User::getFoperateType, User::getFverifyStatus)
+                        .andEqualTo(User::getFuid, searchItemDto.getFuid()));
+                User user = ResultUtils.getData(userResult);
+                if (userResult.getData() == null) {
+                    throw new BizException(MallResultStatus.USER_NOT_EXIST);
+                }
+                if(Objects.equals(UserVerifyStatusEnum.AUTHENTICATED.getCode(), user.getFverifyStatus())){
+                    fuserTypeId = String.valueOf(user.getFoperateType());
+                }
             }
-            if (userResult.getData() == null) {
-                throw new BizException(MallResultStatus.USER_NOT_EXIST);
-            }
-            User user = userResult.getData();
-            fuserTypeId = String.valueOf(user.getFoperateType());
         }
         String priceName = PRICE_TYPE_PREFIX_CAMEL + fuserTypeId;
         return priceName;
