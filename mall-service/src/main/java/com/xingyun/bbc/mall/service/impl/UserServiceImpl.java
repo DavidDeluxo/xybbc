@@ -277,7 +277,7 @@ public class UserServiceImpl implements UserService {
     private SendSmsVo sendSms(SendSmsVo sendSmsVo, UserSecurityDto dto) {
         String mobile = dto.getFmobile();
         String authNum = generateAuthNum(4);
-        String SmsTemplate = "您的验证码是：" + authNum + "，请勿泄露）。若非本人操作，请忽略本短信";
+        String SmsTemplate = "您的验证码是：" + authNum + "，请勿泄露。若非本人操作，请忽略本短信";
         String signature = "【行云全球汇】";
         String content = signature + SmsTemplate;
         logger.info(content);
