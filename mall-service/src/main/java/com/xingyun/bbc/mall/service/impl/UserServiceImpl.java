@@ -830,7 +830,7 @@ public class UserServiceImpl implements UserService {
                 .andEqualTo(Coupon::getFcouponLink, dto.getCouponLink())
                 .andNotEqualTo(Coupon::getFcouponStatus, 1)
                 .fields(Coupon::getFcouponId, Coupon::getFperLimit, Coupon::getFsurplusReleaseQty
-                        , Coupon::getFcouponStatus, Coupon::getFcouponType);
+                        , Coupon::getFcouponStatus, Coupon::getFcouponType, Coupon::getFassignUser);
         Result<Coupon> couponResult = couponApi.queryOneByCriteria(couponCriteria);
         if (!couponResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -847,31 +847,6 @@ public class UserServiceImpl implements UserService {
             return Result.failure(MallExceptionCode.COUPON_LINK_INEXUSTENCE);
         }
         Long couponId = couponResult.getData().getFcouponId();
-        //查询用户是否有领取资格
-        CouponQueryDto couponQueryDto = new CouponQueryDto();
-        List<Integer> couponTypeList = new ArrayList<>();
-        couponTypeList.add(couponResult.getData().getFcouponType());
-        couponQueryDto.setCouponTypes(couponTypeList);
-        couponQueryDto.setUserId(dto.getFuid());
-        Result<List<CouponQueryVo>> listResult = couponProviderApi.queryByUserId(couponQueryDto);
-        if (!listResult.isSuccess()) {
-            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        }
-        Boolean isReceive = false;
-        for (CouponQueryVo couponQueryVo : listResult.getData()) {
-            if (couponQueryVo.getFcouponId().equals(couponId)) {
-                isReceive = true;
-                break;
-            }
-        }
-        if (!isReceive) {
-            return Result.failure(MallExceptionCode.COUPON_INELIGIBILITY);
-        }
-        //剩余发放数量
-        Integer surplusReleaseQty = couponResult.getData().getFsurplusReleaseQty();
-        if (surplusReleaseQty.equals(0)) {
-            return Result.failure(MallExceptionCode.COUPON_IS_PAID_OUT);
-        }
         //每人限领
         Integer perLimit = couponResult.getData().getFperLimit();
         if (!perLimit.equals(0)) {
@@ -906,6 +881,31 @@ public class UserServiceImpl implements UserService {
                 //返回已领取
                 return Result.failure(MallExceptionCode.COUPON_IS_MAX);
             }
+        }
+        //剩余发放数量
+        Integer surplusReleaseQty = couponResult.getData().getFsurplusReleaseQty();
+        if (surplusReleaseQty.equals(0)) {
+            return Result.failure(MallExceptionCode.COUPON_IS_PAID_OUT);
+        }
+        //查询用户是否有领取资格
+        CouponQueryDto couponQueryDto = new CouponQueryDto();
+        List<Integer> couponTypeList = new ArrayList<>();
+        couponTypeList.add(couponResult.getData().getFcouponType());
+        couponQueryDto.setCouponTypes(couponTypeList);
+        couponQueryDto.setUserId(dto.getFuid());
+        Result<List<CouponQueryVo>> listResult = couponProviderApi.queryByUserId(couponQueryDto);
+        if (!listResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        Boolean isReceive = false;
+        for (CouponQueryVo couponQueryVo : listResult.getData()) {
+            if (couponQueryVo.getFcouponId().equals(couponId)) {
+                isReceive = true;
+                break;
+            }
+        }
+        if (!isReceive) {
+            return Result.failure(MallExceptionCode.COUPON_INELIGIBILITY);
         }
         return Result.success(couponId);
     }
