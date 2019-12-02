@@ -17,6 +17,12 @@ public class AftersaleListVo implements Serializable {
     @ApiModelProperty(value = "售后单号")
     private String forderAftersaleId;
 
+    @ApiModelProperty("商品Id")
+    private Long fgoodsId;
+
+    @ApiModelProperty("skuId")
+    private Long fskuId;
+
     @ApiModelProperty(value = "SKU编码")
     private String fskuCode;
 
