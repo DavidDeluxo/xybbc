@@ -29,13 +29,13 @@ public interface GoodsService {
      */
     Result<SearchFilterVo> searchSkuFilter(SearchItemDto searchItemDto);
 
-    /**
-     * 首页楼层一级分类热销前20数据
-     * @param cateIds
-     * @param infoVo
-     * @return
-     */
-    Result<List<CateSearchItemListVo>> floorSkus(List<Integer> cateIds, TokenInfoVo infoVo);
+//    /**
+//     * 首页楼层一级分类热销前20数据
+//     * @param cateIds
+//     * @param infoVo
+//     * @return
+//     */
+//    Result<List<CateSearchItemListVo>> floorSkus(List<Integer> cateIds, TokenInfoVo infoVo);
 
 
 }
