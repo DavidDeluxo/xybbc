@@ -1001,8 +1001,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         //所有券
         List<CouponVo> allCoupon = this.getAllSkuUserCoupon(fskuId, fuid);
         //已领取券
-        List<CouponVo> receiveCoupon = (List<CouponVo>) this.getAlreadyReceiveCoupon(fskuId, fuid).get("receiveCoupon");
-        List<Long> alCouponIds = (List<Long>) this.getAlreadyReceiveCoupon(fskuId, fuid).get("removeCoupon");
+        Map<String, Object> alreadyReceiveCoupon = this.getAlreadyReceiveCoupon(fskuId, fuid);
+        List<CouponVo> receiveCoupon = (List<CouponVo>) alreadyReceiveCoupon.get("receiveCoupon");
+        List<Long> alCouponIds = (List<Long>) alreadyReceiveCoupon.get("removeCoupon");
         //未领取券
         List<CouponVo> unReceiceCoupon = allCoupon.stream().filter(item -> !alCouponIds.contains(item.getFcouponId())).collect(toList());
 
@@ -1025,7 +1026,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         Result<List<CouponQueryVo>> couponQueryResult = couponProviderApi.queryBySkuId(couponQueryDto);
 
         List<CouponQueryVo> couponQueryVos = couponQueryResult.getData();
-        logger.info("获取sku满足的页面领取类型券{}， skuid ={}", JSON.toJSONString(couponQueryVos), fskuId);
+        logger.info("获取sku满足的页面领取类型券{}， skuid ={}", fskuId);
         if (!couponQueryResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
@@ -1220,16 +1221,18 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                         this.setSkuCondition(skuCondition, fskuId);
 
                         //优惠券条件
-                        List<Long> fbrandIds_coupon = (List<Long>) JSON.parse(couponCondition.getFbrandId());
-                        Map<Integer, List<Long>> fcategoryIds_coupon = (Map<Integer, List<Long>>) JSON.parse(couponCondition.getFcategoryId());
-                        List<Long> flabelIds_coupon = (List<Long>) JSON.parse(couponCondition.getFlabelId());
+                        List<Long> fbrandIds_coupon = JSON.parseObject(couponCondition.getFbrandId(), List.class);
+                        Map<String, List<Long>> fcategoryIds_coupon = JSON.parseObject(couponCondition.getFcategoryId(), Map.class);
+                        List<Long> flabelIds_coupon = JSON.parseObject(couponCondition.getFlabelId(), List.class);
+                        List<Long> ftradeId_coupon = JSON.parseObject(couponCondition.getFtradeCode(), List.class);
 
                         //skuid反推的条件
                         Long brandId = skuCondition.get("brandId");
-                        Long categoryId1 = skuCondition.get("categoryId1");
-                        Long categoryId2 = skuCondition.get("categoryId2");
-                        Long categoryId3 = skuCondition.get("categoryId3");
+                        Integer categoryId1 = skuCondition.get("categoryId1").intValue();
+                        Integer categoryId2 = skuCondition.get("categoryId2").intValue();
+                        Integer categoryId3 = skuCondition.get("categoryId3").intValue();
                         Long labelId = skuCondition.get("labelId");
+                        Long tradeId = skuCondition.get("tradeId");
 
                         if (CollectionUtils.isNotEmpty(fbrandIds_coupon) && fbrandIds_coupon.contains(brandId)) {
                             receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
@@ -1239,21 +1242,21 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                             continue;
                         }
                         if (Objects.nonNull(fcategoryIds_coupon)) {
-                            if (null != fcategoryIds_coupon.get(1) && fcategoryIds_coupon.get(1).contains(categoryId1)) {
+                            if (null != fcategoryIds_coupon.get("1") && fcategoryIds_coupon.get("1").contains(categoryId1)) {
                                 receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
                                 if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
                                     removeCoupon.add(fcouponId);
                                 }
                                 continue;
                             }
-                            if (null != fcategoryIds_coupon.get(2) && fcategoryIds_coupon.get(2).contains(categoryId2)) {
+                            if (null != fcategoryIds_coupon.get("2") && fcategoryIds_coupon.get("2").contains(categoryId2)) {
                                 receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
                                 if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
                                     removeCoupon.add(fcouponId);
                                 }
                                 continue;
                             }
-                            if (null != fcategoryIds_coupon.get(3) && fcategoryIds_coupon.get(3).contains(categoryId3)) {
+                            if (null != fcategoryIds_coupon.get("3") && fcategoryIds_coupon.get("3").contains(categoryId3)) {
                                 receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
                                 if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
                                     removeCoupon.add(fcouponId);
@@ -1262,6 +1265,13 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                             }
                         }
                         if (CollectionUtils.isNotEmpty(flabelIds_coupon) && flabelIds_coupon.contains(labelId)) {
+                            receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
+                                removeCoupon.add(fcouponId);
+                            }
+                            continue;
+                        }
+                        if (CollectionUtils.isNotEmpty(ftradeId_coupon) && ftradeId_coupon.contains(tradeId)) {
                             receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
                             if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
                                 removeCoupon.add(fcouponId);
@@ -1282,27 +1292,31 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                             this.setSkuCondition(skuCondition, fskuId);
                             if (null != couponCondition) {
                                 //优惠券条件
-                                List<Long> fbrandIds_coupon = (List<Long>) JSON.parse(couponCondition.getFbrandId());
-                                Map<Integer, List<Long>> fcategoryIds_coupon = (Map<Integer, List<Long>>) JSON.parse(couponCondition.getFcategoryId());
-                                List<Long> flabelIds_coupon = (List<Long>) JSON.parse(couponCondition.getFlabelId());
+                                List<Long> fbrandIds_coupon = JSON.parseObject(couponCondition.getFbrandId(), List.class);
+                                Map<String, List<Long>> fcategoryIds_coupon = JSON.parseObject(couponCondition.getFcategoryId(), Map.class);
+                                List<Long> flabelIds_coupon = JSON.parseObject(couponCondition.getFlabelId(), List.class);
+                                List<Long> ftradeId_coupon = JSON.parseObject(couponCondition.getFtradeCode(), List.class);
 
                                 //skuid反推的条件
                                 Long brandId = skuCondition.get("brandId");
-                                Long categoryId1 = skuCondition.get("categoryId1");
-                                Long categoryId2 = skuCondition.get("categoryId2");
-                                Long categoryId3 = skuCondition.get("categoryId3");
+                                Integer categoryId1 = skuCondition.get("categoryId1").intValue();
+                                Integer categoryId2 = skuCondition.get("categoryId2").intValue();
+                                Integer categoryId3 = skuCondition.get("categoryId3").intValue();
                                 Long labelId = skuCondition.get("labelId");
+                                Long tradeId = skuCondition.get("tradeId");
 
                                 if (CollectionUtils.isNotEmpty(fbrandIds_coupon) && !fbrandIds_coupon.contains(brandId)) {
-                                    if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get(1) && fcategoryIds_coupon.get(1).contains(categoryId1)) {
-                                        if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get(2) && fcategoryIds_coupon.get(2).contains(categoryId2)) {
-                                            if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get(3) && fcategoryIds_coupon.get(3).contains(categoryId3)) {
-                                                if (CollectionUtils.isNotEmpty(flabelIds_coupon) && flabelIds_coupon.contains(labelId)) {
-                                                    receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
-                                                    if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
-                                                        removeCoupon.add(fcouponId);
+                                    if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get("1") && !fcategoryIds_coupon.get("1").contains(categoryId1)) {
+                                        if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get("2") && !fcategoryIds_coupon.get("2").contains(categoryId2)) {
+                                            if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get("3") && !fcategoryIds_coupon.get("3").contains(categoryId3)) {
+                                                if (CollectionUtils.isNotEmpty(flabelIds_coupon) && !flabelIds_coupon.contains(labelId)) {
+                                                    if (CollectionUtils.isNotEmpty(ftradeId_coupon) && !ftradeId_coupon.contains(tradeId)) {
+                                                        receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                                                        if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
+                                                            removeCoupon.add(fcouponId);
+                                                        }
+                                                        continue;
                                                     }
-                                                    continue;
                                                 }
                                             }
                                         }
@@ -1349,7 +1363,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         if (null == skuCondition.get("brandId")) {
             Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
                     .andEqualTo(GoodsSku::getFskuId, fskuId)
-                    .fields(GoodsSku::getFbrandId, GoodsSku::getFcategoryId1, GoodsSku::getFcategoryId2, GoodsSku::getFcategoryId3, GoodsSku::getFlabelId));
+                    .fields(GoodsSku::getFbrandId, GoodsSku::getFcategoryId1, GoodsSku::getFcategoryId2,
+                            GoodsSku::getFcategoryId3, GoodsSku::getFlabelId, GoodsSku::getFgoodsId));
             GoodsSku goodsSku = goodsSkuResult.getData();
             if (goodsSkuResult.isSuccess() && null != goodsSku) {
                 skuCondition.put("brandId", goodsSku.getFbrandId());
@@ -1357,6 +1372,13 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 skuCondition.put("categoryId2", goodsSku.getFcategoryId2());
                 skuCondition.put("categoryId3", goodsSku.getFcategoryId3());
                 skuCondition.put("labelId", goodsSku.getFlabelId());
+                Result<Goods> goodsResult = goodsApi.queryOneByCriteria(Criteria.of(Goods.class)
+                        .andEqualTo(Goods::getFgoodsId, goodsSku.getFgoodsId())
+                        .fields(Goods::getFtradeId));
+                Goods goods = goodsResult.getData();
+                if (goodsResult.isSuccess() && null != goods) {
+                    skuCondition.put("tradeId", goods.getFtradeId());
+                }
             }
         }
         return skuCondition;

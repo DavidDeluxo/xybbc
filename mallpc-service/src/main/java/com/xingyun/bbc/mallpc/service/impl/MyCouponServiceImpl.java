@@ -6,6 +6,7 @@ import com.xingyun.bbc.activity.enums.CouponScene;
 import com.xingyun.bbc.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.activity.model.dto.CouponReleaseDto;
 import com.xingyun.bbc.activity.model.vo.CouponQueryVo;
+
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.CouponApi;
@@ -28,6 +29,7 @@ import com.xingyun.bbc.mallpc.common.utils.PageUtils;
 import com.xingyun.bbc.mallpc.common.utils.PriceUtil;
 import com.xingyun.bbc.mallpc.common.utils.RandomUtils;
 import com.xingyun.bbc.mallpc.model.dto.coupon.MyCouponDto;
+import com.xingyun.bbc.mallpc.model.dto.coupon.QueryCouponDto;
 import com.xingyun.bbc.mallpc.model.dto.coupon.ReceiveCouponDto;
 import com.xingyun.bbc.mallpc.model.vo.PageVo;
 import com.xingyun.bbc.mallpc.model.vo.coupon.CouponVo;
@@ -171,7 +173,8 @@ public class MyCouponServiceImpl implements MyCouponService {
                 .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
                 .andEqualTo(Coupon::getFreleaseType, CouponReleaseTypeEnum.PAGE_RECEIVE.getCode())
                 .fields(Coupon::getFperLimit, Coupon::getFsurplusReleaseQty, Coupon::getFvalidityType,
-                        Coupon::getFvalidityEnd, Coupon::getFreleaseTimeEnd, Coupon::getFreleaseTimeType
+                        Coupon::getFvalidityEnd, Coupon::getFreleaseTimeEnd, Coupon::getFreleaseTimeStart,
+                        Coupon::getFreleaseTimeType
                 ));
         if (!couponResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -203,8 +206,10 @@ public class MyCouponServiceImpl implements MyCouponService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         //校验该券领取上限
-        if (null != countResult.getData() && countResult.getData().equals(coupon.getFperLimit())) {
-            throw new BizException(MallPcExceptionCode.COUPON_IS_MAX);
+        if (null != countResult.getData()) {
+            if (countResult.getData().equals(coupon.getFperLimit())) {
+                throw new BizException(MallPcExceptionCode.COUPON_IS_MAX);
+            }
         }
         ReceiveCouponDto receiveCouponDto = new ReceiveCouponDto();
         receiveCouponDto.setFuid(fuid);
@@ -266,15 +271,17 @@ public class MyCouponServiceImpl implements MyCouponService {
      * @date 2019/11/12 13:49
      */
     @Override
-    public Result<List<ReceiveCenterCouponVo>> getCoupon(CouponQueryDto couponQueryDto) {
+    public Result<List<ReceiveCenterCouponVo>> getCoupon(QueryCouponDto queryCouponDto) {
         //校验用户id
-        if (null == couponQueryDto.getUserId()) {
+        if (null == queryCouponDto.getUserId()) {
             throw new BizException(MallPcExceptionCode.PARAM_ERROR);
         }
         List<Integer> list = new ArrayList<>();
+        CouponQueryDto couponQueryDto = new CouponQueryDto();
         //查出发放类型为2：页面领取的数据
         list.add(2);
         couponQueryDto.setReleaseTypes(list);
+        couponQueryDto.setUserId(queryCouponDto.getUserId());
         Result<List<CouponQueryVo>> couponQueryVos = couponProviderApi.queryByUserId(couponQueryDto);
         List<ReceiveCenterCouponVo> receiveCenterCouponVoList = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(couponQueryVos.getData())) {

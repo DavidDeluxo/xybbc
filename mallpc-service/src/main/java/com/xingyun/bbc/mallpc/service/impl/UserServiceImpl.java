@@ -66,10 +66,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant.USER_COUNT;
 import static com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant.USER_COUNT_LOCK;
@@ -172,7 +169,7 @@ public class UserServiceImpl implements UserService {
         information.setFloginMethod("PC端");
         information.setFloginSite("");
         information.setFipAdress(HttpUtil.getClientIP(RequestHolder.getRequest()));
-        String ua = RequestHolder.getRequest().getHeader("User-Agent");
+        String ua = RequestHolder.getRequest().getHeader("user-agent");
         UserAgent userAgent = UserAgent.parseUserAgentString(ua);
         information.setFunitType(userAgent.getBrowser().getName());
         information.setFoperatingSystem(userAgent.getOperatingSystem().getName());

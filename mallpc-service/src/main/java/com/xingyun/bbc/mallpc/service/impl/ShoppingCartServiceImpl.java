@@ -142,6 +142,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         }
         cartsVos.forEach(cartsVo -> {
             ShoppingCartGoodsVo shoppingCartGoodsVo = dozerMapper.map(cartsVo, ShoppingCartGoodsVo.class);
+            shoppingCartGoodsVo.setFstockRemianNum(cartsVo.getFstockRemianNum() / cartsVo.getFbatchPackageNum());
             shoppingCartGoodsVo.setFskuThumbImage(FileUtils.getFileUrl(shoppingCartGoodsVo.getFskuThumbImage()));
             shoppingCartGoodsVo.setBatchStartNum(cartsVo.getFbatchStartNum() + "件起发");
             shoppingCartGoodsVo.setBatchPackageNum(cartsVo.getFbatchPackageNum() + "件装");
