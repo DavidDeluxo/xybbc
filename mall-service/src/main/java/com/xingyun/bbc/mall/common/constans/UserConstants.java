@@ -42,6 +42,11 @@ public interface UserConstants {
          * 手机登录的token有效时间
          */
         public static final long TOKEN_AUTO_LOGIN_EXPIRATION = 60 * 60 * 1000 * 24 * 7;
+
+        /**
+         * 有效时间：一个月
+         */
+        public static final long TOKEN_EXPIRE_MONTH = 1000L * 60 * 60 * 24 * 30;
     }
 
     class Sms{

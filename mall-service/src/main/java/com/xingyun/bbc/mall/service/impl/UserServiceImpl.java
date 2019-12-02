@@ -188,7 +188,7 @@ public class UserServiceImpl implements UserService {
     //生成token信息
     private UserLoginVo createToken(User user) {
         UserLoginVo userLoginVo = new UserLoginVo();
-        long expire = UserConstants.Token.TOKEN_AUTO_LOGIN_EXPIRATION;
+        long expire = UserConstants.Token.TOKEN_EXPIRE_MONTH;
         TokenInfoVo tokenInfoVo = new TokenInfoVo();
         tokenInfoVo.setFverifyStatus(user.getFverifyStatus()).setFoperateType(user.getFoperateType());
         String token = xyUserJwtManager.createJwt(user.getFuid().toString(), JSON.toJSONString(tokenInfoVo), expire);
@@ -418,12 +418,12 @@ public class UserServiceImpl implements UserService {
         Date date = new Date();
         user.setFlastloginTime(date);
         user.setFmobileValidTime(date);
-        Result<User> idResult = userApi.saveAndReturn(user);
+        Result<Integer> idResult = userApi.create(user);
         if (!idResult.isSuccess()) {
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
         }
         Criteria<User, Object> criteria = Criteria.of(User.class);
-        criteria.andEqualTo(User::getFuid, idResult.getData().getFuid())
+        criteria.andEqualTo(User::getFmobile, dto.getFmobile())
                 .andEqualTo(User::getFisDelete, "0")
                 .fields(User::getFuid,User::getFfreezeStatus,User::getFheadpic,
                 User::getFnickname,User::getFoperateType,User::getFuname,User::getFregisterFrom,
@@ -448,11 +448,16 @@ public class UserServiceImpl implements UserService {
         }
         //领取注册优惠券和新人邀请券
         Integer couponNum = 0;
-        couponNum = queryRegistCoupon(userLoginVo.getFuid());
+//        couponNum = queryRegistCoupon(userLoginVo.getFuid());
         //当couponNum大于0时,前端提示"你有注册优惠券发放到账户"
         userLoginVo.setCouponRegisterNum(couponNum);
         incrUserCount();
         return Result.success(userLoginVo);
+    }
+
+    @Override
+    public Result<Integer> queryRegisterPopupWindows(Long fuid) {
+        return Result.success(queryRegistCoupon(fuid));
     }
 
     private void updateMarketUserStatistics(MarketUser marketUser, Long fuid) {
