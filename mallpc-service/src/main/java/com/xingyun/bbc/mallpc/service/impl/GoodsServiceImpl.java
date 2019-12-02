@@ -172,32 +172,32 @@ public class GoodsServiceImpl implements GoodsService {
         return Result.success(filterVo);
     }
 
-    @Override
-    public Result<List<CateSearchItemListVo>> floorSkus(List<Integer> cateIds, TokenInfoVo infoVo) {
-        if (CollectionUtils.isEmpty(cateIds)) {
-            return Result.success(new ArrayList<>());
-        }
-        List<CateSearchItemListVo> resultList = new ArrayList<>();
-        String priceName = this.getUserPriceType(infoVo.getIsLogin(), infoVo.getFuid(), infoVo.getFoperateType(), infoVo.getFverifyStatus());
-
-        List<CompletableFuture<CateSearchItemListVo>> completableFutureList = new ArrayList<>();
-
-        for (Integer cateId : cateIds) {
-            CompletableFuture<CateSearchItemListVo> result = CompletableFuture.supplyAsync(() -> getSkuList(cateId, infoVo, priceName));
-            completableFutureList.add(result);
-        }
-        CompletableFuture
-                .allOf(completableFutureList.toArray(new CompletableFuture[completableFutureList.size()]))
-                .join();
-        for (CompletableFuture completableFuture : completableFutureList) {
-            try {
-                resultList.add((CateSearchItemListVo) completableFuture.get());
-            } catch (Exception e) {
-                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
-            }
-        }
-        return Result.success(resultList);
-    }
+//    @Override
+//    public Result<List<CateSearchItemListVo>> floorSkus(List<Integer> cateIds, TokenInfoVo infoVo) {
+//        if (CollectionUtils.isEmpty(cateIds)) {
+//            return Result.success(new ArrayList<>());
+//        }
+//        List<CateSearchItemListVo> resultList = new ArrayList<>();
+//        String priceName = this.getUserPriceType(infoVo.getIsLogin(), infoVo.getFuid(), infoVo.getFoperateType(), infoVo.getFverifyStatus());
+//
+//        List<CompletableFuture<CateSearchItemListVo>> completableFutureList = new ArrayList<>();
+//
+//        for (Integer cateId : cateIds) {
+//            CompletableFuture<CateSearchItemListVo> result = CompletableFuture.supplyAsync(() -> getSkuList(cateId, infoVo, priceName));
+//            completableFutureList.add(result);
+//        }
+//        CompletableFuture
+//                .allOf(completableFutureList.toArray(new CompletableFuture[completableFutureList.size()]))
+//                .join();
+//        for (CompletableFuture completableFuture : completableFutureList) {
+//            try {
+//                resultList.add((CateSearchItemListVo) completableFuture.get());
+//            } catch (Exception e) {
+//                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+//            }
+//        }
+//        return Result.success(resultList);
+//    }
 
     /**
      * 封装查询条件查询
