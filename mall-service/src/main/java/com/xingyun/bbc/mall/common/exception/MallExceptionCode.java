@@ -31,7 +31,8 @@ public class MallExceptionCode implements IResultStatus {
     /**
      * 业务级别异常
      */
-    public static final MallExceptionCode SKU_BATCH_IS_NONE = new MallExceptionCode("6666", "没有批次");
+    public static final MallExceptionCode SKU_IS_NONE = new MallExceptionCode("6664", "查不到sku信息");
+    public static final MallExceptionCode SKU_BATCH_IS_NONE = new MallExceptionCode("6665", "没有批次");
     public static final MallExceptionCode SKU_PACKAGE_IS_NONE = new MallExceptionCode("6666", "没有批次包装规格");
     public static final MallExceptionCode NO_USER = new MallExceptionCode("6667", "没有用户信息");
     public static final MallExceptionCode NO_BATCH_USER_PRICE = new MallExceptionCode("6668", "没有SKU批次会员类型售价");

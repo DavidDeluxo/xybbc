@@ -6,7 +6,10 @@ import com.xingyun.bbc.core.operate.api.OrderConfigApi;
 import com.xingyun.bbc.core.operate.api.ShippingCompanyApi;
 import com.xingyun.bbc.core.operate.po.OrderConfig;
 import com.xingyun.bbc.core.operate.po.ShippingCompany;
-import com.xingyun.bbc.core.order.api.*;
+import com.xingyun.bbc.core.order.api.OrderAftersaleAdjustApi;
+import com.xingyun.bbc.core.order.api.OrderAftersaleApi;
+import com.xingyun.bbc.core.order.api.OrderAftersaleBackApi;
+import com.xingyun.bbc.core.order.api.OrderAftersalePicApi;
 import com.xingyun.bbc.core.order.enums.OrderAftersaleStatus;
 import com.xingyun.bbc.core.order.enums.OrderAftersaleType;
 import com.xingyun.bbc.core.order.po.OrderAftersale;
@@ -21,7 +24,9 @@ import com.xingyun.bbc.core.supplier.po.SupplierTransportSku;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.PageUtils;
+import com.xingyun.bbc.mall.base.utils.ResultUtils;
 import com.xingyun.bbc.mall.common.constans.MallConstants;
+import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.AftersaleBackDto;
 import com.xingyun.bbc.mall.model.dto.AftersaleLisDto;
 import com.xingyun.bbc.mall.model.dto.ShippingCompanyDto;
@@ -43,6 +48,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -94,6 +101,9 @@ public class AftersaleServiceImpl implements AftersaleService {
             logger.info("用户user_id {}获取售后订单信息失败", aftersaleLisDto.getFuserId());
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
+        if (countResult.getData().intValue() == 0) {
+            return Result.success(new PageVo<>());
+        }
 
         //售后状态1待客服审核 2待采购审核 3待仓库审核 4待财务审核 5已拒绝 6待退货 7待退款 8已成功 9已撤销  列表查询不限制状态
         criteria.fields(OrderAftersale::getForderAftersaleId, OrderAftersale::getFskuCode,
@@ -110,10 +120,21 @@ public class AftersaleServiceImpl implements AftersaleService {
         }
 
         PageVo<AftersaleListVo> result = pageUtils.convert(countResult.getData(), listResult.getData(), AftersaleListVo.class, aftersaleLisDto);
+        List<AftersaleListVo> aftersaleList = result.getList();
+        List<String> skuCodeList = aftersaleList.stream().map(AftersaleListVo::getFskuCode).distinct().collect(Collectors.toList());
+
+        Result<List<GoodsSku>> goodsSkuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
+                .andIn(GoodsSku::getFskuCode, skuCodeList)
+                .fields(GoodsSku::getFskuCode, GoodsSku::getFskuName, GoodsSku::getFskuThumbImage));
+        if (!goodsSkuResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        List<GoodsSku> goodsSkuList = ResultUtils.getListNotEmpty(goodsSkuResult, MallExceptionCode.SKU_IS_NONE);
+        Map<String, List<GoodsSku>> goodsSkuMap = goodsSkuList.stream().collect(Collectors.groupingBy(GoodsSku::getFskuCode));
 
         //获取skuName
-        for (AftersaleListVo aftersaleListVo : result.getList()) {
-            GoodsSku skuInfor = this.getSkuInfor(aftersaleListVo.getFskuCode());
+        for (AftersaleListVo aftersaleListVo : aftersaleList) {
+            GoodsSku skuInfor = goodsSkuMap.get(aftersaleListVo.getFskuCode()).get(0);
             aftersaleListVo.setFskuName(skuInfor.getFskuName());
             aftersaleListVo.setFskuPic(skuInfor.getFskuThumbImage());
             aftersaleListVo.setFbatchPackageName(aftersaleListVo.getFbatchPackageNum() + "件装");
@@ -162,8 +183,9 @@ public class AftersaleServiceImpl implements AftersaleService {
 
         //获取skuName
         AftersaleDetailVo aftersaleDetailVo = mapper.map(aftersaleBasicResult.getData(), AftersaleDetailVo.class);
-        aftersaleDetailVo.setFskuName(this.getSkuInfor(aftersaleDetailVo.getFskuCode()).getFskuName());
-        aftersaleDetailVo.setFskuPic(this.getSkuInfor(aftersaleDetailVo.getFskuCode()).getFskuThumbImage());
+        GoodsSku skuInfor = this.getSkuInfor(aftersaleDetailVo.getFskuCode());
+        aftersaleDetailVo.setFskuName(skuInfor.getFskuName());
+        aftersaleDetailVo.setFskuPic(skuInfor.getFskuThumbImage());
         aftersaleDetailVo.setFbatchPackageName(aftersaleDetailVo.getFbatchPackageNum() + "件装");
         aftersaleDetailVo.setFunitPrice(aftersaleDetailVo.getFunitPrice().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP));
         aftersaleDetailVo.setFaftersaleNumShow(this.getAftersaleNumShow(aftersaleDetailVo.getFaftersaleNum(), aftersaleDetailVo.getFtransportOrderId(), aftersaleDetailVo.getFskuCode()));
@@ -350,10 +372,8 @@ public class AftersaleServiceImpl implements AftersaleService {
         if (!goodsSkuResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        if (null != goodsSkuResult.getData() && null != goodsSkuResult.getData().getFskuName()) {
+        if (null != goodsSkuResult.getData()) {
             skuName = goodsSkuResult.getData().getFskuName();
-        }
-        if (null != goodsSkuResult.getData() && null != goodsSkuResult.getData().getFskuName()) {
             skuPic = goodsSkuResult.getData().getFskuThumbImage();
         }
         goodsSku.setFskuName(skuName);
