@@ -57,10 +57,14 @@ public class MyCouponServiceImpl implements MyCouponService {
         if (!countResult.isSuccess()){
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
+        if (countResult.getData().intValue() == 0) {
+            return Result.success(new MyCouponVo());
+        }
         Result<List<CouponReceive>> listResult = couponReceiveApi.selectMyCouponList(myCoupinReceiveDto);
         if (!listResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
+
         Integer count = countResult.getData().intValue();
         List<CouponReceive> couponReceives = listResult.getData();
         PageVo<CouponVo> couponPageVo = pageUtils.convert(count, couponReceives, CouponVo.class, myCouponDto);
