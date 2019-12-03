@@ -2,10 +2,7 @@ package com.xingyun.bbc.mallpc.controller;
 
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.utils.JwtParser;
-import com.xingyun.bbc.mallpc.model.dto.address.CityRegionDto;
-import com.xingyun.bbc.mallpc.model.dto.address.UserAddressDetailsDto;
-import com.xingyun.bbc.mallpc.model.dto.address.UserAddressDto;
-import com.xingyun.bbc.mallpc.model.dto.address.UserAddressListDto;
+import com.xingyun.bbc.mallpc.model.dto.address.*;
 import com.xingyun.bbc.mallpc.model.vo.PageVo;
 import com.xingyun.bbc.mallpc.model.vo.TokenInfoVo;
 import com.xingyun.bbc.mallpc.model.vo.address.CityRegionVo;
@@ -83,7 +80,7 @@ public class UserAddressController {
 
     @ApiOperation(value = "查询收件地址 确认订单页", httpMethod = "POST")
     @PostMapping("/queryAddress")
-    public Result<List<UserAddressListVo>> queryAddress(@RequestBody UserAddressListDto userAddressListDto){
-        return userAddressService.queryAddress(userAddressListDto);
+    public Result<List<UserAddressListVo>> queryAddress(@RequestBody UserDeliveryListDto userDeliveryListDto){
+        return userAddressService.queryAddress(userDeliveryListDto);
     }
 }
