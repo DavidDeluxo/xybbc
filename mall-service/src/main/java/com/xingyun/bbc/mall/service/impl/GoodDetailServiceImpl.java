@@ -40,6 +40,7 @@ import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.PriceUtil;
 import com.xingyun.bbc.mall.base.utils.RandomUtils;
+import com.xingyun.bbc.mall.base.utils.ResultUtils;
 import com.xingyun.bbc.mall.common.constans.MallConstants;
 import com.xingyun.bbc.mall.common.ensure.Ensure;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
@@ -277,13 +278,21 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         //商品各种规格
         GoodspecificationVo result = new GoodspecificationVo();
 
-        //sku规格
         Result<List<GoodsSku>> goodsSkuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
                 .andEqualTo(GoodsSku::getFgoodsId, fgoodsId)
                 .andEqualTo(GoodsSku::getFskuStatus, GoodsSkuEnums.Status.OnShelves.getValue())
                 .andEqualTo(GoodsSku::getFisDelete, "0")
                 .fields(GoodsSku::getFskuId, GoodsSku::getFskuCode, GoodsSku::getFskuSpecValue));
+        //sku规格
         List<GoodsSkuVo> skuRes = dozerHolder.convert(goodsSkuResult.getData(), GoodsSkuVo.class);
+        List<Long> skuIds = skuRes.stream().map(GoodsSkuVo::getFskuId).collect(toList());
+        Result<List<SkuBatch>> skuBatchResult = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
+                .andIn(SkuBatch::getFskuId, skuIds)
+                .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
+                .andEqualTo(SkuBatch::getFbatchPutwaySort, 1)//只用取上架排序为1的
+                .fields(SkuBatch::getFqualityEndDate, SkuBatch::getFsupplierSkuBatchId, SkuBatch::getFskuId));
+        List<SkuBatch> skuBatchList = ResultUtils.getListNotEmpty(skuBatchResult, MallExceptionCode.SKU_BATCH_IS_NONE);
+        Map<Long, List<SkuBatch>> skuPatchMap = skuBatchList.stream().collect(Collectors.groupingBy(SkuBatch::getFskuId));
         //批次效期
         List<GoodsSkuBatchVo> batchRes = new ArrayList<>();
         //包装规格
@@ -292,18 +301,17 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         List<GoodspecificationDetailVo> detailRes = new ArrayList<>();
 
         for (GoodsSkuVo skuVo : skuRes) {
-            Result<List<SkuBatch>> skuBatchResult = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
-                    .andEqualTo(SkuBatch::getFskuId, skuVo.getFskuId())
-                    .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
-                    .andEqualTo(SkuBatch::getFbatchPutwaySort, 1)//只用取上架排序为1的
-                    .fields(SkuBatch::getFqualityEndDate, SkuBatch::getFsupplierSkuBatchId));
-            List<GoodsSkuBatchVo> batchVert = dozerHolder.convert(skuBatchResult.getData(), GoodsSkuBatchVo.class);
+            List<GoodsSkuBatchVo> batchVert = dozerHolder.convert(skuPatchMap.get(skuVo.getFskuId()), GoodsSkuBatchVo.class);
+            List<String> batchIds = batchVert.stream().map(GoodsSkuBatchVo::getFsupplierSkuBatchId).collect(toList());
+            Result<List<SkuBatchPackage>> skuBatchPackageResult = skuBatchPackageApi.queryByCriteria(Criteria.of(SkuBatchPackage.class)
+                    .andIn(SkuBatchPackage::getFsupplierSkuBatchId, batchIds)
+                    .fields(SkuBatchPackage::getFbatchPackageId, SkuBatchPackage::getFbatchPackageNum,
+                            SkuBatchPackage::getFbatchStartNum, SkuBatchPackage::getFsupplierSkuBatchId));
+            List<SkuBatchPackage> packageList = ResultUtils.getListNotEmpty(skuBatchPackageResult, MallExceptionCode.SKU_PACKAGE_IS_NONE);
+            Map<String, List<SkuBatchPackage>> packageMap = packageList.stream().collect(Collectors.groupingBy(SkuBatchPackage::getFsupplierSkuBatchId));
             batchRes.addAll(batchVert);
             for (GoodsSkuBatchVo batchVo : batchVert) {
-                Result<List<SkuBatchPackage>> skuBatchPackageResult = skuBatchPackageApi.queryByCriteria(Criteria.of(SkuBatchPackage.class)
-                        .andEqualTo(SkuBatchPackage::getFsupplierSkuBatchId, batchVo.getFsupplierSkuBatchId())
-                        .fields(SkuBatchPackage::getFbatchPackageId, SkuBatchPackage::getFbatchPackageNum, SkuBatchPackage::getFbatchStartNum));
-                List<GoodsSkuBatchPackageVo> packageVert = dozerHolder.convert(skuBatchPackageResult.getData(), GoodsSkuBatchPackageVo.class);
+                List<GoodsSkuBatchPackageVo> packageVert = dozerHolder.convert(packageMap.get(batchVo.getFsupplierSkuBatchId()), GoodsSkuBatchPackageVo.class);
                 packageRes.addAll(packageVert);
                 for (GoodsSkuBatchPackageVo packageVo : packageVert) {
                     GoodspecificationDetailVo detailVo = new GoodspecificationDetailVo();
