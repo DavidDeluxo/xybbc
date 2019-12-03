@@ -101,7 +101,8 @@ public class WalletServiceImpl implements WalletService {
         Criteria<OrderPayment, Object> op = Criteria.of(OrderPayment.class);
 
         op.andEqualTo(OrderPayment::getFuid, uid);
-        op.andIn(OrderPayment::getForderStatus, Arrays.asList(TO_BE_DELIVERED.getValue(), PENDING_RECEIPT.getValue(), RECEIVED.getValue(), DONE.getValue()));
+        op.andIn(OrderPayment::getForderStatus, Arrays.asList(TO_BE_DELIVERED.getValue(), PENDING_RECEIPT.getValue(), RECEIVED.getValue(), DONE.getValue()))
+        .fields(OrderPayment::getFtotalAgentIncome);
         Result<List<OrderPayment>> orderListRes = orderPaymentApi.queryByCriteria(op);
 
         if (!orderListRes.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
