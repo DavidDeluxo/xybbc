@@ -311,7 +311,7 @@ public class UserServiceImpl implements UserService {
         criteria.andEqualTo(User::getFisDelete, "0")
                 .andLeft()
                 .orEqualTo(User::getFmobile, mobile)
-                .orEqualTo(User::getFuname, mobile).addRight();
+                .orEqualTo(User::getFuname, mobile).addRight().fields(User::getFuid);
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
         if (userResult.getData() != null) {
             return false;
@@ -418,12 +418,12 @@ public class UserServiceImpl implements UserService {
         Date date = new Date();
         user.setFlastloginTime(date);
         user.setFmobileValidTime(date);
-        Result<Integer> idResult = userApi.create(user);
+        Result<User> idResult = userApi.saveAndReturn(user);
         if (!idResult.isSuccess()) {
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
         }
         Criteria<User, Object> criteria = Criteria.of(User.class);
-        criteria.andEqualTo(User::getFmobile, dto.getFmobile())
+        criteria.andEqualTo(User::getFuid, idResult.getData().getFuid())
                 .andEqualTo(User::getFisDelete, "0")
                 .fields(User::getFuid,User::getFfreezeStatus,User::getFheadpic,
                 User::getFnickname,User::getFoperateType,User::getFuname,User::getFregisterFrom,
