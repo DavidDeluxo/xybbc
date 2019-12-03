@@ -24,6 +24,11 @@ public class ShoppingCartGoodsVo implements Serializable {
     private Long fshopcarId;
 
     /**
+     * 商品Id
+     */
+    private Long fgoodsId;
+
+    /**
      * sku编号
      */
     private String fskuId;
