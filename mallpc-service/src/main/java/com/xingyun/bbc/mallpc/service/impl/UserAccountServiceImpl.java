@@ -84,8 +84,8 @@ public class UserAccountServiceImpl implements UserAccountService {
     @Resource
     private OrderApi orderApi;
 
-    @Resource
-    private OrderAftersaleVerifyApi orderAftersaleVerifyApi;
+//    @Resource
+//    private OrderAftersaleVerifyApi orderAftersaleVerifyApi;
 
     @Resource
     private OrderAftersalePicApi orderAftersalePicApi;
