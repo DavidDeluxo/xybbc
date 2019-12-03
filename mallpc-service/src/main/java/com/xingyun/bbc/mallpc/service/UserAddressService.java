@@ -1,10 +1,7 @@
 package com.xingyun.bbc.mallpc.service;
 
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mallpc.model.dto.address.CityRegionDto;
-import com.xingyun.bbc.mallpc.model.dto.address.UserAddressDetailsDto;
-import com.xingyun.bbc.mallpc.model.dto.address.UserAddressDto;
-import com.xingyun.bbc.mallpc.model.dto.address.UserAddressListDto;
+import com.xingyun.bbc.mallpc.model.dto.address.*;
 import com.xingyun.bbc.mallpc.model.vo.PageVo;
 import com.xingyun.bbc.mallpc.model.vo.address.CityRegionVo;
 import com.xingyun.bbc.mallpc.model.vo.address.UserAddressDetailsVo;
@@ -79,5 +76,5 @@ public interface UserAddressService {
      * @description :  查询收件地址 确认订单页
      * @version 1.0.0
      */
-    Result<List<UserAddressListVo>> queryAddress(UserAddressListDto userAddressListDto);
+    Result<List<UserAddressListVo>> queryAddress(UserDeliveryListDto userDeliveryListDto);
 }

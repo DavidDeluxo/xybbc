@@ -7,6 +7,7 @@ import com.xingyun.bbc.core.operate.enums.BooleanNum;
 import com.xingyun.bbc.core.operate.po.CityRegion;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserDeliveryApi;
+import com.xingyun.bbc.core.user.dto.UserAddressQueryDto;
 import com.xingyun.bbc.core.user.po.UserDelivery;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.core.utils.StringUtil;
@@ -14,10 +15,7 @@ import com.xingyun.bbc.mallpc.common.components.DozerHolder;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.common.utils.*;
-import com.xingyun.bbc.mallpc.model.dto.address.CityRegionDto;
-import com.xingyun.bbc.mallpc.model.dto.address.UserAddressDetailsDto;
-import com.xingyun.bbc.mallpc.model.dto.address.UserAddressDto;
-import com.xingyun.bbc.mallpc.model.dto.address.UserAddressListDto;
+import com.xingyun.bbc.mallpc.model.dto.address.*;
 import com.xingyun.bbc.mallpc.model.vo.ImageVo;
 import com.xingyun.bbc.mallpc.model.vo.PageVo;
 import com.xingyun.bbc.mallpc.model.vo.address.CityRegionVo;
@@ -66,22 +64,21 @@ public class UserAddressServiceImpl implements UserAddressService {
      */
     @Override
     public Result<PageVo<UserAddressListVo>> query(UserAddressListDto userAddressListDto) {
+        Long userId = RequestHolder.getUserId();
         String fdeliveryCardid = userAddressListDto.getFdeliveryCardid();
         String fdeliveryMobile = userAddressListDto.getFdeliveryMobile();
         String fdeliveryName = userAddressListDto.getFdeliveryName();
         Criteria<UserDelivery, Object> deliveryCondition = Criteria.of(UserDelivery.class)
-                .sortDesc(UserDelivery::getFmodifyTime)
-                .andEqualTo(UserDelivery::getFuid, RequestHolder.getUserId())
+                .sortDesc(UserDelivery::getFisDefualt)
+                .andEqualTo(UserDelivery::getFuid, userId)
                 .andEqualTo(UserDelivery::getFisDelete,  BooleanNum.FALSE.getCode());
         if (Objects.nonNull(userAddressListDto.getIsDefault()) && Objects.equals(userAddressListDto.getIsDefault(), BooleanNum.TRUE.getCode())) {
             deliveryCondition.andEqualTo(UserDelivery::getFisDefualt,  BooleanNum.TRUE.getCode());
         }
         if (StringUtil.isNotBlank(fdeliveryCardid)) {
-            Ensure.that(StringUtilExtention.idCardCheck(fdeliveryCardid)).isTrue(MallPcExceptionCode.ID_CARD_NUMBER_ILLEGAL);
             deliveryCondition.andEqualTo(UserDelivery::getFdeliveryCardid, fdeliveryCardid);
         }
         if (StringUtil.isNotBlank(fdeliveryMobile)) {
-            Ensure.that(StringUtilExtention.mobileCheck(fdeliveryMobile)).isTrue(MallPcExceptionCode.BIND_MOBILE_ERROR);
             deliveryCondition.andEqualTo(UserDelivery::getFdeliveryMobile, fdeliveryMobile);
         }
         if (StringUtil.isNotBlank(fdeliveryName)) {
@@ -94,7 +91,11 @@ public class UserAddressServiceImpl implements UserAddressService {
             return pageHelper.emptyResult(userAddressListDto, UserAddressListVo.class);
         }
         // 分页
-        Result<List<UserDelivery>> userDeliveryResult = userDeliveryApi.queryByCriteria(deliveryCondition.page(userAddressListDto.getCurrentPage(), userAddressListDto.getPageSize()));
+        UserAddressQueryDto userAddressQueryDto = convertor.convert(userAddressListDto, UserAddressQueryDto.class);
+        Integer pageIndex = (userAddressListDto.getCurrentPage()-1) * (userAddressListDto.getPageSize());
+        userAddressQueryDto.setPageIndex(pageIndex);
+        userAddressQueryDto.setFuid(userId);
+        Result<List<UserDelivery>> userDeliveryResult = userDeliveryApi.selectList(userAddressQueryDto);
         Ensure.that(userDeliveryResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
         List<UserDelivery> userDeliveryList = userDeliveryResult.getData();
         List<UserAddressListVo> vos = userDeliveryList.stream().map(userDelivery -> convertAddress(userDelivery)).collect(toList());
@@ -235,18 +236,11 @@ public class UserAddressServiceImpl implements UserAddressService {
     }
 
     @Override
-    public Result<List<UserAddressListVo>> queryAddress(UserAddressListDto userAddressListDto) {
-        String keyword = userAddressListDto.getKeyword();
-        Criteria<UserDelivery, Object> deliveryCondition = Criteria.of(UserDelivery.class)
-                .sortDesc(UserDelivery::getFmodifyTime)
-                .andEqualTo(UserDelivery::getFuid, RequestHolder.getUserId())
-                .andEqualTo(UserDelivery::getFisDelete,  BooleanNum.FALSE.getCode());
-        if (StringUtil.isNotBlank(keyword)) {
-            deliveryCondition.andLeft().andLike(UserDelivery::getFdeliveryName, keyword+"%").orLike(UserDelivery::getFdeliveryMobile,keyword+"%").addRight();
-        }
-        System.out.println(deliveryCondition.buildSql());
-        // 分页
-        Result<List<UserDelivery>> userDeliveryResult = userDeliveryApi.queryByCriteria(deliveryCondition.page(userAddressListDto.getCurrentPage(), userAddressListDto.getPageSize()));
+    public Result<List<UserAddressListVo>> queryAddress(UserDeliveryListDto userDeliveryListDto){
+        Long userId = RequestHolder.getUserId();
+        UserAddressQueryDto userAddressQueryDto = convertor.convert(userDeliveryListDto, UserAddressQueryDto.class);
+        userAddressQueryDto.setFuid(userId);
+        Result<List<UserDelivery>> userDeliveryResult = userDeliveryApi.selectList(userAddressQueryDto);
         Ensure.that(userDeliveryResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
         List<UserDelivery> userDeliveryList = userDeliveryResult.getData();
         List<UserAddressListVo> vos = userDeliveryList.stream().map(userDelivery -> convertAddress(userDelivery)).collect(toList());
