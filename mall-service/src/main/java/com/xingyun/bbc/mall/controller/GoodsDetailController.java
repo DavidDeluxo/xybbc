@@ -3,6 +3,7 @@ package com.xingyun.bbc.mall.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mall.base.utils.JwtParser;
 import com.xingyun.bbc.mall.model.dto.GoodsDetailMallDto;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.GoodDetailService;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +28,9 @@ public class GoodsDetailController {
 
     @Autowired
     private GoodDetailService goodDetailService;
+
+    @Resource
+    private JwtParser jwtParser;
 
     @ApiOperation(value = "获取商品主图", httpMethod = "GET")
     @GetMapping("/via/getGoodDetailPic")
@@ -58,9 +63,10 @@ public class GoodsDetailController {
     @ApiOperation(value = "获取价格", httpMethod = "POST")
     @PostMapping("/getGoodPrice")
     public Result<GoodsPriceVo> getGoodPrice(@RequestBody GoodsDetailMallDto goodsDetailMallDto, HttpServletRequest request){
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
-        goodsDetailMallDto.setFuid(xyid);
-//      goodsDetailMallDto.setFuid(1l);
+        TokenInfoVo tokenInfo = jwtParser.getTokenInfo(request);
+        goodsDetailMallDto.setFuid(tokenInfo.getFuid().longValue());
+        goodsDetailMallDto.setFverifyStatus(tokenInfo.getFverifyStatus());
+        goodsDetailMallDto.setFoperateType(tokenInfo.getFoperateType());
         logger.info("获取价格 {}", JSON.toJSONString(goodsDetailMallDto));
         return goodDetailService.getGoodPrice(goodsDetailMallDto);
     }
