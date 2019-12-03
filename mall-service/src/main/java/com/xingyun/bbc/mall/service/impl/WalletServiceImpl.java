@@ -13,6 +13,7 @@ import com.xingyun.bbc.core.order.po.OrderPayment;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.*;
 import com.xingyun.bbc.core.user.po.*;
+import com.xingyun.bbc.core.utils.DateUtil;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.core.utils.StringUtil;
 import com.xingyun.bbc.mall.base.enums.MallResultStatus;
@@ -43,6 +44,7 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.validation.Valid;
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -363,19 +365,30 @@ public class WalletServiceImpl implements WalletService {
 
     private User checkUser(Long uid) {
         Result<User> userResult = userApi.queryById(uid);
-        if (!userResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (!userResult.isSuccess()){
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
 
         User user = userResult.getData();
-        if (null == user) throw new BizException(MallResultStatus.NAME_NOT_EXIST);
+        if (null == user){
+            throw new BizException(MallResultStatus.NAME_NOT_EXIST);
+        }
 
         // 是否删除：0否，1是
-        if (user.getFisDelete() == 1) throw new BizException(MallResultStatus.ACCOUNT_NOT_EXIST);
+        if (user.getFisDelete() == 1){
+            throw new BizException(MallResultStatus.ACCOUNT_NOT_EXIST);
+        }
 
         // 冻结状态 ：1正常，2冻结
-        if (user.getFfreezeStatus() != 1) throw new BizException(MallResultStatus.ACCOUNT_FREEZE);
+        if (user.getFfreezeStatus() != 1){
+            throw new BizException(MallResultStatus.ACCOUNT_FREEZE);
+        }
 
         // 用户状态：1未认证，2 认证中，3 已认证，4未通过
-        if (user.getFverifyStatus() != 3) throw new BizException(MallResultStatus.ACCOUNT_NOT_AUTH);
+        // 注册30天免认证
+        if (user.getFverifyStatus() != 3 && getDayDiff(DateUtil.formatDate(user.getFcreateTime()),DateUtil.formatDate(new Date()))>30){
+            throw new BizException(MallResultStatus.ACCOUNT_NOT_AUTH);
+        }
 
         // 手机号是否验证：0否，1是
         //if (user.getFmoblieIsValid() != 1) throw new BizException(MallResultStatus.ACCOUNT_MOBILE_NOT_VERIFY);
@@ -383,6 +396,22 @@ public class WalletServiceImpl implements WalletService {
         // 邮箱是否验证：0否，1是
         //if (user.getFmailIsValid() != 1) throw new BizException(MallResultStatus.ACCOUNT_MAIL_NOT_VERIFY);
         return user;
+    }
+
+    public Integer getDayDiff(String smdate,String bdate) {
+        long between_days = 0L;
+        try {
+            SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd");
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(sdf.parse(smdate));
+            long time1 = cal.getTimeInMillis();
+            cal.setTime(sdf.parse(bdate));
+            long time2 = cal.getTimeInMillis();
+            between_days=(time2-time1)/(1000*3600*24);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return Integer.parseInt(String.valueOf(between_days));
     }
 
     @Getter
