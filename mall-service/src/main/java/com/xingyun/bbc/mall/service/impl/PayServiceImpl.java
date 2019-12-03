@@ -132,13 +132,14 @@ public class PayServiceImpl implements PayService {
 		{
 			logger.info("余额支付。用户id：" +fuid+ "账号信息不存在");
 			return Result.failure(MallExceptionCode.USER_FREEZE_ERROR);
-		}else{
-			if(account.getFbalance()==0)
-			{
-				logger.info("余额支付。用户id：" +fuid+ "余额为0!");
-				return Result.failure(MallExceptionCode.BALANCE_NOT_ENOUGH);
-			}
 		}
+//		else{
+//			if(account.getFbalance()==0)
+//			{
+//				logger.info("余额支付。用户id：" +fuid+ "余额为0!");
+//				return Result.failure(MallExceptionCode.BALANCE_NOT_ENOUGH);
+//			}
+//		}
 		totalAmount= orderPayment.getFtotalOrderAmount();
 		unPayAmount = totalAmount - orderPayment.getFbalancePayAmount() - orderPayment.getFcreditPayAmount();
 		Long fbalance=account.getFbalance();
