@@ -79,6 +79,8 @@ public class PageConfigPcServiceImpl implements PageConfigPcService {
 
     private List<PageConfig> getPageConfig(Integer position) {
         Result<List<PageConfig>> listResult = pageConfigApi.queryByCriteria(Criteria.of(PageConfig.class)
+                .fields(PageConfig::getFconfigId,PageConfig::getFconfigType,PageConfig::getFconfigName,PageConfig::getFsortValue,PageConfig::getFimgUrl,
+                        PageConfig::getFtype,PageConfig::getFposition,PageConfig::getFlocation,PageConfig::getFrelationId,PageConfig::getFcategoryLevel,PageConfig::getFcreateTime,PageConfig::getFmodifyTime)
                 .andEqualTo(PageConfig::getFisDelete, 0)
                 .andEqualTo(PageConfig::getFconfigType, PageConfigType.PC_CONFIG.getCode())
                 .andEqualTo(PageConfig::getFposition, position)
