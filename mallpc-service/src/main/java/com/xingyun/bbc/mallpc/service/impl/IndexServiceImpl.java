@@ -1,10 +1,7 @@
 package com.xingyun.bbc.mallpc.service.impl;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.xingyun.bbc.core.enums.ResultStatus;
-import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.PageConfigApi;
 import com.xingyun.bbc.core.operate.enums.BooleanNum;
 import com.xingyun.bbc.core.operate.enums.GuideConfigType;
@@ -23,23 +20,24 @@ import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.components.DozerHolder;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
-import com.xingyun.bbc.mallpc.common.utils.EncryptUtils;
 import com.xingyun.bbc.mallpc.common.utils.FileUtils;
 import com.xingyun.bbc.mallpc.common.utils.MD5Util;
 import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
 import com.xingyun.bbc.mallpc.model.vo.index.*;
 import com.xingyun.bbc.mallpc.service.IndexService;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant.*;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 
 @Service
 public class IndexServiceImpl implements IndexService {
@@ -104,7 +102,7 @@ public class IndexServiceImpl implements IndexService {
     }
 
     @Override
-    public List<CateBrandVo> getBrandList(List<Long> cateIds){
+    public List<CateBrandVo> getBrandList(List<Long> cateIds) {
         String key = MD5Util.toMd5(Joiner.on("").join(cateIds));
         List<CateBrandVo> result = (List<CateBrandVo>) cacheTemplate
                 .get(INDEX_BRAND + key, INDEX_BRAND_UPDATE + key, BRAND_EXPIRE, () -> getCateBrands(cateIds));
@@ -113,10 +111,11 @@ public class IndexServiceImpl implements IndexService {
 
     /**
      * 查询一级分类下的热门品牌
+     *
      * @param cateIds
      * @return
      */
-    private List<CateBrandVo> getCateBrands(List<Long> cateIds){
+    private List<CateBrandVo> getCateBrands(List<Long> cateIds) {
         //查询热门品牌
         Criteria<GoodsBrand, Object> brandCriteria = Criteria.of(GoodsBrand.class)
                 .andEqualTo(GoodsBrand::getFisDelete, 0)
@@ -127,28 +126,28 @@ public class IndexServiceImpl implements IndexService {
             return new ArrayList();
         }
 
-        List<CateBrandVo> list = cateIds.stream().map(item->{
+        List<CateBrandVo> list = cateIds.stream().map(item -> {
             CateBrandVo vo = new CateBrandVo();
             vo.setCateId(item);
             return vo;
         }).collect(toList());
 
-        for(CateBrandVo vo : list){
+        Criteria<Goods, Object> goodsCriteria = Criteria.of(Goods.class)
+                .fields(Goods::getFbrandId, Goods::getFcategoryId1);
+        List<Goods> goodies = ResultUtils.getData(goodsApi.queryByCriteria(goodsCriteria));
+        Map<Long, List<Goods>> cateGoodsMap = goodies.stream().collect(Collectors.groupingBy((Goods::getFcategoryId1)));
+        for (CateBrandVo vo : list) {
             //查询入参一级分类id下的Goods的brandIds
-            Criteria<Goods, Object> goodsCriteria = Criteria.of(Goods.class)
-                    .andEqualTo(Goods::getFcategoryId1, vo.getCateId())
-                    .fields(Goods::getFbrandId);
-            List<Goods> goodsList = ResultUtils.getData(goodsApi.queryByCriteria(goodsCriteria));
+            List<Goods> goodsList = cateGoodsMap.get(vo.getCateId());
             if (CollectionUtils.isEmpty(goodsList)) {
                 vo.setBrands(new ArrayList<>());
                 continue;
             }
-
             List<Long> brandIds = goodsList.stream().map(Goods::getFbrandId).distinct().collect(Collectors.toList());
 
             //筛选出符合条件的品牌信息
             List<GoodsBrand> goodsBrands = brandList.stream().filter(hotBrand -> brandIds.contains(hotBrand.getFbrandId())).collect(Collectors.toList());
-            if(CollectionUtils.isEmpty(goodsBrands)){
+            if (CollectionUtils.isEmpty(goodsBrands)) {
                 vo.setBrands(new ArrayList<>());
                 continue;
             }
@@ -201,7 +200,7 @@ public class IndexServiceImpl implements IndexService {
                 .andEqualTo(GoodsCategory::getFisDisplay, 1));
         Ensure.that(goodsCategoryResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
         List<GoodsCategory> categoryList = goodsCategoryResult.getData();
-        if (CollectionUtils.isEmpty(categoryList)){
+        if (CollectionUtils.isEmpty(categoryList)) {
             return Result.success(Sets.newTreeSet());
         }
         List<GoodsCategoryVo> voList = categoryList.stream().map(category -> {
@@ -216,19 +215,19 @@ public class IndexServiceImpl implements IndexService {
         Set<GoodsCategoryVo> level2 = Sets.newTreeSet(levelMap.get(2));
         // 3级
         Set<GoodsCategoryVo> level3 = Sets.newTreeSet(levelMap.get(3));
-        fillChildCategory(level2,level3);
+        fillChildCategory(level2, level3);
         fillChildCategory(level1, level2);
         return Result.success(level1);
     }
 
     private void fillChildCategory(Set<GoodsCategoryVo> parentList, Set<GoodsCategoryVo> childList) {
-        if (CollectionUtils.isEmpty(childList)){
+        if (CollectionUtils.isEmpty(childList)) {
             return;
         }
         Map<Long, List<GoodsCategoryVo>> childMap = childList.stream().collect(groupingBy(GoodsCategoryVo::getFparentCategoryId));
-        parentList.stream().forEach(parent->{
+        parentList.stream().forEach(parent -> {
             List<GoodsCategoryVo> childs = childMap.get(parent.getFcategoryId());
-            if (CollectionUtils.isNotEmpty(childs)){
+            if (CollectionUtils.isNotEmpty(childs)) {
                 parent.setChildren(Sets.newTreeSet(childs));
             }
         });
