@@ -75,16 +75,16 @@ public class IndexController {
         return Result.success(indexService.getUserCount());
     }
 
-    @ApiOperation("查询楼层商品列表")
-    @GetMapping("/via/floorSkus")
-    public Result<List<CateSearchItemListVo>> floorSkus(@RequestParam List<Integer> cateIds, HttpServletRequest request) {
-        TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
-        Result<List<CateSearchItemListVo>> result = goodsService.floorSkus(cateIds, infoVo);
-        Map<String, Object> extra = new HashMap<>();
-        extra.put("fdfsHost", StringUtils.join(SystemConfig.fdfsHost, File.separator));
-        result.setExtra(extra);
-        return result;
-    }
+//    @ApiOperation("查询楼层商品列表")
+//    @GetMapping("/via/floorSkus")
+//    public Result<List<CateSearchItemListVo>> floorSkus(@RequestParam List<Integer> cateIds, HttpServletRequest request) {
+//        TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
+//        Result<List<CateSearchItemListVo>> result = goodsService.floorSkus(cateIds, infoVo);
+//        Map<String, Object> extra = new HashMap<>();
+//        extra.put("fdfsHost", StringUtils.join(SystemConfig.fdfsHost, File.separator));
+//        result.setExtra(extra);
+//        return result;
+//    }
 
     @ApiOperation(value = "商品分类查询接口")
     @GetMapping("/via/category")

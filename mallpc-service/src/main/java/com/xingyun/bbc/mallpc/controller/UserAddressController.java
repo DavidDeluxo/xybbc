@@ -80,4 +80,10 @@ public class UserAddressController {
         Assert.notNull(infoVo.getFuid(), "用户不能为空");
         return Result.success(userAddressService.defaultAddress(infoVo.getFuid()));
     }
+
+    @ApiOperation(value = "查询收件地址 确认订单页", httpMethod = "POST")
+    @PostMapping("/queryAddress")
+    public Result<List<UserAddressListVo>> queryAddress(@RequestBody UserAddressListDto userAddressListDto){
+        return userAddressService.queryAddress(userAddressListDto);
+    }
 }

@@ -15,7 +15,7 @@ public class MyCouponDto extends PageDto implements Serializable {
     @ApiModelProperty(value = "用户id")
     private Long fuid;
 
-    @ApiModelProperty(value = "优惠券状态，1未使用、2已使用、3已失效")
+    @ApiModelProperty(value = "优惠券状态，1未使用、2已使用、3已作废")
     private Integer fuserCouponStatus;
 
 }

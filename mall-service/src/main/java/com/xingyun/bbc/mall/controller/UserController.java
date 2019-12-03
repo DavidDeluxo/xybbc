@@ -159,6 +159,13 @@ public class UserController {
         return userService.queryPopupWindowsStatus(fuid);
     }
 
+    @ApiOperation("注册弹窗")
+    @PostMapping("/queryRegisterPopupWindows")
+    public Result<Integer> queryRegisterPopupWindows(HttpServletRequest request){
+        Long fuid = Long.parseLong(request.getHeader("xyid"));
+        return userService.queryRegisterPopupWindows(fuid);
+    }
+
     @ApiOperation("修改用户名")
     @PostMapping("/modifiyUserNickname")
     public Result<Integer> modifiyUserNickname(@RequestBody UserDto dto, HttpServletRequest request){

@@ -68,5 +68,7 @@ public interface UserService {
      */
     Result<Integer>getUnusedCouponCount(Long fuid);
 
+    //返回注册可领取优惠券数量
+    Result<Integer> queryRegisterPopupWindows(Long fuid);
 }
 

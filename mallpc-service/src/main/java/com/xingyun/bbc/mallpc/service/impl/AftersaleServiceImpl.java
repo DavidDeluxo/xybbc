@@ -27,6 +27,7 @@ import com.xingyun.bbc.mallpc.common.utils.PageHelper;
 import com.xingyun.bbc.mallpc.common.utils.PriceUtil;
 import com.xingyun.bbc.mallpc.model.dto.aftersale.AftersaleBackDto;
 import com.xingyun.bbc.mallpc.model.dto.aftersale.AftersaleLisDto;
+import com.xingyun.bbc.mallpc.model.dto.aftersale.AftersaleSkuInforDto;
 import com.xingyun.bbc.mallpc.model.dto.aftersale.ShippingCompanyDto;
 import com.xingyun.bbc.mallpc.model.vo.PageVo;
 import com.xingyun.bbc.mallpc.model.vo.aftersale.AftersaleBackVo;
@@ -122,13 +123,15 @@ public class AftersaleServiceImpl implements AftersaleService {
         }
         PageVo<AftersaleListVo> result = pageUtils.convert(countResult.getData().intValue(), listResult.getData(), AftersaleListVo.class, aftersaleLisDto);
         for (AftersaleListVo aftersaleListVo : result.getList()) {
-            GoodsSku skuInfor = this.getSkuInfor(aftersaleListVo.getFskuCode());
+            AftersaleSkuInforDto skuInfor = this.getSkuInfor(aftersaleListVo.getFskuCode());
+            aftersaleListVo.setFgoodsId(skuInfor.getFgoodsId());
+            aftersaleListVo.setFskuId(skuInfor.getFskuId());
             aftersaleListVo.setFskuName(skuInfor.getFskuName());
             aftersaleListVo.setFskuPic(skuInfor.getFskuThumbImage());
+            aftersaleListVo.setFtradeType(skuInfor.getFtradeType());
             aftersaleListVo.setFbatchPackageName(aftersaleListVo.getFbatchPackageNum() + "件装");
             aftersaleListVo.setFunitPrice(PriceUtil.toYuan(aftersaleListVo.getFunitPrice()));
             aftersaleListVo.setFaftersaleNumShow(this.getAftersaleNumShow(aftersaleListVo.getFaftersaleNum(), aftersaleListVo.getFtransportOrderId(), aftersaleListVo.getFskuCode()));
-            aftersaleListVo.setFtradeType(this.getTradeType(aftersaleListVo.getFskuCode()));
             aftersaleListVo.setFvalidityPeriod(this.getValidityPeriod(aftersaleListVo.getFbatchId()));
             OrderAftersaleBack nameMobile = this.getNameMobile(aftersaleListVo.getForderAftersaleId());
             aftersaleListVo.setFdeliveryName(nameMobile.getFdeliveryName());
@@ -152,15 +155,19 @@ public class AftersaleServiceImpl implements AftersaleService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
 
-        //获取skuName
+        //获取sku信息
         AftersaleDetailVo aftersaleDetailVo = mapper.map(aftersaleBasicResult.getData(), AftersaleDetailVo.class);
-        aftersaleDetailVo.setFskuName(this.getSkuInfor(aftersaleDetailVo.getFskuCode()).getFskuName());
-        aftersaleDetailVo.setFskuPic(this.getSkuInfor(aftersaleDetailVo.getFskuCode()).getFskuThumbImage());
+        AftersaleSkuInforDto skuInfor = this.getSkuInfor(aftersaleDetailVo.getFskuCode());
+        aftersaleDetailVo.setFgoodsId(skuInfor.getFgoodsId());
+        aftersaleDetailVo.setFskuId(skuInfor.getFskuId());
+        aftersaleDetailVo.setFskuName(skuInfor.getFskuName());
+        aftersaleDetailVo.setFskuPic(skuInfor.getFskuThumbImage());
+        aftersaleDetailVo.setFtradeType(skuInfor.getFtradeType());
+
         aftersaleDetailVo.setFbatchPackageName(aftersaleDetailVo.getFbatchPackageNum() + "件装");
         aftersaleDetailVo.setFunitPrice(PriceUtil.toYuan(aftersaleDetailVo.getFunitPrice()));
         aftersaleDetailVo.setFrealPayAmount(PriceUtil.toYuan(aftersaleDetailVo.getFunitPrice().multiply(new BigDecimal(aftersaleDetailVo.getFaftersaleNum()))));//实付金额 = 单价 * 数量
         aftersaleDetailVo.setFaftersaleNumShow(this.getAftersaleNumShow(aftersaleDetailVo.getFaftersaleNum(), aftersaleDetailVo.getFtransportOrderId(), aftersaleDetailVo.getFskuCode()));
-        aftersaleDetailVo.setFtradeType(this.getTradeType(aftersaleDetailVo.getFskuCode()));
 
         //获取效期
         aftersaleDetailVo.setFvalidityPeriod(this.getValidityPeriod(aftersaleDetailVo.getFbatchId()));
@@ -368,48 +375,39 @@ public class AftersaleServiceImpl implements AftersaleService {
         return Result.success(aftersaleBackVo);
     }
 
-    private GoodsSku getSkuInfor(String skuCode) {
-        GoodsSku goodsSku = new GoodsSku();
-        String skuName = "";
-        String skuPic = "";
+    //sku相关信息
+    private AftersaleSkuInforDto getSkuInfor(String skuCode) {
         Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
                 .andEqualTo(GoodsSku::getFskuCode, skuCode)
-                .fields(GoodsSku::getFskuName, GoodsSku::getFskuThumbImage));
+                .fields(GoodsSku::getFgoodsId, GoodsSku::getFskuId, GoodsSku::getFskuName, GoodsSku::getFskuThumbImage));
         if (!goodsSkuResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        if (null != goodsSkuResult.getData() && null != goodsSkuResult.getData().getFskuName()) {
-            skuName = goodsSkuResult.getData().getFskuName();
-        }
-        if (null != goodsSkuResult.getData() && null != goodsSkuResult.getData().getFskuName()) {
-            skuPic = goodsSkuResult.getData().getFskuThumbImage();
-        }
-        goodsSku.setFskuName(skuName);
-        goodsSku.setFskuThumbImage(skuPic);
-        return goodsSku;
-    }
-
-    private String getTradeType (String fskuCode) {
-        String tradeType = "";
-        Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
-                .andEqualTo(GoodsSku::getFskuCode, fskuCode)
-                .fields(GoodsSku::getFgoodsId));
-        if (goodsSkuResult.isSuccess() && null != goodsSkuResult.getData()) {
+        AftersaleSkuInforDto result = new AftersaleSkuInforDto();
+        GoodsSku goodsSkuData = goodsSkuResult.getData();
+        result.setFgoodsId(null != goodsSkuData ? goodsSkuData.getFgoodsId() : 0l);
+        result.setFskuId(null != goodsSkuData ? goodsSkuData.getFskuId() : 0l);
+        result.setFskuName(null != goodsSkuData ? goodsSkuData.getFskuName() : "");
+        result.setFskuThumbImage(null != goodsSkuData ? goodsSkuData.getFskuThumbImage() : "");
+        result.setFtradeType("");
+        if (null != goodsSkuData) {
             Long fgoodsId = goodsSkuResult.getData().getFgoodsId();
             Result<Goods> goodsResult = goodsApi.queryOneByCriteria(Criteria.of(Goods.class)
                     .andEqualTo(Goods::getFgoodsId, fgoodsId)
                     .fields(Goods::getFtradeId));
             if (goodsResult.isSuccess() && null != goodsResult.getData()) {
                 Long ftradeId = goodsResult.getData().getFtradeId();
-                Result<TradeType> tradeTypeResult = tradeTypeApi.queryOneByCriteria(Criteria.of(TradeType.class).andEqualTo(TradeType::getFtradeTypeId, ftradeId).fields(TradeType::getFtradeType));
+                Result<TradeType> tradeTypeResult = tradeTypeApi.queryOneByCriteria(Criteria.of(TradeType.class)
+                        .andEqualTo(TradeType::getFtradeTypeId, ftradeId).fields(TradeType::getFtradeType));
                 if (tradeTypeResult.isSuccess() && null != tradeTypeResult.getData()) {
-                    tradeType = tradeTypeResult.getData().getFtradeType();
+                    result.setFtradeType(tradeTypeResult.getData().getFtradeType());
                 }
             }
         }
-        return tradeType;
+        return result;
     }
 
+    //效期
     private String getValidityPeriod (String fbatchId) {
         String validityPeriod = "";
         DateFormat sdf = new SimpleDateFormat("yyyy-MM");
@@ -448,6 +446,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         return result;
     }
 
+    //获取售后总金额
     private Long getAftersaleTotalAmount (String faftersaleId) {
         //获取售后总金额
         Result<OrderAftersaleAdjust> aftersaleAdjustResult = orderAftersaleAdjustApi.queryOneByCriteria(Criteria.of(OrderAftersaleAdjust.class)

@@ -72,4 +72,12 @@ public interface UserAddressService {
      * @version 1.0.0
      */
     UserAddressDetailsVo defaultAddress(Integer userId);
+
+    /**
+     * @author nick
+     * @date 2019-11-20
+     * @description :  查询收件地址 确认订单页
+     * @version 1.0.0
+     */
+    Result<List<UserAddressListVo>> queryAddress(UserAddressListDto userAddressListDto);
 }

@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mallpc.service.impl;
 
 import cn.hutool.http.HttpUtil;
+import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.activity.api.CouponProviderApi;
 import com.xingyun.bbc.activity.enums.CouponScene;
 import com.xingyun.bbc.activity.model.dto.CouponReleaseDto;
@@ -49,6 +50,7 @@ import com.xingyun.bbc.mallpc.model.dto.user.SendSmsCodeDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserLoginDto;
 import com.xingyun.bbc.mallpc.model.dto.user.UserRegisterDto;
 import com.xingyun.bbc.mallpc.model.vo.PageVo;
+import com.xingyun.bbc.mallpc.model.vo.TokenInfoVo;
 import com.xingyun.bbc.mallpc.model.vo.coupon.CouponVo;
 import com.xingyun.bbc.mallpc.model.vo.coupon.MyCouponVo;
 import com.xingyun.bbc.mallpc.model.vo.user.SendSmsCodeVo;
@@ -60,7 +62,6 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -70,6 +71,8 @@ import java.util.*;
 
 import static com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant.USER_COUNT;
 import static com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant.USER_COUNT_LOCK;
+import static java.util.Comparator.*;
+import static java.util.stream.Collectors.*;
 
 /**
  * @author nick
@@ -79,11 +82,6 @@ import static com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant.USER_C
  */
 @Service
 public class UserServiceImpl implements UserService {
-
-    /**
-     * 自动登录的cookie name
-     */
-    private static final String AUTO_LOGIN_COOKIE = "auto_login";
 
     @Resource
     private DozerHolder convertor;
@@ -130,7 +128,7 @@ public class UserServiceImpl implements UserService {
     @Resource
     private XybbcLock xybbcLock;
 
-    @Autowired
+    @Resource
     private UserLoginInformationApi userLoginInformationApi;
 
     /**
@@ -181,7 +179,9 @@ public class UserServiceImpl implements UserService {
     private UserLoginVo createToken(User user) {
         UserLoginVo userLoginVo = convertor.convert(user, UserLoginVo.class);
         long expire = UserConstants.Token.TOKEN_AUTO_LOGIN_EXPIRATION;
-        String token = xyUserJwtManager.createJwt(user.getFuid().toString(), user.getFmobile(), expire);
+        TokenInfoVo tokenInfoVo = new TokenInfoVo();
+        tokenInfoVo.setFverifyStatus(user.getFverifyStatus()).setFoperateType(user.getFoperateType());
+        String token = xyUserJwtManager.createJwt(user.getFuid().toString(), JSON.toJSONString(tokenInfoVo), expire);
         userLoginVo.setExpire(expire);
         userLoginVo.setToken(token);
         if (StringUtils.isBlank(userLoginVo.getFnickname())) {
@@ -344,7 +344,7 @@ public class UserServiceImpl implements UserService {
 
     private void sendSms(String ipAddress, String fmobile) {
         // 发送验证码
-        String verifyCode = RandomUtils.randomString(4);
+        String verifyCode =generateAuthNum(4);
         String content = StringUtils.join("您的验证码是：", verifyCode, "，请勿泄露）。若非本人操作，请忽略本短信", "【行云全球汇】");
         smsApi.sendSms(fmobile, content);
         // 令牌放进redis
@@ -439,8 +439,12 @@ public class UserServiceImpl implements UserService {
             couponVo.setFvalidityDays(coupon.getFvalidityDays());
             couponVo.setFreleaseType(coupon.getFreleaseType());
         }
+        // 排序
+        List<CouponVo> collect = couponPageVo.getList().stream()
+                .sorted(comparing(CouponVo::getFvalidityEnd).thenComparing(CouponVo::getFdeductionValue, reverseOrder()))
+                .collect(toList());
+        couponPageVo.setList(collect);
         //查询各种优惠券数量
-
         MyCouponVo myCouponVo = new MyCouponVo();
         myCouponVo.setCouponVo(couponPageVo);
         myCouponVo.setUnUsedNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.NOT_USED.getCode()) ? count
@@ -558,5 +562,14 @@ public class UserServiceImpl implements UserService {
         Ensure.that(userResult).isNotNullData(MallPcExceptionCode.ACCOUNT_NOT_EXIST);
         Ensure.that(userResult.getData().getFfreezeStatus()).isEqual(1, MallPcExceptionCode.ACCOUNT_FREEZE);
         return Result.success(createToken(userResult.getData()));
+    }
+
+    private String generateAuthNum(int authLen) {
+        StringBuilder str = new StringBuilder();
+        Random random = new Random();
+        for (int i = 0; i < authLen; i++) {
+            str.append(random.nextInt(10));
+        }
+        return str.toString();
     }
 }

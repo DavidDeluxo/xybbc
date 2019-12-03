@@ -4,6 +4,7 @@ import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.CouponApi;
 import com.xingyun.bbc.core.market.api.CouponReceiveApi;
+import com.xingyun.bbc.core.market.dto.MyCoupinReceiveDto;
 import com.xingyun.bbc.core.market.enums.CouponReceiveStatusEnum;
 import com.xingyun.bbc.core.market.enums.CouponTypeEnum;
 import com.xingyun.bbc.core.market.po.Coupon;
@@ -43,21 +44,20 @@ public class MyCouponServiceImpl implements MyCouponService {
     @Override
     public Result<MyCouponVo> getMyCouponVo(MyCouponDto myCouponDto) {
         //查询已经领到的优惠券信息
-        Criteria<CouponReceive, Object> criteria = Criteria.of(CouponReceive.class)
-                .andEqualTo(CouponReceive::getFuid, myCouponDto.getFuid())
-                .andEqualTo(CouponReceive::getFuserCouponStatus, myCouponDto.getFuserCouponStatus());
-        Result<Integer> countResult = couponReceiveApi.countByCriteria(criteria);
+        MyCoupinReceiveDto myCoupinReceiveDto = new MyCoupinReceiveDto();
+        myCoupinReceiveDto.setFuid(myCouponDto.getFuid());
+        myCoupinReceiveDto.setFuserCouponStatus(myCouponDto.getFuserCouponStatus());
+        myCoupinReceiveDto.setCurrentPage(myCouponDto.getCurrentPage());
+        myCoupinReceiveDto.setPageSize(myCouponDto.getPageSize());
+        Result<Long> countResult = couponReceiveApi.selectMyCouponCount(myCoupinReceiveDto);
         if (!countResult.isSuccess()){
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        criteria.fields(CouponReceive::getFcouponId, CouponReceive::getFvalidityStart, CouponReceive::getFvalidityEnd)
-                .page(myCouponDto.getCurrentPage(), myCouponDto.getPageSize())
-                .sortDesc(CouponReceive::getFcreateTime);
-        Result<List<CouponReceive>> listResult = couponReceiveApi.queryByCriteria(criteria);
+        Result<List<CouponReceive>> listResult = couponReceiveApi.selectMyCouponList(myCoupinReceiveDto);
         if (!listResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        Integer count = countResult.getData();
+        Integer count = countResult.getData().intValue();
         PageVo<CouponVo> couponPageVo = pageUtils.convert(count, listResult.getData(), CouponVo.class, myCouponDto);
         //查询优惠券信息
         for (CouponVo couponVo : couponPageVo.getList()) {

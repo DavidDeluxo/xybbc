@@ -46,16 +46,17 @@ public class GoodsController {
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
         dto.setIsLogin(infoVo.getIsLogin());
         dto.setFuid(infoVo.getFuid());
-
+        dto.setFverifyStatus(infoVo.getFverifyStatus());
+        dto.setFoperateType(infoVo.getFoperateType());
         log.info("查询商品列表,请求参数:{}", JSON.toJSONString(dto));
 
         Result<SearchItemListVo<SearchItemVo>> result;
         if (Objects.nonNull(dto.getFcouponId())) {
             result = couponGoodsService.queryGoodsList(dto);
-        }else{
+        } else {
             result = goodsService.searchSkuList(dto);
         }
-        Map<String,Object> extra = new HashMap<>();
+        Map<String, Object> extra = new HashMap<>();
         extra.put("fdfsHost", StringUtils.join(SystemConfig.fdfsHost, File.separator));
         result.setExtra(extra);
         return result;

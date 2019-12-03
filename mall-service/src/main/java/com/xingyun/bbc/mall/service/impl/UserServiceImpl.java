@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.google.common.base.Strings;
 import com.xingyun.bbc.activity.api.CouponProviderApi;
 import com.xingyun.bbc.activity.enums.CouponScene;
@@ -19,7 +20,11 @@ import com.xingyun.bbc.core.market.po.Coupon;
 import com.xingyun.bbc.core.market.po.CouponBindUser;
 import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
+import com.xingyun.bbc.core.operate.api.MarketUserApi;
+import com.xingyun.bbc.core.operate.api.MarketUserStatisticsApi;
 import com.xingyun.bbc.core.operate.po.CityRegion;
+import com.xingyun.bbc.core.operate.po.MarketUser;
+import com.xingyun.bbc.core.operate.po.MarketUserStatistics;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserAccountApi;
 import com.xingyun.bbc.core.user.api.UserApi;
@@ -36,7 +41,6 @@ import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.EncryptUtils;
 import com.xingyun.bbc.mall.base.utils.Md5Utils;
 import com.xingyun.bbc.mall.common.RedisHolder;
-import com.xingyun.bbc.mall.common.constans.MallRedisConstant;
 import com.xingyun.bbc.mall.common.constans.UserConstants;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.common.lock.XybbcLock;
@@ -110,7 +114,10 @@ public class UserServiceImpl implements UserService {
     private XybbcLock xybbcLock;
     @Autowired
     private RedisHolder redisHolder;
-
+    @Autowired
+    private MarketUserApi marketUserApi;
+    @Autowired
+    private MarketUserStatisticsApi marketUserStatisticsApi;
     @Autowired
     private UserLoginInformationApi userLoginInformationApi;
 
@@ -126,7 +133,11 @@ public class UserServiceImpl implements UserService {
                 .andEqualTo(User::getFpasswd, passWord)
                 .andLeft().orEqualTo(User::getFmobile, dto.getUserAccount())
                 .orEqualTo(User::getFmail, dto.getUserAccount())
-                .orEqualTo(User::getFuname, dto.getUserAccount()).addRight();
+                .orEqualTo(User::getFuname, dto.getUserAccount()).addRight()
+                .fields(User::getFuid,User::getFfreezeStatus,User::getFheadpic,
+                        User::getFnickname,User::getFoperateType,User::getFuname,User::getFregisterFrom,
+                        User::getFverifyStatus,User::getFverifyStatus,User::getFmobile,User::getFmail,
+                        User::getFwithdrawPasswd);
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
         if (userResult.getData() == null) {
             return Result.failure(MallResultStatus.LOGIN_FAILURE);
@@ -177,8 +188,10 @@ public class UserServiceImpl implements UserService {
     //生成token信息
     private UserLoginVo createToken(User user) {
         UserLoginVo userLoginVo = new UserLoginVo();
-        long expire = UserConstants.Token.TOKEN_AUTO_LOGIN_EXPIRATION;
-        String token = xyUserJwtManager.createJwt(user.getFuid().toString(), user.getFmobile(), expire);
+        long expire = UserConstants.Token.TOKEN_EXPIRE_MONTH;
+        TokenInfoVo tokenInfoVo = new TokenInfoVo();
+        tokenInfoVo.setFverifyStatus(user.getFverifyStatus()).setFoperateType(user.getFoperateType());
+        String token = xyUserJwtManager.createJwt(user.getFuid().toString(), JSON.toJSONString(tokenInfoVo), expire);
         userLoginVo.setExpire(expire);
         userLoginVo.setToken(token);
         userLoginVo.setFuid(user.getFuid());
@@ -264,7 +277,7 @@ public class UserServiceImpl implements UserService {
     private SendSmsVo sendSms(SendSmsVo sendSmsVo, UserSecurityDto dto) {
         String mobile = dto.getFmobile();
         String authNum = generateAuthNum(4);
-        String SmsTemplate = "您的验证码是：" + authNum + "，请勿泄露）。若非本人操作，请忽略本短信";
+        String SmsTemplate = "您的验证码是：" + authNum + "，请勿泄露。若非本人操作，请忽略本短信";
         String signature = "【行云全球汇】";
         String content = signature + SmsTemplate;
         logger.info(content);
@@ -298,7 +311,7 @@ public class UserServiceImpl implements UserService {
         criteria.andEqualTo(User::getFisDelete, "0")
                 .andLeft()
                 .orEqualTo(User::getFmobile, mobile)
-                .orEqualTo(User::getFuname, mobile).addRight();
+                .orEqualTo(User::getFuname, mobile).addRight().fields(User::getFuid);
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
         if (userResult.getData() != null) {
             return false;
@@ -373,6 +386,7 @@ public class UserServiceImpl implements UserService {
     @GlobalTransactional
     public Result<UserLoginVo> registerUser(UserRegisterDto dto) {
         User user = new User();
+        MarketUser marketUser = null;
         String mobile = dto.getFmobile();
         //手机号是否注册校验
         boolean CheckExist = CheckMobileExist(mobile);
@@ -384,6 +398,17 @@ public class UserServiceImpl implements UserService {
             throw new BizException(MallResultStatus.LOGIN_FAILURE);
         }
         passWord = Md5Utils.toMd5(passWord);
+        if(dto.getFinviter() != null && !dto.getFinviter().equals("")){
+            Result<MarketUser> marketUserResult = marketUserApi.queryOneByCriteria(Criteria.of(MarketUser.class)
+                    .fields(MarketUser::getFuid, MarketUser::getFextensionCode)
+                    .andEqualTo(MarketUser::getFextensionCode, dto.getFinviter()));
+            if(marketUserResult.getData() != null){
+                marketUser = marketUserResult.getData();
+            }else {
+                return Result.failure(MallResultStatus.EXTENSION_CODE_NOT_EXIST);
+            }
+            user.setFinviter(dto.getFinviter());
+        }
         user.setFregisterFrom(dto.getFregisterFrom());
         user.setFmobile(dto.getFmobile());
         user.setFuname(dto.getFmobile());
@@ -393,21 +418,24 @@ public class UserServiceImpl implements UserService {
         Date date = new Date();
         user.setFlastloginTime(date);
         user.setFmobileValidTime(date);
-        Result<Integer> result = userApi.create(user);
-        if (!result.isSuccess()) {
+        Result<User> idResult = userApi.saveAndReturn(user);
+        if (!idResult.isSuccess()) {
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
         }
         Criteria<User, Object> criteria = Criteria.of(User.class);
-        criteria.andEqualTo(User::getFmobile, dto.getFmobile())
-                .andEqualTo(User::getFpasswd, passWord)
-                .andEqualTo(User::getFisDelete, "0");
+        criteria.andEqualTo(User::getFuid, idResult.getData().getFuid())
+                .andEqualTo(User::getFisDelete, "0")
+                .fields(User::getFuid,User::getFfreezeStatus,User::getFheadpic,
+                User::getFnickname,User::getFoperateType,User::getFuname,User::getFregisterFrom,
+                User::getFverifyStatus,User::getFverifyStatus,User::getFmobile,User::getFmail,
+                User::getFwithdrawPasswd);
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
         if (userResult.getData() == null) {
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
         }
         UserAccount userAccount = new UserAccount();
         userAccount.setFuid(userResult.getData().getFuid());
-        result = userAccountApi.create(userAccount);
+        Result<Integer> result = userAccountApi.create(userAccount);
         if (!result.isSuccess()) {
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
         }
@@ -415,13 +443,53 @@ public class UserServiceImpl implements UserService {
         if (userLoginVo == null) {
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
         }
+        if(marketUser != null){
+            updateMarketUserStatistics(marketUser,userAccount.getFuid());
+        }
         //领取注册优惠券和新人邀请券
         Integer couponNum = 0;
-        couponNum = receiveCoupon(userLoginVo.getFuid());
-        //当couponNum大于0时,前端提示"你获得+couponNum+张优惠券"
+//        couponNum = queryRegistCoupon(userLoginVo.getFuid());
+        //当couponNum大于0时,前端提示"你有注册优惠券发放到账户"
         userLoginVo.setCouponRegisterNum(couponNum);
         incrUserCount();
         return Result.success(userLoginVo);
+    }
+
+    @Override
+    public Result<Integer> queryRegisterPopupWindows(Long fuid) {
+        return Result.success(queryRegistCoupon(fuid));
+    }
+
+    private void updateMarketUserStatistics(MarketUser marketUser, Long fuid) {
+        // 保存统计表
+        MarketUserStatistics marketUserStatistics = new MarketUserStatistics();
+        marketUserStatistics.setFextensionCode(marketUser.getFextensionCode());
+        marketUserStatistics.setFuid(marketUser.getFuid());
+        marketUserStatistics.setFinvitorUid(fuid);
+        marketUserStatisticsApi.create(marketUserStatistics);
+    }
+
+    private Integer queryRegistCoupon(Long fuid) {
+        Integer count = 0;
+        Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)
+                .andEqualTo(Coupon::getFcouponStatus, 2)
+                .andEqualTo(Coupon::getFreleaseType, 3)
+                .andGreaterThan(Coupon::getFsurplusReleaseQty, 0)
+                .andLeft()
+                .andEqualTo(Coupon::getFvalidityType,2)
+                .orLeft()
+                .orEqualTo(Coupon::getFvalidityType,1)
+                .andGreaterThan(Coupon::getFvalidityEnd,0)
+                .addRight()
+                .addRight();
+        Result<Integer> integerResult = couponApi.countByCriteria(couponCriteria);
+        if(integerResult.getData() != null){
+            if(!integerResult.getData().equals(count)){
+                count = integerResult.getData();
+            }
+        }
+        receiveCoupon(fuid);
+        return count;
     }
 
     /**
@@ -447,8 +515,7 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private Integer receiveCoupon(Long fuid) {
-        Integer couponNum = 0;
+    private void receiveCoupon(Long fuid) {
         //查询可用注册优惠券
         Date date = new Date();
         Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)
@@ -476,10 +543,8 @@ public class UserServiceImpl implements UserService {
                 //每人限领张数
                 couponDto.setReceiveQty(fperLimit);
                 couponProviderApi.receive(couponDto);
-                couponNum = couponNum + fperLimit;
             }
         }
-        return couponNum;
     }
 
     @Override
@@ -770,7 +835,7 @@ public class UserServiceImpl implements UserService {
                 .andEqualTo(Coupon::getFcouponLink, dto.getCouponLink())
                 .andNotEqualTo(Coupon::getFcouponStatus, 1)
                 .fields(Coupon::getFcouponId, Coupon::getFperLimit, Coupon::getFsurplusReleaseQty
-                        , Coupon::getFcouponStatus, Coupon::getFcouponType);
+                        , Coupon::getFcouponStatus, Coupon::getFcouponType, Coupon::getFassignUser);
         Result<Coupon> couponResult = couponApi.queryOneByCriteria(couponCriteria);
         if (!couponResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -781,35 +846,12 @@ public class UserServiceImpl implements UserService {
         }
         //优惠券状态 1待发布、2已发布、3已过期、4已结束、5已作废
         Integer couponStatus = couponResult.getData().getFcouponStatus();
-        if (!couponStatus.equals(2)) {
+        if (couponStatus.equals(3)) {
             return Result.failure(MallExceptionCode.COUPON_IS_INVALID);
+        }else if(!couponStatus.equals(2)){
+            return Result.failure(MallExceptionCode.COUPON_LINK_INEXUSTENCE);
         }
         Long couponId = couponResult.getData().getFcouponId();
-        //查询用户是否有领取资格
-        CouponQueryDto couponQueryDto = new CouponQueryDto();
-        List<Integer> couponTypeList = new ArrayList<>();
-        couponTypeList.add(couponResult.getData().getFcouponType());
-        couponQueryDto.setCouponTypes(couponTypeList);
-        couponQueryDto.setUserId(dto.getFuid());
-        Result<List<CouponQueryVo>> listResult = couponProviderApi.queryByUserId(couponQueryDto);
-        if (!listResult.isSuccess()) {
-            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        }
-        Boolean isReceive = false;
-        for (CouponQueryVo couponQueryVo : listResult.getData()) {
-            if (couponQueryVo.getFcouponId().equals(couponId)) {
-                isReceive = true;
-                break;
-            }
-        }
-        if (!isReceive) {
-            return Result.failure(MallExceptionCode.COUPON_INELIGIBILITY);
-        }
-        //剩余发放数量
-        Integer surplusReleaseQty = couponResult.getData().getFsurplusReleaseQty();
-        if (surplusReleaseQty.equals(0)) {
-            return Result.failure(MallExceptionCode.COUPON_IS_PAID_OUT);
-        }
         //每人限领
         Integer perLimit = couponResult.getData().getFperLimit();
         if (!perLimit.equals(0)) {
@@ -844,6 +886,31 @@ public class UserServiceImpl implements UserService {
                 //返回已领取
                 return Result.failure(MallExceptionCode.COUPON_IS_MAX);
             }
+        }
+        //剩余发放数量
+        Integer surplusReleaseQty = couponResult.getData().getFsurplusReleaseQty();
+        if (surplusReleaseQty.equals(0)) {
+            return Result.failure(MallExceptionCode.COUPON_IS_PAID_OUT);
+        }
+        //查询用户是否有领取资格
+        CouponQueryDto couponQueryDto = new CouponQueryDto();
+        List<Integer> couponTypeList = new ArrayList<>();
+        couponTypeList.add(couponResult.getData().getFcouponType());
+        couponQueryDto.setCouponTypes(couponTypeList);
+        couponQueryDto.setUserId(dto.getFuid());
+        Result<List<CouponQueryVo>> listResult = couponProviderApi.queryByUserId(couponQueryDto);
+        if (!listResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        Boolean isReceive = false;
+        for (CouponQueryVo couponQueryVo : listResult.getData()) {
+            if (couponQueryVo.getFcouponId().equals(couponId)) {
+                isReceive = true;
+                break;
+            }
+        }
+        if (!isReceive) {
+            return Result.failure(MallExceptionCode.COUPON_INELIGIBILITY);
         }
         return Result.success(couponId);
     }

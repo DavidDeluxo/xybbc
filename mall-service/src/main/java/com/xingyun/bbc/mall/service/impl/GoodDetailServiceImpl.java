@@ -1451,13 +1451,13 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             result = "全部商品可用";
         } else if (2 == fapplicableSku) {
             if (this.isHasCouponSkuCondition(fcouponId)) {
-                result = "部分商品可用" + "\n" + this.getCouponSkuCondition(fcouponId);
+                result = "部分商品可用" + "\n" + this.getCouponSkuCondition(fcouponId, true);
             } else {
                 result = "部分商品可用";
             }
         } else {
             if (this.isHasCouponSkuCondition(fcouponId)) {
-                result = "部分商品不可用" + "\n" + this.getCouponSkuCondition(fcouponId);
+                result = "部分商品不可用" + "\n" + this.getCouponSkuCondition(fcouponId, false);
             } else {
                 result = "部分商品不可用";
             }
@@ -1481,7 +1481,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         }
     }
 
-    private String getCouponSkuCondition(Long fcouponId) {
+    private String getCouponSkuCondition(Long fcouponId, Boolean isCanBuy) {
         String result = "";
         //贸易类型--三级分类--品牌
         Result<CouponApplicableSkuCondition> conditionResult = couponApplicableSkuConditionApi.queryOneByCriteria(Criteria.of(CouponApplicableSkuCondition.class)
@@ -1497,19 +1497,37 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         StringBuffer resBf = new StringBuffer();
         String fcategoryName = conditionData.getFcategoryName();
         if (!StringUtils.isEmpty(fcategoryName)) {
-            resBf.append("分类：").append("\n").append("仅可以购买 ").append(fcategoryName.substring(1, fcategoryName.length() - 1)).append("\n");
+            if (isCanBuy) {
+                resBf.append("分类：").append("\n").append("仅可以购买 ").append(fcategoryName.substring(1, fcategoryName.length() - 1)).append("\n");
+            } else {
+                resBf.append("分类：").append("\n").append(fcategoryName.substring(1, fcategoryName.length() - 1)).append("不可用 ").append("\n");
+            }
+
         }
         String fbrandName = conditionData.getFbrandName();
         if (!StringUtils.isEmpty(fbrandName)) {
-            resBf.append("品牌：").append("\n").append("仅可以购买 ").append(fbrandName.substring(1, fbrandName.length() - 1)).append("\n");
+            if (isCanBuy) {
+                resBf.append("品牌：").append("\n").append("仅可以购买 ").append(fbrandName.substring(1, fbrandName.length() - 1)).append("\n");
+            } else {
+                resBf.append("品牌：").append("\n").append(fbrandName.substring(1, fbrandName.length() - 1)).append("不可用").append("\n");
+            }
+
         }
         String ftradeName = conditionData.getFtradeName();
         if (!StringUtils.isEmpty(ftradeName)) {
-            resBf.append("贸易类型：").append("\n").append("仅可以购买 ").append(ftradeName.substring(1, ftradeName.length() - 1)).append("\n");
+            if (isCanBuy) {
+                resBf.append("贸易类型：").append("\n").append("仅可以购买 ").append(ftradeName.substring(1, ftradeName.length() - 1)).append("\n");
+            } else {
+                resBf.append("贸易类型：").append("\n").append(ftradeName.substring(1, ftradeName.length() - 1)).append("不可用").append("\n");
+            }
         }
         String flabelName = conditionData.getFlabelName();
         if (!StringUtils.isEmpty(flabelName)) {
-            resBf.append("标签：").append("\n").append("仅可以购买 ").append(flabelName.substring(1, flabelName.length() - 1));
+            if (isCanBuy) {
+                resBf.append("标签：").append("\n").append("仅可以购买 ").append(flabelName.substring(1, flabelName.length() - 1));
+            } else {
+                resBf.append("标签：").append("\n").append(flabelName.substring(1, flabelName.length() - 1)).append("不可用");
+            }
         }
         result = resBf.toString();
         return result;
