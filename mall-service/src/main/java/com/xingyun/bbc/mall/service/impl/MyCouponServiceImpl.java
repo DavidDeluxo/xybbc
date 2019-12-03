@@ -93,8 +93,8 @@ public class MyCouponServiceImpl implements MyCouponService {
                 : this.getCouponByStatus(myCouponDto, CouponReceiveStatusEnum.NOT_USED.getCode()));
         myCouponVo.setUsedNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.USED.getCode()) ? count
                 : this.getCouponByStatus(myCouponDto, CouponReceiveStatusEnum.USED.getCode()));
-        myCouponVo.setExpiredNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.INVALID.getCode()) ? count
-                : this.getCouponByStatus(myCouponDto, CouponReceiveStatusEnum.INVALID.getCode()));
+        myCouponVo.setExpiredNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.NULLIFY.getCode()) ? count
+                : this.getCouponByStatus(myCouponDto, CouponReceiveStatusEnum.NULLIFY.getCode()));
         myCouponVo.setNowDate(new Date());
 
         return Result.success(myCouponVo);
