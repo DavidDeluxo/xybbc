@@ -11,6 +11,7 @@ import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.CouponApi;
 import com.xingyun.bbc.core.market.api.CouponReceiveApi;
+import com.xingyun.bbc.core.market.dto.MyCoupinReceiveDto;
 import com.xingyun.bbc.core.market.enums.CouponReceiveStatusEnum;
 import com.xingyun.bbc.core.market.enums.CouponReleaseTypeEnum;
 import com.xingyun.bbc.core.market.enums.CouponStatusEnum;
@@ -79,25 +80,20 @@ public class MyCouponServiceImpl implements MyCouponService {
     @Override
     public Result<MyCouponVo> getMyCouponVo(MyCouponDto myCouponDto) {
         //查询已经领到的优惠券信息
-        Criteria<CouponReceive, Object> criteria = Criteria.of(CouponReceive.class)
-                .andEqualTo(CouponReceive::getFuid, myCouponDto.getFuid());
-        if (myCouponDto.getFuserCouponStatus() != 0) {
-            criteria.andEqualTo(CouponReceive::getFuserCouponStatus, myCouponDto.getFuserCouponStatus());
-        }
-
-        Result<Integer> countResult = couponReceiveApi.countByCriteria(criteria);
-        if (!countResult.isSuccess()) {
+        MyCoupinReceiveDto myCoupinReceiveDto = new MyCoupinReceiveDto();
+        myCoupinReceiveDto.setCurrentPage(myCouponDto.getCurrentPage());
+        myCoupinReceiveDto.setPageSize(myCouponDto.getPageSize());
+        myCoupinReceiveDto.setFuid(myCouponDto.getFuid());
+        myCoupinReceiveDto.setFuserCouponStatus(myCouponDto.getFuserCouponStatus());
+        Result<Long> countResult = couponReceiveApi.selectMyCouponCount(myCoupinReceiveDto);
+        if (!countResult.isSuccess()){
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        criteria.fields(CouponReceive::getFcouponId, CouponReceive::getFvalidityStart,
-                CouponReceive::getFvalidityEnd,CouponReceive::getFuserCouponStatus)
-                .page(myCouponDto.getCurrentPage(), myCouponDto.getPageSize())
-                .sortDesc(CouponReceive::getFmodifyTime);
-        Result<List<CouponReceive>> listResult = couponReceiveApi.queryByCriteria(criteria);
+        Result<List<CouponReceive>> listResult = couponReceiveApi.selectMyCouponList(myCoupinReceiveDto);
         if (!listResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        Integer count = countResult.getData();
+        Integer count = countResult.getData().intValue();
         PageVo<CouponVo> couponPageVo = pageUtils.convert(count, listResult.getData(), CouponVo.class, myCouponDto);
         //查询优惠券信息
         for (CouponVo couponVo : couponPageVo.getList()) {
@@ -105,15 +101,15 @@ public class MyCouponServiceImpl implements MyCouponService {
                     .andEqualTo(Coupon::getFcouponId, couponVo.getFcouponId())
                     .fields(Coupon::getFcouponName, Coupon::getFcouponType,
                             Coupon::getFthresholdAmount, Coupon::getFdeductionValue,
-                            Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFreleaseType,Coupon::getFapplicableSku));
+                            Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFreleaseType));
             if (!couponResult.isSuccess()) {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
             Coupon coupon = couponResult.getData();
-            couponVo.setFcouponName(coupon.getFcouponName());
             couponVo.setFcouponType(coupon.getFcouponType());
+            couponVo.setFcouponName(coupon.getFcouponName());
             couponVo.setFthresholdAmount(PriceUtil.toYuan(coupon.getFthresholdAmount()));
-            couponVo.setFapplicableSku(coupon.getFapplicableSku());
+
             //优惠券类型，1满减券、2折扣券
             if (coupon.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
                 couponVo.setFdeductionValue(PriceUtil.toYuan(coupon.getFdeductionValue()));
@@ -130,25 +126,22 @@ public class MyCouponServiceImpl implements MyCouponService {
         MyCouponVo myCouponVo = new MyCouponVo();
         myCouponVo.setCouponVo(couponPageVo);
         myCouponVo.setUnUsedNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.NOT_USED.getCode()) ? count
-                : this.getCouponByStatus(myCouponDto, CouponReceiveStatusEnum.NOT_USED.getCode()));
+                : this.getCouponByStatus(myCoupinReceiveDto));
         myCouponVo.setUsedNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.USED.getCode()) ? count
-                : this.getCouponByStatus(myCouponDto, CouponReceiveStatusEnum.USED.getCode()));
-        myCouponVo.setExpiredNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.INVALID.getCode()) ? count
-                : this.getCouponByStatus(myCouponDto, CouponReceiveStatusEnum.INVALID.getCode()));
+                : this.getCouponByStatus(myCoupinReceiveDto));
+        myCouponVo.setExpiredNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.NULLIFY.getCode()) ? count
+                : this.getCouponByStatus(myCoupinReceiveDto));
         myCouponVo.setNowDate(new Date());
 
         return Result.success(myCouponVo);
     }
 
-    private Integer getCouponByStatus(MyCouponDto myCouponDto, Integer fuserCouponStatus) {
-        Criteria<CouponReceive, Object> criteriaStatus = Criteria.of(CouponReceive.class)
-                .andEqualTo(CouponReceive::getFuid, myCouponDto.getFuid())
-                .andEqualTo(CouponReceive::getFuserCouponStatus, fuserCouponStatus);
-        Result<Integer> countResult = couponReceiveApi.countByCriteria(criteriaStatus);
+    private Integer getCouponByStatus(MyCoupinReceiveDto myCoupinReceiveDto) {
+        Result<Long> countResult = couponReceiveApi.selectMyCouponCount(myCoupinReceiveDto);
         if (!countResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        return countResult.getData();
+        return Math.toIntExact(countResult.getData());
     }
 
 
