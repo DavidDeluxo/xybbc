@@ -395,16 +395,19 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     @Override
     public Result<GoodsPriceVo> getGoodPrice(GoodsDetailMallDto goodsDetailMallDto) {
-        //查询用户认证类型
-        Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
-                .andEqualTo(User::getFuid, goodsDetailMallDto.getFuid())
-                .fields(User::getFoperateType, User::getFverifyStatus));
-        if (!userResult.isSuccess() || null == userResult.getData()) {
-            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        //token取的认证类型不是--已认证就查表
+        if (!goodsDetailMallDto.getFverifyStatus().equals(UserVerifyStatusEnum.AUTHENTICATED.getCode())) {
+            //查询用户认证类型
+            Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
+                    .andEqualTo(User::getFuid, goodsDetailMallDto.getFuid())
+                    .fields(User::getFoperateType, User::getFverifyStatus));
+            if (!userResult.isSuccess() || null == userResult.getData()) {
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            }
+            //如果用户未认证直接查基础价格表
+            goodsDetailMallDto.setFoperateType(userResult.getData().getFoperateType());
+            goodsDetailMallDto.setFverifyStatus(userResult.getData().getFverifyStatus());
         }
-        //如果用户未认证直接查基础价格表
-        goodsDetailMallDto.setFoperateType(userResult.getData().getFoperateType());
-        goodsDetailMallDto.setFverifyStatus(userResult.getData().getFverifyStatus());
 
         //获取价格地址
         GoodsPriceVo priceResult = new GoodsPriceVo();
