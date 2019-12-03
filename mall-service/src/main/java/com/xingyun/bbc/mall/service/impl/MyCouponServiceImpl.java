@@ -13,6 +13,8 @@ import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.PageUtils;
 import com.xingyun.bbc.mall.base.utils.PriceUtil;
+import com.xingyun.bbc.mall.base.utils.ResultUtils;
+import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.MyCouponDto;
 import com.xingyun.bbc.mall.model.vo.CouponVo;
 import com.xingyun.bbc.mall.model.vo.MyCouponVo;
@@ -26,6 +28,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class MyCouponServiceImpl implements MyCouponService {
@@ -58,18 +62,20 @@ public class MyCouponServiceImpl implements MyCouponService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         Integer count = countResult.getData().intValue();
-        PageVo<CouponVo> couponPageVo = pageUtils.convert(count, listResult.getData(), CouponVo.class, myCouponDto);
+        List<CouponReceive> couponReceives = listResult.getData();
+        PageVo<CouponVo> couponPageVo = pageUtils.convert(count, couponReceives, CouponVo.class, myCouponDto);
+        List<Long> couponIds = couponReceives.stream().map(CouponReceive::getFcouponId).distinct().collect(Collectors.toList());
+        Result<List<Coupon>> couponResult = couponApi.queryByCriteria(Criteria.of(Coupon.class)
+                .andIn(Coupon::getFcouponId, couponIds)
+                .fields(Coupon::getFcouponName, Coupon::getFcouponType,
+                        Coupon::getFthresholdAmount, Coupon::getFdeductionValue,
+                        Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFreleaseType));
+        List<Coupon> couponList = ResultUtils.getListNotEmpty(couponResult, MallExceptionCode.COUPON_IS_NOT_EXIST);
+        Map<Long, List<Coupon>> couponMap = couponList.stream().collect(Collectors.groupingBy(Coupon::getFcouponId));
+
         //查询优惠券信息
         for (CouponVo couponVo : couponPageVo.getList()) {
-            Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
-                    .andEqualTo(Coupon::getFcouponId, couponVo.getFcouponId())
-                    .fields(Coupon::getFcouponName, Coupon::getFcouponType,
-                            Coupon::getFthresholdAmount, Coupon::getFdeductionValue,
-                            Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFreleaseType));
-            if (!couponResult.isSuccess()) {
-                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-            }
-            Coupon coupon = couponResult.getData();
+            Coupon coupon = couponMap.get(couponVo.getFcouponId()).get(0);
             couponVo.setFcouponName(coupon.getFcouponName());
             couponVo.setFcouponType(coupon.getFcouponType());
             couponVo.setFthresholdAmount(PriceUtil.toYuan(coupon.getFthresholdAmount()));
