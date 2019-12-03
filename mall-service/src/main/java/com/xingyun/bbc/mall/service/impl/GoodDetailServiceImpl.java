@@ -387,6 +387,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         Result<List<GoodsAttribute>> goodsAttributeRes = goodsAttributeApi.queryByCriteria(Criteria.of(GoodsAttribute.class)
                 .andEqualTo(GoodsAttribute::getFgoodsId, fgoodsId)
                 .fields(GoodsAttribute::getFclassAttributeItemVal, GoodsAttribute::getFclassAttributeId, GoodsAttribute::getFclassAttributeName));
+        Ensure.that(goodsAttributeRes.isSuccess()).isTrue(new MallExceptionCode(goodsAttributeRes.getCode(), goodsAttributeRes.getMsg()));
         List<GoodsAttributeVo> convert = dozerHolder.convert(goodsAttributeRes.getData(), GoodsAttributeVo.class);
 
         Map<String, List<GoodsAttributeVo>> collect = convert.stream().collect(Collectors.groupingBy(GoodsAttributeVo::getFclassAttributeName, toList()));
