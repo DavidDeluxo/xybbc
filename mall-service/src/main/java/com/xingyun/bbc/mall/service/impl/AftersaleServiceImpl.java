@@ -40,6 +40,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -264,15 +265,21 @@ public class AftersaleServiceImpl implements AftersaleService {
         }
         if (null != aftersaleBackDto.getFpicStr()) {
             String[] picStr = aftersaleBackDto.getFpicStr().split(",");
+            List<OrderAftersalePic> aftersalePicLis = new ArrayList<>();
+            Date nowDate = new Date();
             for (String pic : picStr) {
-                OrderAftersalePic orderAftersalePic = new OrderAftersalePic();
-                orderAftersalePic.setForderAftersaleId(aftersaleBackDto.getForderAftersaleId());
-                orderAftersalePic.setFpicType(2);
-                orderAftersalePic.setFaftersalePic(pic);
-                Result<Integer> picInsResult = orderAftersalePicApi.create(orderAftersalePic);
-                if (!picInsResult.isSuccess()) {
-                    throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-                }
+                OrderAftersalePic aftersalePic = new OrderAftersalePic();
+                aftersalePic.setForderAftersaleId(aftersaleBackDto.getForderAftersaleId());
+                aftersalePic.setFpicType(2);
+                aftersalePic.setFaftersalePic(pic);
+                aftersalePic.setFcreateTime(nowDate);
+                aftersalePic.setFmodifyTime(nowDate);
+                aftersalePicLis.add(aftersalePic);
+
+            }
+            Result<Integer> picInsResult = orderAftersalePicApi.createBatch(aftersalePicLis);
+            if (!picInsResult.isSuccess()) {
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
             }
         }
         //更新售后状态--修改时间加了乐观锁--先查询再保存
