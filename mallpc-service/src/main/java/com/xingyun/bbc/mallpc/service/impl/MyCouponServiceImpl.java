@@ -126,17 +126,18 @@ public class MyCouponServiceImpl implements MyCouponService {
         MyCouponVo myCouponVo = new MyCouponVo();
         myCouponVo.setCouponVo(couponPageVo);
         myCouponVo.setUnUsedNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.NOT_USED.getCode()) ? count
-                : this.getCouponByStatus(myCoupinReceiveDto));
+                : this.getCouponByStatus(myCoupinReceiveDto, CouponReceiveStatusEnum.NOT_USED.getCode()));
         myCouponVo.setUsedNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.USED.getCode()) ? count
-                : this.getCouponByStatus(myCoupinReceiveDto));
+                : this.getCouponByStatus(myCoupinReceiveDto, CouponReceiveStatusEnum.USED.getCode()));
         myCouponVo.setExpiredNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.NULLIFY.getCode()) ? count
-                : this.getCouponByStatus(myCoupinReceiveDto));
+                : this.getCouponByStatus(myCoupinReceiveDto, CouponReceiveStatusEnum.NULLIFY.getCode()));
         myCouponVo.setNowDate(new Date());
 
         return Result.success(myCouponVo);
     }
 
-    private Integer getCouponByStatus(MyCoupinReceiveDto myCoupinReceiveDto) {
+    private Integer getCouponByStatus(MyCoupinReceiveDto myCoupinReceiveDto,Integer fuserCouponStatus) {
+        myCoupinReceiveDto.setFuserCouponStatus(fuserCouponStatus);
         Result<Long> countResult = couponReceiveApi.selectMyCouponCount(myCoupinReceiveDto);
         if (!countResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
