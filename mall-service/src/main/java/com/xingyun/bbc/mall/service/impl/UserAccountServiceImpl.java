@@ -21,6 +21,8 @@ import com.xingyun.bbc.mall.model.dto.UserRechargeDto;
 import com.xingyun.bbc.mall.model.vo.UserRechargeVo;
 import com.xingyun.bbc.mall.service.UserAccountService;
 
+import io.seata.spring.annotation.GlobalTransactional;
+
 
 /**
  * @author ZSY
@@ -52,6 +54,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 	 * @date 2019/8/20 13:49
 	 */
     @Override
+    @GlobalTransactional
     public Result<UserRechargeVo> insertUserBalance(UserRechargeDto userRechargeDto) {
         //将充值金额转换为分
     	Long recharge = PriceUtil.toPenny(userRechargeDto.getFrecharger()).longValue();

@@ -608,6 +608,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             }
         }
         BigDecimal packageNum = this.getPackageNum(fbatchPackageId);
+        //价格区间展示单件价格--单件展示件装价格
         return goodsDetailMallDto.getFbatchPackageId() == null ? price.divide(packageNum, 8, BigDecimal.ROUND_HALF_UP) : price;
     }
 
@@ -625,13 +626,12 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         if (null != skuBatchUserPriceResult.getData()) {
-            if (null != skuBatchUserPriceResult.getData().getFbatchSellPrice()) {
-                price = new BigDecimal(skuBatchUserPriceResult.getData().getFbatchSellPrice()).divide(packageNum, 8, BigDecimal.ROUND_HALF_UP);
-            }
+            price = new BigDecimal(skuBatchUserPriceResult.getData().getFbatchSellPrice());
         } else {
             return this.getGeneralPrice(goodsDetailMallDto);
         }
-        return goodsDetailMallDto.getFbatchPackageId() == null ? new BigDecimal(skuBatchUserPriceResult.getData().getFbatchSellPrice()).divide(packageNum, 8, BigDecimal.ROUND_HALF_UP) : price;
+        //价格区间展示单件价格--单件展示件装价格
+        return goodsDetailMallDto.getFbatchPackageId() == null ? price.divide(packageNum, 8, BigDecimal.ROUND_HALF_UP) : price;
     }
 
     //是否支持平台会员折扣 0 取 GoodsSkuBatchPrice 1 取 SkuBatchUserPrice
@@ -721,7 +721,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 }
             }
         }
-        if (null == goodsDetailMallDto.getFskuId()) {
+        if (null == goodsDetailMallDto.getFbatchPackageId()) {
             skuTaxRate = skuTaxRate.divide(new BigDecimal("10000"), 8, BigDecimal.ROUND_HALF_UP);
             priceVo.setTaxStart(priceVo.getPriceStart().multiply(skuTaxRate));
             priceVo.setTaxEnd(priceVo.getPriceEnd().multiply(skuTaxRate));
@@ -783,7 +783,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 }
             }
         }
-        if (null == goodsDetailMallDto.getFgoodsId()) {
+        if (null == goodsDetailMallDto.getFsupplierSkuBatchId()) {
             skuTaxRate = skuTaxRate.divide(new BigDecimal("10000"), 8, BigDecimal.ROUND_HALF_UP);
             priceVo.setTaxStart(priceVo.getPriceStart().multiply(skuTaxRate));
             priceVo.setTaxEnd(priceVo.getPriceEnd().multiply(skuTaxRate));
@@ -839,6 +839,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 }
             }
         }
+        priceVo.setPriceStart(priceVo.getPriceStart().add(priceVo.getTaxStart()));
+        priceVo.setPriceEnd(priceVo.getPriceEnd().add(priceVo.getTaxEnd()));
         return priceVo;
     }
 
