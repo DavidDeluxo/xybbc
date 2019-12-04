@@ -109,6 +109,7 @@ public class MyCouponServiceImpl implements MyCouponService {
             couponVo.setFcouponType(coupon.getFcouponType());
             couponVo.setFcouponName(coupon.getFcouponName());
             couponVo.setFthresholdAmount(PriceUtil.toYuan(coupon.getFthresholdAmount()));
+            couponVo.setFuserCouponStatus(myCouponDto.getFuserCouponStatus());
 
             //优惠券类型，1满减券、2折扣券
             if (coupon.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
