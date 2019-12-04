@@ -158,7 +158,10 @@ public class UserAddressServiceImpl implements UserAddressService {
         } else {
             // 编辑
             Ensure.that(userDeliveryApi.updateNotNull(userDelivery).isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
-            return Result.success();
+           // 返回查询结果
+            Result<UserDelivery> userDeliveryResult = userDeliveryApi.queryOneByCriteria(Criteria.of(UserDelivery.class).andEqualTo(UserDelivery::getFdeliveryUserId, userDelivery.getFdeliveryUserId()));
+            Ensure.that(userDeliveryResult).isNotNull(MallPcExceptionCode.SYSTEM_ERROR);
+            return Result.success(convertAddress(userDeliveryResult.getData()));
         }
     }
 
