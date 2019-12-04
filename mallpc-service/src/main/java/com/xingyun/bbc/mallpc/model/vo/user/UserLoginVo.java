@@ -40,11 +40,11 @@ public class UserLoginVo implements Serializable {
     private String freeVerifyRemainDays;
 
     @ApiModelProperty("用户免认证到期时间")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy.MM.dd HH:mm:ss", timezone = "GMT+8")
     private Date freeVerifyEndTime;
 
     @ApiModelProperty("用户创建时间")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy.MM.dd HH:mm:ss", timezone = "GMT+8")
     private Date fcreateTime;
 
     @ApiModelProperty("用户等级")
