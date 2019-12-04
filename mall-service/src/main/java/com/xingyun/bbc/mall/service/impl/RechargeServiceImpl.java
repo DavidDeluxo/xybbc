@@ -94,7 +94,8 @@ public class RechargeServiceImpl implements RechargeService{
 			transInfo.setFrechargeType(this.thirdPayTypeToTransThirdPayType(thirdPayType));
 			transInfo.setFtransThdUid(thirdTradeNo);
 			transInfo.setFtransThdDetail(thirdPayInfo.getPayAccount());
-			transInfo.setFpayTime(new Date());
+			Date date=new Date();
+			transInfo.setFpayTime(date);
 			
 			Result<Integer> flagTrans = transApi.updateNotNull(transInfo);
 			UserAccountTransWater accountTransWater=  dozerHolder.convert(transInfo,UserAccountTransWater.class);
@@ -123,7 +124,7 @@ public class RechargeServiceImpl implements RechargeService{
 			//余额=充值后余额+提现冻结金额+支付冻结金额
 			detail.setFbalance(newBalance+account.getFfreezeWithdraw()+account.getFfreezePay());
 			detail.setFcreditBalance(creditBalance);
-			detail.setFaccountDate(new Date());
+			detail.setFaccountDate(date);
 			detail.setFremark(remark);
 			Result<Integer> flagUserDetail = detailApi.create(detail);
 			if (!this.checkAllModifySuccess(flagTrans.getData(), flagTransWater.getData(), flagAccount.getData(), flagAccountWater.getData(), flagUserDetail.getData())) {
@@ -166,7 +167,8 @@ public class RechargeServiceImpl implements RechargeService{
 			transInfo.setFrechargeType(this.thirdPayTypeToTransThirdPayType(thirdPayType));
 			transInfo.setFtransThdUid(thirdTradeNo);
 			transInfo.setFtransThdDetail(thirdPayInfo.get("payAccount"));
-			transInfo.setFpayTime(new Date());
+			Date date=new Date();
+			transInfo.setFpayTime(date);
 			
 			Result<Integer> flagTrans = transApi.updateNotNull(transInfo);
 			UserAccountTransWater accountTransWater=  dozerHolder.convert(transInfo,UserAccountTransWater.class);
@@ -191,7 +193,7 @@ public class RechargeServiceImpl implements RechargeService{
 			detail.setFincomeAmount(thirdPayAmount.longValue());
 			detail.setFbalance(newBalance);
 			detail.setFcreditBalance(creditBalance);
-			detail.setFaccountDate(new Date());
+			detail.setFaccountDate(date);
 			detail.setFremark(remark);
 			Result<Integer> flagUserDetail = detailApi.create(detail);
 			if (!this.checkAllModifySuccess(flagTrans.getData(), flagTransWater.getData(), flagAccount.getData(), flagAccountWater.getData(), flagUserDetail.getData())) {

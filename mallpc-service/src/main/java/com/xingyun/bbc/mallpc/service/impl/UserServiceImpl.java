@@ -451,8 +451,8 @@ public class UserServiceImpl implements UserService {
                 : this.getCouponByStatus(userId, CouponReceiveStatusEnum.NOT_USED.getCode()));
         myCouponVo.setUsedNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.USED.getCode()) ? count
                 : this.getCouponByStatus(userId, CouponReceiveStatusEnum.USED.getCode()));
-        myCouponVo.setExpiredNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.INVALID.getCode()) ? count
-                : this.getCouponByStatus(userId, CouponReceiveStatusEnum.INVALID.getCode()));
+        myCouponVo.setExpiredNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.NULLIFY.getCode()) ? count
+                : this.getCouponByStatus(userId, CouponReceiveStatusEnum.NULLIFY.getCode()));
         myCouponVo.setNowDate(new Date());
 
         return Result.success(myCouponVo);

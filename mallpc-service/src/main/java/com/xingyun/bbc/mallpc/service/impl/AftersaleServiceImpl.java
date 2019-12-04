@@ -23,8 +23,10 @@ import com.xingyun.bbc.core.supplier.api.SupplierTransportSkuApi;
 import com.xingyun.bbc.core.supplier.po.SupplierTransportSku;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.components.DozerHolder;
+import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.common.utils.PageHelper;
 import com.xingyun.bbc.mallpc.common.utils.PriceUtil;
+import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
 import com.xingyun.bbc.mallpc.model.dto.aftersale.AftersaleBackDto;
 import com.xingyun.bbc.mallpc.model.dto.aftersale.AftersaleLisDto;
 import com.xingyun.bbc.mallpc.model.dto.aftersale.AftersaleSkuInforDto;
@@ -49,6 +51,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -123,13 +126,25 @@ public class AftersaleServiceImpl implements AftersaleService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         PageVo<AftersaleListVo> result = pageUtils.convert(countResult.getData().intValue(), listResult.getData(), AftersaleListVo.class, aftersaleLisDto);
+
+        List<AftersaleListVo> aftersaleList = result.getList();
+        List<String> skuCodeList = aftersaleList.stream().map(AftersaleListVo::getFskuCode).distinct().collect(Collectors.toList());
+
+        Result<List<GoodsSku>> goodsSkuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
+                .andIn(GoodsSku::getFskuCode, skuCodeList)
+                .fields(GoodsSku::getFskuCode, GoodsSku::getFskuName, GoodsSku::getFskuThumbImage));
+        if (!goodsSkuResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        List<GoodsSku> goodsSkuList = ResultUtils.getListNotEmpty(goodsSkuResult, MallPcExceptionCode.SKU_IS_NONE);
+        Map<String, List<GoodsSku>> goodsSkuMap = goodsSkuList.stream().collect(Collectors.groupingBy(GoodsSku::getFskuCode));
         for (AftersaleListVo aftersaleListVo : result.getList()) {
-            AftersaleSkuInforDto skuInfor = this.getSkuInfor(aftersaleListVo.getFskuCode());
+            GoodsSku skuInfor = goodsSkuMap.get(aftersaleListVo.getFskuCode()).get(0);
             aftersaleListVo.setFgoodsId(skuInfor.getFgoodsId());
             aftersaleListVo.setFskuId(skuInfor.getFskuId());
             aftersaleListVo.setFskuName(skuInfor.getFskuName());
             aftersaleListVo.setFskuPic(skuInfor.getFskuThumbImage());
-            aftersaleListVo.setFtradeType(skuInfor.getFtradeType());
+            aftersaleListVo.setFtradeType(this.getTradeType(aftersaleListVo.getFskuCode()));
             aftersaleListVo.setFbatchPackageName(aftersaleListVo.getFbatchPackageNum() + "件装");
             aftersaleListVo.setFunitPrice(PriceUtil.toYuan(aftersaleListVo.getFunitPrice()));
             aftersaleListVo.setFaftersaleNumShow(this.getAftersaleNumShow(aftersaleListVo.getFaftersaleNum(), aftersaleListVo.getFtransportOrderId(), aftersaleListVo.getFskuCode()));
@@ -411,6 +426,28 @@ public class AftersaleServiceImpl implements AftersaleService {
             }
         }
         return result;
+    }
+
+    //查询贸易类型
+    private String getTradeType (String fskuCode) {
+        String tradeType = "";
+        Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
+                .andEqualTo(GoodsSku::getFskuCode, fskuCode)
+                .fields(GoodsSku::getFgoodsId));
+        if (goodsSkuResult.isSuccess() && null != goodsSkuResult.getData()) {
+            Long fgoodsId = goodsSkuResult.getData().getFgoodsId();
+            Result<Goods> goodsResult = goodsApi.queryOneByCriteria(Criteria.of(Goods.class)
+                    .andEqualTo(Goods::getFgoodsId, fgoodsId)
+                    .fields(Goods::getFtradeId));
+            if (goodsResult.isSuccess() && null != goodsResult.getData()) {
+                Long ftradeId = goodsResult.getData().getFtradeId();
+                Result<TradeType> tradeTypeResult = tradeTypeApi.queryOneByCriteria(Criteria.of(TradeType.class).andEqualTo(TradeType::getFtradeTypeId, ftradeId).fields(TradeType::getFtradeType));
+                if (tradeTypeResult.isSuccess() && null != tradeTypeResult.getData()) {
+                    tradeType = tradeTypeResult.getData().getFtradeType();
+                }
+            }
+        }
+        return tradeType;
     }
 
     //效期

@@ -138,4 +138,9 @@ public class MallPcExceptionCode implements IResultStatus {
     public static final MallPcExceptionCode USER_NOT_COUPON = new MallPcExceptionCode("6007", "用户无匹配优惠券");
     public static final MallPcExceptionCode USER_NOT_RIGHT_COUPON = new MallPcExceptionCode("6008", "用户暂无权限兑换该类优惠券");
     public static final MallPcExceptionCode COUPON_IS_NOT_TIME = new MallPcExceptionCode("6009", "优惠券不在领取时间内");
+
+    /**
+     * SKU错误信息
+     */
+    public static final MallPcExceptionCode SKU_IS_NONE = new MallPcExceptionCode("5000", "查不到sku信息");
 }

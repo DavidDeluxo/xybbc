@@ -71,7 +71,7 @@ public class MyCouponServiceImpl implements MyCouponService {
         List<Long> couponIds = couponReceives.stream().map(CouponReceive::getFcouponId).distinct().collect(Collectors.toList());
         Result<List<Coupon>> couponResult = couponApi.queryByCriteria(Criteria.of(Coupon.class)
                 .andIn(Coupon::getFcouponId, couponIds)
-                .fields(Coupon::getFcouponName, Coupon::getFcouponType,
+                .fields(Coupon::getFcouponId, Coupon::getFcouponName, Coupon::getFcouponType,
                         Coupon::getFthresholdAmount, Coupon::getFdeductionValue,
                         Coupon::getFvalidityType, Coupon::getFvalidityDays, Coupon::getFreleaseType));
         List<Coupon> couponList = ResultUtils.getListNotEmpty(couponResult, MallExceptionCode.COUPON_IS_NOT_EXIST);
@@ -111,13 +111,13 @@ public class MyCouponServiceImpl implements MyCouponService {
     }
 
     private Integer getCouponByStatus (MyCouponDto myCouponDto, Integer fuserCouponStatus) {
-        Criteria<CouponReceive, Object> criteriaStatus = Criteria.of(CouponReceive.class)
-                .andEqualTo(CouponReceive::getFuid, myCouponDto.getFuid())
-                .andEqualTo(CouponReceive::getFuserCouponStatus, fuserCouponStatus);
-        Result<Integer> countResult = couponReceiveApi.countByCriteria(criteriaStatus);
-        if (!countResult.isSuccess()) {
+        MyCoupinReceiveDto myCoupinReceiveDto = new MyCoupinReceiveDto();
+        myCoupinReceiveDto.setFuid(myCouponDto.getFuid());
+        myCoupinReceiveDto.setFuserCouponStatus(fuserCouponStatus);
+        Result<Long> countResult = couponReceiveApi.selectMyCouponCount(myCoupinReceiveDto);
+        if (!countResult.isSuccess()){
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
-        return countResult.getData();
+        return countResult.getData().intValue();
     }
 }
