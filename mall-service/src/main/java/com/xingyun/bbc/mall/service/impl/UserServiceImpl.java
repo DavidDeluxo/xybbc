@@ -661,7 +661,15 @@ public class UserServiceImpl implements UserService {
         }
         if (userResult.getData().getFoperateType().equals(dto.getFoperateType())) {
             Criteria<UserVerify, Object> criteria = Criteria.of(UserVerify.class);
-            criteria.andEqualTo(UserVerify::getFuid, dto.getFuid());
+            criteria.andEqualTo(UserVerify::getFuid, dto.getFuid())
+                    .fields(UserVerify::getFuid,UserVerify::getFoperateMethod,UserVerify::getFshopName,
+                            UserVerify::getFshopWeb,UserVerify::getFinterestItem,UserVerify::getFcategory,
+                            UserVerify::getFshopFront,UserVerify::getFshopInside,UserVerify::getFshopProvinceId,
+                            UserVerify::getFshopCityId,UserVerify::getFshopAreaId,UserVerify::getFshopAddress,
+                            UserVerify::getFplatform,UserVerify::getFsalesVolume,UserVerify::getFcustomerNum,
+                            UserVerify::getFcompanyName,UserVerify::getFbusinessLicenseNo,UserVerify::getFbusinessLicensePic,
+                            UserVerify::getFname,UserVerify::getFidcardNo,UserVerify::getFidcardFront,
+                            UserVerify::getFidcardBack,UserVerify::getFremark,UserVerify::getFcreateTime,UserVerify::getFmodifyTime);
             Result<UserVerify> result = userVerifyApi.queryOneByCriteria(criteria);
             if (result.getData() != null) {
                 userVerifyVo = dozerHolder.convert(result.getData(), UserVerifyVo.class);
