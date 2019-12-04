@@ -201,7 +201,7 @@ public class UserServiceImpl implements UserService {
         userLoginVo.setFreeVerifyEndTime(verifyEndTime);
         //剩余时间
         Days days = Days.daysBetween(DateTime.now(), new DateTime(verifyEndTime));
-        int remainDays = days.getDays() < 0 ? 0 : days.getDays();
+        int remainDays = days.getDays() < 0 ? 0 : days.getDays()+1;
         userLoginVo.setFreeVerifyRemainDays(remainDays + "天");
         return userLoginVo;
     }
@@ -246,12 +246,14 @@ public class UserServiceImpl implements UserService {
         user.setFlastloginTime(date);
         user.setFmobileValidTime(date);
         Result<User> userResult = userApi.saveAndReturn(user);
+        Ensure.that(userResult).isNotNull(MallPcExceptionCode.SYSTEM_ERROR);
         Long fuid = userResult.getData().getFuid();
-        Ensure.that(userResult).isSuccess(MallPcExceptionCode.SYSTEM_ERROR);
+        Result<User> result = userApi.queryOneByCriteria(Criteria.of(User.class).andEqualTo(User::getFuid, fuid));
+        Ensure.that(result).isNotNull(MallPcExceptionCode.SYSTEM_ERROR);
         UserAccount userAccount = new UserAccount();
         userAccount.setFuid(fuid);
         Ensure.that(userAccountApi.create(userAccount)).isSuccess(MallPcExceptionCode.SYSTEM_ERROR);
-        UserLoginVo userLoginVo = createToken(userResult.getData());
+        UserLoginVo userLoginVo = createToken(result.getData());
         // 如果使用了推广码注册成功保存推广信息
         if (Objects.nonNull(marketUser)) {
             // 保存统计表

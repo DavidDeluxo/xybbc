@@ -43,6 +43,7 @@ public class GoodsController {
     @ApiOperation("查询商品列表")
     @PostMapping("/via/skuSearch")
     public Result<SearchItemListVo<SearchItemVo>> skuSearch(@RequestBody SearchItemDto dto, HttpServletRequest request) {
+        long start = System.currentTimeMillis();
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
         dto.setIsLogin(infoVo.getIsLogin());
         dto.setFuid(infoVo.getFuid());
@@ -59,6 +60,7 @@ public class GoodsController {
         Map<String, Object> extra = new HashMap<>();
         extra.put("fdfsHost", StringUtils.join(SystemConfig.fdfsHost, File.separator));
         result.setExtra(extra);
+        log.info("查询商品列表,请求耗时:{}", (System.currentTimeMillis() - start));
         return result;
     }
 
@@ -68,6 +70,7 @@ public class GoodsController {
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
         dto.setIsLogin(infoVo.getIsLogin());
         dto.setFuid(infoVo.getFuid());
+        log.info("查询筛选信息,请求参数:{}", JSON.toJSONString(dto));
         return goodsService.searchSkuFilter(dto);
     }
 
