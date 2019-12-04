@@ -133,10 +133,8 @@ public class GoodsDetailController {
 //    }
     @ApiOperation(value = "获取分类根据sku id", httpMethod = "GET")
     @GetMapping("/getCategoryBySkuId")
-    public Result<Map<String, Long>> getCategoryBySkuId(@RequestParam Long skuId, HttpServletRequest request) {
-        Long xyid = RequestHolder.getUserId();
-        logger.info("获取分类根据skuId skuId {} fuid {}", skuId, xyid);
-        return goodDetailService.getCategoryBySkuId(skuId, xyid);
+    public Result<Map<String, Long>> getCategoryBySkuId(@RequestParam Long skuId) {
+        return goodDetailService.getCategoryBySkuId(skuId);
     }
 
     /**

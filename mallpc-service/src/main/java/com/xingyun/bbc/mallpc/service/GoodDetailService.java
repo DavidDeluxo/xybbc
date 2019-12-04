@@ -60,10 +60,9 @@ public interface GoodDetailService {
      * 获取分类根据skuId
      *
      * @param skuId
-     * @param xyid
      * @return
      */
-    Result<Map<String, Long>> getCategoryBySkuId(Long skuId, Long xyid);
+    Result<Map<String, Long>> getCategoryBySkuId(Long skuId);
 
     /**
      * 获取全国省市区

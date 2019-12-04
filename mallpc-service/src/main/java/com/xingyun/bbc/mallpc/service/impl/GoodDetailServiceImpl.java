@@ -23,7 +23,6 @@ import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.sku.api.*;
 import com.xingyun.bbc.core.sku.enums.GoodsSkuEnums;
 import com.xingyun.bbc.core.sku.enums.SkuBatchEnums;
-import com.xingyun.bbc.core.sku.po.GoodsSku;
 import com.xingyun.bbc.core.sku.po.*;
 import com.xingyun.bbc.core.supplier.api.SupplierSkuBatchApi;
 import com.xingyun.bbc.core.supplier.api.SupplierSkuBatchPackageApi;
@@ -46,11 +45,8 @@ import com.xingyun.bbc.mallpc.common.utils.RandomUtils;
 import com.xingyun.bbc.mallpc.model.dto.detail.GoodsDetailMallDto;
 import com.xingyun.bbc.mallpc.model.dto.detail.ReceiveCouponDto;
 import com.xingyun.bbc.mallpc.model.dto.detail.SkuDiscountTaxDto;
-import com.xingyun.bbc.mallpc.model.dto.search.SearchItemDto;
 import com.xingyun.bbc.mallpc.model.vo.address.CityRegionAllVO;
 import com.xingyun.bbc.mallpc.model.vo.detail.*;
-import com.xingyun.bbc.mallpc.model.vo.search.SearchItemListVo;
-import com.xingyun.bbc.mallpc.model.vo.search.SearchItemVo;
 import com.xingyun.bbc.mallpc.service.GoodDetailService;
 import com.xingyun.bbc.mallpc.service.GoodsService;
 import com.xingyun.bbc.order.api.FreightApi;
@@ -1663,12 +1659,11 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     /**
      * @param skuId
-     * @param xyid
      * @return
-     * @see GoodDetailService#getCategoryBySkuId(Long, Long)
+     * @see GoodDetailService#getCategoryBySkuId(Long)
      */
     @Override
-    public Result<Map<String, Long>> getCategoryBySkuId(Long skuId, Long xyid) {
+    public Result<Map<String, Long>> getCategoryBySkuId(Long skuId) {
 
         Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryById(skuId);
         if (!goodsSkuResult.isSuccess()) {
