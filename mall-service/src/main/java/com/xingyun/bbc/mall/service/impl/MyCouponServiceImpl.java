@@ -29,6 +29,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -80,19 +81,21 @@ public class MyCouponServiceImpl implements MyCouponService {
         //查询优惠券信息
         for (CouponVo couponVo : couponPageVo.getList()) {
             Coupon coupon = couponMap.get(couponVo.getFcouponId()).get(0);
-            couponVo.setFcouponName(coupon.getFcouponName());
-            couponVo.setFcouponType(coupon.getFcouponType());
-            couponVo.setFthresholdAmount(PriceUtil.toYuan(coupon.getFthresholdAmount()));
+            if (Objects.nonNull(coupon)) {
+                couponVo.setFcouponName(coupon.getFcouponName());
+                couponVo.setFcouponType(coupon.getFcouponType());
+                couponVo.setFthresholdAmount(PriceUtil.toYuan(coupon.getFthresholdAmount()));
 
-            //优惠券类型，1满减券、2折扣券
-            if (coupon.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
-                couponVo.setFdeductionValue(PriceUtil.toYuan(coupon.getFdeductionValue()));
-            } else {
-                couponVo.setFdeductionValue(new BigDecimal(coupon.getFdeductionValue()).divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP));
+                //优惠券类型，1满减券、2折扣券
+                if (coupon.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
+                    couponVo.setFdeductionValue(PriceUtil.toYuan(coupon.getFdeductionValue()));
+                } else {
+                    couponVo.setFdeductionValue(new BigDecimal(coupon.getFdeductionValue()).divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP));
+                }
+                couponVo.setFvalidityType(coupon.getFvalidityType());
+                couponVo.setFvalidityDays(coupon.getFvalidityDays());
+                couponVo.setFreleaseType(coupon.getFreleaseType());
             }
-            couponVo.setFvalidityType(coupon.getFvalidityType());
-            couponVo.setFvalidityDays(coupon.getFvalidityDays());
-            couponVo.setFreleaseType(coupon.getFreleaseType());
         }
         //查询各种优惠券数量
         Integer fuserCouponStatus = myCouponDto.getFuserCouponStatus();

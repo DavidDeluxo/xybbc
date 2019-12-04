@@ -115,6 +115,9 @@ public class AftersaleServiceImpl implements AftersaleService {
             logger.info("用户user_id {}获取售后订单信息失败", aftersaleLisDto.getFuid());
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
+        if (countResult.getData().intValue() == 0) {
+            return Result.success();
+        }
 
         Result<List<OrderAftersale>> listResult = orderAftersaleApi.selectAftersaleLisMallPc(dto);
 

@@ -99,7 +99,7 @@ public class AftersaleServiceImpl implements AftersaleService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         if (countResult.getData().intValue() == 0) {
-            return Result.success(new PageVo<>());
+            return Result.success();
         }
 
         //售后状态1待客服审核 2待采购审核 3待仓库审核 4待财务审核 5已拒绝 6待退货 7待退款 8已成功 9已撤销  列表查询不限制状态
