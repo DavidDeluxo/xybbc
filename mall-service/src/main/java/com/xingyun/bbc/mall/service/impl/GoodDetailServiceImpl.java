@@ -307,8 +307,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     .andIn(SkuBatchPackage::getFsupplierSkuBatchId, batchIds)
                     .fields(SkuBatchPackage::getFbatchPackageId, SkuBatchPackage::getFbatchPackageNum,
                             SkuBatchPackage::getFbatchStartNum, SkuBatchPackage::getFsupplierSkuBatchId));
-            logger.info("商品各种规格=======" + JSON.toJSONString(skuBatchPackageResult.getData()));
+
             List<SkuBatchPackage> packageList = ResultUtils.getListNotEmpty(skuBatchPackageResult, MallExceptionCode.SKU_PACKAGE_IS_NONE);
+            logger.info("商品各种规格=======" + JSON.toJSONString(skuBatchPackageResult.getData()));
             Map<String, List<SkuBatchPackage>> packageMap = packageList.stream().collect(Collectors.groupingBy(SkuBatchPackage::getFsupplierSkuBatchId));
             batchRes.addAll(batchVert);
             for (GoodsSkuBatchVo batchVo : batchVert) {
