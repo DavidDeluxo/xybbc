@@ -114,7 +114,13 @@ public class IndexServiceImpl implements IndexService {
         //先查询pageConfigRedis key是否有被命中,没有命中则查询数据库
         if (CollectionUtils.isEmpty(pageConfigRedisResultList)) {
             Criteria<PageConfig, Object> pageConfigCriteria = Criteria.of(PageConfig.class);
-            pageConfigCriteria.andEqualTo(PageConfig::getFposition, position);
+            pageConfigCriteria.andEqualTo(PageConfig::getFposition, position)
+            .fields(PageConfig::getFcategoryLevel,PageConfig::getFconfigName
+                    ,PageConfig::getFimgUrl,PageConfig::getFlocation,PageConfig::getFpeiodEndTime
+                    ,PageConfig::getFperiodStartTime,PageConfig::getFposition
+                    ,PageConfig::getFredirectUrl,PageConfig::getFrelationId
+                    ,PageConfig::getFsortValue,PageConfig::getFtype
+                    ,PageConfig::getFviewType,PageConfig::getFisDelete);
             //查询未删除的
             // pageConfigCriteria.andEqualTo(PageConfig::getFisDelete, 0);
             //查询未删除,配置对象为0的数据
