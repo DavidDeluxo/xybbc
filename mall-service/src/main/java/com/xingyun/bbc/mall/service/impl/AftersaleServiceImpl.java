@@ -45,10 +45,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -135,8 +132,10 @@ public class AftersaleServiceImpl implements AftersaleService {
         //获取skuName
         for (AftersaleListVo aftersaleListVo : aftersaleList) {
             GoodsSku skuInfor = goodsSkuMap.get(aftersaleListVo.getFskuCode()).get(0);
-            aftersaleListVo.setFskuName(skuInfor.getFskuName());
-            aftersaleListVo.setFskuPic(skuInfor.getFskuThumbImage());
+            if (Objects.nonNull(skuInfor)) {
+                aftersaleListVo.setFskuName(skuInfor.getFskuName());
+                aftersaleListVo.setFskuPic(skuInfor.getFskuThumbImage());
+            }
             aftersaleListVo.setFbatchPackageName(aftersaleListVo.getFbatchPackageNum() + "件装");
             aftersaleListVo.setFunitPrice(aftersaleListVo.getFunitPrice().divide(MallConstants.ONE_HUNDRED, 2, BigDecimal.ROUND_HALF_UP));
             aftersaleListVo.setFaftersaleNumShow(this.getAftersaleNumShow(aftersaleListVo.getFaftersaleNum(), aftersaleListVo.getFtransportOrderId(), aftersaleListVo.getFskuCode()));

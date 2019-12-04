@@ -48,10 +48,7 @@ import org.springframework.util.CollectionUtils;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -132,7 +129,7 @@ public class AftersaleServiceImpl implements AftersaleService {
 
         Result<List<GoodsSku>> goodsSkuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
                 .andIn(GoodsSku::getFskuCode, skuCodeList)
-                .fields(GoodsSku::getFskuCode, GoodsSku::getFskuName, GoodsSku::getFskuThumbImage));
+                .fields(GoodsSku::getFgoodsId, GoodsSku::getFskuId, GoodsSku::getFskuCode, GoodsSku::getFskuName, GoodsSku::getFskuThumbImage));
         if (!goodsSkuResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
@@ -140,10 +137,12 @@ public class AftersaleServiceImpl implements AftersaleService {
         Map<String, List<GoodsSku>> goodsSkuMap = goodsSkuList.stream().collect(Collectors.groupingBy(GoodsSku::getFskuCode));
         for (AftersaleListVo aftersaleListVo : result.getList()) {
             GoodsSku skuInfor = goodsSkuMap.get(aftersaleListVo.getFskuCode()).get(0);
-            aftersaleListVo.setFgoodsId(skuInfor.getFgoodsId());
-            aftersaleListVo.setFskuId(skuInfor.getFskuId());
-            aftersaleListVo.setFskuName(skuInfor.getFskuName());
-            aftersaleListVo.setFskuPic(skuInfor.getFskuThumbImage());
+            if (Objects.nonNull(skuInfor)) {
+                aftersaleListVo.setFgoodsId(skuInfor.getFgoodsId());
+                aftersaleListVo.setFskuId(skuInfor.getFskuId());
+                aftersaleListVo.setFskuName(skuInfor.getFskuName());
+                aftersaleListVo.setFskuPic(skuInfor.getFskuThumbImage());
+            }
             aftersaleListVo.setFtradeType(this.getTradeType(aftersaleListVo.getFskuCode()));
             aftersaleListVo.setFbatchPackageName(aftersaleListVo.getFbatchPackageNum() + "件装");
             aftersaleListVo.setFunitPrice(PriceUtil.toYuan(aftersaleListVo.getFunitPrice()));
