@@ -303,11 +303,13 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         for (GoodsSkuVo skuVo : skuRes) {
             List<GoodsSkuBatchVo> batchVert = dozerHolder.convert(skuPatchMap.get(skuVo.getFskuId()), GoodsSkuBatchVo.class);
             List<String> batchIds = batchVert.stream().map(GoodsSkuBatchVo::getFsupplierSkuBatchId).collect(toList());
+            if (CollectionUtils.isEmpty(batchIds)) {
+                continue;
+            }
             Result<List<SkuBatchPackage>> skuBatchPackageResult = skuBatchPackageApi.queryByCriteria(Criteria.of(SkuBatchPackage.class)
                     .andIn(SkuBatchPackage::getFsupplierSkuBatchId, batchIds)
                     .fields(SkuBatchPackage::getFbatchPackageId, SkuBatchPackage::getFbatchPackageNum,
                             SkuBatchPackage::getFbatchStartNum, SkuBatchPackage::getFsupplierSkuBatchId));
-            logger.info("商品规格--批次返回=======" + JSON.toJSONString(skuBatchPackageResult));
             List<SkuBatchPackage> packageList = ResultUtils.getListNotEmpty(skuBatchPackageResult, MallExceptionCode.SKU_PACKAGE_IS_NONE);
             logger.info("商品各种规格=======" + JSON.toJSONString(skuBatchPackageResult.getData()));
             Map<String, List<SkuBatchPackage>> packageMap = packageList.stream().collect(Collectors.groupingBy(SkuBatchPackage::getFsupplierSkuBatchId));
