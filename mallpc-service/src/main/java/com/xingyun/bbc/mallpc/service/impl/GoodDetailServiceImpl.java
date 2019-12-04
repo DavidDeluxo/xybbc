@@ -1670,6 +1670,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
         }
         GoodsSku goodsSku = goodsSkuResult.getData();
+        if (goodsSku == null) {
+            throw new BizException(new MallPcExceptionCode("9999", "sku不存在"));
+        }
         Map<String, Long> categorys = new HashMap<>(4);
         categorys.put("1", goodsSku.getFcategoryId1());
         categorys.put("2", goodsSku.getFcategoryId2());
