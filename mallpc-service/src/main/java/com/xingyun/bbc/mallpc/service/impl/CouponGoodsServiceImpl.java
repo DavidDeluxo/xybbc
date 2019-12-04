@@ -10,13 +10,13 @@ import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.CouponApi;
 import com.xingyun.bbc.core.market.api.CouponApplicableSkuApi;
 import com.xingyun.bbc.core.market.api.CouponApplicableSkuConditionApi;
-import com.xingyun.bbc.core.market.api.CouponGoodsApi;
-import com.xingyun.bbc.core.market.dto.ItemDto;
 import com.xingyun.bbc.core.market.po.Coupon;
 import com.xingyun.bbc.core.market.po.CouponApplicableSku;
 import com.xingyun.bbc.core.market.po.CouponApplicableSkuCondition;
-import com.xingyun.bbc.core.market.vo.ItemVo;
 import com.xingyun.bbc.core.query.Criteria;
+import com.xingyun.bbc.core.sku.api.GoodsCouponApi;
+import com.xingyun.bbc.core.sku.dto.ItemDto;
+import com.xingyun.bbc.core.sku.vo.ItemVo;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
@@ -51,7 +51,7 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
     @Resource
     private GoodsService goodsService;
     @Resource
-    private CouponGoodsApi couponGoodsApi;
+    private GoodsCouponApi couponGoodsApi;
     @Resource
     private UserApi userApi;
     @Resource
