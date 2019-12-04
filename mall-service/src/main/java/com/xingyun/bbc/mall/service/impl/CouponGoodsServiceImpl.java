@@ -10,23 +10,20 @@ import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.CouponApi;
 import com.xingyun.bbc.core.market.api.CouponApplicableSkuApi;
 import com.xingyun.bbc.core.market.api.CouponApplicableSkuConditionApi;
-import com.xingyun.bbc.core.market.api.CouponGoodsApi;
-import com.xingyun.bbc.core.market.dto.ItemDto;
+import com.xingyun.bbc.core.sku.api.GoodsCouponApi;
+import com.xingyun.bbc.core.sku.dto.ItemDto;
 import com.xingyun.bbc.core.market.po.Coupon;
 import com.xingyun.bbc.core.market.po.CouponApplicableSku;
 import com.xingyun.bbc.core.market.po.CouponApplicableSkuCondition;
-import com.xingyun.bbc.core.market.vo.ItemVo;
+import com.xingyun.bbc.core.sku.vo.ItemVo;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserApi;
-import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.core.utils.StringUtil;
-import com.xingyun.bbc.mall.base.enums.MallResultStatus;
 import com.xingyun.bbc.mall.base.utils.PriceUtil;
 import com.xingyun.bbc.mall.common.ensure.Ensure;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.SearchItemDto;
-import com.xingyun.bbc.mall.model.vo.SearchFilterVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemListVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemVo;
 import com.xingyun.bbc.mall.service.CouponGoodsService;
@@ -54,7 +51,7 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
     @Autowired
     private GoodsService goodsService;
     @Autowired
-    private CouponGoodsApi couponGoodsApi;
+    private GoodsCouponApi goodsCouponApi;
     @Autowired
     UserApi userApi;
     @Autowired
@@ -152,8 +149,8 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
         ItemDto itemDto = new ItemDto();
         BeanUtils.copyProperties(dto, itemDto);
         itemDto.setPageNum(dto.getPageIndex());
-
-        Result<Page<ItemVo>> pageResult = couponGoodsApi.queryCouponGoods(itemDto);
+        itemDto.setFoperateType(dto.getFoperateType());
+        Result<Page<ItemVo>> pageResult = goodsCouponApi.queryCouponGoods(itemDto);
 
         if (!pageResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
 
