@@ -132,7 +132,7 @@ public class GoodsDetailController {
 //        return goodDetailService.getSkuBatchPackageSpecifi(fskuBatchId);
 //    }
     @ApiOperation(value = "获取分类根据sku id", httpMethod = "GET")
-    @GetMapping("/getCategoryBySkuId")
+    @GetMapping("/via/getCategoryBySkuId")
     public Result<Map<String, Long>> getCategoryBySkuId(@RequestParam Long skuId) {
         return goodDetailService.getCategoryBySkuId(skuId);
     }
@@ -146,7 +146,7 @@ public class GoodsDetailController {
      * @author ming.yiFei
      */
     @ApiOperation("获取中国全部省市区")
-    @GetMapping("/queryRegionAll")
+    @GetMapping("/via/queryRegionAll")
     public Result<CityRegionAllVO> queryRegionAll() {
         return goodDetailService.queryRegionOfChina();
     }
