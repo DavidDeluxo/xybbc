@@ -52,11 +52,12 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     //充值明细表查询状态
     private static List<Integer> detailStatus = Arrays.stream(values())
-            .filter(item -> item.getCode().compareTo(ALI_ORDER.getCode()) == 0)
-            .filter(item -> item.getCode().compareTo(WECHAT_ORDER.getCode()) == 0)
-            .filter(item -> item.getCode().compareTo(AFTERSALE_WORK_CREDIT.getCode()) == 0)
-            .filter(item -> item.getCode().compareTo(CREDIT_LIMIT_AVAILABLE_BALANCE.getCode()) == 0)
-            .filter(item -> item.getCode().compareTo(CREDIT_LIMIT_ORDER.getCode()) == 0)
+            .filter(item -> item.getCode().compareTo(ALI_ORDER.getCode()) != 0)
+            .filter(item -> item.getCode().compareTo(WECHAT_ORDER.getCode()) != 0)
+            .filter(item -> item.getCode().compareTo(AFTERSALE_WORK_CREDIT.getCode()) != 0)
+            .filter(item -> item.getCode().compareTo(CREDIT_LIMIT_AVAILABLE_BALANCE.getCode()) != 0)
+            .filter(item -> item.getCode().compareTo(CREDIT_LIMIT_ORDER.getCode()) != 0)
+            .filter(item -> item.getCode().compareTo(UNKNOWN.getCode()) != 0)
             .map(UserDetailType::getCode).
 
                     collect(Collectors.toList());
