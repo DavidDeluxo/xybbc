@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mallpc.service.impl;
 
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import com.google.common.collect.Lists;
 import com.xingyun.bbc.common.redis.order.OrderTypeEnum;
@@ -479,9 +480,18 @@ public class UserAccountServiceImpl implements UserAccountService {
             case 9:
             case 11:
             case 12:
-                List<Order> orders = orders(listResult.getData().get(0).getFtypeId());
-                Order order = orders.get(0);
-                accountDetail.setFpassedTime(order.getFmodifyTime());
+                if(listResult.getData().get(0).getFtypeId().startsWith("Z")){
+                    List<OrderPayment> orderPayments1 = orderPayments(listResult.getData().get(0).getFtypeId());
+                    if(CollUtil.isNotEmpty(orderPayments1)){
+                        accountDetail.setFpassedTime(orderPayments1.get(0).getFmodifyTime());
+                    }
+                }else{
+                    List<Order> orders = orders(listResult.getData().get(0).getFtypeId());
+                    if(CollUtil.isNotEmpty(orders)){
+                        Order order = orders.get(0);
+                        accountDetail.setFpassedTime(order.getFmodifyTime());
+                    }
+                }
                 break;
             default:
                 break;
