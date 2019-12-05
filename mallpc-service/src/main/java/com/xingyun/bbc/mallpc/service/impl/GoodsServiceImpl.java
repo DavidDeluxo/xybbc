@@ -49,6 +49,7 @@ public class GoodsServiceImpl implements GoodsService {
     private static final String PRICE_TYPE_PREFIX_CAMEL = "priceType";
     private static final String PRICE_TYPE_SUFFIX = ".min_price";
     private static Pattern humpPattern = Pattern.compile("[A-Z0-9]");
+    private static final String COUPON_ALIAS_PREFIX = "coupon_";
 
     @Autowired
     private EsManager esManager;
@@ -60,7 +61,6 @@ public class GoodsServiceImpl implements GoodsService {
     private SearchRecordService searchRecordService;
     @Autowired
     private RedisHolder redisHolder;
-
     /**
      * 查询商品列表
      *
@@ -79,9 +79,11 @@ public class GoodsServiceImpl implements GoodsService {
         pageVo.setPageSize(1);
         this.setCategoryCondition(searchItemDto);
         EsCriteria criteria = EsCriteria.build(searchItemDto);
+        if (searchItemDto.getFcouponId() != null) {
+            criteria.setIndexName(this.getCouponAliasName(Long.parseLong(String.valueOf(searchItemDto.getFcouponId()))));
+        }
         this.setSearchCondition(searchItemDto, criteria);
         String soldAmountScript = "1-Math.pow(doc['fsell_total'].value + 1, -1)";
-
         Map<String, Object> resultMap = esManager.functionQueryForResponse(criteria, soldAmountScript, CombineFunction.SUM);
         List<Map<String, Object>> resultList = (List<Map<String, Object>>) resultMap.get("resultList");
         List<SearchItemVo> voList = new LinkedList<>();
@@ -105,6 +107,18 @@ public class GoodsServiceImpl implements GoodsService {
     }
 
     /**
+     * 根据优惠券id获取Alias名称
+     * @param fcouponId
+     * @return
+     */
+    private String getCouponAliasName(Long fcouponId) {
+        if (Objects.isNull(fcouponId)) {
+            throw new IllegalArgumentException("优惠券id不能为空");
+        }
+        return COUPON_ALIAS_PREFIX + fcouponId;
+    }
+
+    /**
      * 查询商品筛选信息列表
      *
      * @param searchItemDto
@@ -117,6 +131,9 @@ public class GoodsServiceImpl implements GoodsService {
         this.setCategoryCondition(searchItemDto);
         //扫描入参类属性注解, 自动构建搜索条件
         EsCriteria criteria = EsCriteria.build(searchItemDto);
+        if (searchItemDto.getFcouponId() != null) {
+            criteria.setIndexName(this.getCouponAliasName(Long.parseLong(String.valueOf(searchItemDto.getFcouponId()))));
+        }
         //设定搜索条件
         this.setSearchCondition(searchItemDto, criteria);
         this.setAggregation(criteria);

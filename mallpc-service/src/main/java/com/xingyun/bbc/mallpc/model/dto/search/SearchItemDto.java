@@ -111,7 +111,7 @@ public class SearchItemDto {
     @ApiModelProperty(value = "sku_id", hidden = true)
     private List<Long> fskuIds;
 
-    @EsMark(policy = BuildPolicy.MUST, field = "fcoupon_ids")
+//    @EsMark(policy = BuildPolicy.MUST, field = "fcoupon_ids")
     @ApiModelProperty("优惠券ID")
     private Long fcouponId;
 
