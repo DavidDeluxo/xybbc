@@ -64,7 +64,6 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
 
     @Override
     public Result<SearchItemListVo<SearchItemVo>> queryGoodsList(SearchItemDto dto) {
-
         Result<SearchItemListVo<SearchItemVo>> res = new Result<>();
         SearchItemListVo<SearchItemVo> pageVo = new SearchItemListVo<>();
         pageVo.setIsLogin(dto.getIsLogin());
@@ -76,24 +75,19 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
         pageVo.setPageCount(0);
         pageVo.setList(Lists.newArrayList());
         res.setData(pageVo);
-
         try {
             res = goodsService.searchSkuList(dto);
             if (!res.isSuccess())
                 throw new Exception();
-
         } catch (Exception e) {
             log.warn("ES优惠券商品搜索失败!...");
-
             if (Objects.nonNull(dto.getCouponId())){
-
                 log.info("----------ES优惠券商品搜索失败!,转SQL查询------------");
                 res = this.queryGoodsListRealTime(dto);
             }
 
         }
         return res;
-
     }
 
     private void buildCategory(SearchItemDto dto, List<CouponApplicableSkuCondition> skuConResData) {

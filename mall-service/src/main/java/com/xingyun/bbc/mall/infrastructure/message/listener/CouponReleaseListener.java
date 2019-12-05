@@ -6,7 +6,8 @@ import com.xingyun.bbc.core.market.event.CouponInvalidateEvent;
 import com.xingyun.bbc.core.market.event.CouponReleaseEvent;
 import com.xingyun.bbc.core.market.event.channel.CouponEventInputChannel;
 import com.xingyun.bbc.core.market.po.Coupon;
-import com.xingyun.bbc.mall.infrastructure.message.CouponUpdateBySkuEvent;
+import com.xingyun.bbc.mall.infrastructure.message.event.SkuBaseInfoUpdateEvent;
+import com.xingyun.bbc.mall.infrastructure.message.event.SkuStockPriceUpdateEvent;
 import com.xingyun.bbc.mall.service.GoodsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,7 @@ public class CouponReleaseListener {
 
                 log.info("开始消费发布优惠券信息message={}", JSON.toJSONString(couponEvent));
                 Coupon coupon = couponEvent.getCoupon();
-                goodsService.updateCouponInfoToEsByAlias(coupon);
+                goodsService.updateCouponInfoToEsByAlias(coupon, true);
                 log.info("消费发布优惠券信息成功message={}", JSON.toJSONString(couponEvent));
 
             } else if (couponEvent instanceof CouponInvalidateEvent) {
@@ -37,12 +38,19 @@ public class CouponReleaseListener {
                 goodsService.deleteCouponInfoFromEsByAlias(coupon);
                 log.info("消费发布失效优惠券信息成功message={}", JSON.toJSONString(couponEvent));
 
-            }else if (couponEvent instanceof CouponUpdateBySkuEvent){
+            }else if (couponEvent instanceof SkuStockPriceUpdateEvent){
 
-                log.info("开始消费SKU更新信息message={}", JSON.toJSONString(couponEvent));
-                CouponUpdateBySkuEvent skuEvent = (CouponUpdateBySkuEvent) couponEvent;
-                goodsService.updateEsSkuWithSkuUpdate(skuEvent.getSkuSourceMap());
-                log.info("消费发SKU更新信息成功message={}", JSON.toJSONString(couponEvent));
+                log.info("开始消费SKU价格库存更新信息message={}", JSON.toJSONString(couponEvent));
+                SkuStockPriceUpdateEvent skuStockPriceUpdateEvent = (SkuStockPriceUpdateEvent) couponEvent;
+                goodsService.updateEsSkuWithBaseInfo(skuStockPriceUpdateEvent.getSkuInfoMap(), false);
+                log.info("消费发SKU价格库存更新信息成功message={}", JSON.toJSONString(couponEvent));
+
+            }else if (couponEvent instanceof SkuBaseInfoUpdateEvent){
+
+                log.info("开始消费SKU基本信息更新信息message={}", JSON.toJSONString(couponEvent));
+                SkuBaseInfoUpdateEvent baseInfoUpdateEvent = (SkuBaseInfoUpdateEvent) couponEvent;
+                goodsService.updateEsSkuWithBaseInfo(baseInfoUpdateEvent.getSkuInfoMap(), true);
+                log.info("开始消费SKU基本信息更新信息message={}", JSON.toJSONString(couponEvent));
 
             }else {
                 log.error("不支持该事件类型");

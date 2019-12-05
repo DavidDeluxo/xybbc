@@ -11,36 +11,56 @@ import java.util.Map;
 
 public interface GoodsService {
 
+    /**
+     * 查询sku列表
+     * @param searchItemDto
+     * @return
+     */
     Result<SearchItemListVo<SearchItemVo>> searchSkuList(SearchItemDto searchItemDto);
 
+    /**
+     * 查询sku过滤信息
+     * @param searchItemDto
+     * @return
+     */
     Result<SearchFilterVo> searchSkuFilter(SearchItemDto searchItemDto);
 
+    /**
+     * 查询商品品牌专属页
+     * @param fbrandId
+     * @return
+     */
     Result<BrandPageVo> searchSkuBrandPage(Integer fbrandId);
 
+    /**
+     * 查询热门搜索关键词列表
+     * @return
+     */
     Result<List<String>> queryHotSearch();
 
-    Result<Boolean> updateCouponList();
-
     /**
-     * 更新ES的优惠券信息 (更新优惠券id列表)
+     * 更新ES的优惠券信息 (增量更新Alias)
      * @param coupon
      */
-    void updateEsSkuWithCouponInfo(Coupon coupon);
+    void updateCouponInfoToEsByAlias(Coupon coupon, boolean isUpdateByMessage) throws Exception;
 
     /**
-     * 更新ES的优惠券信息 (更新Alias)
+     * 更新ES的优惠券信息 (全量更新Alias)
      * @param coupon
      */
-    void updateCouponInfoToEsByAlias(Coupon coupon) throws Exception;
+    void updateCouponInfoToEsByAliasBatch(RefreshCouponDto refreshCouponDto);
 
+    /**
+     * 删除ES的优惠券信息
+     * @param coupon
+     */
     void deleteCouponInfoFromEsByAlias(Coupon coupon);
 
-    void deleteCouponInfoFromEsSku(Coupon coupon);
+    /**
+     * 更新ES商品基本信息
+     * @param skuSourceMap
+     */
+   void updateEsSkuWithBaseInfo(Map<String, Object> skuSourceMap, boolean isBaseInfoUpdate);
 
-    void updateEsSkuWithSkuUpdate(Map<String, Object> skuSourceMap);
-
-    void updateCouponIdForAllSku(RefreshCouponDto refreshCouponDto);
-
-    void testEsAlias();
 
 }

@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.market.po.Coupon;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.JwtParser;
+import com.xingyun.bbc.mall.model.dto.RefreshCouponDto;
 import com.xingyun.bbc.mall.model.dto.SearchItemDto;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.CouponGoodsService;
@@ -47,7 +48,6 @@ public class GoodsController {
         dto.setFoperateType(infoVo.getFoperateType());
         log.info("查询商品列表,请求参数:{}", JSON.toJSONString(dto));
         if (Objects.nonNull(dto.getCouponId())) return couponGoodsService.queryGoodsList(dto);
-
         return goodsService.searchSkuList(dto);
     }
 
@@ -72,21 +72,10 @@ public class GoodsController {
         return goodsService.queryHotSearch();
     }
 
-    @ApiOperation(value = "优惠券更新测试")
-    @PostMapping("/via/updateCouponList")
-    public Result<Boolean> updateCouponList(@RequestParam Long fcouponId){
-        Coupon param = new Coupon();
-        param.setFcouponId(fcouponId);
-        goodsService.updateEsSkuWithCouponInfo(param);
-        return Result.success(true);
-    }
-
     @ApiOperation(value = "优惠券全量更新")
     @PostMapping("/via/updateCouponListForAllSku")
-    public Result<Boolean> updateCouponListWhole(@RequestParam Long fcouponId){
-        Coupon param = new Coupon();
-        param.setFcouponId(fcouponId);
-        goodsService.updateCouponIdForAllSku(null);
+    public Result<Boolean> updateCouponListWhole(@RequestBody RefreshCouponDto refreshCouponDto){
+        goodsService.updateCouponInfoToEsByAliasBatch(refreshCouponDto);
         return Result.success(true);
     }
 
