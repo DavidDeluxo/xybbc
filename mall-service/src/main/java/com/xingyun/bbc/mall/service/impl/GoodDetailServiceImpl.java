@@ -721,7 +721,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 }
             }
         }
-        if (null == goodsDetailMallDto.getFbatchPackageId()) {
+        if (null != goodsDetailMallDto.getFsupplierSkuBatchId()) {
             skuTaxRate = skuTaxRate.divide(new BigDecimal("10000"), 8, BigDecimal.ROUND_HALF_UP);
             priceVo.setTaxStart(priceVo.getPriceStart().multiply(skuTaxRate));
             priceVo.setTaxEnd(priceVo.getPriceEnd().multiply(skuTaxRate));
@@ -783,13 +783,12 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 }
             }
         }
-        if (null == goodsDetailMallDto.getFsupplierSkuBatchId()) {
-            skuTaxRate = skuTaxRate.divide(new BigDecimal("10000"), 8, BigDecimal.ROUND_HALF_UP);
-            priceVo.setTaxStart(priceVo.getPriceStart().multiply(skuTaxRate));
-            priceVo.setTaxEnd(priceVo.getPriceEnd().multiply(skuTaxRate));
-            priceVo.setPriceStart(priceVo.getPriceStart().add(priceVo.getTaxStart()));
-            priceVo.setPriceEnd(priceVo.getPriceEnd().add(priceVo.getTaxEnd()));
-        }
+        //只有sku和spu才会执行直接计算出-含税价和税费
+        skuTaxRate = skuTaxRate.divide(new BigDecimal("10000"), 8, BigDecimal.ROUND_HALF_UP);
+        priceVo.setTaxStart(priceVo.getPriceStart().multiply(skuTaxRate));
+        priceVo.setTaxEnd(priceVo.getPriceEnd().multiply(skuTaxRate));
+        priceVo.setPriceStart(priceVo.getPriceStart().add(priceVo.getTaxStart()));
+        priceVo.setPriceEnd(priceVo.getPriceEnd().add(priceVo.getTaxEnd()));
         return priceVo;
     }
 
@@ -839,8 +838,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 }
             }
         }
-        priceVo.setPriceStart(priceVo.getPriceStart().add(priceVo.getTaxStart()));
-        priceVo.setPriceEnd(priceVo.getPriceEnd().add(priceVo.getTaxEnd()));
         return priceVo;
     }
 
