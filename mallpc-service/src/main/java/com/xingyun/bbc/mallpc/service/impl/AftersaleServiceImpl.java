@@ -151,7 +151,7 @@ public class AftersaleServiceImpl implements AftersaleService {
             aftersaleListVo.setFunitPrice(PriceUtil.toYuan(aftersaleListVo.getFunitPrice()));
             aftersaleListVo.setFaftersaleNumShow(this.getAftersaleNumShow(aftersaleListVo.getFaftersaleNum(), aftersaleListVo.getFtransportOrderId(), aftersaleListVo.getFskuCode()));
             aftersaleListVo.setFvalidityPeriod(this.getValidityPeriod(aftersaleListVo.getFbatchId()));
-            OrderAftersaleBack nameMobile = this.getNameMobile(aftersaleListVo.getForderAftersaleId());
+            OrderAftersaleBack nameMobile = this.getNameMobile(aftersaleListVo.getForderId());
             aftersaleListVo.setFdeliveryName(nameMobile.getFdeliveryName());
             aftersaleListVo.setFdeliveryMobile(nameMobile.getFdeliveryMobile());
             aftersaleListVo.setFaftersaleTotalAmount(PriceUtil.toYuan(this.getAftersaleTotalAmount(aftersaleListVo.getForderAftersaleId())));
