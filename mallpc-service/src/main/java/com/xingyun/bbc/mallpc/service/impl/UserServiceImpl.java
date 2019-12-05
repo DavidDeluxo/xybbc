@@ -146,7 +146,6 @@ public class UserServiceImpl implements UserService {
                 .andEqualTo(User::getFisDelete, "0")
                 .andEqualTo(User::getFpasswd, passWord)
                 .andLeft().orEqualTo(User::getFmobile, userLoginDto.getUserAccount())
-                .orEqualTo(User::getFmail, userLoginDto.getUserAccount())
                 .orEqualTo(User::getFuname, userLoginDto.getUserAccount()).addRight());
         Ensure.that(userResult).isNotNullData(MallPcExceptionCode.LOGIN_FAILED);
         Ensure.that(userResult.getData().getFfreezeStatus()).isEqual(1, MallPcExceptionCode.ACCOUNT_FREEZE);
