@@ -94,7 +94,7 @@ public class IndexController {
         dto.setFuid(infoVo.getFuid());
         dto.setFverifyStatus(infoVo.getFverifyStatus());
         dto.setFoperateType(infoVo.getFoperateType());
-        Result<SearchItemListVo<SearchItemVo>> result = goodsService.searchSkuList(dto);
+     /*   Result<SearchItemListVo<SearchItemVo>> result = goodsService.searchSkuList(dto);
         result.getData().getList().clear();
         if (CollectionUtils.isEmpty(result.getData().getList())) {
             return Result.success(indexService.queryGoodsByCategoryId1(dto));
@@ -104,6 +104,7 @@ public class IndexController {
             } else {
                 return result;
             }
-        }
+        }*/
+        return Result.success(indexService.queryGoodsByCategoryId1(dto));
     }
 }
