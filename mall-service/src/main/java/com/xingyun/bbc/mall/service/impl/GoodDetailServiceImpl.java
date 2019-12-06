@@ -1034,14 +1034,15 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             //不满足券条件的先排除
             if (couponResult.isSuccess() && null != coupon) {
                 if (coupon.getFvalidityType().equals(CouponValidityTypeEnum.TIME_SLOT.getCode())) {
-                    Date fvalidityStart = coupon.getFvalidityStart();
-                    String fvalidityStartStr = sdf.format(fvalidityStart);
-                    if (!fvalidityStartStr.equals("1970-01-01 00:00:00") && (now.before(fvalidityStart))) {
+                    Date fvalidityEnd = coupon.getFvalidityEnd();
+                    String fvalidityEndStr = sdf.format(fvalidityEnd);
+                    if (!fvalidityEndStr.equals("1970-01-01 00:00:00") && (now.after(fvalidityEnd))) {
                         continue;
                     }
                     Date freleaseTimeStart = coupon.getFreleaseTimeStart();
+                    Date freleaseTimeEnd = coupon.getFreleaseTimeEnd();
                     String freleaseTimeStartStr = sdf.format(freleaseTimeStart);
-                    if (!freleaseTimeStartStr.equals("1970-01-01 00:00:00") && now.before(freleaseTimeStart)) {
+                    if (!freleaseTimeStartStr.equals("1970-01-01 00:00:00") && (now.before(freleaseTimeStart) || now.after(freleaseTimeEnd))) {
                         continue;
                     }
                 }
