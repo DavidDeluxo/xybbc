@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @ApiModel("商品基本信息")
@@ -57,5 +58,8 @@ public class GoodsVo implements Serializable {
 
     @ApiModelProperty(value = "商品规格信息")
     private List<GoodsSkuVo> fgoodsSkuVo;
+
+    @ApiModelProperty(value = "key:skuid value:商品名称 商品描述 商品列表缩略图")
+    private Map<Long, GoodsAlterVo> goodsSkuAlterVo;
 
 }

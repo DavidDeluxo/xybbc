@@ -207,7 +207,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         if (null == goodsBasic.getData()) {
-            return Result.success(null);
+            return Result.success();
         }
         GoodsVo goodsVo = dozerMapper.map(goodsBasic.getData(), GoodsVo.class);
 
@@ -219,18 +219,24 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         }
         goodsVo.setFtradeType(tradeType);
 
-        //获取sku商品描述和商品主图
-        goodsVo.setFskuDesc("");
-        if (null != fskuId) {
-            GoodsSku goodSkuDesc = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
-                    .andEqualTo(GoodsSku::getFskuId, fskuId)
-                    .fields(GoodsSku::getFskuDesc, GoodsSku::getFskuThumbImage, GoodsSku::getFskuName)).getData();
-            if (null != goodSkuDesc) {
-                goodsVo.setFskuDesc(goodSkuDesc.getFskuDesc());
+        //获取商品名称、sku商品描述和商品主图
+        Result<List<GoodsSku>> goodsSkuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
+                .andEqualTo(GoodsSku::getFgoodsId, fgoodsId)
+                .fields(GoodsSku::getFskuDesc, GoodsSku::getFskuThumbImage, GoodsSku::getFskuName, GoodsSku::getFskuId));
+        Ensure.that(goodsSkuResult.isSuccess()).isTrue(new MallExceptionCode(goodsSkuResult.getCode(), goodsSkuResult.getMsg()));
+
+        List<GoodsSku> goodsSkuList = goodsSkuResult.getData();
+        Map<Long, GoodsAlterVo> goodsSkuAlterVo = new HashMap<>();
+        if (CollectionUtils.isNotEmpty(goodsSkuList)) {
+            for (GoodsSku goodsSku : goodsSkuList) {
+                GoodsAlterVo goodsAlterVo = new GoodsAlterVo();
                 //之前取spu表列表缩略图后改成sku表主图
-                goodsVo.setFgoodsImgUrl(goodSkuDesc.getFskuThumbImage());
-                goodsVo.setFgoodsName(goodSkuDesc.getFskuName());
+                goodsAlterVo.setFgoodsImgUrl(goodsSku.getFskuThumbImage());
+                goodsAlterVo.setFgoodsName(goodsSku.getFskuName());
+                goodsAlterVo.setFskuDesc(goodsSku.getFskuDesc());
+                goodsSkuAlterVo.put(goodsSku.getFskuId(), goodsAlterVo);
             }
+            goodsVo.setGoodsSkuAlterVo(goodsSkuAlterVo);
         }
 
         //获取品牌名称和国旗icon
@@ -262,13 +268,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 goodsVo.setFgoodsOrigin(cityRegion.getFcrName());
             }
         }
-
-//        //商品规格
-//        Result<List<GoodsSku>> goodsSkuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
-//                .andEqualTo(GoodsSku::getFgoodsId, fgoodsId)
-//                .fields(GoodsSku::getFskuId, GoodsSku::getFgoodsId, GoodsSku::getFskuSpecValue));
-//        List<GoodsSkuVo> convert = dozerHolder.convert(goodsSkuResult.getData(), GoodsSkuVo.class);
-//        goodsVo.setFgoodsSkuVo(convert);
         return Result.success(goodsVo);
     }
 
@@ -283,6 +282,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 .andEqualTo(GoodsSku::getFskuStatus, GoodsSkuEnums.Status.OnShelves.getValue())
                 .andEqualTo(GoodsSku::getFisDelete, "0")
                 .fields(GoodsSku::getFskuId, GoodsSku::getFskuCode, GoodsSku::getFskuSpecValue));
+        Ensure.that(goodsSkuResult.isSuccess()).isTrue(new MallExceptionCode(goodsSkuResult.getCode(), goodsSkuResult.getMsg()));
+        if (CollectionUtils.isEmpty(goodsSkuResult.getData())) {
+            return Result.success();
+        }
         //sku规格
         List<GoodsSkuVo> skuRes = dozerHolder.convert(goodsSkuResult.getData(), GoodsSkuVo.class);
         List<Long> skuIds = skuRes.stream().map(GoodsSkuVo::getFskuId).collect(toList());
@@ -291,6 +294,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
                 .andEqualTo(SkuBatch::getFbatchPutwaySort, 1)//只用取上架排序为1的
                 .fields(SkuBatch::getFqualityEndDate, SkuBatch::getFsupplierSkuBatchId, SkuBatch::getFskuId));
+
         List<SkuBatch> skuBatchList = ResultUtils.getListNotEmpty(skuBatchResult, MallExceptionCode.SKU_BATCH_IS_NONE);
         Map<Long, List<SkuBatch>> skuPatchMap = skuBatchList.stream().collect(Collectors.groupingBy(SkuBatch::getFskuId));
         //批次效期
@@ -426,23 +430,27 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         GoodsPriceVo priceResult = new GoodsPriceVo();
         //到规格
         if (null != goodsDetailMallDto.getFbatchPackageId()) {
-            BigDecimal packagePrice = this.getPackagePrice(goodsDetailMallDto, goodsDetailMallDto);
+            GoodsDetailMallDto param = dozerMapper.map(goodsDetailMallDto, GoodsDetailMallDto.class);
+            BigDecimal packagePrice = this.getPackagePrice(goodsDetailMallDto, param);
             priceResult.setRealPrice(PriceUtil.toYuan(packagePrice));
             priceResult.setPriceStart(PriceUtil.toYuan(packagePrice));
         }
         //到批次
         if (null != goodsDetailMallDto.getFsupplierSkuBatchId() && null == goodsDetailMallDto.getFbatchPackageId()) {
-            priceResult = this.getBatchPrice(goodsDetailMallDto);
+            GoodsDetailMallDto param = dozerMapper.map(goodsDetailMallDto, GoodsDetailMallDto.class);
+            priceResult = this.getBatchPrice(goodsDetailMallDto, param);
             this.dealGoodDetailPriceToYuan(priceResult);
         }
         //到sku
         if (null != goodsDetailMallDto.getFskuId() && null == goodsDetailMallDto.getFsupplierSkuBatchId() && null == goodsDetailMallDto.getFbatchPackageId()) {
-            priceResult = this.getSkuPrice(goodsDetailMallDto);
+            GoodsDetailMallDto param = dozerMapper.map(goodsDetailMallDto, GoodsDetailMallDto.class);
+            priceResult = this.getSkuPrice(goodsDetailMallDto, param);
             this.dealGoodDetailPriceToYuan(priceResult);
         }
         //到spu
         if (null != goodsDetailMallDto.getFgoodsId() && null == goodsDetailMallDto.getFskuId() && null == goodsDetailMallDto.getFsupplierSkuBatchId() && null == goodsDetailMallDto.getFbatchPackageId()) {
-            priceResult = this.getSpuPrice(goodsDetailMallDto);
+            GoodsDetailMallDto param = dozerMapper.map(goodsDetailMallDto, GoodsDetailMallDto.class);
+            priceResult = this.getSpuPrice(goodsDetailMallDto, param);
             this.dealGoodDetailPriceToYuan(priceResult);
         }
         //起始区间价 只有是单一价格PriceStart才计算运费、税费、折合单价
@@ -486,10 +494,13 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             }
             //起始价格都转成元---下面计算都以元算
             //查询税率
-            Long fskuTaxRate = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
+            Result<GoodsSku> skuTaxResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
                     .andEqualTo(GoodsSku::getFskuId, goodsDetailMallDto.getFskuId())
-                    .fields(GoodsSku::getFskuTaxRate)).getData().getFskuTaxRate();
-            //(原始价*购买数量)
+                    .fields(GoodsSku::getFskuTaxRate));
+            Ensure.that(skuTaxResult.isSuccess()).isTrue(new MallExceptionCode(skuTaxResult.getCode(), skuTaxResult.getMsg()));
+            Long fskuTaxRate = 0l;
+            fskuTaxRate = skuTaxResult.getData().getFskuTaxRate();
+                    //(原始价*购买数量)
             BigDecimal orgPrice = priceResult.getPriceStart().multiply(new BigDecimal(goodsDetailMallDto.getFnum()));
             //税费 = (原始价*购买数量 + 运费) * 税率
             BigDecimal taxPrice = BigDecimal.ZERO;
@@ -555,19 +566,19 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     //获取到规格的价格
     private BigDecimal getPackagePrice(GoodsDetailMallDto goodsDetailMallDto, GoodsDetailMallDto param) {
         //如果未认证直接查基础表
-        if (goodsDetailMallDto.getFverifyStatus().intValue() == UserVerifyStatusEnum.AUTHENTICATED.getCode()) {
-            if (Objects.isNull(goodsDetailMallDto.getFskuDiscount())) {
-                SkuDiscountTaxDto isSkuDiscountTax = this.getIsSkuDiscountTax(goodsDetailMallDto.getFskuId());
-                goodsDetailMallDto.setFskuTaxRate(isSkuDiscountTax.getFskuTaxRate());
-                goodsDetailMallDto.setFskuDiscount(isSkuDiscountTax.getFisUserTypeDiscount());
+        if (param.getFverifyStatus().intValue() == UserVerifyStatusEnum.AUTHENTICATED.getCode()) {
+            if (Objects.isNull(param.getFskuDiscount())) {
+                SkuDiscountTaxDto isSkuDiscountTax = this.getIsSkuDiscountTax(param.getFskuId());
+                param.setFskuTaxRate(isSkuDiscountTax.getFskuTaxRate());
+                param.setFskuDiscount(isSkuDiscountTax.getFisUserTypeDiscount());
             }
             //sku是否支持平台会员折扣
-            if (goodsDetailMallDto.getFskuDiscount().intValue() == 1) {
-                if (Objects.isNull(goodsDetailMallDto.getFskuUserDiscount())) {
-                    goodsDetailMallDto.setFskuUserDiscount(this.getIsSkuUserDiscount(goodsDetailMallDto, goodsDetailMallDto.getFoperateType()));
+            if (param.getFskuDiscount().intValue() == 1) {
+                if (Objects.isNull(param.getFskuUserDiscount())) {
+                    param.setFskuUserDiscount(this.getIsSkuUserDiscount(goodsDetailMallDto, goodsDetailMallDto.getFoperateType()));
                 }
                 //sku——user是否支持折扣
-                if (goodsDetailMallDto.getFskuUserDiscount() == 0) {
+                if (param.getFskuUserDiscount() == 0) {
                     return this.getGeneralPrice(goodsDetailMallDto, param);
                 }
                 return this.getDiscountPrice(goodsDetailMallDto, param);
@@ -598,7 +609,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     //获取折扣价格
     private BigDecimal getDiscountPrice(GoodsDetailMallDto goodsDetailMallDto, GoodsDetailMallDto param) {
-        Integer foperateType = param.getFoperateType();
+        Integer foperateType = goodsDetailMallDto.getFoperateType();
         Long fbatchPackageId = param.getFbatchPackageId();
         BigDecimal price = BigDecimal.ZERO;
         BigDecimal packageNum = this.getPackageNum(fbatchPackageId);
@@ -658,12 +669,12 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     }
 
     //获取到批次的价格
-    private GoodsPriceVo getBatchPrice(GoodsDetailMallDto goodsDetailMallDto) {
+    private GoodsPriceVo getBatchPrice(GoodsDetailMallDto goodsDetailMallDto, GoodsDetailMallDto param) {
         //到批次
-        Result<List<SkuBatchPackage>> batch = skuBatchPackageApi.queryByCriteria(Criteria.of(SkuBatchPackage.class)
-                .andEqualTo(SkuBatchPackage::getFsupplierSkuBatchId, goodsDetailMallDto.getFsupplierSkuBatchId())
+        Result<List<SkuBatchPackage>> batchPackageResult = skuBatchPackageApi.queryByCriteria(Criteria.of(SkuBatchPackage.class)
+                .andEqualTo(SkuBatchPackage::getFsupplierSkuBatchId, param.getFsupplierSkuBatchId())
                 .fields(SkuBatchPackage::getFbatchPackageId));
-        if (!batch.isSuccess()) {
+        if (!batchPackageResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         GoodsPriceVo priceVo = new GoodsPriceVo();
@@ -674,25 +685,17 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         priceVo.setTaxEnd(zero);
 
         //获取sku税率 sku是否支持打折
-        if (null == goodsDetailMallDto.getFskuTaxRate()) {
-            SkuDiscountTaxDto isSkuDiscountTax = this.getIsSkuDiscountTax(goodsDetailMallDto.getFskuId());
-            goodsDetailMallDto.setFskuTaxRate(isSkuDiscountTax.getFskuTaxRate());
-            goodsDetailMallDto.setFskuDiscount(isSkuDiscountTax.getFisUserTypeDiscount());
+        if (null == param.getFskuTaxRate()) {
+            SkuDiscountTaxDto isSkuDiscountTax = this.getIsSkuDiscountTax(param.getFskuId());
+            param.setFskuTaxRate(isSkuDiscountTax.getFskuTaxRate());
+            param.setFskuDiscount(isSkuDiscountTax.getFisUserTypeDiscount());
             //sku_user是否打折
-            goodsDetailMallDto.setFskuUserDiscount(this.getIsSkuUserDiscount(goodsDetailMallDto, goodsDetailMallDto.getFoperateType()));
+            param.setFskuUserDiscount(this.getIsSkuUserDiscount(param, param.getFoperateType()));
         }
-        List<SkuBatchPackage> batchResult = batch.getData();
-        if (!CollectionUtils.isEmpty(batchResult)) {
-            for (int i = 0; i < batchResult.size(); i++) {
-                GoodsDetailMallDto param = new GoodsDetailMallDto();
-                param.setFuid(goodsDetailMallDto.getFuid());
-                param.setFskuId(goodsDetailMallDto.getFskuId());
-                param.setFbatchPackageId(batchResult.get(i).getFbatchPackageId());
-                param.setFoperateType(goodsDetailMallDto.getFoperateType());
-                param.setFverifyStatus(goodsDetailMallDto.getFverifyStatus());
-                param.setFskuDiscount(goodsDetailMallDto.getFskuDiscount());
-                param.setFskuUserDiscount(goodsDetailMallDto.getFskuUserDiscount());
-                param.setFskuTaxRate(goodsDetailMallDto.getFskuTaxRate());
+        List<SkuBatchPackage> batchPackage = batchPackageResult.getData();
+        if (!CollectionUtils.isEmpty(batchPackage)) {
+            for (int i = 0; i < batchPackage.size(); i++) {
+                param.setFbatchPackageId(batchPackage.get(i).getFbatchPackageId());
                 BigDecimal packagePrice = this.getPackagePrice(goodsDetailMallDto, param);
                 if (i == 0) {
                     priceVo.setPriceStart(packagePrice);
@@ -707,8 +710,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 }
             }
         }
-        if (null != goodsDetailMallDto.getFsupplierSkuBatchId()) {
-            BigDecimal skuTaxRate = goodsDetailMallDto.getFskuTaxRate();
+        if (Objects.nonNull(goodsDetailMallDto.getFsupplierSkuBatchId())) {
+            BigDecimal skuTaxRate = param.getFskuTaxRate();
             skuTaxRate = skuTaxRate.divide(new BigDecimal("10000"), 8, BigDecimal.ROUND_HALF_UP);
             priceVo.setTaxStart(priceVo.getPriceStart().multiply(skuTaxRate));
             priceVo.setTaxEnd(priceVo.getPriceEnd().multiply(skuTaxRate));
@@ -719,9 +722,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     }
 
     //获取到sku的价格
-    private GoodsPriceVo getSkuPrice(GoodsDetailMallDto goodsDetailMallDto) {
+    private GoodsPriceVo getSkuPrice(GoodsDetailMallDto goodsDetailMallDto, GoodsDetailMallDto param) {
         Result<List<SkuBatch>> skuBatche = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
-                .andEqualTo(SkuBatch::getFskuId, goodsDetailMallDto.getFskuId())
+                .andEqualTo(SkuBatch::getFskuId, param.getFskuId())
                 .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
                 .fields(SkuBatch::getFsupplierSkuBatchId));
         if (!skuBatche.isSuccess()) {
@@ -734,27 +737,19 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         priceVo.setTaxStart(zero);
         priceVo.setTaxEnd(zero);
         //sku是否支持打折--获取sku税率
-        SkuDiscountTaxDto isSkuDiscountTax = this.getIsSkuDiscountTax(goodsDetailMallDto.getFskuId());
-        goodsDetailMallDto.setFskuDiscount(isSkuDiscountTax.getFisUserTypeDiscount());
+        SkuDiscountTaxDto isSkuDiscountTax = this.getIsSkuDiscountTax(param.getFskuId());
+        param.setFskuDiscount(isSkuDiscountTax.getFisUserTypeDiscount());
         BigDecimal skuTaxRate = isSkuDiscountTax.getFskuTaxRate();
-        goodsDetailMallDto.setFskuTaxRate(skuTaxRate);
+        param.setFskuTaxRate(skuTaxRate);
 
         //sku_user是否打折
-        goodsDetailMallDto.setFskuUserDiscount(this.getIsSkuUserDiscount(goodsDetailMallDto, goodsDetailMallDto.getFoperateType()));
+        param.setFskuUserDiscount(this.getIsSkuUserDiscount(param, param.getFoperateType()));
 
         List<SkuBatch> skuBatcheResult = skuBatche.getData();
         if (!CollectionUtils.isEmpty(skuBatcheResult)) {
             for (int i = 0; i < skuBatcheResult.size(); i++) {
-                GoodsDetailMallDto param = new GoodsDetailMallDto();
-                param.setFuid(goodsDetailMallDto.getFuid());
-                param.setFskuId(goodsDetailMallDto.getFskuId());
                 param.setFsupplierSkuBatchId(skuBatcheResult.get(i).getFsupplierSkuBatchId());
-                param.setFoperateType(goodsDetailMallDto.getFoperateType());
-                param.setFverifyStatus(goodsDetailMallDto.getFverifyStatus());
-                param.setFskuDiscount(goodsDetailMallDto.getFskuDiscount());
-                param.setFskuUserDiscount(goodsDetailMallDto.getFskuUserDiscount());
-                param.setFskuTaxRate(goodsDetailMallDto.getFskuTaxRate());
-                GoodsPriceVo batchPrice = this.getBatchPrice(param);
+                GoodsPriceVo batchPrice = this.getBatchPrice(goodsDetailMallDto, param);
                 if (i == 0) {
                     priceVo.setPriceStart(batchPrice.getPriceStart());
                     priceVo.setPriceEnd(batchPrice.getPriceEnd());
@@ -778,9 +773,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     }
 
     //获取到spu的价格
-    private GoodsPriceVo getSpuPrice(GoodsDetailMallDto goodsDetailMallDto) {
+    private GoodsPriceVo getSpuPrice(GoodsDetailMallDto goodsDetailMallDto, GoodsDetailMallDto param) {
         Result<List<GoodsSku>> listResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
-                .andEqualTo(GoodsSku::getFgoodsId, goodsDetailMallDto.getFgoodsId())
+                .andEqualTo(GoodsSku::getFgoodsId, param.getFgoodsId())
                 .andEqualTo(GoodsSku::getFskuStatus, GoodsSkuEnums.Status.OnShelves.getValue())
                 .andEqualTo(GoodsSku::getFisDelete, "0")
                 .fields(GoodsSku::getFskuId));
@@ -796,12 +791,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         List<GoodsSku> skuResult = listResult.getData();
         if (!CollectionUtils.isEmpty(skuResult)) {
             for (int i = 0; i < skuResult.size(); i++) {
-                GoodsDetailMallDto param = new GoodsDetailMallDto();
-                param.setFuid(goodsDetailMallDto.getFuid());
                 param.setFskuId(skuResult.get(i).getFskuId());
-                param.setFoperateType(goodsDetailMallDto.getFoperateType());
-                param.setFverifyStatus(goodsDetailMallDto.getFverifyStatus());
-                GoodsPriceVo skuPrice = this.getSkuPrice(param);
+                GoodsPriceVo skuPrice = this.getSkuPrice(goodsDetailMallDto, param);
                 if (i == 0) {
                     priceVo.setPriceStart(skuPrice.getPriceStart());
                     priceVo.setPriceEnd(skuPrice.getPriceEnd());
@@ -1033,10 +1024,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         Date now = new Date();
         for (CouponQueryVo couponQueryVo : couponQueryVos) {
             Long fcouponId = couponQueryVo.getFcouponId();
-            logger.info("券id{}",fcouponId);
-            if (fcouponId.intValue() == 869) {
-                System.out.println(869);
-            }
+//            logger.info("券id{}",fcouponId);
+//            if (fcouponId.intValue() == 869) {
+//                System.out.println(869);
+//            }
             Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
                     .andEqualTo(Coupon::getFcouponId, fcouponId)
                     .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
@@ -1050,10 +1041,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             //不满足券条件的先排除
             if (couponResult.isSuccess() && null != coupon) {
                 if (coupon.getFvalidityType().equals(CouponValidityTypeEnum.TIME_SLOT.getCode())) {
-                    Date fvalidityStart = coupon.getFvalidityStart();
                     Date fvalidityEnd = coupon.getFvalidityEnd();
-                    String fvalidityStartStr = sdf.format(fvalidityStart);
-                    if (!fvalidityStartStr.equals("1970-01-01 00:00:00") && (now.before(fvalidityStart) || now.after(fvalidityEnd))) {
+                    String fvalidityEndStr = sdf.format(fvalidityEnd);
+                    if (!fvalidityEndStr.equals("1970-01-01 00:00:00") && (now.after(fvalidityEnd))) {
                         continue;
                     }
                     Date freleaseTimeStart = coupon.getFreleaseTimeStart();
