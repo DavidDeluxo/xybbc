@@ -459,9 +459,11 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         //起始区间价 只有是单一价格PriceStart才计算运费、税费、折合单价
         if (null == priceResult.getPriceEnd()) {
             //查询批次价格类型 1.含邮含税 2.含邮不含税 3.不含邮含税 4.不含邮不含税
-            SkuBatch fskuBatch = skuBatchApi.queryOneByCriteria(Criteria.of(SkuBatch.class)
+            Result<SkuBatch> skuBatchResult = skuBatchApi.queryOneByCriteria(Criteria.of(SkuBatch.class)
                     .andEqualTo(SkuBatch::getFsupplierSkuBatchId, goodsDetailMallDto.getFsupplierSkuBatchId())
-                    .fields(SkuBatch::getFbatchPriceType, SkuBatch::getFfreightId, SkuBatch::getFsupplierSkuBatchId)).getData();
+                    .fields(SkuBatch::getFbatchPriceType, SkuBatch::getFfreightId, SkuBatch::getFsupplierSkuBatchId));
+            SkuBatch fskuBatch = skuBatchResult.getData();
+            Ensure.that(skuBatchResult.isSuccess()).isTrue(new MallExceptionCode(skuBatchResult.getCode(), skuBatchResult.getMsg()));
             Integer fbatchPriceType = fskuBatch.getFbatchPriceType();
             //运费先判断--价格类型--不含邮才计算运费
             BigDecimal freightPrice = BigDecimal.ZERO;
@@ -713,14 +715,22 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 }
             }
         }
-        if (Objects.nonNull(goodsDetailMallDto.getFsupplierSkuBatchId())) {
-            BigDecimal skuTaxRate = param.getFskuTaxRate();
-            skuTaxRate = skuTaxRate.divide(new BigDecimal("10000"), 8, BigDecimal.ROUND_HALF_UP);
-            priceVo.setTaxStart(priceVo.getPriceStart().multiply(skuTaxRate));
-            priceVo.setTaxEnd(priceVo.getPriceEnd().multiply(skuTaxRate));
-            priceVo.setPriceStart(priceVo.getPriceStart().add(priceVo.getTaxStart()));
-            priceVo.setPriceEnd(priceVo.getPriceEnd().add(priceVo.getTaxEnd()));
+        //查询批次价格类型 1.含邮含税 2.含邮不含税 3.不含邮含税 4.不含邮不含税
+        Result<SkuBatch> skuBatchResult = skuBatchApi.queryOneByCriteria(Criteria.of(SkuBatch.class)
+                .andEqualTo(SkuBatch::getFsupplierSkuBatchId, param.getFsupplierSkuBatchId())
+                .fields(SkuBatch::getFbatchPriceType, SkuBatch::getFfreightId, SkuBatch::getFsupplierSkuBatchId));
+        SkuBatch fskuBatch = skuBatchResult.getData();
+        Ensure.that(skuBatchResult.isSuccess()).isTrue(new MallExceptionCode(skuBatchResult.getCode(), skuBatchResult.getMsg()));
+        Integer fbatchPriceType = fskuBatch.getFbatchPriceType();
+        BigDecimal skuTaxRate = param.getFskuTaxRate();
+        if (fbatchPriceType.intValue() == 1 || fbatchPriceType.intValue() == 3) {
+            skuTaxRate = BigDecimal.ZERO;
         }
+        skuTaxRate = skuTaxRate.divide(new BigDecimal("10000"), 8, BigDecimal.ROUND_HALF_UP);
+        priceVo.setTaxStart(priceVo.getPriceStart().multiply(skuTaxRate));
+        priceVo.setTaxEnd(priceVo.getPriceEnd().multiply(skuTaxRate));
+        priceVo.setPriceStart(priceVo.getPriceStart().add(priceVo.getTaxStart()));
+        priceVo.setPriceEnd(priceVo.getPriceEnd().add(priceVo.getTaxEnd()));
         return priceVo;
     }
 
@@ -763,15 +773,15 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     if (batchPrice.getPriceEnd().compareTo(priceVo.getPriceEnd()) > 0) {
                         priceVo.setPriceEnd(batchPrice.getPriceEnd());
                     }
+                    if (batchPrice.getTaxStart().compareTo(priceVo.getTaxStart()) < 0) {
+                        priceVo.setTaxStart(batchPrice.getTaxStart());
+                    }
+                    if (batchPrice.getTaxEnd().compareTo(priceVo.getTaxEnd()) > 0) {
+                        priceVo.setTaxEnd(batchPrice.getTaxEnd());
+                    }
                 }
             }
         }
-        //只有sku和spu才会执行直接计算出-含税价和税费
-        skuTaxRate = skuTaxRate.divide(new BigDecimal("10000"), 8, BigDecimal.ROUND_HALF_UP);
-        priceVo.setTaxStart(priceVo.getPriceStart().multiply(skuTaxRate));
-        priceVo.setTaxEnd(priceVo.getPriceEnd().multiply(skuTaxRate));
-        priceVo.setPriceStart(priceVo.getPriceStart().add(priceVo.getTaxStart()));
-        priceVo.setPriceEnd(priceVo.getPriceEnd().add(priceVo.getTaxEnd()));
         return priceVo;
     }
 
