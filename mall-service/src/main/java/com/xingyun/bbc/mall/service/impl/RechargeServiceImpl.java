@@ -1,6 +1,9 @@
 package com.xingyun.bbc.mall.service.impl;
 
+import java.util.ArrayList;
 import java.util.Date;
+
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -105,10 +108,11 @@ public class RechargeServiceImpl implements RechargeService{
 		if (!flagTrans.isSuccess()) {
             logger.info("更新用户充值单失败");
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-		} else if(flagTrans.getData()==0){
-			logger.info("更新用户充值单失败");
-	        throw new BizException(MallResultStatus.COMMON_UPDATE_FAIL);
 		}
+		
+		if (flagTrans.getData()==0) {
+             throw new BizException(MallResultStatus.COMMON_UPDATE_FAIL);
+        }
 		
 		UserAccountTransWater accountTransWater=  dozerHolder.convert(transInfo,UserAccountTransWater.class);
 		
@@ -117,7 +121,9 @@ public class RechargeServiceImpl implements RechargeService{
 		if (!flagTransWater.isSuccess()) {
             logger.info("更新用户充值流水失败");
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-		} else if(flagTransWater.getData()==0){
+		}
+		
+		if(flagTransWater.getData()==0){
 			logger.info("更新用户充值流水失败");
 	        throw new BizException(MallResultStatus.COMMON_UPDATE_FAIL);
 		}
@@ -141,7 +147,9 @@ public class RechargeServiceImpl implements RechargeService{
 		if (!flagAccount.isSuccess()) {
             logger.info("更新用户账户表失败");
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-		} else if(flagAccount.getData()==0){
+		}
+		
+		if(flagAccount.getData()==0){
 			logger.info("更新用户账户表失败");
 	        throw new BizException(MallResultStatus.COMMON_UPDATE_FAIL);
 		}
@@ -151,7 +159,9 @@ public class RechargeServiceImpl implements RechargeService{
 		if (!flagAccountWater.isSuccess()) {
             logger.info("更新用户账户流水表失败");
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-		} else if(flagAccountWater.getData()==0){
+		}
+		
+		if(flagAccountWater.getData()==0){
 			logger.info("更新用户账户流水表失败");
 	        throw new BizException(MallResultStatus.COMMON_UPDATE_FAIL);
 		}
@@ -172,7 +182,9 @@ public class RechargeServiceImpl implements RechargeService{
 		if (!flagUserDetail.isSuccess()) {
             logger.info("更新用户账户明细表失败");
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-		} else if(flagUserDetail.getData()==0){
+		}
+		
+		if(flagUserDetail.getData()==0){
 			logger.info("更新用户账户明细表失败");
 	        throw new BizException(MallResultStatus.COMMON_UPDATE_FAIL);
 		}

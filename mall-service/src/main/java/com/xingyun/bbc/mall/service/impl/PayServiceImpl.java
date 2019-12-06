@@ -4,6 +4,8 @@ package com.xingyun.bbc.mall.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.google.common.base.Strings;
+import com.xingyun.bbc.core.enums.ResultStatus;
+import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.OrderConfigApi;
 import com.xingyun.bbc.core.operate.po.OrderConfig;
 import com.xingyun.bbc.core.order.api.OrderPaymentApi;
@@ -35,6 +37,8 @@ import com.xingyun.bbc.pay.model.dto.ThirdPayDto;
 import com.xingyun.bbc.pay.model.dto.ThirdPayResponseDto;
 import com.xingyun.bbc.pay.model.vo.PayInfoVo;
 import io.seata.spring.annotation.GlobalTransactional;
+
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -124,7 +128,13 @@ public class PayServiceImpl implements PayService {
 
 		Long totalAmount=null;//订单总金额
 		Long unPayAmount=null;//未支付金额
-		OrderPayment orderPayment=orderPaymentApi.queryById(dto.getForderId()).getData();
+		Result<OrderPayment> orderPaymentResult=orderPaymentApi.queryById(dto.getForderId());
+		if (!orderPaymentResult.isSuccess()) {
+            logger.error("查询支付订单失败");
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+		
+		OrderPayment orderPayment=orderPaymentResult.getData();
 		
 		//查询账号余额信息
 		UserAccount account=userAccountApi.queryById(fuid).getData();
@@ -133,13 +143,6 @@ public class PayServiceImpl implements PayService {
 			logger.info("余额支付。用户id：" +fuid+ "账号信息不存在");
 			return Result.failure(MallExceptionCode.USER_FREEZE_ERROR);
 		}
-//		else{
-//			if(account.getFbalance()==0)
-//			{
-//				logger.info("余额支付。用户id：" +fuid+ "余额为0!");
-//				return Result.failure(MallExceptionCode.BALANCE_NOT_ENOUGH);
-//			}
-//		}
 		totalAmount= orderPayment.getFtotalOrderAmount();
 		unPayAmount = totalAmount - orderPayment.getFbalancePayAmount() - orderPayment.getFcreditPayAmount();
 		Long fbalance=account.getFbalance();
@@ -402,7 +405,12 @@ public class PayServiceImpl implements PayService {
 	
 	//校验是否可以充值
 	public Result<?> checkRechargeIsEnable(HttpServletRequest request,ThirdPayDto dto) {
-		UserAccountTrans userAccountTrans = userAccountTransApi.queryById(dto.getForderId()).getData();
+		Result<UserAccountTrans> userAccountTransResult = userAccountTransApi.queryById(dto.getForderId());
+		if (!userAccountTransResult.isSuccess()) {
+               logger.error("查询用户充值单失败");
+               throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+		UserAccountTrans userAccountTrans=userAccountTransResult.getData();
 		// 充值记录不存在或者已完成
 		if (userAccountTrans == null || userAccountTrans.getFtransStatus()!= 1) {
 			logger.info("充值订单不存在或已支付。");
@@ -425,37 +433,44 @@ public class PayServiceImpl implements PayService {
 		Long fbalancePayAmount = null; // 订单已付金额
 		int orderStatus = -1; // 订单状态
 		int thirdTradeStatus = -1; // 第三方支付状态
-		OrderPayment orderPayment = orderPaymentApi.queryById(dto.getForderId()).getData();
-			if (orderPayment == null) {
-				logger.info("支付订单号查询返回结果为空！ 订单号：" + dto.getForderId());
-				return Result.failure(MallExceptionCode.ORDER_NOT_EXIST);
-			}
-			
-			
-			Long fminute = 0l;
-			
-			Criteria<OrderConfig, Object> orderConfigCriteria = Criteria.of(OrderConfig.class);
-			orderConfigCriteria.andEqualTo(OrderConfig::getForderConfigType, 0);// 0待支付订单限时支付
-			orderConfigCriteria.andEqualTo(OrderConfig::getFstatus,0);
-			orderConfigCriteria.fields(OrderConfig::getForderConfigType,OrderConfig::getFminute);
-			Result<List<OrderConfig>>  orderConfigResult = orderConfigApi.queryByCriteria(orderConfigCriteria);
-			if(!orderConfigResult.isSuccess()){
-				fminute =  DEFAULT_LOCK_TIME;
-			}else {
-				List<OrderConfig> orderConfigList = orderConfigResult.getData();
-				if (orderConfigList.size() > 0) {
-					fminute = orderConfigList.get(0).getFminute();
-				}else{
-					fminute = DEFAULT_LOCK_TIME;
-				}
-			}
-			
-		    lockTime = TimeAddUtil.addMinute(orderPayment.getFcreateTime(),fminute.intValue());
-			orderTotalAmount = orderPayment.getFtotalOrderAmount();
-			fbalancePayAmount=orderPayment.getFbalancePayAmount();
-			orderStatus = orderPayment.getForderStatus();
-			thirdTradeStatus = orderPayment.getFthirdTradeStatus();
+		Result<OrderPayment> orderPaymentResult = orderPaymentApi.queryById(dto.getForderId());
 		
+		if (!orderPaymentResult.isSuccess()) {
+            logger.error("查询支付单失败");
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+		}
+		
+		OrderPayment orderPayment=orderPaymentResult.getData();
+		
+		if (orderPayment == null) {
+			logger.info("支付订单号查询返回结果为空！ 订单号：" + dto.getForderId());
+			return Result.failure(MallExceptionCode.ORDER_NOT_EXIST);
+		}
+		
+		Long fminute = 0l;
+		
+		Criteria<OrderConfig, Object> orderConfigCriteria = Criteria.of(OrderConfig.class);
+		orderConfigCriteria.andEqualTo(OrderConfig::getForderConfigType, 0);// 0待支付订单限时支付
+		orderConfigCriteria.andEqualTo(OrderConfig::getFstatus,0);
+		orderConfigCriteria.fields(OrderConfig::getForderConfigType,OrderConfig::getFminute);
+		Result<List<OrderConfig>>  orderConfigResult = orderConfigApi.queryByCriteria(orderConfigCriteria);
+		if(!orderConfigResult.isSuccess()){
+			fminute =  DEFAULT_LOCK_TIME;
+		}else {
+			List<OrderConfig> orderConfigList = orderConfigResult.getData();
+			if (orderConfigList.size() > 0) {
+				fminute = orderConfigList.get(0).getFminute();
+			}else{
+				fminute = DEFAULT_LOCK_TIME;
+			}
+		}
+		
+	    lockTime = TimeAddUtil.addMinute(orderPayment.getFcreateTime(),fminute.intValue());
+		orderTotalAmount = orderPayment.getFtotalOrderAmount();
+		fbalancePayAmount=orderPayment.getFbalancePayAmount();
+		orderStatus = orderPayment.getForderStatus();
+		thirdTradeStatus = orderPayment.getFthirdTradeStatus();
+	
 		if (lockTime.compareTo(new Date()) < 0) {
 			logger.info("订单已过期！"  + "订单号：" + dto.getForderId());
 			return Result.failure(MallExceptionCode.ORDER_IS_OVERDUE);
