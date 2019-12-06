@@ -51,7 +51,7 @@ public class ShoppingCartGoodsVo implements Serializable {
     /**
      * 批次起发数
      */
-    private String batchStartNum;
+    private Long batchStartNum;
 
     /**
      * 批次包装规格值

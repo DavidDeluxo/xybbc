@@ -78,7 +78,10 @@ public class UserAccountServiceImpl implements UserAccountService {
         {
             //将数据插入订单流水表
             UserAccountTransWater userAccountTransWater = dozerHolder.convert(userAccountTrans, UserAccountTransWater.class);
-            userAccountTransWaterApi.create(userAccountTransWater);
+            Result<Integer> waterResult = userAccountTransWaterApi.create(userAccountTransWater);
+            if (!waterResult.isSuccess()) {
+                throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+            }
         }else {
         	logger.info("用户充值失败");
 			throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);

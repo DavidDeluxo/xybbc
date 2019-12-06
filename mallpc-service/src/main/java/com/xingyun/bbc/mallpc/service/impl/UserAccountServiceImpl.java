@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mallpc.service.impl;
 
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import com.google.common.collect.Lists;
 import com.xingyun.bbc.common.redis.order.OrderTypeEnum;
@@ -50,11 +51,16 @@ public class UserAccountServiceImpl implements UserAccountService {
     private static Set<Integer> status = new HashSet<>(5);
 
     //充值明细表查询状态
-    private static List<Integer> detailStatus = Arrays.stream(values()).filter(item -> item.getCode().compareTo(ALI_ORDER.getCode()) != 0
-            || item.getCode().compareTo(WECHAT_ORDER.getCode()) != 0
-            || item.getCode().compareTo(AFTERSALE_WORK_CREDIT.getCode()) != 0
-            || item.getCode().compareTo(CREDIT_LIMIT_AVAILABLE_BALANCE.getCode()) != 0
-            || item.getCode().compareTo(CREDIT_LIMIT_ORDER.getCode()) != 0).map(UserDetailType::getCode).collect(Collectors.toList());
+    private static List<Integer> detailStatus = Arrays.stream(values())
+            .filter(item -> item.getCode().compareTo(ALI_ORDER.getCode()) != 0)
+            .filter(item -> item.getCode().compareTo(WECHAT_ORDER.getCode()) != 0)
+            .filter(item -> item.getCode().compareTo(AFTERSALE_WORK_CREDIT.getCode()) != 0)
+            .filter(item -> item.getCode().compareTo(CREDIT_LIMIT_AVAILABLE_BALANCE.getCode()) != 0)
+            .filter(item -> item.getCode().compareTo(CREDIT_LIMIT_ORDER.getCode()) != 0)
+            .filter(item -> item.getCode().compareTo(UNKNOWN.getCode()) != 0)
+            .map(UserDetailType::getCode).
+
+                    collect(Collectors.toList());
 
     static {
         status.add(AccountTransType.Passed.getCode());
@@ -318,7 +324,7 @@ public class UserAccountServiceImpl implements UserAccountService {
     @Override
     public AccountBaseInfoVo accountInfo(Long uid) {
         Result<List<UserAccount>> listResult = userAccountApi.queryByCriteria(Criteria.of(UserAccount.class)
-                .fields(UserAccount::getFbalance,UserAccount::getFfreezeWithdraw)
+                .fields(UserAccount::getFbalance, UserAccount::getFfreezeWithdraw)
                 .andEqualTo(UserAccount::getFuid, uid));
         Ensure.that(listResult).isNotEmptyData(MallPcExceptionCode.PARAM_ERROR);
 
@@ -357,12 +363,12 @@ public class UserAccountServiceImpl implements UserAccountService {
         } else {
             Result<List<UserAccountTrans>> userAccountTransResult = userAccountTransApi.queryByCriteria(Criteria.of(UserAccountTrans.class)
                     .andEqualTo(UserAccountTrans::getFtransId, id)
-            .fields(UserAccountTrans::getFcreateTime,UserAccountTrans::getFrechargeType,UserAccountTrans::getFaccountHolder,UserAccountTrans::getFaid
-            ,UserAccountTrans::getFcheckAid,UserAccountTrans::getFmodifyTime,UserAccountTrans::getFpassedTime,UserAccountTrans::getFpayTime,UserAccountTrans::getFpayVoucher
-            ,UserAccountTrans::getFreceiptOrderId,UserAccountTrans::getFremark,UserAccountTrans::getFtransActualAmount,UserAccountTrans::getFtransAmount
-            ,UserAccountTrans::getFtransCreditType,UserAccountTrans::getFtransId,UserAccountTrans::getFtransMethod,UserAccountTrans::getFtransPoundage,UserAccountTrans::getFtransReason
-            ,UserAccountTrans::getFtransStatus,UserAccountTrans::getFtransThdDetail,UserAccountTrans::getFtransThdUid,UserAccountTrans::getFtransTypes
-            ,UserAccountTrans::getFuid,UserAccountTrans::getFwithdrawAccount,UserAccountTrans::getFwithdrawBank,UserAccountTrans::getFwithdrawType));
+                    .fields(UserAccountTrans::getFcreateTime, UserAccountTrans::getFrechargeType, UserAccountTrans::getFaccountHolder, UserAccountTrans::getFaid
+                            , UserAccountTrans::getFcheckAid, UserAccountTrans::getFmodifyTime, UserAccountTrans::getFpassedTime, UserAccountTrans::getFpayTime, UserAccountTrans::getFpayVoucher
+                            , UserAccountTrans::getFreceiptOrderId, UserAccountTrans::getFremark, UserAccountTrans::getFtransActualAmount, UserAccountTrans::getFtransAmount
+                            , UserAccountTrans::getFtransCreditType, UserAccountTrans::getFtransId, UserAccountTrans::getFtransMethod, UserAccountTrans::getFtransPoundage, UserAccountTrans::getFtransReason
+                            , UserAccountTrans::getFtransStatus, UserAccountTrans::getFtransThdDetail, UserAccountTrans::getFtransThdUid, UserAccountTrans::getFtransTypes
+                            , UserAccountTrans::getFuid, UserAccountTrans::getFwithdrawAccount, UserAccountTrans::getFwithdrawBank, UserAccountTrans::getFwithdrawType));
             Ensure.that(userAccountTransResult).isNotEmptyData(new MallPcExceptionCode(userAccountTransResult.getCode(), userAccountTransResult.getMsg()));
 
             accountDetailVo = dozerHolder.convert(userAccountTransResult.getData().get(0), AccountDetailVo.class);
@@ -411,8 +417,8 @@ public class UserAccountServiceImpl implements UserAccountService {
     private AccountDetailVo getInOutDetail(String id) {
         Result<List<UserDetail>> listResult = userDetailApi.queryByCriteria(Criteria.of(UserDetail.class)
                 .andEqualTo(UserDetail::getFdetailId, id)
-        .fields(UserDetail::getFcreateTime,UserDetail::getFaccountDate,UserDetail::getFbalance,UserDetail::getFcreditBalance,UserDetail::getFdetailId
-        ,UserDetail::getFdetailType,UserDetail::getFexpenseAmount,UserDetail::getFincomeAmount,UserDetail::getFmodifyTime,UserDetail::getFremark,UserDetail::getFtypeId,UserDetail::getFuid));
+                .fields(UserDetail::getFcreateTime, UserDetail::getFaccountDate, UserDetail::getFbalance, UserDetail::getFcreditBalance, UserDetail::getFdetailId
+                        , UserDetail::getFdetailType, UserDetail::getFexpenseAmount, UserDetail::getFincomeAmount, UserDetail::getFmodifyTime, UserDetail::getFremark, UserDetail::getFtypeId, UserDetail::getFuid));
         Ensure.that(listResult).isNotEmptyData(new MallPcExceptionCode(listResult.getCode(), listResult.getMsg()));
         AccountDetailVo accountDetail = (dozerHolder.convert(listResult.getData().get(0), AccountDetailVo.class));
         accountDetail.setFpassedTime(listResult.getData().get(0).getFmodifyTime());
@@ -469,8 +475,8 @@ public class UserAccountServiceImpl implements UserAccountService {
                 Result<List<OrderAftersalePic>> orderAftersaleListResult = orderAftersalePicApi.queryByCriteria(
                         Criteria.of(OrderAftersalePic.class)
                                 .fields(OrderAftersalePic::getFaftersalePic)
-                        .andEqualTo(OrderAftersalePic::getForderAftersaleId, orderAftersale.getForderAftersaleId())
-                        .andEqualTo(OrderAftersalePic::getFpicType, 1));
+                                .andEqualTo(OrderAftersalePic::getForderAftersaleId, orderAftersale.getForderAftersaleId())
+                                .andEqualTo(OrderAftersalePic::getFpicType, 1));
                 Ensure.that(orderAftersaleListResult).isSuccess(new MallPcExceptionCode(orderAftersaleListResult.getCode(), orderAftersaleListResult.getMsg()));
                 if (CollectionUtil.isNotEmpty(orderAftersaleListResult.getData())) {
                     accountDetail.setFapplyPic(orderAftersaleListResult.getData().stream().map(OrderAftersalePic::getFaftersalePic).collect(Collectors.joining(",", "", "")));
@@ -479,9 +485,18 @@ public class UserAccountServiceImpl implements UserAccountService {
             case 9:
             case 11:
             case 12:
-                List<Order> orders = orders(listResult.getData().get(0).getFtypeId());
-                Order order = orders.get(0);
-                accountDetail.setFpassedTime(order.getFmodifyTime());
+                if (listResult.getData().get(0).getFtypeId().startsWith("Z")) {
+                    List<OrderPayment> orderPayments1 = orderPayments(listResult.getData().get(0).getFtypeId());
+                    if (CollUtil.isNotEmpty(orderPayments1)) {
+                        accountDetail.setFpassedTime(orderPayments1.get(0).getFmodifyTime());
+                    }
+                } else {
+                    List<Order> orders = orders(listResult.getData().get(0).getFtypeId());
+                    if (CollUtil.isNotEmpty(orders)) {
+                        Order order = orders.get(0);
+                        accountDetail.setFpassedTime(order.getFmodifyTime());
+                    }
+                }
                 break;
             default:
                 break;
@@ -493,7 +508,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     private List<OrderPayment> orderPayments(String id) {
         Result<List<OrderPayment>> listResult1 = orderPaymentApi.queryByCriteria(Criteria.of(OrderPayment.class)
-                .andEqualTo(OrderPayment::getForderPaymentId, id).fields(OrderPayment::getFcreateTime,OrderPayment::getFpayTime));
+                .andEqualTo(OrderPayment::getForderPaymentId, id).fields(OrderPayment::getFcreateTime, OrderPayment::getFpayTime));
         Ensure.that(listResult1).isNotNullData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
         return listResult1.getData();
     }
@@ -501,9 +516,9 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     private UserWork userWorks(String id) {
         Result<List<UserWork>> listResult1 = userWorkApi.queryByCriteria(Criteria.of(UserWork.class)
-                .fields(UserWork::getFadminId,UserWork::getFapplyAmount,UserWork::getFapplyPic,UserWork::getFapplyReason,UserWork::getFcreateTime
-                ,UserWork::getFmodifyTime,UserWork::getForderAftersaleId,UserWork::getForderId,UserWork::getFrejectReason,UserWork::getFremark,UserWork::getFstatus,UserWork::getFuid
-                ,UserWork::getFuserWorkOrder,UserWork::getFworkType)
+                .fields(UserWork::getFadminId, UserWork::getFapplyAmount, UserWork::getFapplyPic, UserWork::getFapplyReason, UserWork::getFcreateTime
+                        , UserWork::getFmodifyTime, UserWork::getForderAftersaleId, UserWork::getForderId, UserWork::getFrejectReason, UserWork::getFremark, UserWork::getFstatus, UserWork::getFuid
+                        , UserWork::getFuserWorkOrder, UserWork::getFworkType)
                 .andEqualTo(UserWork::getFuserWorkOrder, id));
         Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
         return listResult1.getData().get(0);
@@ -512,9 +527,9 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     private OrderAftersale orderAftersales(String id) {
         Result<List<OrderAftersale>> listResult1 = orderAftersaleApi.queryByCriteria(Criteria.of(OrderAftersale.class)
-                .fields(OrderAftersale::getFaftersaleStatus,OrderAftersale::getFaftersaleReason,OrderAftersale::getFaftersaleType
-                ,OrderAftersale::getFcheckTime,OrderAftersale::getFcreateTime,OrderAftersale::getFdealType,OrderAftersale::getFmodifyTime,OrderAftersale::getForderAftersaleId
-                ,OrderAftersale::getForderId)
+                .fields(OrderAftersale::getFaftersaleStatus, OrderAftersale::getFaftersaleReason, OrderAftersale::getFaftersaleType
+                        , OrderAftersale::getFcheckTime, OrderAftersale::getFcreateTime, OrderAftersale::getFdealType, OrderAftersale::getFmodifyTime, OrderAftersale::getForderAftersaleId
+                        , OrderAftersale::getForderId)
                 .andEqualTo(OrderAftersale::getForderAftersaleId, id));
         Ensure.that(listResult1).isNotEmptyData(new MallPcExceptionCode(listResult1.getCode(), listResult1.getMsg()));
 
