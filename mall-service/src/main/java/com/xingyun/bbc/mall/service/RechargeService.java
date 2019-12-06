@@ -9,8 +9,6 @@
 */
 package com.xingyun.bbc.mall.service;
 
-import java.util.Map;
-
 import com.xingyun.bbc.pay.model.vo.PayInfoVo;
 
 
@@ -26,9 +24,6 @@ import com.xingyun.bbc.pay.model.vo.PayInfoVo;
 public interface RechargeService {
 
 	
-	int newUpdateAfterRechargeSuccess(PayInfoVo thirdPayInfo);
-
-	
 	/**
 	* @Title: updateAfterRechargeSuccess 
 	* @Description: 第三方支付成功后，修改账户信息 
@@ -36,5 +31,5 @@ public interface RechargeService {
 	* @return 0-失败，1-成功
 	* @author Tito
 	 */
-	int updateAfterRechargeSuccess(Map<String, String> thirdPayInfo);
+	int newUpdateAfterRechargeSuccess(PayInfoVo thirdPayInfo);
 }

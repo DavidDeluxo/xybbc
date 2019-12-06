@@ -49,7 +49,7 @@ public class MallExceptionCode implements IResultStatus {
      */
     public static final MallExceptionCode ORDER_NOT_EXIST = new MallExceptionCode("7777", "订单不存在");
     public static final MallExceptionCode ORDER_NOT_MATCHING = new MallExceptionCode("7778", "订单与用户不匹配");
-    public static final MallExceptionCode ORDER_AS_CANCELLED = new MallExceptionCode("7779", "该订单已取消");
+    public static final MallExceptionCode ORDER_AS_CANCELLED = new MallExceptionCode("7779", "该订单已取消或已支付");
     public static final MallExceptionCode ORDER_IS_COMPLETION = new MallExceptionCode("7779", "支付已完成的交易");
     public static final MallExceptionCode WITHDRAW_PSD_WRONG = new MallExceptionCode("7780", "支付密码错误");
     public static final MallExceptionCode PAY_PWD_IS_NOT_SET = new MallExceptionCode("7781", "支付密码未设置");
