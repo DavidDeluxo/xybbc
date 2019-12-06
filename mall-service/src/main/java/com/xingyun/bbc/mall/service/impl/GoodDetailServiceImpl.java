@@ -283,6 +283,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 .andEqualTo(GoodsSku::getFskuStatus, GoodsSkuEnums.Status.OnShelves.getValue())
                 .andEqualTo(GoodsSku::getFisDelete, "0")
                 .fields(GoodsSku::getFskuId, GoodsSku::getFskuCode, GoodsSku::getFskuSpecValue));
+        Ensure.that(goodsSkuResult.isSuccess()).isTrue(new MallExceptionCode(goodsSkuResult.getCode(), goodsSkuResult.getMsg()));
+        if (CollectionUtils.isEmpty(goodsSkuResult.getData())) {
+            return Result.success();
+        }
         //sku规格
         List<GoodsSkuVo> skuRes = dozerHolder.convert(goodsSkuResult.getData(), GoodsSkuVo.class);
         List<Long> skuIds = skuRes.stream().map(GoodsSkuVo::getFskuId).collect(toList());
@@ -291,6 +295,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
                 .andEqualTo(SkuBatch::getFbatchPutwaySort, 1)//只用取上架排序为1的
                 .fields(SkuBatch::getFqualityEndDate, SkuBatch::getFsupplierSkuBatchId, SkuBatch::getFskuId));
+
         List<SkuBatch> skuBatchList = ResultUtils.getListNotEmpty(skuBatchResult, MallExceptionCode.SKU_BATCH_IS_NONE);
         Map<Long, List<SkuBatch>> skuPatchMap = skuBatchList.stream().collect(Collectors.groupingBy(SkuBatch::getFskuId));
         //批次效期
