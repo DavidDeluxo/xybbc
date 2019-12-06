@@ -219,19 +219,26 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         }
         goodsVo.setFtradeType(tradeType);
 
-        //获取sku商品描述和商品主图
-        goodsVo.setFskuDesc("");
-        if (null != fskuId) {
-            GoodsSku goodSkuDesc = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
-                    .andEqualTo(GoodsSku::getFskuId, fskuId)
-                    .fields(GoodsSku::getFskuDesc, GoodsSku::getFskuThumbImage, GoodsSku::getFskuName)).getData();
-            if (null != goodSkuDesc) {
-                goodsVo.setFskuDesc(goodSkuDesc.getFskuDesc());
+        //获取商品名称、sku商品描述和商品主图
+        Result<List<GoodsSku>> goodsSkuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
+                .andEqualTo(GoodsSku::getFgoodsId, fgoodsId)
+                .fields(GoodsSku::getFskuDesc, GoodsSku::getFskuThumbImage, GoodsSku::getFskuName));
+        Ensure.that(goodsSkuResult.isSuccess()).isTrue(new MallExceptionCode(goodsSkuResult.getCode(), goodsSkuResult.getMsg()));
+
+        List<GoodsSku> goodsSkuList = goodsSkuResult.getData();
+        Map<Long, GoodsAlterVo> goodsSkuAlterVo = new HashMap<>();
+        if (CollectionUtils.isNotEmpty(goodsSkuList)) {
+            for (GoodsSku goodsSku : goodsSkuList) {
+                GoodsAlterVo goodsAlterVo = new GoodsAlterVo();
                 //之前取spu表列表缩略图后改成sku表主图
-                goodsVo.setFgoodsImgUrl(goodSkuDesc.getFskuThumbImage());
-                goodsVo.setFgoodsName(goodSkuDesc.getFskuName());
+                goodsAlterVo.setFgoodsImgUrl(goodsSku.getFskuThumbImage());
+                goodsAlterVo.setFgoodsName(goodsSku.getFskuName());
+                goodsAlterVo.setFskuDesc(goodsSku.getFskuDesc());
+                goodsSkuAlterVo.put(goodsSku.getFskuId(), goodsAlterVo);
+
             }
         }
+        goodsVo.setGoodsSkuAlterVo(goodsSkuAlterVo);
 
         //获取品牌名称和国旗icon
         goodsVo.setFbrandName("");
@@ -262,13 +269,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 goodsVo.setFgoodsOrigin(cityRegion.getFcrName());
             }
         }
-
-//        //商品规格
-//        Result<List<GoodsSku>> goodsSkuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
-//                .andEqualTo(GoodsSku::getFgoodsId, fgoodsId)
-//                .fields(GoodsSku::getFskuId, GoodsSku::getFgoodsId, GoodsSku::getFskuSpecValue));
-//        List<GoodsSkuVo> convert = dozerHolder.convert(goodsSkuResult.getData(), GoodsSkuVo.class);
-//        goodsVo.setFgoodsSkuVo(convert);
         return Result.success(goodsVo);
     }
 
@@ -1035,9 +1035,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             if (couponResult.isSuccess() && null != coupon) {
                 if (coupon.getFvalidityType().equals(CouponValidityTypeEnum.TIME_SLOT.getCode())) {
                     Date fvalidityStart = coupon.getFvalidityStart();
-                    Date fvalidityEnd = coupon.getFvalidityEnd();
                     String fvalidityStartStr = sdf.format(fvalidityStart);
-                    if (!fvalidityStartStr.equals("1970-01-01 00:00:00") && (now.before(fvalidityStart) || now.after(fvalidityEnd))) {
+                    if (!fvalidityStartStr.equals("1970-01-01 00:00:00") && (now.before(fvalidityStart))) {
                         continue;
                     }
                     Date freleaseTimeStart = coupon.getFreleaseTimeStart();
