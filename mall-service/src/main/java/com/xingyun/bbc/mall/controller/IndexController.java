@@ -95,6 +95,7 @@ public class IndexController {
         dto.setFverifyStatus(infoVo.getFverifyStatus());
         dto.setFoperateType(infoVo.getFoperateType());
         Result<SearchItemListVo<SearchItemVo>> result = goodsService.searchSkuList(dto);
+        result.getData().getList().clear();
         if (CollectionUtils.isEmpty(result.getData().getList())) {
             return Result.success(indexService.queryGoodsByCategoryId1(dto));
         } else {
