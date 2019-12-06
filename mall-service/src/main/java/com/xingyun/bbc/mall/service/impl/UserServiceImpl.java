@@ -935,26 +935,25 @@ public class UserServiceImpl implements UserService {
 
     private Integer queryAuthenticationCoupon(Long fuid) {
         Integer couponAuthenticationNum = 0;
-        //查询可用注册优惠券
+        //查询可用认证优惠券
         Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)
                 .andEqualTo(Coupon::getFcouponStatus, 2)
                 .andEqualTo(Coupon::getFreleaseType, CouponScene.AUTHENTICATION.getCode())
                 .fields(Coupon::getFcouponId);
         Result<List<Coupon>> listResult = couponApi.queryByCriteria(couponCriteria);
         if (listResult.isSuccess()) {
+            List<Long> couponIds = new ArrayList<>();
             for (Coupon coupon : listResult.getData()) {
-                //查询用户是否存在当前优惠券
-                Criteria<CouponReceive, Object> couponReceiveCriteria = Criteria.of(CouponReceive.class)
-                        .andEqualTo(CouponReceive::getFcouponId, coupon.getFcouponId())
-                        .andEqualTo(CouponReceive::getFuserCouponStatus, 1)
-                        .andEqualTo(CouponReceive::getFuid, fuid)
-                        .fields(CouponReceive::getFcouponId);
-                Integer couponNum = 0;
-                Result<List<CouponReceive>> result = couponReceiveApi.queryByCriteria(couponReceiveCriteria);
-                if (result.isSuccess()) {
-                    couponNum = result.getData().size();
-                }
-                couponAuthenticationNum = couponAuthenticationNum + couponNum;
+                couponIds.add(coupon.getFcouponId());
+            }
+            //查询用户是否存在当前优惠券
+            Criteria<CouponReceive, Object> couponReceiveCriteria = Criteria.of(CouponReceive.class)
+                    .andIn(CouponReceive::getFcouponId, couponIds)
+                    .andEqualTo(CouponReceive::getFuserCouponStatus, 1)
+                    .andEqualTo(CouponReceive::getFuid, fuid);
+            Result<Integer> result = couponReceiveApi.countByCriteria(couponReceiveCriteria);
+            if (result.isSuccess()) {
+                couponAuthenticationNum = result.getData();
             }
         }
         return couponAuthenticationNum;
