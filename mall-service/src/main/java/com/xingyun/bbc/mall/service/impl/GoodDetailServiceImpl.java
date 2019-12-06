@@ -226,7 +226,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         Ensure.that(goodsSkuResult.isSuccess()).isTrue(new MallExceptionCode(goodsSkuResult.getCode(), goodsSkuResult.getMsg()));
 
         List<GoodsSku> goodsSkuList = goodsSkuResult.getData();
-        Map<Long, GoodsAlterVo> goodsSkuAlterVo = new HashMap<>();
+        List<GoodsAlterVo> goodsSkuAlterVo = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(goodsSkuList)) {
             for (GoodsSku goodsSku : goodsSkuList) {
                 GoodsAlterVo goodsAlterVo = new GoodsAlterVo();
@@ -234,7 +234,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 goodsAlterVo.setFgoodsImgUrl(goodsSku.getFskuThumbImage());
                 goodsAlterVo.setFgoodsName(goodsSku.getFskuName());
                 goodsAlterVo.setFskuDesc(goodsSku.getFskuDesc());
-                goodsSkuAlterVo.put(goodsSku.getFskuId(), goodsAlterVo);
+                goodsAlterVo.setFskuId(goodsSku.getFskuId());
+                goodsSkuAlterVo.add(goodsAlterVo);
             }
             goodsVo.setGoodsSkuAlterVo(goodsSkuAlterVo);
         }
@@ -348,7 +349,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             MallTVo tVoSku = new MallTVo();
             tVoSku.setTId(skuRe.getFskuId());
             tVoSku.setTName(skuRe.getFskuSpecValue());
-            skuMall.add(tVoSku);
+            if (CollectionUtils.isNotEmpty(skuPatchMap.get(skuRe.getFskuId()))) {
+                skuMall.add(tVoSku);
+            }
         }
         GoodspecificationExVo skuEx = new GoodspecificationExVo();
         skuEx.setIdType(1);
