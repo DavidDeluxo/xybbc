@@ -207,7 +207,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         if (null == goodsBasic.getData()) {
-            return Result.success(null);
+            return Result.success();
         }
         GoodsVo goodsVo = dozerMapper.map(goodsBasic.getData(), GoodsVo.class);
 
@@ -222,7 +222,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         //获取商品名称、sku商品描述和商品主图
         Result<List<GoodsSku>> goodsSkuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
                 .andEqualTo(GoodsSku::getFgoodsId, fgoodsId)
-                .fields(GoodsSku::getFskuDesc, GoodsSku::getFskuThumbImage, GoodsSku::getFskuName));
+                .fields(GoodsSku::getFskuDesc, GoodsSku::getFskuThumbImage, GoodsSku::getFskuName, GoodsSku::getFskuId));
         Ensure.that(goodsSkuResult.isSuccess()).isTrue(new MallExceptionCode(goodsSkuResult.getCode(), goodsSkuResult.getMsg()));
 
         List<GoodsSku> goodsSkuList = goodsSkuResult.getData();
@@ -235,10 +235,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 goodsAlterVo.setFgoodsName(goodsSku.getFskuName());
                 goodsAlterVo.setFskuDesc(goodsSku.getFskuDesc());
                 goodsSkuAlterVo.put(goodsSku.getFskuId(), goodsAlterVo);
-
             }
+            goodsVo.setGoodsSkuAlterVo(goodsSkuAlterVo);
         }
-        goodsVo.setGoodsSkuAlterVo(goodsSkuAlterVo);
 
         //获取品牌名称和国旗icon
         goodsVo.setFbrandName("");
