@@ -623,13 +623,17 @@ public class UserServiceImpl implements UserService {
 
         //查询是否已认证
         Criteria<UserVerify, Object> criteria = Criteria.of(UserVerify.class);
-        criteria.andEqualTo(UserVerify::getFuid, dto.getFuid()).fields(UserVerify::getFuserVerifyId);
+        criteria.andEqualTo(UserVerify::getFuid, dto.getFuid()).fields(UserVerify::getFuserVerifyId,UserVerify::getFmodifyTime);
         Result<UserVerify> result = userVerifyApi.queryOneByCriteria(criteria);
         UserVerify userVerify = dozerHolder.convert(dto, UserVerify.class);
         userVerify.setFuid(dto.getFuid());
         Integer verResult = 0;
+        if(!result.isSuccess()){
+            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+        }
         if (result.getData() != null) {
             userVerify.setFuserVerifyId(result.getData().getFuserVerifyId());
+            userVerify.setFmodifyTime(result.getData().getFmodifyTime());
             verResult = userVerifyApi.updateNotNull(userVerify).getData();
         } else {
             verResult = userVerifyApi.create(userVerify).getData();
@@ -766,6 +770,9 @@ public class UserServiceImpl implements UserService {
                 .andEqualTo(User::getFuid, fuid)
                 .fields(User::getFverifyStatus, User::getFoperateType);
         Result<User> userResult = userApi.queryOneByCriteria(userCriteria);
+        if(!userResult.isSuccess()){
+            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+        }
         if (userResult.getData() != null) {
             userVo.setFverifyStatus(userResult.getData().getFverifyStatus());
             userVo.setFoperateType(userResult.getData().getFoperateType());
@@ -785,6 +792,9 @@ public class UserServiceImpl implements UserService {
                         , User::getFmobile, User::getFmail, User::getFwithdrawPasswd
                         , User::getFlastloginTime, User::getFuserValidTime);
         Result<User> userResult = userApi.queryOneByCriteria(userCriteria);
+        if(!userResult.isSuccess()){
+            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+        }
         if (userResult.getData() != null) {
             userVo = dozerHolder.convert(userResult.getData(), UserVo.class);
             //判断fnickname是否为空字符串，若为空字符串则表示用户还没修改过用户名，用户是否可修改：0否，1是
@@ -928,7 +938,8 @@ public class UserServiceImpl implements UserService {
         //查询可用注册优惠券
         Criteria<Coupon, Object> couponCriteria = Criteria.of(Coupon.class)
                 .andEqualTo(Coupon::getFcouponStatus, 2)
-                .andEqualTo(Coupon::getFreleaseType, CouponScene.AUTHENTICATION.getCode());
+                .andEqualTo(Coupon::getFreleaseType, CouponScene.AUTHENTICATION.getCode())
+                .fields(Coupon::getFcouponId);
         Result<List<Coupon>> listResult = couponApi.queryByCriteria(couponCriteria);
         if (listResult.isSuccess()) {
             for (Coupon coupon : listResult.getData()) {
