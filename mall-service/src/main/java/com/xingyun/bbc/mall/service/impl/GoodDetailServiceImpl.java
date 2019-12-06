@@ -490,10 +490,13 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             }
             //起始价格都转成元---下面计算都以元算
             //查询税率
-            Long fskuTaxRate = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
+            Result<GoodsSku> skuTaxResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
                     .andEqualTo(GoodsSku::getFskuId, goodsDetailMallDto.getFskuId())
-                    .fields(GoodsSku::getFskuTaxRate)).getData().getFskuTaxRate();
-            //(原始价*购买数量)
+                    .fields(GoodsSku::getFskuTaxRate));
+            Ensure.that(skuTaxResult.isSuccess()).isTrue(new MallExceptionCode(skuTaxResult.getCode(), skuTaxResult.getMsg()));
+            Long fskuTaxRate = 0l;
+            fskuTaxRate = skuTaxResult.getData().getFskuTaxRate();
+                    //(原始价*购买数量)
             BigDecimal orgPrice = priceResult.getPriceStart().multiply(new BigDecimal(goodsDetailMallDto.getFnum()));
             //税费 = (原始价*购买数量 + 运费) * 税率
             BigDecimal taxPrice = BigDecimal.ZERO;
