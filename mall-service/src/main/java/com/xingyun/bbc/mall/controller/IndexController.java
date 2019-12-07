@@ -95,7 +95,7 @@ public class IndexController {
         dto.setFverifyStatus(infoVo.getFverifyStatus());
         dto.setFoperateType(infoVo.getFoperateType());
         Result<SearchItemListVo<SearchItemVo>> result = goodsService.searchSkuList(dto);
-        if (CollectionUtils.isEmpty(result.getData().getList())) {
+        if (CollectionUtils.isEmpty(result.getData().getList()) || !result.isSuccess()) {
             return Result.success(indexService.queryGoodsByCategoryId1(dto));
         } else {
             if (dto.getPageIndex() > 20) {
