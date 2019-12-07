@@ -416,7 +416,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     @Override
     public Result<GoodsPriceVo> getGoodPrice(GoodsDetailMallDto goodsDetailMallDto) {
         //token取的认证类型不是--已认证就查表
-        if (!goodsDetailMallDto.getFverifyStatus().equals(UserVerifyStatusEnum.AUTHENTICATED.getCode())) {
+        if (!UserVerifyStatusEnum.AUTHENTICATED.getCode().equals(goodsDetailMallDto.getFverifyStatus())) {
             //查询用户认证类型
             Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
                     .andEqualTo(User::getFuid, goodsDetailMallDto.getFuid())
