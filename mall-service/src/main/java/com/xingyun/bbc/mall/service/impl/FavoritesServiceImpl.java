@@ -448,8 +448,8 @@ public class FavoritesServiceImpl implements FavoritesService {
                     .setFgoodsId(fa.getFgoodsId());
             GoodsPriceIntervalVo goodsPriceIntervalVo = queryGoodPriceInterval(intervalDto);
             if (Objects.nonNull(goodsPriceIntervalVo)){
-                fa.setMinPrice(goodsPriceIntervalVo.getPriceEnd());
-                fa.setMaxPrice(goodsPriceIntervalVo.getTaxStart());
+                fa.setMinPrice(goodsPriceIntervalVo.getPriceStart());
+                fa.setMaxPrice(goodsPriceIntervalVo.getPriceEnd());
             }
         });
         data.setList(favoritesVos);
