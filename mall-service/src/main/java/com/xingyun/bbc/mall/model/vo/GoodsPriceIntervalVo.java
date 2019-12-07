@@ -28,10 +28,10 @@ public class GoodsPriceIntervalVo implements Serializable {
     @ApiModelProperty(value = "税费")
     private BigDecimal taxPrice;
 
-    @ApiModelProperty(value = "折合单价")
-    private BigDecimal dealUnitPrice;
+//    @ApiModelProperty(value = "折合单价")
+//    private BigDecimal dealUnitPrice;
 
-    @ApiModelProperty(value = "商品实际单价")
-    private BigDecimal realPrice;
+//    @ApiModelProperty(value = "商品实际单价")
+//    private BigDecimal realPrice;
 
 }

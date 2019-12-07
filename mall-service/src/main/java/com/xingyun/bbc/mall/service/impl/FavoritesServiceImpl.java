@@ -25,6 +25,7 @@ import com.xingyun.bbc.order.api.FavoritesApi;
 import com.xingyun.bbc.order.model.dto.favorites.FavoritesDto;
 import com.xingyun.bbc.order.model.vo.PageVo;
 import com.xingyun.bbc.order.model.vo.favorites.FavoritesVo;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.dozer.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @Service
 public class FavoritesServiceImpl implements FavoritesService {
 
@@ -86,7 +88,7 @@ public class FavoritesServiceImpl implements FavoritesService {
         if (null != goodsDetailMallDto.getFbatchPackageId()) {
             GoodsPriceIntervalDto param = dozerMapper.map(goodsDetailMallDto, GoodsPriceIntervalDto.class);
             BigDecimal packagePrice = this.getPackagePrice(goodsDetailMallDto, param);
-            priceResult.setRealPrice(PriceUtil.toYuan(packagePrice));
+//            priceResult.setRealPrice(PriceUtil.toYuan(packagePrice));
             priceResult.setPriceStart(PriceUtil.toYuan(packagePrice));
         }
         //到批次
@@ -109,6 +111,7 @@ public class FavoritesServiceImpl implements FavoritesService {
         }
         //起始区间价 只有是单一价格PriceStart才计算运费、税费、折合单价
         if (null == priceResult.getPriceEnd()) {
+            log.info("---------------------1进入了这段没用的代码---------------------");
             //查询批次价格类型 1.含邮含税 2.含邮不含税 3.不含邮含税 4.不含邮不含税
             Result<SkuBatch> skuBatchResult = skuBatchApi.queryOneByCriteria(Criteria.of(SkuBatch.class)
                     .andEqualTo(SkuBatch::getFsupplierSkuBatchId, goodsDetailMallDto.getFsupplierSkuBatchId())
@@ -135,15 +138,16 @@ public class FavoritesServiceImpl implements FavoritesService {
             }
             //总价 = (原始价*购买数量) + 税费
             BigDecimal priceTotal = orgPrice.add(taxPrice);
-            //折合单价 = 总价 / 数量 /包装规格数量
-            BigDecimal dealUnitPrice = BigDecimal.ZERO;
-            if (null != goodsDetailMallDto.getFbatchPackageNum()) {
-                dealUnitPrice = priceTotal.divide(new BigDecimal(goodsDetailMallDto.getFnum()).multiply(new BigDecimal(goodsDetailMallDto.getFbatchPackageNum())), 2, BigDecimal.ROUND_HALF_UP);
-            }
+//            //折合单价 = 总价 / 数量 /包装规格数量
+//            BigDecimal dealUnitPrice = BigDecimal.ZERO;
+//            if (null != goodsDetailMallDto.getFbatchPackageNum()) {
+//                dealUnitPrice = priceTotal.divide(new BigDecimal(goodsDetailMallDto.getFnum()).multiply(new BigDecimal(goodsDetailMallDto.getFbatchPackageNum())), 2, BigDecimal.ROUND_HALF_UP);
+//            }
 
             priceResult.setPriceStart(priceTotal);
             priceResult.setTaxPrice(taxPrice);
-            priceResult.setDealUnitPrice(dealUnitPrice);
+//            priceResult.setDealUnitPrice(dealUnitPrice);
+            log.info("---------------------2进入了这段没用的代码---------------------");
         }
         return priceResult;
     }
