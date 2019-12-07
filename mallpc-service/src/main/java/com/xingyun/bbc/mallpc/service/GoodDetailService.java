@@ -3,7 +3,6 @@ package com.xingyun.bbc.mallpc.service;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.dto.detail.GoodsDetailMallDto;
 import com.xingyun.bbc.mallpc.model.dto.detail.ReceiveCouponDto;
-import com.xingyun.bbc.mallpc.model.vo.address.CityRegionAllVO;
 import com.xingyun.bbc.mallpc.model.vo.detail.*;
 
 import java.util.List;
@@ -63,11 +62,4 @@ public interface GoodDetailService {
      * @return
      */
     Result<Map<String, Long>> getCategoryBySkuId(Long skuId);
-
-    /**
-     * 获取全国省市区
-     *
-     * @return
-     */
-    Result<CityRegionAllVO> queryRegionOfChina();
 }

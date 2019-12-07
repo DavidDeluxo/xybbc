@@ -102,7 +102,7 @@ public class MallPcExceptionCode implements IResultStatus {
     public static final MallPcExceptionCode  WITHDRAW_LES_MIN_AMOUNT = new MallPcExceptionCode("1038", "不得小于最低提现金额");
     public static final MallPcExceptionCode  NAME_NOT_EXIST = new MallPcExceptionCode("1039", "账号不存在");
     public static final MallPcExceptionCode  ACCOUNT_NOT_AUTH = new MallPcExceptionCode("1040", "账户未认证或认证不通过");
-
+    public static final MallPcExceptionCode SKU_PACKAGE_IS_NONE = new MallPcExceptionCode("1041", "没有批次包装规格");
 
     /**
      * pay模块错误信息

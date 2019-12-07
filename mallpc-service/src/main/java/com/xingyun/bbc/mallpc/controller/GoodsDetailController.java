@@ -5,7 +5,6 @@ import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.utils.RequestHolder;
 import com.xingyun.bbc.mallpc.model.dto.detail.GoodsDetailMallDto;
-import com.xingyun.bbc.mallpc.model.vo.address.CityRegionAllVO;
 import com.xingyun.bbc.mallpc.model.vo.detail.*;
 import com.xingyun.bbc.mallpc.service.GoodDetailService;
 import io.swagger.annotations.Api;
@@ -135,19 +134,5 @@ public class GoodsDetailController {
     @GetMapping("/via/getCategoryBySkuId")
     public Result<Map<String, Long>> getCategoryBySkuId(@RequestParam Long skuId) {
         return goodDetailService.getCategoryBySkuId(skuId);
-    }
-
-    /**
-     * 获取中国全部省市区
-     *
-     * @param
-     * @return com.xingyun.bbc.core.utils.Result<com.xingyun.bbc.supplier.api.model.dto.caseManagement.CityRegionAllVO>
-     * @date 2019/10/10 20:48
-     * @author ming.yiFei
-     */
-    @ApiOperation("获取中国全部省市区")
-    @GetMapping("/via/queryRegionAll")
-    public Result<CityRegionAllVO> queryRegionAll() {
-        return goodDetailService.queryRegionOfChina();
     }
 }
