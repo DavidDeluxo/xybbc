@@ -421,6 +421,8 @@ public class IndexServiceImpl implements IndexService {
                     fsellNum += sellNum;
                 }
                 searchItemVo.setFsellNum(fsellNum);
+            }else {
+                searchItemVo.setFsellNum(Long.valueOf(0));
             }
             //2---------封装价格：1.未登录情况下不展示价格：2.根据sku是否支持平台会员类型折扣分两种情况：
             // 一，支持，则在t_bbc_sku_batch_user_price取值；二，不支持，则在t_bbc_goods_sku_batch_price取值
@@ -460,6 +462,8 @@ public class IndexServiceImpl implements IndexService {
                         if (CollectionUtils.isNotEmpty(skuBatchIdList)) {
                             //封装最小价格
                             this.getMinPrice(skuBatchIdList, searchItemVo,goodsSku.getFskuTaxRate());
+                        }else {
+                            searchItemVo.setFbatchSellPrice(BigDecimal.valueOf(0));
                         }
                         //有会员折扣配置取会员折扣价
                     } else {
@@ -529,6 +533,8 @@ public class IndexServiceImpl implements IndexService {
                             BigDecimal sellPrice = fbatchSellPrice.getFbatchSellPrice()
                                     .divide(PageConfigContants.BIG_DECIMAL_100, 2, BigDecimal.ROUND_HALF_UP);
                             searchItemVo.setFbatchSellPrice(sellPrice);
+                        }else {
+                            searchItemVo.setFbatchSellPrice(BigDecimal.valueOf(0));
                         }
                     }
                 } else {
@@ -538,6 +544,8 @@ public class IndexServiceImpl implements IndexService {
                     if (CollectionUtils.isNotEmpty(skuBatchIdList)) {
                         //封装最小价格
                         this.getMinPrice(skuBatchIdList, searchItemVo,goodsSku.getFskuTaxRate());
+                    }else {
+                        searchItemVo.setFbatchSellPrice(BigDecimal.valueOf(0));
                     }
                 }
             }
