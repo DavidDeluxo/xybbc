@@ -450,6 +450,9 @@ public class FavoritesServiceImpl implements FavoritesService {
             if (Objects.nonNull(goodsPriceIntervalVo)){
                 fa.setMinPrice(goodsPriceIntervalVo.getPriceStart());
                 fa.setMaxPrice(goodsPriceIntervalVo.getPriceEnd());
+                if (goodsPriceIntervalVo.getPriceStart().compareTo(BigDecimal.ZERO)<=0){
+                    fa.setMinPrice(goodsPriceIntervalVo.getPriceEnd());
+                }
             }
         });
         data.setList(favoritesVos);
