@@ -86,7 +86,7 @@ public class FavoritesServiceImpl implements FavoritesService {
         if (null != goodsDetailMallDto.getFbatchPackageId()) {
             GoodsPriceIntervalDto param = dozerMapper.map(goodsDetailMallDto, GoodsPriceIntervalDto.class);
             BigDecimal packagePrice = this.getPackagePrice(goodsDetailMallDto, param);
-            priceResult.setRealPrice(PriceUtil.toYuan(packagePrice));
+//            priceResult.setRealPrice(PriceUtil.toYuan(packagePrice));
             priceResult.setPriceStart(PriceUtil.toYuan(packagePrice));
         }
         //到批次
@@ -135,15 +135,15 @@ public class FavoritesServiceImpl implements FavoritesService {
             }
             //总价 = (原始价*购买数量) + 税费
             BigDecimal priceTotal = orgPrice.add(taxPrice);
-            //折合单价 = 总价 / 数量 /包装规格数量
-            BigDecimal dealUnitPrice = BigDecimal.ZERO;
-            if (null != goodsDetailMallDto.getFbatchPackageNum()) {
-                dealUnitPrice = priceTotal.divide(new BigDecimal(goodsDetailMallDto.getFnum()).multiply(new BigDecimal(goodsDetailMallDto.getFbatchPackageNum())), 2, BigDecimal.ROUND_HALF_UP);
-            }
+//            //折合单价 = 总价 / 数量 /包装规格数量
+//            BigDecimal dealUnitPrice = BigDecimal.ZERO;
+//            if (null != goodsDetailMallDto.getFbatchPackageNum()) {
+//                dealUnitPrice = priceTotal.divide(new BigDecimal(goodsDetailMallDto.getFnum()).multiply(new BigDecimal(goodsDetailMallDto.getFbatchPackageNum())), 2, BigDecimal.ROUND_HALF_UP);
+//            }
 
             priceResult.setPriceStart(priceTotal);
             priceResult.setTaxPrice(taxPrice);
-            priceResult.setDealUnitPrice(dealUnitPrice);
+//            priceResult.setDealUnitPrice(dealUnitPrice);
         }
         return priceResult;
     }
