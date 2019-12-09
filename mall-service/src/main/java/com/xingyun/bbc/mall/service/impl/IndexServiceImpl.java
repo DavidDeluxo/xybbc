@@ -163,9 +163,9 @@ public class IndexServiceImpl implements IndexService {
         //首页配置位置是2的数据根据展现时间进行过滤
         if (position == 2) {
             List<PageConfigVo> pageConfigVos = new ArrayList<>();
+            Date currentTime = new Date();
             for (PageConfigVo pageConfigVo : pageConfigRedisResultList) {
                 Integer viewType = pageConfigVo.getFviewType();
-                Date currentTime = new Date();
                 Date startTime = pageConfigVo.getFperiodStartTime();
                 Date endTime = pageConfigVo.getFpeiodEndTime();
                 //展示类型是长期时不用筛选
