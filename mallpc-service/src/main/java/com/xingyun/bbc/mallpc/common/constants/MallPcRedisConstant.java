@@ -58,7 +58,15 @@ public interface MallPcRedisConstant {
     String PC_MALL_PAGECONFIG_TOPIC_UPDATE = "pc_mall_topic_lock";
 
 
+    /**
+     * pc发送验证码前缀
+     */
     String VERIFY_CODE_PREFIX = "sms:";
+
+    /**
+     * pc发送验证码限制前缀
+     */
+    String VERIFY_CODE_LIMIT_PREFIX = "sms_limit:";
 
     String ADD_USER_WITHDRAW_LOCK = KEY_PREFIX + "add_user_withdraw_lock";
 

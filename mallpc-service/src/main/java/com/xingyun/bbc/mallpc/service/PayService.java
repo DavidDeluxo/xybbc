@@ -4,6 +4,8 @@ import javax.servlet.http.HttpServletRequest;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.dto.pay.BalancePayDto;
 import com.xingyun.bbc.mallpc.model.dto.pay.CheckPayDto;
+import com.xingyun.bbc.order.model.dto.order.OrderPaymentInfoDto;
+import com.xingyun.bbc.order.model.vo.order.OrderPaymentInfoVo;
 import com.xingyun.bbc.pay.model.dto.ThirdPayDto;
 
 
@@ -25,4 +27,10 @@ public interface PayService {
 	
 	Result<?> checkRechargeIsPaySuccess(CheckPayDto dto,HttpServletRequest request);
 
+	/**
+	 * 查询支付信息
+	 * @param orderPaymentInfoDto
+	 * @return
+	 */
+	Result<OrderPaymentInfoVo> getPaymentInfo(OrderPaymentInfoDto orderPaymentInfoDto);
 }

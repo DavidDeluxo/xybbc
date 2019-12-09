@@ -109,6 +109,8 @@ public class FavoritesServiceImpl implements FavoritesService {
             priceResult = this.getSpuPrice(goodsDetailMallDto, param);
             this.dealGoodDetailPriceToYuan(priceResult);
         }
+
+        /**
         //起始区间价 只有是单一价格PriceStart才计算运费、税费、折合单价
         if (null == priceResult.getPriceEnd()) {
             log.info("---------------------1进入了这段没用的代码---------------------");
@@ -149,6 +151,8 @@ public class FavoritesServiceImpl implements FavoritesService {
 //            priceResult.setDealUnitPrice(dealUnitPrice);
             log.info("---------------------2进入了这段没用的代码---------------------");
         }
+
+         **/
         return priceResult;
     }
 

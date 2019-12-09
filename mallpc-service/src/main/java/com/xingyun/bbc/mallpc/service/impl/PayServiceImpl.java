@@ -27,7 +27,9 @@ import com.xingyun.bbc.mallpc.model.vo.pay.OrderResultVo;
 import com.xingyun.bbc.mallpc.model.vo.pay.PayResultVo;
 import com.xingyun.bbc.mallpc.service.PayService;
 import com.xingyun.bbc.order.api.OrderPayApi;
+import com.xingyun.bbc.order.model.dto.order.OrderPaymentInfoDto;
 import com.xingyun.bbc.order.model.dto.order.PayDto;
+import com.xingyun.bbc.order.model.vo.order.OrderPaymentInfoVo;
 import com.xingyun.bbc.order.model.vo.pay.BalancePayVo;
 import com.xingyun.bbc.pay.api.PayChannelApi;
 import com.xingyun.bbc.pay.model.dto.ThirdPayDto;
@@ -246,6 +248,11 @@ public class PayServiceImpl implements PayService {
 		payResultVo.setPayStatus(payStatus);
 
 		return Result.success(payResultVo);
+	}
+
+	@Override
+	public Result<OrderPaymentInfoVo> getPaymentInfo(OrderPaymentInfoDto orderPaymentInfoDto) {
+		return orderPayApi.getPaymentInfo(orderPaymentInfoDto);
 	}
 
 	// 校验输入的支付密码
