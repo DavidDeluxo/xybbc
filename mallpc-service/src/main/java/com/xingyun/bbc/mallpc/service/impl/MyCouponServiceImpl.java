@@ -88,12 +88,21 @@ public class MyCouponServiceImpl implements MyCouponService {
         myCoupinReceiveDto.setCurrentPage(myCouponDto.getCurrentPage());
         myCoupinReceiveDto.setPageSize(myCouponDto.getPageSize());
         Result<Long> countResult = couponReceiveApi.selectMyCouponCount(myCoupinReceiveDto);
+        Integer count = countResult.getData().intValue();
         if (!countResult.isSuccess()){
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
+        Integer fuserCouponStatus = myCouponDto.getFuserCouponStatus();
+        //数据为空封装返回参数
         if (countResult.getData().intValue() == 0) {
             MyCouponVo myCouponVo =  new MyCouponVo();
             myCouponVo.setCouponVo( new PageVo<>(0, myCouponDto.getCurrentPage(), myCouponDto.getPageSize(), Lists.newArrayList()));
+            myCouponVo.setUnUsedNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.NOT_USED.getCode()) ? count
+                    : this.getCouponByStatus(myCoupinReceiveDto, CouponReceiveStatusEnum.NOT_USED.getCode()));
+            myCouponVo.setUsedNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.USED.getCode()) ? count
+                    : this.getCouponByStatus(myCoupinReceiveDto, CouponReceiveStatusEnum.USED.getCode()));
+            myCouponVo.setExpiredNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.NULLIFY.getCode()) ? count
+                    : this.getCouponByStatus(myCoupinReceiveDto, CouponReceiveStatusEnum.NULLIFY.getCode()));
             return Result.success(myCouponVo);
         }
         Result<List<CouponReceive>> listResult = couponReceiveApi.selectMyCouponList(myCoupinReceiveDto);
@@ -101,7 +110,6 @@ public class MyCouponServiceImpl implements MyCouponService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
 
-        Integer count = countResult.getData().intValue();
         List<CouponReceive> couponReceives = listResult.getData();
         PageVo<CouponVo> couponPageVo = pageUtils.convert(count, couponReceives, CouponVo.class, myCouponDto);
         List<Long> couponIds = couponReceives.stream().map(CouponReceive::getFcouponId).distinct().collect(Collectors.toList());
@@ -134,8 +142,6 @@ public class MyCouponServiceImpl implements MyCouponService {
             couponVo.setFreleaseType(coupon.getFreleaseType());
         }
         //查询各种优惠券数量
-        Integer fuserCouponStatus = myCouponDto.getFuserCouponStatus();
-
         MyCouponVo myCouponVo = new MyCouponVo();
         myCouponVo.setCouponVo(couponPageVo);
         myCouponVo.setUnUsedNum(fuserCouponStatus.equals(CouponReceiveStatusEnum.NOT_USED.getCode()) ? count
