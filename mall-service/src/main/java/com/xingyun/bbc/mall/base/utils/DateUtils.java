@@ -1,11 +1,10 @@
 package com.xingyun.bbc.mall.base.utils;
 
 
+import com.xingyun.bbc.mall.common.constans.PayConstants;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.format.DateTimeFormat;
-
-import com.xingyun.bbc.mall.common.constans.PayConstants;
 
 import java.util.Date;
 
@@ -28,7 +27,11 @@ public class DateUtils {
     }
 
     public static Date parseDate(String dateStr) {
-        return DateTimeFormat.forPattern(PayConstants.FULL_STANDARD_PATTERN).parseDateTime(dateStr).toDate();
+        return parseDate(dateStr, PayConstants.FULL_STANDARD_PATTERN);
+    }
+
+    public static Date parseDate(String dateStr, String pattern) {
+        return DateTimeFormat.forPattern(pattern).parseDateTime(dateStr).toDate();
     }
 
     public static String formatDate(Date date) {
