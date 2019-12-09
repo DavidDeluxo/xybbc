@@ -4,11 +4,13 @@ import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.dto.pay.BalancePayDto;
 import com.xingyun.bbc.mallpc.model.dto.pay.CheckPayDto;
 import com.xingyun.bbc.mallpc.service.PayService;
+import com.xingyun.bbc.order.model.dto.order.OrderPaymentInfoDto;
 import com.xingyun.bbc.pay.model.dto.ThirdPayDto;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -58,6 +60,12 @@ public class PayController {
 	@PostMapping("/checkRechargeIsPaySuccess")
 	public Result<?> checkRechargeIsPaySuccess(@RequestBody CheckPayDto dto, HttpServletRequest request) {
 		return payService.checkRechargeIsPaySuccess(dto, request);
+	}
+
+	@ApiOperation("查询支付信息")
+	@PostMapping(value = "/getPaymentInfo")
+	public Result<?> balancePay(@RequestBody @Validated OrderPaymentInfoDto orderPaymentInfoDto) {
+		return payService.getPaymentInfo(orderPaymentInfoDto);
 	}
 
 }
