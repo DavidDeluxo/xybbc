@@ -126,8 +126,6 @@ public class IndexServiceImpl implements IndexService {
                     ,PageConfig::getFredirectUrl,PageConfig::getFrelationId
                     ,PageConfig::getFsortValue,PageConfig::getFtype
                     ,PageConfig::getFviewType,PageConfig::getFisDelete);
-            //查询未删除的
-            // pageConfigCriteria.andEqualTo(PageConfig::getFisDelete, 0);
             //查询未删除,配置对象为0的数据
             pageConfigCriteria.andEqualTo(PageConfig::getFisDelete, 0).andEqualTo(PageConfig::getFconfigType, 0);
             //位置为0:Banner配置 1:ICON配置时用sortValue排序字段进行排序
