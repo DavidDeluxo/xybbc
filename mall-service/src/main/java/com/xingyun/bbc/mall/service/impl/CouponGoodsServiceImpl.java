@@ -77,8 +77,9 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
         res.setData(pageVo);
         try {
             res = goodsService.searchSkuList(dto);
-            if (!res.isSuccess())
+            if (!res.isSuccess()) {
                 throw new Exception();
+            }
         } catch (Exception e) {
             log.warn("ES优惠券商品搜索失败!...");
             if (Objects.nonNull(dto.getCouponId())) {
@@ -117,28 +118,44 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
 
         });
 
-        if (categoryIdL1.size() > 0) dto.setFcategoryIdL1(toList(categoryIdL1));
+        if (categoryIdL1.size() > 0) {
+            dto.setFcategoryIdL1(toList(categoryIdL1));
+        }
 
-        if (categoryIdL2.size() > 0) dto.setFcategoryIdL2(toList(categoryIdL2));
+        if (categoryIdL2.size() > 0) {
+            dto.setFcategoryIdL2(toList(categoryIdL2));
+        }
 
-        if (categoryIdL3.size() > 0) dto.setFcategoryId(toList(categoryIdL3));
+        if (categoryIdL3.size() > 0) {
+            dto.setFcategoryId(toList(categoryIdL3));
+        }
 
-        if (brandId.size() > 0) dto.setFbrandId(toList(brandId));
+        if (brandId.size() > 0) {
+            dto.setFbrandId(toList(brandId));
+        }
 
-        if (labelId.size() > 0) dto.setFlabelId(toList(labelId));
+        if (labelId.size() > 0) {
+            dto.setFlabelId(toList(labelId));
+        }
 
-        if (tradeId.size() > 0) dto.setFtradeId(toList(tradeId));
+        if (tradeId.size() > 0) {
+            dto.setFtradeId(toList(tradeId));
+        }
     }
 
     @Override
     public Result<SearchItemListVo<SearchItemVo>> queryGoodsListRealTime(SearchItemDto dto) {
         CouponSkuCondition couponSkuCondition = new CouponSkuCondition(dto).invoke();
 
-        if (couponSkuCondition.is()) return Result.success(this.getInitListVo(dto));
+        if (couponSkuCondition.is()) {
+            return Result.success(this.getInitListVo(dto));
+        }
 
         List<CouponApplicableSkuCondition> skuConResData = couponSkuCondition.getSkuConResData();
 
-        if (!CollectionUtils.isEmpty(skuConResData)) this.buildCategory(dto, skuConResData);
+        if (!CollectionUtils.isEmpty(skuConResData)) {
+            this.buildCategory(dto, skuConResData);
+        }
 
         ItemDto itemDto = new ItemDto();
         BeanUtils.copyProperties(dto, itemDto);
@@ -146,10 +163,14 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
         itemDto.setFoperateType(dto.getFoperateType());
         Result<Page<ItemVo>> pageResult = goodsCouponApi.queryCouponGoods(itemDto);
 
-        if (!pageResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (!pageResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
 
         Page<ItemVo> data = pageResult.getData();
-        if (CollectionUtils.isEmpty(data.getResult())) return Result.success(this.getInitListVo(dto));
+        if (CollectionUtils.isEmpty(data.getResult())) {
+            return Result.success(this.getInitListVo(dto));
+        }
 
         List<SearchItemVo> list = new ArrayList<SearchItemVo>(data.getResult().size());
         data.getResult().forEach(da -> {
@@ -177,7 +198,9 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
     }
 
     private List<Integer> toList(Set<Integer> set) {
-        if (CollectionUtils.isEmpty(set)) return Lists.newArrayList();
+        if (CollectionUtils.isEmpty(set)) {
+            return Lists.newArrayList();
+        }
 
         List<Integer> list = new ArrayList<Integer>(set.size());
         set.forEach(s -> list.add(s));
@@ -207,24 +230,32 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
 
     private void addCategoryIds(Set<Integer> categoryIdL1, Set<Integer> categoryIdL2, Set<Integer> categoryIdL3, String categoryIdJson) {
         JSONObject js = JSON.parseObject(categoryIdJson);
-        if (js.isEmpty()) return;
+        if (js.isEmpty()) {
+            return;
+        }
 
         js.keySet().forEach(key -> {
 
             int keys = Integer.parseInt(key + "");
             if (keys == 1) {
                 js.getJSONArray(key).forEach(v -> {
-                    if (!StringUtil.isBlank(v + "")) categoryIdL1.add(Integer.valueOf(v + ""));
+                    if (!StringUtil.isBlank(v + "")) {
+                        categoryIdL1.add(Integer.valueOf(v + ""));
+                    }
                 });
 
             } else if (keys == 2) {
                 js.getJSONArray(key).forEach(v -> {
-                    if (!StringUtil.isBlank(v + "")) categoryIdL2.add(Integer.valueOf(v + ""));
+                    if (!StringUtil.isBlank(v + "")) {
+                        categoryIdL2.add(Integer.valueOf(v + ""));
+                    }
                 });
 
             } else if (keys == 3) {
                 js.getJSONArray(key).forEach(v -> {
-                    if (!StringUtil.isBlank(v + "")) categoryIdL3.add(Integer.valueOf(v + ""));
+                    if (!StringUtil.isBlank(v + "")) {
+                        categoryIdL3.add(Integer.valueOf(v + ""));
+                    }
                 });
             }
 
