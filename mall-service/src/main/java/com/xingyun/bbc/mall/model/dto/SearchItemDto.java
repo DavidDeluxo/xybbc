@@ -122,7 +122,7 @@ public class SearchItemDto {
     //----------------------------------------------
     //   banner icon 专题位 配置分类id时使用, 用来区分分类id等级
     @ApiModelProperty(value = "通用类目id")
-    private List<Integer> fUnicategoryIds;
+    private List<Integer> funicategoryIds;
 
     @ApiModelProperty(value = "类目等级")
     private Integer fcategoryLevel;
