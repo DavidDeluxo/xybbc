@@ -55,6 +55,7 @@ public class CategoryServiceImpl implements CategoryService {
         List<Long> brandIdListFilter = null;
         if (fcategoryId != null) {
             Criteria<Goods, Object> goodsCriteria = Criteria.of(Goods.class)
+                    .fields(Goods::getFbrandId)
                     .andEqualTo(Goods::getFcategoryId1, fcategoryId)
                     .andEqualTo(Goods::getFisDelete,0)
                     .andEqualTo(Goods::getFisDraft,0);
@@ -263,6 +264,7 @@ public class CategoryServiceImpl implements CategoryService {
             List<Goods> goodsListAll = goodsResultAll.getData();
             List<Long> categoryListFiltered = goodsListAll.stream().map(Goods::getFcategoryId1).distinct().collect(Collectors.toList());
             Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class)
+                    .fields(GoodsCategory::getFcategoryId, GoodsCategory::getFcategoryName, GoodsCategory::getFcategoryDesc)
                     .andIn(GoodsCategory::getFcategoryId, categoryListFiltered)
                     .andEqualTo(GoodsCategory::getFisDelete, 0)
                     .andEqualTo(GoodsCategory::getFisDisplay, 1)
