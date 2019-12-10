@@ -65,6 +65,7 @@ public class MallExceptionCode implements IResultStatus {
      * */
     public static final MallExceptionCode USER_FREEZE_ERROR =new MallExceptionCode("8888", "该用户已被冻结或禁用");
     public static final MallExceptionCode NULL_ERROR_WITHDRAWPSD =new MallExceptionCode("8889", "尚未设置提现密码");
+    public static final MallExceptionCode USER_NOT_LOGGED_IN = new MallExceptionCode("8890", "用户未登录");
 
     /**
      * Mall优惠券错误信息

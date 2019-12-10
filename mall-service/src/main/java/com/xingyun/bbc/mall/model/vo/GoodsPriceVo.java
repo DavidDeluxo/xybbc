@@ -13,7 +13,7 @@ public class GoodsPriceVo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "起始价格或费区间价格总价")
+    @ApiModelProperty(value = "起始价格或含运费税费总价")
     private BigDecimal priceStart;
 
     @ApiModelProperty(value = "结尾价格")
@@ -34,7 +34,7 @@ public class GoodsPriceVo implements Serializable {
     @ApiModelProperty(value = "折合单价")
     private BigDecimal dealUnitPrice;
 
-    @ApiModelProperty(value = "商品实际单价")
+    @ApiModelProperty(value = "商品实际单价--不含运费税费")
     private BigDecimal realPrice;
 
     @ApiModelProperty("省份名称")

@@ -22,12 +22,6 @@ public interface GoodDetailService {
     //获取各种规格
     Result<GoodspecificationVo> getGoodsSpecifi(Long fgoodsId);
 
-//    //获取sku批次有效期
-//    Result<List<GoodsSkuBatchVo>> getSkuBatchSpecifi(Long fskuId);
-//
-//    //获取sku批次包装规格
-//    Result<List<GoodsSkuBatchPackageVo>> getSkuBatchPackageSpecifi(Long fskuBatchId);
-
     //获取价格
     Result<GoodsPriceVo> getGoodPrice(GoodsDetailMallDto goodsDetailMallDto);
 
@@ -54,10 +48,5 @@ public interface GoodDetailService {
 
     //领取优惠券--通用
     Result receiveCoupon(ReceiveCouponDto receiveCouponDto);
-
-
-
-
-
 
 }

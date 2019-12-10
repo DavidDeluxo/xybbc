@@ -1625,22 +1625,4 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         return Result.success(true);
     }
 
-    //    @Override
-//    public Result<List<GoodsSkuBatchVo>> getSkuBatchSpecifi(Long fskuId) {
-//        Result<List<SkuBatch>> skuBatchResult = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
-//                .andEqualTo(SkuBatch::getFskuId, fskuId)
-//                .fields(SkuBatch::getFvalidityStartDate, SkuBatch::getFvalidityEndDate, SkuBatch::getFsupplierSkuBatchId, SkuBatch::getFskuId));
-//        List<GoodsSkuBatchVo> convert = dozerHolder.convert(skuBatchResult.getData(), GoodsSkuBatchVo.class);
-//        return Result.success(convert);
-//    }
-//
-//    @Override
-//    public Result<List<GoodsSkuBatchPackageVo>> getSkuBatchPackageSpecifi(Long fskuBatchId) {
-//        Result<List<SkuBatchPackage>> skuBatchPackageResult = skuBatchPackageApi.queryByCriteria(Criteria.of(SkuBatchPackage.class)
-//                .andEqualTo(SkuBatchPackage::getFsupplierSkuBatchId, fskuBatchId)
-//                .fields(SkuBatchPackage::getFbatchPackageId, SkuBatchPackage::getFsupplierSkuBatchId, SkuBatchPackage::getFbatchPackageNum, SkuBatchPackage::getFbatchStartNum));
-//        List<GoodsSkuBatchPackageVo> convert = dozerHolder.convert(skuBatchPackageResult.getData(), GoodsSkuBatchPackageVo.class);
-//        return Result.success(convert);
-//    }
-
 }
