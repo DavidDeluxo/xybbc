@@ -183,8 +183,8 @@ public class AftersaleServiceImpl implements AftersaleService {
         aftersaleDetailVo.setFtradeType(skuInfor.getFtradeType());
 
         aftersaleDetailVo.setFbatchPackageName(aftersaleDetailVo.getFbatchPackageNum() + "件装");
-        aftersaleDetailVo.setFunitPrice(PriceUtil.toYuan(aftersaleDetailVo.getFunitPrice()));
         aftersaleDetailVo.setFrealPayAmount(PriceUtil.toYuan(aftersaleDetailVo.getFunitPrice().multiply(new BigDecimal(aftersaleDetailVo.getFaftersaleNum()))));//实付金额 = 单价 * 数量
+        aftersaleDetailVo.setFunitPrice(PriceUtil.toYuan(aftersaleDetailVo.getFunitPrice()));
         aftersaleDetailVo.setFaftersaleNumShow(this.getAftersaleNumShow(aftersaleDetailVo.getFaftersaleNum(), aftersaleDetailVo.getFtransportOrderId(), aftersaleDetailVo.getFskuCode()));
 
         //获取效期
