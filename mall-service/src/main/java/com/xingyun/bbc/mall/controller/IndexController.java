@@ -86,7 +86,7 @@ public class IndexController {
     }
 
 
-    @ApiOperation(value = "查询一级类目下所有sku列表---不校验登录")
+    @ApiOperation(value = "查询一级类目下所有sku列表")
     @PostMapping("/via/queryGoodsByCategoryId1")
     public Result<SearchItemListVo<SearchItemVo>> queryGoodsByCategoryId1(@RequestBody SearchItemDto dto, HttpServletRequest request) {
         TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
@@ -95,7 +95,7 @@ public class IndexController {
         dto.setFverifyStatus(infoVo.getFverifyStatus());
         dto.setFoperateType(infoVo.getFoperateType());
         Result<SearchItemListVo<SearchItemVo>> result = goodsService.searchSkuList(dto);
-        if (CollectionUtils.isEmpty(result.getData().getList())) {
+        if (CollectionUtils.isEmpty(result.getData().getList()) || !result.isSuccess()) {
             return Result.success(indexService.queryGoodsByCategoryId1(dto));
         } else {
             if (dto.getPageIndex() > 20) {

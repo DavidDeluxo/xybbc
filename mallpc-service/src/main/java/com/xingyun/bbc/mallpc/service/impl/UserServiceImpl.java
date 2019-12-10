@@ -330,8 +330,9 @@ public class UserServiceImpl implements UserService {
         Ensure.that(Objects.isNull(redisManager.get(fmobile))).isTrue(MallPcExceptionCode.SMS_AUTH_IS_SEND);
         // 校验同一个ip发送次数
         String ipAddress = HttpUtil.getClientIP(RequestHolder.getRequest());
-        if (Objects.nonNull(redisManager.get(ipAddress))) {
-            Integer count = (Integer) redisManager.get(ipAddress);
+        String limit_key = StringUtils.join(MallPcRedisConstant.VERIFY_CODE_LIMIT_PREFIX, ipAddress);
+        if (Objects.nonNull(redisManager.get(limit_key))) {
+            Integer count = (Integer) redisManager.get(limit_key);
             Ensure.that(count).isLt(UserConstants.Sms.MAX_IP_SMS_SEND_TIME, MallPcExceptionCode.USER_SEND_SMS_FAILD);
             if (count > UserConstants.Sms.CAPTCHA_THRESHOLD) {
                 // 触发滑动验证
@@ -353,7 +354,7 @@ public class UserServiceImpl implements UserService {
         // 设置一分钟间隔
         redisManager.set(fmobile, MallPcRedisConstant.DEFAULT_LOCK_VALUE, UserConstants.Sms.MOBILE_SEND_SMS_TIME);
         // 设置ip次数上限
-        redisManager.incr(ipAddress);
+        redisManager.incr(StringUtils.join(MallPcRedisConstant.VERIFY_CODE_LIMIT_PREFIX, ipAddress));
         //获取当天剩余时间秒
         long secondsLeftToday = 86400 - DateUtils.getFragmentInSeconds(Calendar.getInstance(), Calendar.DATE);
         redisManager.expire(ipAddress, secondsLeftToday);

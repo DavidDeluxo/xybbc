@@ -81,7 +81,7 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
                 throw new Exception();
         } catch (Exception e) {
             log.warn("ES优惠券商品搜索失败!...");
-            if (Objects.nonNull(dto.getCouponId())){
+            if (Objects.nonNull(dto.getCouponId())) {
                 log.info("----------ES优惠券商品搜索失败!,转SQL查询------------");
                 res = this.queryGoodsListRealTime(dto);
             }
@@ -258,7 +258,9 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
                 return this;
             }
 
-            Result<List<CouponApplicableSku>> skuListRes = couponApplicableSkuApi.queryByCriteria(Criteria.of(CouponApplicableSku.class).andEqualTo(CouponApplicableSku::getFcouponId, dto.getCouponId()));
+            Result<List<CouponApplicableSku>> skuListRes = couponApplicableSkuApi.queryByCriteria(Criteria.of(CouponApplicableSku.class)
+                    .andEqualTo(CouponApplicableSku::getFcouponId, dto.getCouponId())
+                    .fields(CouponApplicableSku::getFskuId));
             Ensure.that(skuListRes.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
 
             //skuId
@@ -266,7 +268,20 @@ public class CouponGoodsServiceImpl implements CouponGoodsService {
                 dto.setFskuIds(skuListRes.getData().stream().map(CouponApplicableSku::getFskuId).collect(Collectors.toList()));
             }
 
-            Result<List<CouponApplicableSkuCondition>> skuConRes = couponApplicableSkuConditionApi.queryByCriteria(Criteria.of(CouponApplicableSkuCondition.class).andEqualTo(CouponApplicableSkuCondition::getFcouponId, dto.getCouponId()));
+            Result<List<CouponApplicableSkuCondition>> skuConRes = couponApplicableSkuConditionApi.queryByCriteria(Criteria.of(CouponApplicableSkuCondition.class)
+                    .andEqualTo(CouponApplicableSkuCondition::getFcouponId, dto.getCouponId())
+                    .fields(CouponApplicableSkuCondition::getFcouponAssignSkuId,
+                            CouponApplicableSkuCondition::getFcouponId,
+                            CouponApplicableSkuCondition::getFcategoryId,
+                            CouponApplicableSkuCondition::getFbrandId,
+                            CouponApplicableSkuCondition::getFlabelId,
+                            CouponApplicableSkuCondition::getFtradeCode,
+                            CouponApplicableSkuCondition::getFcategoryName,
+                            CouponApplicableSkuCondition::getFbrandName,
+                            CouponApplicableSkuCondition::getFlabelName,
+                            CouponApplicableSkuCondition::getFtradeName,
+                            CouponApplicableSkuCondition::getFcreateTime,
+                            CouponApplicableSkuCondition::getFmodifyTime));
             Ensure.that(skuConRes.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
 
             skuConResData = skuConRes.getData();

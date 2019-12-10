@@ -1,7 +1,11 @@
 package com.xingyun.bbc.mall.controller;
 
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mall.base.utils.JwtParser;
 import com.xingyun.bbc.mall.base.utils.UserUtil;
+import com.xingyun.bbc.mall.model.dto.GoodsPriceIntervalDto;
+import com.xingyun.bbc.mall.model.vo.TokenInfoVo;
+import com.xingyun.bbc.mall.service.FavoritesService;
 import com.xingyun.bbc.order.api.FavoritesApi;
 import com.xingyun.bbc.order.model.dto.cart.FavoritesClearDto;
 import com.xingyun.bbc.order.model.dto.favorites.AddFavoritesDto;
@@ -15,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.List;
@@ -32,6 +37,10 @@ public class FavoritesController {
 
     @Autowired
     private FavoritesApi favoritesApi;
+    @Resource
+    private JwtParser jwtParser;
+    @Autowired
+    private FavoritesService favoritesService;
 
     @ApiOperation("移入常购清单")
     @PostMapping("/add")
@@ -43,8 +52,15 @@ public class FavoritesController {
     @ApiOperation("常购清单列表")
     @PostMapping("/list")
     public Result<PageVo<FavoritesVo>> favoritesList(@RequestBody FavoritesDto favoritesDto,HttpServletRequest request) {
-        long fuid = UserUtil.uid(request);
-        return favoritesApi.favoritesList(favoritesDto.setFuid(fuid));
+        TokenInfoVo tokenInfo = jwtParser.getTokenInfo(request);
+        GoodsPriceIntervalDto dto = new GoodsPriceIntervalDto();
+        dto.setFuid(tokenInfo.getFuid().longValue());
+        dto.setFverifyStatus(tokenInfo.getFverifyStatus());
+        dto.setFoperateType(tokenInfo.getFoperateType());
+        dto.setPageNum(favoritesDto.getPageNum());
+        dto.setPageSize(favoritesDto.getPageSize());
+        dto.setFcategoryId(favoritesDto.getFcategoryId());
+        return Result.success(favoritesService.queryFavoritesPage(dto));
     }
 
     @ApiOperation("查询常购清单数量")

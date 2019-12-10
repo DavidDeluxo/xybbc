@@ -82,7 +82,15 @@ public class GoodsServiceImpl implements GoodsService {
         if (searchItemDto.getFcouponId() != null) {
             criteria.setIndexName(this.getCouponAliasName(Long.parseLong(String.valueOf(searchItemDto.getFcouponId()))));
         }
+
+        String priceName = searchItemDto.getPriceName();
+        if (StringUtils.isEmpty(priceName)) {
+            priceName = this.getUserPriceType(searchItemDto.getIsLogin(), searchItemDto.getFuid(), searchItemDto.getFoperateType(), searchItemDto.getFverifyStatus());
+            searchItemDto.setPriceName(priceName);
+        }
+
         this.setSearchCondition(searchItemDto, criteria);
+
         String soldAmountScript = "1-Math.pow(doc['fsell_total'].value + 1, -1)";
         Map<String, Object> resultMap = esManager.functionQueryForResponse(criteria, soldAmountScript, CombineFunction.SUM);
         List<Map<String, Object>> resultList = (List<Map<String, Object>>) resultMap.get("resultList");
@@ -90,10 +98,6 @@ public class GoodsServiceImpl implements GoodsService {
         pageVo.setList(voList);
         Map<String, Object> baseInfoMap = (Map<String, Object>) resultMap.get("baseInfoMap");
         if (!CollectionUtils.isEmpty(resultList)) {
-            String priceName = searchItemDto.getPriceName();
-            if (StringUtils.isEmpty(priceName)) {
-                priceName = this.getUserPriceType(searchItemDto.getIsLogin(), searchItemDto.getFuid(), searchItemDto.getFoperateType(), searchItemDto.getFverifyStatus());
-            }
             for (Map<String, Object> map : resultList) {
                 SearchItemVo vo = getSearchItemVo(map, priceName, searchItemDto.getIsLogin());
                 voList.add(vo);
@@ -135,6 +139,11 @@ public class GoodsServiceImpl implements GoodsService {
             criteria.setIndexName(this.getCouponAliasName(Long.parseLong(String.valueOf(searchItemDto.getFcouponId()))));
         }
         //设定搜索条件
+        String priceName = searchItemDto.getPriceName();
+        if (StringUtils.isEmpty(priceName)) {
+            priceName = this.getUserPriceType(searchItemDto.getIsLogin(), searchItemDto.getFuid(), searchItemDto.getFoperateType(), searchItemDto.getFverifyStatus());
+            searchItemDto.setPriceName(priceName);
+        }
         this.setSearchCondition(searchItemDto, criteria);
         this.setAggregation(criteria);
 
@@ -410,7 +419,7 @@ public class GoodsServiceImpl implements GoodsService {
             return;
         }
 
-        String priceFieldName = this.getUserPriceType(searchItemDto.getIsLogin(), searchItemDto.getFuid(), searchItemDto.getFoperateType(), searchItemDto.getFverifyStatus());
+        String priceFieldName = searchItemDto.getPriceName();
         String fieldName = humpToLine2(priceFieldName) + PRICE_TYPE_SUFFIX;
         if (searchItemDto.getPriceOrderBy() != null) {
             criteria.sortBy(fieldName, searchItemDto.getPriceOrderBy());

@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 
 public interface MallConstants {
 
+    String FULL_STANDARD_PATTERN = "yyyy-MM-dd HH:mm:ss";
+
     //是否被删除
     Integer ISDELETE_NO = 0;
     Integer ISDELETE_YES = 1;

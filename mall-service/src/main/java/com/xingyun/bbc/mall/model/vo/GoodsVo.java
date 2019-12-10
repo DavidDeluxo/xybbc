@@ -58,4 +58,7 @@ public class GoodsVo implements Serializable {
     @ApiModelProperty(value = "商品规格信息")
     private List<GoodsSkuVo> fgoodsSkuVo;
 
+    @ApiModelProperty(value = "key:skuid value:商品名称 商品描述 商品列表缩略图")
+    private List<GoodsAlterVo> goodsSkuAlterVo;
+
 }
