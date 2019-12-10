@@ -185,17 +185,17 @@ public class GoodsServiceImpl implements GoodsService {
      */
     private void setCategoryCondition(SearchItemDto searchItemDto) {
         // 商品类目条件
-        if (CollectionUtils.isNotEmpty(searchItemDto.getFUnicategoryIds())
+        if (CollectionUtils.isNotEmpty(searchItemDto.getFunicategoryIds())
                 && searchItemDto.getFcategoryLevel() != null) {
             Integer fcateogryLevel = searchItemDto.getFcategoryLevel();
             if (fcateogryLevel == 1) {
-                searchItemDto.setFcategoryIdL1(searchItemDto.getFUnicategoryIds());
+                searchItemDto.setFcategoryIdL1(searchItemDto.getFunicategoryIds());
             }
             if (fcateogryLevel == 2) {
-                searchItemDto.setFcategoryIdL2(searchItemDto.getFUnicategoryIds());
+                searchItemDto.setFcategoryIdL2(searchItemDto.getFunicategoryIds());
             }
             if (fcateogryLevel == 3) {
-                searchItemDto.setFcategoryId(searchItemDto.getFUnicategoryIds());
+                searchItemDto.setFcategoryId(searchItemDto.getFunicategoryIds());
             }
         }
     }
