@@ -4,6 +4,7 @@ import cn.hutool.http.HttpUtil;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.po.UserVerify;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mall.common.utils.RequestHolder;
 import com.xingyun.bbc.mall.model.dto.*;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.GoodDetailService;
@@ -65,14 +66,14 @@ public class UserController {
     @ApiOperation("用户认证")
     @PostMapping("/userVerify")
     public Result<Integer> userVerify(@RequestBody UserVerifyDto dto,HttpServletRequest request){
-        dto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        dto.setFuid(RequestHolder.getUserId());
         return userService.userVerify(dto);
     }
 
     @ApiOperation("用户认证信息查询")
     @PostMapping("/queryUserVerify")
     public Result<UserVerifyVo> queryUserVerify(@RequestBody UserVerifyDto dto,HttpServletRequest request){
-        dto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        dto.setFuid(RequestHolder.getUserId());
         return userService.queryUserVerify(dto);
     }
 
@@ -91,14 +92,13 @@ public class UserController {
     @ApiOperation("用户认证状态查询")
     @PostMapping("/queryUserVerifyStatus")
     public Result<UserVo> queryUserVerifyStatus(HttpServletRequest request){
-        Long fuid = Long.parseLong(request.getHeader("xyid"));
-        return userService.queryUserVerifyStatus(fuid);
+        return userService.queryUserVerifyStatus(RequestHolder.getUserId());
     }
 
     @ApiOperation("账户与安全验证-发送短信/邮件")
     @PostMapping("/accountSecurityVerification")
     public Result<SendSmsVo> accountSecurityVerification(@RequestBody UserSecurityDto dto, HttpServletRequest request){
-        dto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        dto.setFuid(RequestHolder.getUserId());
         dto.setIpAddress(request.getRemoteAddr());
         return userService.accountSecurityVerification(dto);
     }
@@ -112,28 +112,28 @@ public class UserController {
     @ApiOperation("修改/设置支付密码")
     @PostMapping("/modifiyPayPwd")
     public Result<Integer> modifiyPayPwd(@RequestBody UserSecurityDto dto, HttpServletRequest request){
-        dto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        dto.setFuid(RequestHolder.getUserId());
         return userService.modifiyPayPwd(dto);
     }
 
     @ApiOperation("修改密码")
     @PostMapping("/modifiyPwd")
     public Result<Integer> modifiyPwd(@RequestBody UserSecurityDto dto, HttpServletRequest request){
-        dto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        dto.setFuid(RequestHolder.getUserId());
         return userService.modifiyPwd(dto);
     }
 
     @ApiOperation("修改邮箱")
     @PostMapping("/modifiyEmailAccount")
     public Result<Integer> modifiyEmailAccount(@RequestBody UserSecurityDto dto, HttpServletRequest request){
-        dto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        dto.setFuid(RequestHolder.getUserId());
         return userService.modifiyEmailAccount(dto);
     }
 
     @ApiOperation("修改手机号-短信发送")
     @PostMapping("/modifiyMobileSendSMS")
     public Result<SendSmsVo> modifiyMobileSendSMS(@RequestBody UserSecurityDto dto, HttpServletRequest request){
-        dto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        dto.setFuid(RequestHolder.getUserId());
         dto.setIpAddress(request.getRemoteAddr());
         return userService.modifiyMobileSendSMS(dto);
     }
@@ -141,42 +141,39 @@ public class UserController {
     @ApiOperation("修改手机号")
     @PostMapping("/modifiyMobile")
     public Result<Integer> modifiyMobile(@RequestBody UserSecurityDto dto, HttpServletRequest request){
-        dto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        dto.setFuid(RequestHolder.getUserId());
         return userService.modifiyMobile(dto);
     }
 
     @ApiOperation("用户信息查询")
     @PostMapping("/queryUserInfo")
     public Result<UserVo> queryUserInfo(HttpServletRequest request){
-        Long fuid = Long.parseLong(request.getHeader("xyid"));
-        return userService.queryUserInfo(fuid);
+        return userService.queryUserInfo(RequestHolder.getUserId());
     }
 
     @ApiOperation("认证优惠券弹窗")
     @PostMapping("/queryPopupWindowsStatus")
     public Result<UserVo> queryPopupWindowsStatus(HttpServletRequest request){
-        Long fuid = Long.parseLong(request.getHeader("xyid"));
-        return userService.queryPopupWindowsStatus(fuid);
+        return userService.queryPopupWindowsStatus(RequestHolder.getUserId());
     }
 
     @ApiOperation("注册弹窗")
     @PostMapping("/queryRegisterPopupWindows")
     public Result<Integer> queryRegisterPopupWindows(HttpServletRequest request){
-        Long fuid = Long.parseLong(request.getHeader("xyid"));
-        return userService.queryRegisterPopupWindows(fuid);
+        return userService.queryRegisterPopupWindows(RequestHolder.getUserId());
     }
 
     @ApiOperation("修改用户名")
     @PostMapping("/modifiyUserNickname")
     public Result<Integer> modifiyUserNickname(@RequestBody UserDto dto, HttpServletRequest request){
-        dto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        dto.setFuid(RequestHolder.getUserId());
         return userService.modifiyUserNickname(dto);
     }
 
     @ApiOperation("H5链接登录后领取优惠券")
     @PostMapping("/couponLinkReceive")
     public Result couponLinkReceive(@RequestBody CouponLinkDto dto, HttpServletRequest request){
-        dto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        dto.setFuid(RequestHolder.getUserId());
         Result result = new Result();
         result = userService.couponLinkReceive(dto);
         if(result.isSuccess()){
@@ -191,7 +188,6 @@ public class UserController {
     @ApiOperation("查询优惠卷未使用的数量")
     @PostMapping("/getUnusedCouponCount")
     public Result<Integer> getUnusedCouponCount(HttpServletRequest request){
-        Long fuid = Long.parseLong(request.getHeader("xyid"));
-        return userService.getUnusedCouponCount(fuid);
+        return userService.getUnusedCouponCount(RequestHolder.getUserId());
     }
 }
