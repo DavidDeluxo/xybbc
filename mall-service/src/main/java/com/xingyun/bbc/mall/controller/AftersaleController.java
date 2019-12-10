@@ -1,7 +1,7 @@
 package com.xingyun.bbc.mall.controller;
 
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mall.base.utils.JwtParser;
+import com.xingyun.bbc.mall.common.utils.RequestHolder;
 import com.xingyun.bbc.mall.model.dto.AftersaleBackDto;
 import com.xingyun.bbc.mall.model.dto.AftersaleLisDto;
 import com.xingyun.bbc.mall.model.dto.ShippingCompanyDto;
@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
@@ -28,13 +27,10 @@ public class AftersaleController {
     @Autowired
     private AftersaleService aftersaleService;
 
-    @Resource
-    private JwtParser jwtParser;
-
     @ApiOperation(value = "获取售后列表", httpMethod = "GET")
     @GetMapping("/getAftersaleLis")
     public Result<PageVo<AftersaleListVo>> getAftersaleLis(@ModelAttribute AftersaleLisDto aftersaleLisDto, HttpServletRequest request) {
-        Long xyid = jwtParser.getTokenInfo(request).getFuid().longValue();
+        Long xyid = RequestHolder.getUserId();
         aftersaleLisDto.setFuserId(xyid);
         return aftersaleService.getAftersaleLis(aftersaleLisDto);
     }
