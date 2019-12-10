@@ -103,7 +103,12 @@ public class IndexServiceImpl implements IndexService {
 
     @Override
     public List<CateBrandVo> getBrandList(List<Long> cateIds) {
-        String key = MD5Util.toMd5(Joiner.on("").join(cateIds));
+        String key;
+        if (CollectionUtils.isEmpty(cateIds)) {
+            key = "";
+        } else {
+            key = MD5Util.toMd5(Joiner.on("").join(cateIds));
+        }
         List<CateBrandVo> result = (List<CateBrandVo>) cacheTemplate
                 .get(INDEX_BRAND + key, INDEX_BRAND_UPDATE + key, BRAND_EXPIRE, () -> getCateBrands(cateIds));
         return result;
