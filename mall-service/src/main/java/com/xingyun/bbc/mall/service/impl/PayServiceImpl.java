@@ -136,8 +136,23 @@ public class PayServiceImpl implements PayService {
 		
 		OrderPayment orderPayment=orderPaymentResult.getData();
 		
+		if(orderPayment==null)
+		{
+			logger.info("余额支付。用户id：" +fuid+ "支付订单信息不存在");
+			return Result.failure(MallExceptionCode.ORDER_NOT_EXIST);
+		}
+		
+		
 		//查询账号余额信息
-		UserAccount account=userAccountApi.queryById(fuid).getData();
+		Result<UserAccount> accountResult=userAccountApi.queryById(fuid);
+		
+		if (!accountResult.isSuccess()) {
+            logger.error("查询用户账号失败");
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+		
+		UserAccount account=accountResult.getData();
+		
 		if(account==null)
 		{
 			logger.info("余额支付。用户id：" +fuid+ "账号信息不存在");

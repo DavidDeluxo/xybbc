@@ -1,6 +1,8 @@
 package com.xingyun.bbc.mallpc.service.impl;
 
 import com.google.common.base.Strings;
+import com.xingyun.bbc.core.enums.ResultStatus;
+import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.OrderConfigApi;
 import com.xingyun.bbc.core.operate.po.OrderConfig;
 import com.xingyun.bbc.core.order.api.OrderPaymentApi;
@@ -102,20 +104,34 @@ public class PayServiceImpl implements PayService {
 
 		Long totalAmount = null;// 订单总金额
 		Long unPayAmount = null;// 未支付金额
-		OrderPayment orderPayment = orderPaymentApi.queryById(dto.getForderId()).getData();
+		Result<OrderPayment> orderPaymentResult = orderPaymentApi.queryById(dto.getForderId());
+		
+		if (!orderPaymentResult.isSuccess()) {
+            logger.error("查询支付订单失败");
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+		
+		OrderPayment orderPayment=orderPaymentResult.getData();
+		
+		if(orderPayment==null)
+		{
+			logger.info("余额支付。用户id：" +fuid+ "支付订单信息不存在");
+			return Result.failure(MallPcExceptionCode.ORDER_NOT_EXIST);
+		}
 
 		// 查询账号余额信息
-		UserAccount account = userAccountApi.queryById(fuid).getData();
+		Result<UserAccount> accountResult = userAccountApi.queryById(fuid);
+		if (!accountResult.isSuccess()) {
+            logger.error("查询用户账号失败");
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+		UserAccount account=accountResult.getData();
+		
 		if (account == null) {
 			logger.info("余额支付。用户id：" + fuid + "账号信息不存在");
 			return Result.failure(MallPcExceptionCode.USER_FREEZE_ERROR);
 		} 
-//		else {
-//			if (account.getFbalance() == 0) {
-//				logger.info("余额支付。用户id：" + fuid + "余额为0!");
-//				return Result.failure(MallPcExceptionCode.BALANCE_NOT_ENOUGH);
-//			}
-//		}
+		
 		totalAmount = orderPayment.getFtotalOrderAmount();
 		unPayAmount = totalAmount - orderPayment.getFbalancePayAmount() - orderPayment.getFcreditPayAmount();
 		Long fbalance = account.getFbalance();
@@ -210,6 +226,9 @@ public class PayServiceImpl implements PayService {
 					payStatus = true;
 				}
 			}
+		}else{
+			 logger.error("查询订单支付结果失败");
+	         throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
 		}
 
 		payResultVo.setPayStatus(payStatus);
@@ -243,6 +262,9 @@ public class PayServiceImpl implements PayService {
 					payStatus = true;
 				}
 			}
+		}else{
+			 logger.error("查询充值订单支付结果失败");
+	         throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
 		}
 
 		payResultVo.setPayStatus(payStatus);
@@ -329,7 +351,12 @@ public class PayServiceImpl implements PayService {
 
 	// 校验是否可以充值
 	public Result<?> checkRechargeIsEnable(HttpServletRequest request, ThirdPayDto dto) {
-		UserAccountTrans userAccountTrans = userAccountTransApi.queryById(dto.getForderId()).getData();
+		Result<UserAccountTrans> userAccountTransResult = userAccountTransApi.queryById(dto.getForderId());
+		if (!userAccountTransResult.isSuccess()) {
+            logger.error("查询用户充值单失败");
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+		}
+		UserAccountTrans userAccountTrans=userAccountTransResult.getData();
 		// 充值记录不存在或者已完成
 		if (userAccountTrans == null || userAccountTrans.getFtransStatus() != 1) {
 			logger.info("充值订单不存在或已支付。");
@@ -352,7 +379,15 @@ public class PayServiceImpl implements PayService {
 		Long fbalancePayAmount = null; // 订单已付金额
 		int orderStatus = -1; // 订单状态
 		int thirdTradeStatus = -1; // 第三方支付状态
-		OrderPayment orderPayment = orderPaymentApi.queryById(dto.getForderId()).getData();
+		Result<OrderPayment> orderPaymentResult = orderPaymentApi.queryById(dto.getForderId());
+		
+		if (!orderPaymentResult.isSuccess()) {
+            logger.error("查询支付单失败");
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+		}
+		
+		OrderPayment orderPayment=orderPaymentResult.getData();
+		
 		if (orderPayment == null) {
 			logger.info("支付订单号查询返回结果为空！ 订单号：" + dto.getForderId());
 			return Result.failure(MallPcExceptionCode.ORDER_NOT_EXIST);
