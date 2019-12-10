@@ -483,7 +483,7 @@ public class WalletServiceImpl implements WalletService {
         public WithdrawRate get() {
             // 提现费率，若不存在则默认为0
             BigDecimal poundagePercent = BigDecimal.ZERO;
-            List<WithdrawRateVo> withdrawRates = WalletServiceImpl.this.queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(way));
+            List<WithdrawRateVo> withdrawRates = queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(way));
             if (!CollectionUtils.isEmpty(withdrawRates)) {
                 poundagePercent = withdrawRates.stream().findFirst().get().getFrate();
             }
