@@ -88,7 +88,7 @@ public class GoodsDetailController {
     @ApiOperation(value = "获取是否加入常购清单", httpMethod = "GET")
     @GetMapping("/getIsRegular")
     public Result<Integer> getIsRegular(@RequestParam Long fgoodsId, HttpServletRequest request){
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        Long xyid = jwtParser.getTokenInfo(request).getFuid().longValue();
         logger.info("获取是否加入常购清单 fgoodsId {} fuid {}", fgoodsId, xyid);
         return goodDetailService.getIsRegular(fgoodsId, xyid);
     }
@@ -96,7 +96,7 @@ public class GoodsDetailController {
     @ApiOperation(value = "商品详情查询可领取优惠券--未点击", httpMethod = "GET")
     @GetMapping("/getSkuUserCouponLight")
     public Result<List<CouponVo>> getSkuUserCouponLight(@RequestParam Long fskuId, HttpServletRequest request){
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        Long xyid = jwtParser.getTokenInfo(request).getFuid().longValue();
         logger.info("商品详情查询可领取优惠券--未点击 fskuId {} fuid {}", fskuId, xyid);
         return goodDetailService.getSkuUserCouponLight(fskuId, xyid);
     }
@@ -104,7 +104,7 @@ public class GoodsDetailController {
     @ApiOperation(value = "商品详情查询可领取优惠券--点击", httpMethod = "GET")
     @GetMapping("/getSkuUserCoupon")
     public Result<GoodsDetailCouponVo> getSkuUserCoupon(@RequestParam Long fskuId, HttpServletRequest request){
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        Long xyid = jwtParser.getTokenInfo(request).getFuid().longValue();
         logger.info("商品详情查询可领取优惠券--点击 fskuId {} fuid {}", fskuId, xyid);
         return goodDetailService.getSkuUserCoupon(fskuId, xyid);
     }
@@ -119,21 +119,9 @@ public class GoodsDetailController {
     @ApiOperation(value = "商品详情领取优惠券", httpMethod = "GET")
     @GetMapping("/addReceiveCoupon")
     public Result<Boolean> addReceiveCoupon(@RequestParam Long fcouponId, HttpServletRequest request){
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        Long xyid = jwtParser.getTokenInfo(request).getFuid().longValue();
         logger.info("商品详情领取优惠券 fcouponId {} fuid {}", fcouponId, xyid);
         return goodDetailService.addReceiveCoupon(fcouponId, xyid);
     }
-
-//    @ApiOperation(value = "获取sku批次有效期", httpMethod = "GET")
-//    @GetMapping("/getSkuBatchSpecifi")
-//    public Result<List<GoodsSkuBatchVo>> getSkuBatchSpecifi(@RequestParam Long fskuId){
-//        return goodDetailService.getSkuBatchSpecifi(fskuId);
-//    }
-//
-//    @ApiOperation(value = "获取sku批次包装规格", httpMethod = "GET")
-//    @GetMapping("/getSkuBatchPackageSpecifi")
-//    public Result<List<GoodsSkuBatchPackageVo>> getSkuBatchPackageSpecifi(@RequestParam Long fskuBatchId){
-//        return goodDetailService.getSkuBatchPackageSpecifi(fskuBatchId);
-//    }
 
 }

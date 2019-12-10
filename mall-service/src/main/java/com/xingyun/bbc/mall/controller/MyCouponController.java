@@ -1,6 +1,7 @@
 package com.xingyun.bbc.mall.controller;
 
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mall.base.utils.JwtParser;
 import com.xingyun.bbc.mall.model.dto.MyCouponDto;
 import com.xingyun.bbc.mall.model.vo.MyCouponVo;
 import com.xingyun.bbc.mall.service.MyCouponService;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
 @Api("我的优惠券")
@@ -22,10 +24,13 @@ public class MyCouponController {
     @Autowired
     private MyCouponService myCouponService;
 
+    @Resource
+    private JwtParser jwtParser;
+
     @ApiOperation(value = "获取我的优惠券列表", httpMethod = "GET")
     @GetMapping("/getMyCouponLis")
     public Result<MyCouponVo> getMyCouponLis(@ModelAttribute MyCouponDto myCouponDto, HttpServletRequest request) {
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        Long xyid = jwtParser.getTokenInfo(request).getFuid().longValue();
         myCouponDto.setFuid(xyid);
         return myCouponService.getMyCouponVo(myCouponDto);
     }
