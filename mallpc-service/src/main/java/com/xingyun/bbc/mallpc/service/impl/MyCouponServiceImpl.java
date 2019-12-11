@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mallpc.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.xingyun.bbc.activity.api.CouponProviderApi;
 import com.xingyun.bbc.activity.enums.CouponScene;
@@ -10,6 +11,7 @@ import com.xingyun.bbc.activity.model.vo.CouponQueryVo;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.market.api.CouponApi;
+import com.xingyun.bbc.core.market.api.CouponCodeApi;
 import com.xingyun.bbc.core.market.api.CouponReceiveApi;
 import com.xingyun.bbc.core.market.dto.MyCoupinReceiveDto;
 import com.xingyun.bbc.core.market.enums.CouponReceiveStatusEnum;
@@ -17,6 +19,7 @@ import com.xingyun.bbc.core.market.enums.CouponReleaseTypeEnum;
 import com.xingyun.bbc.core.market.enums.CouponStatusEnum;
 import com.xingyun.bbc.core.market.enums.CouponTypeEnum;
 import com.xingyun.bbc.core.market.po.Coupon;
+import com.xingyun.bbc.core.market.po.CouponCode;
 import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.utils.Result;
@@ -70,6 +73,9 @@ public class MyCouponServiceImpl implements MyCouponService {
 
     @Autowired
     private CouponProviderApi couponProviderApi;
+    
+    @Autowired
+    CouponCodeApi couponCodeApi;
 
     /**
      * @author lll
@@ -343,6 +349,139 @@ public class MyCouponServiceImpl implements MyCouponService {
             }
         }
         return Result.success(receiveCenterCouponVoList);
+    }
+    
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 券码兑换优惠券
+     * @Param: receiveCouponDto
+     * @return: Boolean                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
+     * @date 2019/11/12 13:49
+     */
+    @GlobalTransactional
+    @Override
+    public Result receiveCodeCoupon(String fcouponCode, Long fuid) {
+        //校验参数
+        if (null == fuid || null == fcouponCode) {
+            throw new BizException(MallPcExceptionCode.PARAM_ERROR);
+        }
+        //通过券码查询券id
+        Result<CouponCode> couponCode = couponCodeApi.queryOneByCriteria(Criteria.of(CouponCode.class)
+                .andEqualTo(CouponCode::getFcouponCode, fcouponCode)
+                .fields(CouponCode::getFcouponId, CouponCode::getFisUsed));
+        if (!couponCode.isSuccess()) {
+            logger.error("通过券码查询券id失败，fcouponCode{}", fcouponCode);
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (null == couponCode.getData()) {
+            throw new BizException(MallPcExceptionCode.CODE_NOT_COUPON);
+        }
+        if (couponCode.getData().getFisUsed() == 1) {
+            throw new BizException(MallPcExceptionCode.CODE_IS_USED);
+        }
+        //查询优惠券--状态（已发布）--类型（页面领取）--剩余数量--领取上限--有效期结束时间--发放结束时间
+        Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
+                .andEqualTo(Coupon::getFcouponId, couponCode.getData().getFcouponId())
+                .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
+                .andEqualTo(Coupon::getFreleaseType, CouponReleaseTypeEnum.COUPON_CODE_ACTIVATION.getCode())
+                .fields(Coupon::getFperLimit, Coupon::getFsurplusReleaseQty, Coupon::getFvalidityType,
+                        Coupon::getFvalidityEnd, Coupon::getFreleaseTimeEnd, Coupon::getFreleaseTimeStart,
+                        Coupon::getFreleaseTimeType, Coupon::getFcouponId
+                ));
+        if (!couponResult.isSuccess()) {
+            logger.error("查询优惠券失败，fcouponId{}", couponCode.getData().getFcouponId());
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        Coupon coupon = couponResult.getData();
+        //校验该券是否存在
+        if (null == coupon) {
+            throw new BizException(MallPcExceptionCode.COUPON_IS_NOT_EXIST);
+        }
+        //校验该券库存
+        if (coupon.getFsurplusReleaseQty() <= 0) {
+            throw new BizException(MallPcExceptionCode.COUPON_IS_PAID_OUT);
+        }
+        Date now = new Date();
+        //校验该券有效期时间
+        if (coupon.getFvalidityType() == 1 && now.after(coupon.getFvalidityEnd())) {
+            return Result.failure(MallPcExceptionCode.COUPON_IS_INVALID);
+        }
+        //校验该券领取时间
+        if (coupon.getFreleaseTimeType() == 2 && (now.after(coupon.getFreleaseTimeEnd()) || now.before(coupon.getFreleaseTimeStart()))) {
+            throw new BizException(MallPcExceptionCode.COUPON_IS_NOT_TIME);
+        }
+        //查询用户已经领到的券张数
+        Result<Integer> countResult = couponReceiveApi.countByCriteria(Criteria.of(CouponReceive.class)
+                .andEqualTo(CouponReceive::getFuid, fuid)
+                .andEqualTo(CouponReceive::getFcouponId, couponResult.getData().getFcouponId()));
+        if (!couponResult.isSuccess()) {
+            logger.error("查询用户已经领到的券张数失败，fcouponId{} fuid{}", couponCode.getData().getFcouponId(), fuid);
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        //校验该券领取上限
+        if (null != countResult.getData()) {
+            if (countResult.getData().equals(coupon.getFperLimit())) {
+                throw new BizException(MallPcExceptionCode.COUPON_IS_MAX);
+            }
+        }
+        //校验券码对应的券和指定会员关系
+        CouponQueryDto couponQueryDto = new CouponQueryDto();
+        couponQueryDto.setUserId(fuid);
+        List<Integer> list = new ArrayList<>();
+        list.add(8);
+        couponQueryDto.setReleaseTypes(list);
+        //查询用户可用优惠券
+        Result<List<CouponQueryVo>> couponQueryVoResult = couponProviderApi.queryByUserId(couponQueryDto);
+        if (!couponQueryVoResult.isSuccess()) {
+            logger.error("查询用户可用优惠券失败，请求参数{}", JSONObject.toJSONString(couponQueryDto));
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (CollectionUtils.isEmpty(couponQueryVoResult.getData())) {
+            throw new BizException(MallPcExceptionCode.USER_NOT_COUPON);
+        }
+        //判断该券是否在可领券集合中
+        List<Long> couponIdList = couponQueryVoResult.getData().stream().map(s -> s.getFcouponId()).collect(Collectors.toList());
+        if (!couponIdList.contains(couponCode.getData().getFcouponId())) {
+            throw new BizException(MallPcExceptionCode.USER_NOT_RIGHT_COUPON);
+        }
+        ReceiveCouponDto receiveCouponDto = new ReceiveCouponDto();
+        receiveCouponDto.setFuid(fuid);
+        receiveCouponDto.setFcouponCode(fcouponCode);
+        //调用聚合服务进行领券
+        Result result = this.receiveCoupon(receiveCouponDto);
+        return result;
+    }
+    
+    
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 调用远程服务领取优惠券
+     * @Param: receiveCouponDto
+     * @return: Result                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
+     * @date 2019/11/12 13:49
+     */
+    public Result receiveCoupon(ReceiveCouponDto receiveCouponDto) {
+        Long fuid = receiveCouponDto.getFuid();
+        String fcouponCode = receiveCouponDto.getFcouponCode();
+        try {
+            //封装参数
+            CouponReleaseDto couponReleaseDto = new CouponReleaseDto();
+            couponReleaseDto.setCouponScene(CouponScene.COUPON_CODE_ACTIVATION);
+            couponReleaseDto.setCouponCode(fcouponCode);
+            couponReleaseDto.setUserId(fuid);
+            couponReleaseDto.setDeltaValue(-1);
+            //调用领券服务
+            Result receiveReceive = couponProviderApi.receive(couponReleaseDto);
+            if (!receiveReceive.isSuccess()) {
+                logger.error("调用领券服务失败，请求参数{}", JSONObject.toJSONString(couponReleaseDto));
+                return receiveReceive;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return Result.success(true);
     }
 
 }
