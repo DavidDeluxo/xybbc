@@ -354,10 +354,11 @@ public class UserServiceImpl implements UserService {
         // 设置一分钟间隔
         redisManager.set(fmobile, MallPcRedisConstant.DEFAULT_LOCK_VALUE, UserConstants.Sms.MOBILE_SEND_SMS_TIME);
         // 设置ip次数上限
-        redisManager.incr(StringUtils.join(MallPcRedisConstant.VERIFY_CODE_LIMIT_PREFIX, ipAddress));
+        String limit_key = StringUtils.join(MallPcRedisConstant.VERIFY_CODE_LIMIT_PREFIX, ipAddress);
+        redisManager.incr(limit_key);
         //获取当天剩余时间秒
         long secondsLeftToday = 86400 - DateUtils.getFragmentInSeconds(Calendar.getInstance(), Calendar.DATE);
-        redisManager.expire(ipAddress, secondsLeftToday);
+        redisManager.expire(limit_key, secondsLeftToday);
     }
 
     public User findUserByMobile(String mobile) {

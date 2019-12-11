@@ -38,6 +38,8 @@ import com.xingyun.bbc.mallpc.service.UserAccountService;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import javax.persistence.Column;
+import javax.persistence.Id;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -144,9 +146,16 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     }
 
+
+
+
     @Override
     public PageVo<WithDrawRecordsVo> withDrawRecords(PageDto pageDto, Long uid) {
         Criteria<UserAccountTrans, Object> criteria = Criteria.of(UserAccountTrans.class)
+                .fields(UserAccountTrans::getFtransId,UserAccountTrans::getFuid,UserAccountTrans::getFaid,UserAccountTrans::getFreceiptOrderId,UserAccountTrans::getFtransTypes
+                ,UserAccountTrans::getFrechargeType,UserAccountTrans::getFtransAmount,UserAccountTrans::getFtransThdUid,UserAccountTrans::getFtransThdDetail,UserAccountTrans::getFtransReason
+                ,UserAccountTrans::getFtransStatus,UserAccountTrans::getFtransActualAmount,UserAccountTrans::getFtransPoundage,UserAccountTrans::getFwithdrawType,UserAccountTrans::getFwithdrawAccount
+                ,UserAccountTrans::getFwithdrawBank,UserAccountTrans::getFaccountHolder,UserAccountTrans::getFtransMethod,UserAccountTrans::getFpassedTime,UserAccountTrans::getFpayTime,UserAccountTrans::getFmodifyTime,UserAccountTrans::getFcreateTime)
                 .andEqualTo(UserAccountTrans::getFtransTypes, UserAccountTransTypesEnum.WITHDRAW.getCode())
                 .andEqualTo(UserAccountTrans::getFuid, uid)
                 .sortDesc(UserAccountTrans::getFcreateTime)
