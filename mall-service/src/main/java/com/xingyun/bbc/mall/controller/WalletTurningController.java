@@ -2,6 +2,7 @@ package com.xingyun.bbc.mall.controller;
 
 
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mall.common.utils.RequestHolder;
 import com.xingyun.bbc.mall.model.dto.UserWalletDetailDto;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.WalletTurningService;
@@ -37,7 +38,7 @@ public class WalletTurningController {
     @ApiOperation(value = "查询钱包收支明细列表")
     @PostMapping("/queryWalletTurningList")
     public Result<PageVo<UserWalletDetailVo>> queryWalletTurningList(@RequestBody UserWalletDetailDto userWalletDetailDto, HttpServletRequest request) {
-        userWalletDetailDto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        userWalletDetailDto.setFuid(RequestHolder.getUserId());
         return Result.success(walletTurningService.queryWalletTurningList(userWalletDetailDto));
     }
 

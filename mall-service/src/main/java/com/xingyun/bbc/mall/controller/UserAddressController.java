@@ -3,6 +3,7 @@ package com.xingyun.bbc.mall.controller;
 
 import com.xingyun.bbc.core.utils.Result;
 
+import com.xingyun.bbc.mall.common.utils.RequestHolder;
 import com.xingyun.bbc.mall.model.dto.*;
 import com.xingyun.bbc.mall.model.vo.CityRegionVo;
 import com.xingyun.bbc.mall.model.vo.PageVo;
@@ -40,21 +41,21 @@ public class UserAddressController {
     @ApiOperation(value = "查询用户收货地址列表", httpMethod = "POST")
     @PostMapping("/getUserAddress")
     public Result<PageVo<UserDeliveryVo>> getUserAddress(@RequestBody UserDeliveryDto userDeliveryDto, HttpServletRequest request) {
-        userDeliveryDto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        userDeliveryDto.setFuid(RequestHolder.getUserId());
         return Result.success(userAddressService.getUserAddress(userDeliveryDto));
     }
 
     @ApiOperation(value = "新增用户收货地址", httpMethod = "POST")
     @PostMapping("/addUserAddress")
     public Result addUserAddress(@RequestBody @Validated UserDeliveryAddDto userDeliveryDto, HttpServletRequest request) {
-        userDeliveryDto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        userDeliveryDto.setFuid(RequestHolder.getUserId());
         return userAddressService.addUserAddress(userDeliveryDto);
     }
 
     @ApiOperation(value = "编辑用户收货地址", httpMethod = "POST")
     @PostMapping("/modifyUserAddress")
     public Result modifyUserAddress(@RequestBody UserDeliveryUpdateDto userDeliveryDto, HttpServletRequest request) {
-        userDeliveryDto.setFuid(Long.parseLong(request.getHeader("xyid")));
+        userDeliveryDto.setFuid(RequestHolder.getUserId());
         return userAddressService.modifyUserAddress(userDeliveryDto);
     }
 
