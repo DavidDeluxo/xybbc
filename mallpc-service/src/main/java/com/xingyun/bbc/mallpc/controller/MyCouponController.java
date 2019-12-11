@@ -93,7 +93,7 @@ public class MyCouponController {
     @ApiOperation(value = "券码兑换优惠券", httpMethod = "POST")
     @PostMapping("/receiveCodeCoupon")
     public Result<Boolean> receiveCodeCoupon(@RequestBody ReceiveCouponDto receiveCouponDto, HttpServletRequest request){
-        Long xyid = Long.parseLong(request.getHeader("xyid"));
+        Long xyid = RequestHolder.getUserId();
         logger.info("券码兑换优惠券 fcouponCode {} fuid {}", receiveCouponDto.getFcouponCode(), xyid);
         return myCouponService.receiveCodeCoupon(receiveCouponDto.getFcouponCode(), xyid);
     }
