@@ -739,6 +739,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         Result<List<SkuBatch>> skuBatche = skuBatchApi.queryByCriteria(Criteria.of(SkuBatch.class)
                 .andEqualTo(SkuBatch::getFskuId, param.getFskuId())
                 .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
+                .andEqualTo(SkuBatch::getFbatchPutwaySort, 1)
                 .fields(SkuBatch::getFsupplierSkuBatchId));
         if (!skuBatche.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
