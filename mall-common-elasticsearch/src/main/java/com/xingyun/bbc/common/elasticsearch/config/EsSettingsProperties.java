@@ -27,6 +27,36 @@ public class EsSettingsProperties {
 
     private int pageSize;
 
+    private Boolean isAuthRequired = false;
+
+    private String account;
+
+    private String password;
+
+    public Boolean getAuthRequired() {
+        return isAuthRequired;
+    }
+
+    public void setAuthRequired(Boolean authRequired) {
+        isAuthRequired = authRequired;
+    }
+
+    public String getAccount() {
+        return account;
+    }
+
+    public void setAccount(String account) {
+        this.account = account;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public String getIp() {
         return ip;
     }
