@@ -179,7 +179,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     public List<BanksVo> queryBankList() {
-        Result<List<BankDeposit>> result = bankDepositApi.queryAll();
+        Result<List<BankDeposit>> result = bankDepositApi.queryByCriteria(Criteria.of(BankDeposit.class).fields(BankDeposit::getFicon,BankDeposit::getFbankCode,BankDeposit::getFbankName));
         if (!result.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
