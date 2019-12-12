@@ -42,7 +42,7 @@ public class EsConfig {
             }
             credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(esSettingsProperties.getAccount(), esSettingsProperties.getPassword()));
             restClientBuilder = RestClient.builder(
-                    HttpHost.create(esSettingsProperties.getIp())).setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
+                    HttpHost.create(esSettingsProperties.getIp() + ":" +  esSettingsProperties.getPort())).setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
                 public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
                     httpClientBuilder.disableAuthCaching();
                     return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
