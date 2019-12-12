@@ -30,8 +30,10 @@ public class EsConfig {
     @Autowired
     public RestHighLevelClient getClient(EsSettingsProperties esSettingsProperties){
 
-        RestClientBuilder restClientBuilder = null;
-
+        RestClientBuilder restClientBuilder;
+        if(esSettingsProperties.getAuthRequired() == null){
+            throw new RuntimeException("认证配置信息authRequired为空");
+        }
         if(esSettingsProperties.getAuthRequired()){
             CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
             if(StringUtils.isEmpty(esSettingsProperties.getAccount())){
