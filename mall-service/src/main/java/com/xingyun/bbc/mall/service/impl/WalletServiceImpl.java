@@ -90,12 +90,16 @@ public class WalletServiceImpl implements WalletService {
     public WalletAmountVo queryAmount(Long uid) {
 
         Result<UserAccount> accountResult = userAccountApi.queryById(uid);
-        if (!accountResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (!accountResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
 
         WalletAmountVo amountVo = new WalletAmountVo();
 
         UserAccount account = accountResult.getData();
-        if (null == account) return amountVo;
+        if (null == account) {
+            return amountVo;
+        }
 
         amountVo.setBalance(PriceUtil.toYuan(account.getFbalance()));
         amountVo.setWithdrawalAmount(PriceUtil.toYuan(account.getFfreezeWithdraw()));
@@ -104,13 +108,17 @@ public class WalletServiceImpl implements WalletService {
 
         op.andEqualTo(OrderPayment::getFuid, uid);
         op.andIn(OrderPayment::getForderStatus, Arrays.asList(TO_BE_DELIVERED.getValue(), PENDING_RECEIPT.getValue(), RECEIVED.getValue(), DONE.getValue()))
-        .fields(OrderPayment::getFtotalAgentIncome);
+                .fields(OrderPayment::getFtotalAgentIncome);
         Result<List<OrderPayment>> orderListRes = orderPaymentApi.queryByCriteria(op);
 
-        if (!orderListRes.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (!orderListRes.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
 
         List<OrderPayment> orderList = orderListRes.getData();
-        if (CollectionUtils.isEmpty(orderList)) return amountVo;
+        if (CollectionUtils.isEmpty(orderList)) {
+            return amountVo;
+        }
 
         long sum = orderList.stream().mapToLong(OrderPayment::getFtotalAgentIncome).sum();
 
@@ -137,34 +145,47 @@ public class WalletServiceImpl implements WalletService {
             rateQuery.andLessThanOrEqualTo(UserWithdrawRate::getFeffectiveDate, today);
             rateQuery.andGreaterThanOrEqualTo(UserWithdrawRate::getFinvalidDate, today);
 
-            Result<List<UserWithdrawRate>> userRateRes = userWithdrawRateApi.queryByCriteria(rateQuery);
+            Result<List<UserWithdrawRate>> userRateRes = userWithdrawRateApi.queryByCriteria(rateQuery.fields(UserWithdrawRate::getFrate, UserWithdrawRate::getMinimumAmount, UserWithdrawRate::getFwithdrawType));
 
-            if (!userRateRes.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            if (!userRateRes.isSuccess()) {
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            }
 
-            if (CollectionUtils.isEmpty(userRateRes.getData())) return Lists.newArrayList();
+            if (CollectionUtils.isEmpty(userRateRes.getData())) {
+                return Lists.newArrayList();
+            }
 
             return this.toWithdrawRateVos(userRateRes.getData());
         }
 
         Result<List<UserWithdrawRate>> result = userWithdrawRateApi.queryByCriteria(
                 Criteria.of(UserWithdrawRate.class)
-                .andLessThanOrEqualTo(UserWithdrawRate::getFeffectiveDate, today)
-                .andEqualTo(UserWithdrawRate::getFstate, 1)
-                .andGreaterThanOrEqualTo(UserWithdrawRate::getFinvalidDate, today));
+                        .andLessThanOrEqualTo(UserWithdrawRate::getFeffectiveDate, today)
+                        .andEqualTo(UserWithdrawRate::getFstate, 1)
+                        .andGreaterThanOrEqualTo(UserWithdrawRate::getFinvalidDate, today)
+                        .fields(UserWithdrawRate::getFrate, UserWithdrawRate::getMinimumAmount, UserWithdrawRate::getFwithdrawType));
 
-        if (!result.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        if (!result.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
 
-        if (CollectionUtils.isEmpty(result.getData())) return Lists.newArrayList();
+        if (CollectionUtils.isEmpty(result.getData())) {
+            return Lists.newArrayList();
+        }
 
         return this.toWithdrawRateVos(result.getData());
     }
 
     @Override
     public List<BanksVo> queryBankList() {
-        Result<List<BankDeposit>> result = bankDepositApi.queryAll();
-        if (!result.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        Result<List<BankDeposit>> result = bankDepositApi.queryByCriteria(Criteria.of(BankDeposit.class).fields(BankDeposit::getFicon,BankDeposit::getFbankCode,BankDeposit::getFbankName));
+        if (!result.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
 
-        if (CollectionUtils.isEmpty(result.getData())) throw new BizException(MallResultStatus.BANK_NOT_CONFIG);
+        if (CollectionUtils.isEmpty(result.getData())) {
+            throw new BizException(MallResultStatus.BANK_NOT_CONFIG);
+        }
 
         return result.getData().stream()
                 .map(bank -> new BanksVo()
@@ -235,14 +256,22 @@ public class WalletServiceImpl implements WalletService {
 
     private void addAccountWater(Long uid) {
         Result<UserAccount> userAccountResult = userAccountApi.queryById(uid);
-        if (!userAccountResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        if (null == userAccountResult.getData()) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        if (!userAccountResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (null == userAccountResult.getData()) {
+            throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        }
 
         UserAccountWater accountWater = new UserAccountWater();
         BeanUtils.copyProperties(userAccountResult.getData(), accountWater);
         Result<Integer> waterResult = userAccountWaterApi.create(accountWater);
-        if (!waterResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        if (waterResult.getData() < 0) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        if (!waterResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (waterResult.getData() < 0) {
+            throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        }
     }
 
     private void modifyAccount(Long uid, BigDecimal transAmount, BigDecimal newBalance, BigDecimal freezeWithdraw) {
@@ -253,35 +282,55 @@ public class WalletServiceImpl implements WalletService {
         userAccount.setFoperateRemark("申请提现,金额:" + transAmount + "分");
 
         Result<UserAccount> result = userAccountApi.queryById(uid);
-        if (!result.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        if (null == result.getData()) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        if (!result.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (null == result.getData()) {
+            throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        }
         // 乐观锁-先查原来的值
         userAccount.setFmodifyTime(result.getData().getFmodifyTime());
 
         Result<Integer> accountResult = userAccountApi.updateNotNull(userAccount);
-        if (!accountResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        if (accountResult.getData() < 0) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        if (!accountResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (accountResult.getData() < 0) {
+            throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        }
     }
 
     private void addAccountTransWater(String transId) {
         Result<UserAccountTrans> userAccountTransResult = userAccountTransApi.queryById(transId);
-        if (!userAccountTransResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        if (null == userAccountTransResult.getData()) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        if (!userAccountTransResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (null == userAccountTransResult.getData()) {
+            throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        }
 
         UserAccountTransWater accountTransWater = new UserAccountTransWater();
         BeanUtils.copyProperties(userAccountTransResult.getData(), accountTransWater);
         accountTransWater.setFtransId(transId);
         Result<Integer> accountWaterResult = userAccountTransWaterApi.create(accountTransWater);
-        if (!accountWaterResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        if (accountWaterResult.getData() < 0) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        if (!accountWaterResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (accountWaterResult.getData() < 0) {
+            throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        }
     }
 
     private void addAccountTrans(UserAccountTrans userAccountTrans, String transId) {
         userAccountTrans.setFtransId(transId);
 
         Result<Integer> accountTransResult = userAccountTransApi.create(userAccountTrans);
-        if (!accountTransResult.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        if (accountTransResult.getData() < 0) throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        if (!accountTransResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (accountTransResult.getData() < 0) {
+            throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        }
     }
 
     private Long withdrawCheck(@Valid WithdrawDto withdrawDto) {
@@ -307,21 +356,30 @@ public class WalletServiceImpl implements WalletService {
 
         if (balance.compareTo(new BigDecimal("0.00")) <= 0 ||
                 withdrawDto.getWithdrawAmount().compareTo(balance) > 0) {
+
             throw new BizException(MallResultStatus.ACCOUNT_BALANCE_INSUFFICIENT);
         }
 
         String passWord = EncryptUtils.aesDecrypt(withdrawDto.getWithdrawPwd());
 
-        if (StringUtil.isBlank(passWord)) throw new BizException(MallResultStatus.WITHDRAW_PASSWORD_ERROR);
+        if (StringUtil.isBlank(passWord)) {
+            throw new BizException(MallResultStatus.WITHDRAW_PASSWORD_ERROR);
+        }
 
         passWord = Md5Utils.toMd5(passWord);
 
-        if (!passWord.equals(user.getFwithdrawPasswd()))
+        if (!passWord.equals(user.getFwithdrawPasswd())) {
+
             throw new BizException(MallResultStatus.WITHDRAW_PASSWORD_ERROR);
+        }
 
         Result<UserAccount> result = userAccountApi.queryById(uid);
-        if (!result.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        if (null == result.getData()) throw new BizException(MallResultStatus.ACCOUNT_NOT_EXIST);
+        if (!result.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (null == result.getData()) {
+            throw new BizException(MallResultStatus.ACCOUNT_NOT_EXIST);
+        }
 
         if (result.getData().getFfreezeWithdraw() < 0) {
             log.warn("提现冻结金额小于0");
@@ -338,12 +396,12 @@ public class WalletServiceImpl implements WalletService {
         //提现费率未配置则提现金额不得低于1元
         if (Objects.isNull(withdrawRate)) {
 
-            if (withdrawDto.getWithdrawAmount().compareTo(new BigDecimal("100"))<0){
+            if (withdrawDto.getWithdrawAmount().compareTo(new BigDecimal("100")) < 0) {
                 throw new BizException(MallResultStatus.LESS_THAN_ONE_RMB);
             }
 
-        //提现费率配置则提现金额不得低于配置金额
-        }else if(PriceUtil.toPenny(withdrawRate.getMinimumAmount()).compareTo(withdrawDto.getWithdrawAmount())>0){
+            //提现费率配置则提现金额不得低于配置金额
+        } else if (PriceUtil.toPenny(withdrawRate.getMinimumAmount()).compareTo(withdrawDto.getWithdrawAmount()) > 0) {
 
             throw new BizException(MallResultStatus.WITHDRAW_LES_MIN_AMOUNT);
         }
@@ -365,28 +423,28 @@ public class WalletServiceImpl implements WalletService {
 
     private User checkUser(Long uid) {
         Result<User> userResult = userApi.queryById(uid);
-        if (!userResult.isSuccess()){
+        if (!userResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
 
         User user = userResult.getData();
-        if (null == user){
+        if (null == user) {
             throw new BizException(MallResultStatus.NAME_NOT_EXIST);
         }
 
         // 是否删除：0否，1是
-        if (user.getFisDelete() == 1){
+        if (user.getFisDelete() == 1) {
             throw new BizException(MallResultStatus.ACCOUNT_NOT_EXIST);
         }
 
         // 冻结状态 ：1正常，2冻结
-        if (user.getFfreezeStatus() != 1){
+        if (user.getFfreezeStatus() != 1) {
             throw new BizException(MallResultStatus.ACCOUNT_FREEZE);
         }
 
         // 用户状态：1未认证，2 认证中，3 已认证，4未通过
         // 注册30天免认证
-        if (user.getFverifyStatus() != 3 && getDayDiff(DateUtil.formatDate(user.getFcreateTime()),DateUtil.formatDate(new Date()))>30){
+        if (user.getFverifyStatus() != 3 && getDayDiff(DateUtil.formatDate(user.getFcreateTime()), DateUtil.formatDate(new Date())) > 30) {
             throw new BizException(MallResultStatus.ACCOUNT_NOT_AUTH);
         }
 
@@ -398,17 +456,17 @@ public class WalletServiceImpl implements WalletService {
         return user;
     }
 
-    public Integer getDayDiff(String smdate,String bdate) {
+    public Integer getDayDiff(String smdate, String bdate) {
         long between_days = 0L;
         try {
-            SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             Calendar cal = Calendar.getInstance();
             cal.setTime(sdf.parse(smdate));
             long time1 = cal.getTimeInMillis();
             cal.setTime(sdf.parse(bdate));
             long time2 = cal.getTimeInMillis();
-            between_days=(time2-time1)/(1000*3600*24);
-        }catch (Exception e) {
+            between_days = (time2 - time1) / (1000 * 3600 * 24);
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return Integer.parseInt(String.valueOf(between_days));
@@ -426,7 +484,7 @@ public class WalletServiceImpl implements WalletService {
         public WithdrawRate get() {
             // 提现费率，若不存在则默认为0
             BigDecimal poundagePercent = BigDecimal.ZERO;
-            List<WithdrawRateVo> withdrawRates = WalletServiceImpl.this.queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(way));
+            List<WithdrawRateVo> withdrawRates = queryWithdrawRate(new WithdrawRateDto().setFwithdrawType(way));
             if (!CollectionUtils.isEmpty(withdrawRates)) {
                 poundagePercent = withdrawRates.stream().findFirst().get().getFrate();
             }
@@ -474,8 +532,8 @@ public class WalletServiceImpl implements WalletService {
                 userAccountTrans.setFwithdrawType(1);
                 userAccountTrans.setFwithdrawAccount(withdrawDto.getAccountNumber());
 
-            //银行卡
-            }else if (withdrawDto.getWay() == 2){
+                //银行卡
+            } else if (withdrawDto.getWay() == 2) {
                 userAccountTrans.setFrechargeType(4);
                 userAccountTrans.setFtransStatus(2);
                 userAccountTrans.setFwithdrawType(2);
@@ -501,10 +559,14 @@ public class WalletServiceImpl implements WalletService {
 
         public CheckAfterMoney check() {
             Result<UserAccount> resultAccount = userAccountApi.queryById(uid);
-            if (!resultAccount.isSuccess()) throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            if (!resultAccount.isSuccess()) {
+                throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+            }
 
             UserAccount account = resultAccount.getData();
-            if (null == account) throw new BizException(MallResultStatus.ACCOUNT_NOT_EXIST);
+            if (null == account) {
+                throw new BizException(MallResultStatus.ACCOUNT_NOT_EXIST);
+            }
 
             BigDecimal oldBalance = new BigDecimal(account.getFbalance());
             newBalance = oldBalance.subtract(transAmount);

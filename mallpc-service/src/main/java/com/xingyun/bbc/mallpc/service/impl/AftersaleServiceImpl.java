@@ -11,6 +11,7 @@ import com.xingyun.bbc.core.operate.po.TradeType;
 import com.xingyun.bbc.core.order.api.*;
 import com.xingyun.bbc.core.order.enums.OrderAftersaleStatus;
 import com.xingyun.bbc.core.order.enums.OrderAftersaleType;
+import com.xingyun.bbc.core.order.model.dto.AftersaleLisDto;
 import com.xingyun.bbc.core.order.po.*;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.sku.api.GoodsApi;
@@ -28,7 +29,7 @@ import com.xingyun.bbc.mallpc.common.utils.PageHelper;
 import com.xingyun.bbc.mallpc.common.utils.PriceUtil;
 import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
 import com.xingyun.bbc.mallpc.model.dto.aftersale.AftersaleBackDto;
-import com.xingyun.bbc.mallpc.model.dto.aftersale.AftersaleLisDto;
+import com.xingyun.bbc.mallpc.model.dto.aftersale.AftersalePcLisDto;
 import com.xingyun.bbc.mallpc.model.dto.aftersale.AftersaleSkuInforDto;
 import com.xingyun.bbc.mallpc.model.dto.aftersale.ShippingCompanyDto;
 import com.xingyun.bbc.mallpc.model.vo.PageVo;
@@ -107,8 +108,8 @@ public class AftersaleServiceImpl implements AftersaleService {
 
 
     @Override
-    public Result<PageVo<AftersaleListVo>> getAftersaleLis(AftersaleLisDto aftersaleLisDto) {
-        com.xingyun.bbc.core.order.model.dto.AftersaleLisDto dto = mapper.map(aftersaleLisDto, com.xingyun.bbc.core.order.model.dto.AftersaleLisDto.class);
+    public Result<PageVo<AftersaleListVo>> getAftersaleLis(AftersalePcLisDto aftersaleLisDto) {
+        AftersaleLisDto dto = mapper.map(aftersaleLisDto, AftersaleLisDto.class);
         //获取售后列表信息
         Result<Long> countResult = orderAftersaleApi.selectAftersaleCountMallPc(dto);
         if (!countResult.isSuccess()) {
@@ -183,8 +184,8 @@ public class AftersaleServiceImpl implements AftersaleService {
         aftersaleDetailVo.setFtradeType(skuInfor.getFtradeType());
 
         aftersaleDetailVo.setFbatchPackageName(aftersaleDetailVo.getFbatchPackageNum() + "件装");
-        aftersaleDetailVo.setFunitPrice(PriceUtil.toYuan(aftersaleDetailVo.getFunitPrice()));
         aftersaleDetailVo.setFrealPayAmount(PriceUtil.toYuan(aftersaleDetailVo.getFunitPrice().multiply(new BigDecimal(aftersaleDetailVo.getFaftersaleNum()))));//实付金额 = 单价 * 数量
+        aftersaleDetailVo.setFunitPrice(PriceUtil.toYuan(aftersaleDetailVo.getFunitPrice()));
         aftersaleDetailVo.setFaftersaleNumShow(this.getAftersaleNumShow(aftersaleDetailVo.getFaftersaleNum(), aftersaleDetailVo.getFtransportOrderId(), aftersaleDetailVo.getFskuCode()));
 
         //获取效期

@@ -81,4 +81,20 @@ public class MyCouponController {
         logger.info("查询可领优惠券 fuid {}",  RequestHolder.getUserId());
         return myCouponService.getCoupon(queryCouponDto);
     }
+    
+    /**
+     * @author lll
+     * @version V1.0
+     * @Description: 券码兑换优惠券
+     * @Param: receiveCouponDto
+     * @return: Boolean                                                                                                                                                                                                                                                                 <                                                                                                                                                                                                                                                               GoodsCategoryVo>>
+     * @date 2019/11/12 13:49
+     */
+    @ApiOperation(value = "券码兑换优惠券", httpMethod = "POST")
+    @PostMapping("/receiveCodeCoupon")
+    public Result<Boolean> receiveCodeCoupon(@RequestBody ReceiveCouponDto receiveCouponDto, HttpServletRequest request){
+        Long xyid = RequestHolder.getUserId();
+        logger.info("券码兑换优惠券 fcouponCode {} fuid {}", receiveCouponDto.getFcouponCode(), xyid);
+        return myCouponService.receiveCodeCoupon(receiveCouponDto.getFcouponCode(), xyid);
+    }
 }
