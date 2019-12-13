@@ -457,7 +457,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             this.dealGoodDetailPriceToYuan(priceResult);
         }
         //起始区间价 只有是单一价格PriceStart才计算运费、税费、折合单价
-        if (null == priceResult.getPriceEnd()) {
+        if (Objects.nonNull(priceResult.getPriceStart()) && Objects.isNull(priceResult.getPriceEnd())) {
             //查询批次价格类型 1.含邮含税 2.含邮不含税 3.不含邮含税 4.不含邮不含税
             Result<SkuBatch> skuBatchResult = skuBatchApi.queryOneByCriteria(Criteria.of(SkuBatch.class)
                     .andEqualTo(SkuBatch::getFsupplierSkuBatchId, goodsDetailMallDto.getFsupplierSkuBatchId())
