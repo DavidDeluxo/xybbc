@@ -545,9 +545,8 @@ public class UserServiceImpl implements UserService {
                 .andEqualTo(GuidePage::getFtype, GuidePageType.LOGIN_PAGE.getCode())
                 .fields(GuidePage::getFimgUrl, GuidePage::getFguideId)
         );
-        Ensure.that(guidePageResult).isNotNull(MallPcExceptionCode.SYSTEM_ERROR);
-        String fimgUrl = guidePageResult.getData().getFimgUrl();
-        return Result.success(StringUtil.isNotBlank(fimgUrl) ? fimgUrl : "");
+        Ensure.that(guidePageResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+        return Result.success(Objects.nonNull(guidePageResult.getData())&&StringUtil.isNotBlank(guidePageResult.getData().getFimgUrl()) ? guidePageResult.getData().getFimgUrl() : "");
     }
 
     /**
