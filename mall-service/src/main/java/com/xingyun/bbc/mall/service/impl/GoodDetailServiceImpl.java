@@ -505,7 +505,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             Ensure.that(skuTaxResult.isSuccess()).isTrue(new MallExceptionCode(skuTaxResult.getCode(), skuTaxResult.getMsg()));
             Long fskuTaxRate = 0l;
             fskuTaxRate = skuTaxResult.getData().getFskuTaxRate();
-                    //(原始价*购买数量)
+            //(原始价*购买数量)
             BigDecimal orgPrice = priceResult.getPriceStart().multiply(new BigDecimal(goodsDetailMallDto.getFnum()));
             //税费 = (原始价*购买数量 + 运费) * 税率
             BigDecimal taxPrice = BigDecimal.ZERO;
@@ -683,7 +683,11 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         GoodsPriceVo priceVo = new GoodsPriceVo();
-
+        BigDecimal zero = BigDecimal.ZERO;
+        priceVo.setPriceStart(zero);
+        priceVo.setPriceEnd(zero);
+        priceVo.setTaxStart(zero);
+        priceVo.setTaxEnd(zero);
         //获取sku税率 sku是否支持打折
         if (null == param.getFskuTaxRate()) {
             SkuDiscountTaxDto isSkuDiscountTax = this.getIsSkuDiscountTax(param.getFskuId());
@@ -740,6 +744,11 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         GoodsPriceVo priceVo = new GoodsPriceVo();
+        BigDecimal zero = BigDecimal.ZERO;
+        priceVo.setPriceStart(zero);
+        priceVo.setPriceEnd(zero);
+        priceVo.setTaxStart(zero);
+        priceVo.setTaxEnd(zero);
         //sku是否支持打折--获取sku税率
         SkuDiscountTaxDto isSkuDiscountTax = this.getIsSkuDiscountTax(param.getFskuId());
         param.setFskuDiscount(isSkuDiscountTax.getFisUserTypeDiscount());
