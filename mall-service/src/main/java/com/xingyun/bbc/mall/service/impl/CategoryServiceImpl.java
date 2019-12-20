@@ -227,6 +227,7 @@ public class CategoryServiceImpl implements CategoryService {
         List<GoodsCategoryVo> categoryVoList = new LinkedList<>();
         //查询一级类目列表
         Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class)
+                .fields(GoodsCategory::getFcategoryId)
                 //一级类目父类目id为0
                 .andEqualTo(GoodsCategory::getFparentCategoryId,0)
                 //类目未删除
