@@ -118,6 +118,10 @@ public class AftersaleServiceImpl implements AftersaleService {
 
         PageVo<AftersaleListVo> result = pageUtils.convert(countResult.getData(), listResult.getData(), AftersaleListVo.class, aftersaleLisDto);
         List<AftersaleListVo> aftersaleList = result.getList();
+        if (CollectionUtils.isEmpty(aftersaleList)) {
+            return Result.success();
+        }
+
         List<String> skuCodeList = aftersaleList.stream().map(AftersaleListVo::getFskuCode).distinct().collect(Collectors.toList());
 
         Result<List<GoodsSku>> goodsSkuResult = goodsSkuApi.queryByCriteria(Criteria.of(GoodsSku.class)
