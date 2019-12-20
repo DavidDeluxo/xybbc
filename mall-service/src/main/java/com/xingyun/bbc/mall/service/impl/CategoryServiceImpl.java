@@ -80,6 +80,7 @@ public class CategoryServiceImpl implements CategoryService {
             //根据类目id筛选出来的品牌id
             brandCriteria.andIn(GoodsBrand::getFbrandId, brandIdListFilter);
         }
+        brandCriteria.fields(GoodsBrand::getFbrandId, GoodsBrand::getFbrandName, GoodsBrand::getFbrandLogo, GoodsBrand::getFbrandSort, GoodsBrand::getFcreateTime);
         Result<List<GoodsBrand>> brandResult = goodsBrandApi.queryByCriteria(brandCriteria);
         Ensure.that(brandResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
         if (CollectionUtils.isEmpty(brandResult.getData())) {
@@ -106,8 +107,17 @@ public class CategoryServiceImpl implements CategoryService {
             List<GoodsCategoryVo> a = (List<GoodsCategoryVo>) cachedCategory;
             return Result.success(a);
         }
+
         //缓存无数据,查询数据库
         Result<List<GoodsCategory>> categoryResult = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class)
+                .fields(GoodsCategory::getFcategoryId,
+                        GoodsCategory::getFcategoryName,
+                        GoodsCategory::getFcategoryDesc,
+                        GoodsCategory::getFcategoryUrl,
+                        GoodsCategory::getFparentCategoryId,
+                        GoodsCategory::getFisRecommed,
+                        GoodsCategory::getFcategorySort,
+                        GoodsCategory::getFcreateTime)
                 .andEqualTo(GoodsCategory::getFisDisplay, 1)
                 .andEqualTo(GoodsCategory::getFisDelete, 0));
         if (!categoryResult.isSuccess()) {
