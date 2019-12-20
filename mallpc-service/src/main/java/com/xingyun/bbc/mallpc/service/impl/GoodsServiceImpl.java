@@ -3,8 +3,6 @@ package com.xingyun.bbc.mallpc.service.impl;
 import com.xingyun.bbc.common.elasticsearch.config.EsBeanUtil;
 import com.xingyun.bbc.common.elasticsearch.config.EsCriteria;
 import com.xingyun.bbc.common.elasticsearch.config.EsManager;
-import com.xingyun.bbc.core.enums.ResultStatus;
-import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.sku.api.GoodsCategoryApi;
 import com.xingyun.bbc.core.sku.po.GoodsCategory;
@@ -34,7 +32,6 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -61,6 +58,7 @@ public class GoodsServiceImpl implements GoodsService {
     private SearchRecordService searchRecordService;
     @Autowired
     private RedisHolder redisHolder;
+
     /**
      * 查询商品列表
      *
@@ -112,6 +110,7 @@ public class GoodsServiceImpl implements GoodsService {
 
     /**
      * 根据优惠券id获取Alias名称
+     *
      * @param fcouponId
      * @return
      */
@@ -171,11 +170,12 @@ public class GoodsServiceImpl implements GoodsService {
             if (!CollectionUtils.isEmpty(categoryFilterList)) {
                 List<Integer> cateIds = categoryFilterList.stream().map(item -> item.getFcategoryId()).collect(Collectors.toList());
                 Criteria<GoodsCategory, Object> criteriaCate = Criteria.of(GoodsCategory.class)
+                        .fields(GoodsCategory::getFcategoryId, GoodsCategory::getFcategorySort, GoodsCategory::getFcreateTime)
                         .andIn(GoodsCategory::getFcategoryId, cateIds);
                 Result<List<GoodsCategory>> categoryResult = goodsCategoryApi.queryByCriteria(criteriaCate);
                 List<GoodsCategory> cateList = ResultUtils.getData(categoryResult);
                 if (CollectionUtils.isNotEmpty(cateList)) {
-                    Map<Long, GoodsCategory> categoryMap = categoryResult.getData().stream().collect(Collectors.toMap(GoodsCategory::getFcategoryId, cate -> cate));
+                    Map<Long, GoodsCategory> categoryMap = cateList.stream().collect(Collectors.toMap(GoodsCategory::getFcategoryId, cate -> cate));
                     for (CategoryFilterVo categoryFilterVo : categoryFilterList) {
                         Integer categoryId = categoryFilterVo.getFcategoryId();
                         GoodsCategory category = categoryMap.get(Long.parseLong(String.valueOf(categoryId)));
@@ -239,7 +239,7 @@ public class GoodsServiceImpl implements GoodsService {
         long start = System.currentTimeMillis();
         if (redisHolder.exists(key)) {
             voList = (List<SearchItemVo>) redisHolder.getObject(key);
-            log("缓存",cateId,System.currentTimeMillis()-start);
+            log("缓存", cateId, System.currentTimeMillis() - start);
         } else {
             SearchItemDto searchItemDto = new SearchItemDto();
             List<Integer> cateIdList = new ArrayList<>();
@@ -253,8 +253,8 @@ public class GoodsServiceImpl implements GoodsService {
             voList = result.getData().getList();
             //缓存有效期随机数10到40秒之间
             long timeout = RandomUtils.randomLong(30) + 10;
-            redisHolder.set(key,voList,timeout);
-            log("搜索引擎",cateId,System.currentTimeMillis()-start);
+            redisHolder.set(key, voList, timeout);
+            log("搜索引擎", cateId, System.currentTimeMillis() - start);
         }
 
         CateSearchItemListVo vo = new CateSearchItemListVo();
@@ -265,12 +265,13 @@ public class GoodsServiceImpl implements GoodsService {
 
     /**
      * 首页耗时日志记录
+     *
      * @param model
      * @param cateId
      * @param time
      */
-    private void log(String model, Integer cateId, long time){
-        if(log.isDebugEnabled()){
+    private void log(String model, Integer cateId, long time) {
+        if (log.isDebugEnabled()) {
             String info = new StringBuilder().append("一级分类").append(cateId).append(model).append("，首页楼层商品耗时: ").append(time).toString();
             log.debug(info);
         }
@@ -448,14 +449,14 @@ public class GoodsServiceImpl implements GoodsService {
         String fuserTypeId = "0";
         if (isLogin && fuid != null) {
             //若登录信息里面存的用户认证类型和认证状态可用，不用查库
-            if(Objects.equals(UserVerifyStatusEnum.AUTHENTICATED.getCode(), fverifyStatus)){
+            if (Objects.equals(UserVerifyStatusEnum.AUTHENTICATED.getCode(), fverifyStatus)) {
                 fuserTypeId = String.valueOf(foperateType);
-            }else{
+            } else {
                 Result<User> userResult = userApi.queryOneByCriteria(Criteria.of(User.class)
                         .fields(User::getFuid, User::getFoperateType, User::getFverifyStatus)
                         .andEqualTo(User::getFuid, fuid));
                 User user = ResultUtils.getDataNotNull(userResult, MallPcExceptionCode.USER_NOT_EXIST);
-                if(Objects.equals(UserVerifyStatusEnum.AUTHENTICATED.getCode(), user.getFverifyStatus())){
+                if (Objects.equals(UserVerifyStatusEnum.AUTHENTICATED.getCode(), user.getFverifyStatus())) {
                     fuserTypeId = String.valueOf(user.getFoperateType());
                 }
             }
