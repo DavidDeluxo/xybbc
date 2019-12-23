@@ -72,8 +72,11 @@ public class AppVersionServiceImpl implements AppVersionService {
             }
         }
         log.info("APP版本信息缓存失效，查询数据库");
+        List<Integer> platforms = new ArrayList<>();
+        platforms.add(fplatform);
+        platforms.add(VersionPlatformEnum.ALL.getCode());
         Criteria<AppVersion, Object> appVersionCriteria = Criteria.of(AppVersion.class)
-                .andEqualTo(AppVersion::getFplatform, fplatform)
+                .andIn(AppVersion::getFplatform, platforms)
                 .andEqualTo(AppVersion::getFstatus, VersionStatusEnum.AVAILABLE.getCode())
                 .fields(AppVersion::getFappVersionId,
                         AppVersion::getFplatform,
