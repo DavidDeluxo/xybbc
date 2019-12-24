@@ -248,6 +248,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 goodsVo.setFbrandLogo(goodsBrand.getFbrandLogo() == null ? "" : goodsBrand.getFbrandLogo());
                 Country country = countryApi.queryOneByCriteria(Criteria.of(Country.class)
                         .andEqualTo(Country::getFcountryName, goodsBrand.getFcountryName())
+                        .andEqualTo(Country::getFisDelete, 0)
                         .fields(Country::getFcountryIcon)).getData();
                 if (null != country) {
                     goodsVo.setFcountryIcon(country.getFcountryIcon());
