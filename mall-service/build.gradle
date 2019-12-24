@@ -42,7 +42,7 @@ dependencies {
     compile group: 'com.xingyun.bbc', name: 'xybbc-express-service-api', version: '1.0.2'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-helper-api', version: '1.0.5'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-user-api', version: '1.0.33'
-    compile group: 'com.xingyun.bbc', name: 'xybbc-core-order-api', version: '1.0.37'
+    compile group: 'com.xingyun.bbc', name: 'xybbc-core-order-api', version: '1.0.38'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-market-api', version: '1.0.44'
     compile group: 'com.xingyun.bbc', name: 'xybbc-center-order-api', version: '1.1.62'
     compile group: 'com.xingyun.bbc', name: 'xybbc-center-activity-api', version: '1.0.21'
