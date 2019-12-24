@@ -1,8 +1,9 @@
-package com.xingyun.bbc.mallpc.message;
+package com.xingyun.bbc.mallpc.message.register;
 
 import org.springframework.context.ApplicationEvent;
 
 /**
+ * 注册事件
  * @author: xuxianbei
  * Date: 2019/12/24
  * Time: 14:10

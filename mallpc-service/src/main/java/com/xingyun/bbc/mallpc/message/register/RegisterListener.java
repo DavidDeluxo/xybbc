@@ -1,4 +1,4 @@
-package com.xingyun.bbc.mallpc.message;
+package com.xingyun.bbc.mallpc.message.register;
 
 import com.xingyun.bbc.core.operate.enums.PushTypeEnum;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
@@ -7,6 +7,7 @@ import com.xingyun.bbc.message.business.WaitSendInfo;
 import com.xingyun.bbc.message.model.dto.MsgPushDto;
 import com.xingyun.bbc.message.model.dto.MsgTemplateVariableDto;
 import io.jsonwebtoken.lang.Assert;
+import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.context.ApplicationListener;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -15,12 +16,14 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 
 /**
+ * 注册监听
  * @author: xuxianbei
  * Date: 2019/12/24
  * Time: 14:11
  * Version:V1.0
  */
 @Component
+@EnableBinding(MessagePushChannel.class)
 public class RegisterListener implements ApplicationListener<RegisterEvent> {
 
     @Resource

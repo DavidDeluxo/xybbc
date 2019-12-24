@@ -1,4 +1,4 @@
-package com.xingyun.bbc.mallpc.message;
+package com.xingyun.bbc.mallpc.message.register;
 
 import com.alibaba.fastjson.JSONObject;
 import com.xingyun.bbc.core.user.api.UserApi;
@@ -26,6 +26,10 @@ import javax.annotation.Resource;
 @Component
 public class RegisterMessage extends AbstractNotifyBusiness implements NotifyBusinessInterface {
 
+    /**
+     * 业务ID
+     * @return
+     */
     private String businessId;
 
     private String oldKey;
