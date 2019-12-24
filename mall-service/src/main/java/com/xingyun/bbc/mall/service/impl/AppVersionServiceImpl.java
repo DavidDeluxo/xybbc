@@ -3,6 +3,7 @@ package com.xingyun.bbc.mall.service.impl;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.AppVersionApi;
 import com.xingyun.bbc.core.operate.api.ConfigApi;
+import com.xingyun.bbc.core.operate.dto.AppVersionCondition;
 import com.xingyun.bbc.core.operate.enums.VersionPlatformEnum;
 import com.xingyun.bbc.core.operate.enums.VersionStatusEnum;
 import com.xingyun.bbc.core.operate.enums.VersionUpdateConditionEnum;
@@ -25,8 +26,8 @@ import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -91,7 +92,17 @@ public class AppVersionServiceImpl implements AppVersionService {
         if (VersionUpdateConditionEnum.ALL.getCode().equals(appVersion.getFcondition())) {
             vo.setFVersionNos(new ArrayList<>());
         } else {
-            List<String> ids = Arrays.asList(appVersion.getFconditionVersions().split(","));
+            Set<Integer> ids;
+            try {
+                AppVersionCondition appVersionCondition = JacksonUtils.jsonTopojo(appVersion.getFconditionVersions(), AppVersionCondition.class);
+                if (VersionPlatformEnum.IOS.getCode().equals(fplatform)) {
+                    ids = appVersionCondition.getIos();
+                } else {
+                    ids = appVersionCondition.getAndroid();
+                }
+            } catch (Exception e) {
+                throw new BizException(MallExceptionCode.BALANCE_NOT_ENOUGH);
+            }
             Criteria<AppVersion, Object> condition = Criteria.of(AppVersion.class)
                     .fields(AppVersion::getFversionNo)
                     .andIn(AppVersion::getFid, ids)
