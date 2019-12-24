@@ -14,7 +14,6 @@ import com.xingyun.bbc.core.market.enums.*;
 import com.xingyun.bbc.core.market.po.*;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
 import com.xingyun.bbc.core.operate.api.CountryApi;
-import com.xingyun.bbc.core.operate.po.CityRegion;
 import com.xingyun.bbc.core.operate.po.Country;
 import com.xingyun.bbc.core.order.api.RegularListApi;
 import com.xingyun.bbc.core.order.po.RegularList;
@@ -266,11 +265,11 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         //获取商品原产地名称
         goodsVo.setFgoodsOrigin("");
         if (null != goodsVo.getForiginId()) {
-            CityRegion cityRegion = cityRegionApi.queryOneByCriteria(Criteria.of(CityRegion.class)
-                    .andEqualTo(CityRegion::getFregionId, goodsVo.getForiginId())
-                    .fields(CityRegion::getFcrName)).getData();
-            if (null != cityRegion && null != cityRegion.getFcrName()) {
-                goodsVo.setFgoodsOrigin(cityRegion.getFcrName());
+            Country country = countryApi.queryOneByCriteria(Criteria.of(Country.class)
+                    .andEqualTo(Country::getFcountryId, goodsVo.getForiginId())
+                    .fields(Country::getFcountryName)).getData();
+            if (null != country) {
+                goodsVo.setFgoodsOrigin(country.getFcountryName());
             }
         }
         return Result.success(goodsVo);
