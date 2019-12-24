@@ -252,12 +252,13 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             }
         }
 
-        //获取商品原产地 名称
+        //获取商品原产地名称
         goodsVo.setFgoodsOrigin("");
         if (null != goodsVo.getForiginId()) {
             Country country = countryApi.queryOneByCriteria(Criteria.of(Country.class)
-                    .andEqualTo(Country::getFcountryId, goodsVo.getForiginId()).fields(Country::getFcountryName)).getData();
-            if (null != country && null != country.getFcountryName()) {
+                    .andEqualTo(Country::getFcountryId, goodsVo.getForiginId())
+                    .fields(Country::getFcountryName)).getData();
+            if (null != country) {
                 goodsVo.setFgoodsOrigin(country.getFcountryName());
             }
         }
