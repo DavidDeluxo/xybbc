@@ -42,20 +42,20 @@ public interface MallPcRedisConstant {
     /**
      * 首页配置 Banner key
      */
-    String PC_MALL_PAGECONFIG_BANNER = "pc_mall_banner";
+    String PC_MALL_PAGECONFIG_BANNER = KEY_PREFIX + "banner";
     /**
      * pc首页banner更新时redis分布式锁前缀
      */
-    String PC_MALL_PAGECONFIG_BANNER_UPDATE = "pc_mall_banner_lock";
+    String PC_MALL_PAGECONFIG_BANNER_UPDATE = KEY_PREFIX + "banner_lock";
 
     /**
      * 首页配置 专题位 key
      */
-    String PC_MALL_PAGECONFIG_TOPIC = "pc_mall_topic";
+    String PC_MALL_PAGECONFIG_TOPIC = KEY_PREFIX + "topic";
     /**
      * pc首页专题位更新时redis分布式锁前缀
      */
-    String PC_MALL_PAGECONFIG_TOPIC_UPDATE = "pc_mall_topic_lock";
+    String PC_MALL_PAGECONFIG_TOPIC_UPDATE = KEY_PREFIX + "topic_lock";
 
 
     /**

@@ -21,4 +21,14 @@ public interface MallRedisConstant {
      * 首页用户数缓存更新分布式锁前缀
      */
     String USER_COUNT_LOCK = "user_count_lock";
+
+    /**
+     * IOS最新APP版本信息
+     */
+    String LASTEST_APP_VERSION_IOS = "LASTEST_APP_VERSION:IOS";
+
+    /**
+     * 安卓最新APP版本信息
+     */
+    String LASTEST_APP_VERSION_ANDROID = "LASTEST_APP_VERSION:ANDROID";
 }

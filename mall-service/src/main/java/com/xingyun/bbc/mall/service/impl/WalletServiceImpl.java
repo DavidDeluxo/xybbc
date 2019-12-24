@@ -9,7 +9,6 @@ import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.BankDepositApi;
 import com.xingyun.bbc.core.operate.po.BankDeposit;
 import com.xingyun.bbc.core.order.api.OrderPaymentApi;
-import com.xingyun.bbc.core.order.po.OrderPayment;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.*;
 import com.xingyun.bbc.core.user.po.*;
@@ -45,10 +44,11 @@ import org.springframework.validation.annotation.Validated;
 import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
-
-import static com.xingyun.bbc.mall.common.enums.OrderPayMent.OrderPayStatusEnum.*;
 
 
 /**
@@ -104,26 +104,26 @@ public class WalletServiceImpl implements WalletService {
         amountVo.setBalance(PriceUtil.toYuan(account.getFbalance()));
         amountVo.setWithdrawalAmount(PriceUtil.toYuan(account.getFfreezeWithdraw()));
 
-        Criteria<OrderPayment, Object> op = Criteria.of(OrderPayment.class);
+//        Criteria<OrderPayment, Object> op = Criteria.of(OrderPayment.class);
+//
+//        op.andEqualTo(OrderPayment::getFuid, uid);
+//        op.andIn(OrderPayment::getForderStatus, Arrays.asList(TO_BE_DELIVERED.getValue(), PENDING_RECEIPT.getValue(), RECEIVED.getValue(), DONE.getValue()))
+//                .fields(OrderPayment::getFtotalAgentIncome);
+//        Result<List<OrderPayment>> orderListRes = orderPaymentApi.queryByCriteria(op);
+//
+//        if (!orderListRes.isSuccess()) {
+//            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+//        }
+//
+//        List<OrderPayment> orderList = orderListRes.getData();
+//        if (CollectionUtils.isEmpty(orderList)) {
+//            return amountVo;
+//        }
+//
+//        long sum = orderList.stream().mapToLong(OrderPayment::getFtotalAgentIncome).sum();
 
-        op.andEqualTo(OrderPayment::getFuid, uid);
-        op.andIn(OrderPayment::getForderStatus, Arrays.asList(TO_BE_DELIVERED.getValue(), PENDING_RECEIPT.getValue(), RECEIVED.getValue(), DONE.getValue()))
-        .fields(OrderPayment::getFtotalAgentIncome);
-        Result<List<OrderPayment>> orderListRes = orderPaymentApi.queryByCriteria(op);
 
-        if (!orderListRes.isSuccess()) {
-            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        }
-
-        List<OrderPayment> orderList = orderListRes.getData();
-        if (CollectionUtils.isEmpty(orderList)) {
-            return amountVo;
-        }
-
-        long sum = orderList.stream().mapToLong(OrderPayment::getFtotalAgentIncome).sum();
-
-
-        return amountVo.setWaitIncome(PriceUtil.toYuan(sum));
+        return amountVo.setWaitIncome(PriceUtil.toYuan(account.getFpengingIncome()));
     }
 
     @Override
@@ -145,7 +145,7 @@ public class WalletServiceImpl implements WalletService {
             rateQuery.andLessThanOrEqualTo(UserWithdrawRate::getFeffectiveDate, today);
             rateQuery.andGreaterThanOrEqualTo(UserWithdrawRate::getFinvalidDate, today);
 
-            Result<List<UserWithdrawRate>> userRateRes = userWithdrawRateApi.queryByCriteria(rateQuery);
+            Result<List<UserWithdrawRate>> userRateRes = userWithdrawRateApi.queryByCriteria(rateQuery.fields(UserWithdrawRate::getFrate, UserWithdrawRate::getMinimumAmount, UserWithdrawRate::getFwithdrawType));
 
             if (!userRateRes.isSuccess()) {
                 throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -160,9 +160,10 @@ public class WalletServiceImpl implements WalletService {
 
         Result<List<UserWithdrawRate>> result = userWithdrawRateApi.queryByCriteria(
                 Criteria.of(UserWithdrawRate.class)
-                .andLessThanOrEqualTo(UserWithdrawRate::getFeffectiveDate, today)
-                .andEqualTo(UserWithdrawRate::getFstate, 1)
-                .andGreaterThanOrEqualTo(UserWithdrawRate::getFinvalidDate, today));
+                        .andLessThanOrEqualTo(UserWithdrawRate::getFeffectiveDate, today)
+                        .andEqualTo(UserWithdrawRate::getFstate, 1)
+                        .andGreaterThanOrEqualTo(UserWithdrawRate::getFinvalidDate, today)
+                        .fields(UserWithdrawRate::getFrate, UserWithdrawRate::getMinimumAmount, UserWithdrawRate::getFwithdrawType));
 
         if (!result.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -177,7 +178,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     public List<BanksVo> queryBankList() {
-        Result<List<BankDeposit>> result = bankDepositApi.queryAll();
+        Result<List<BankDeposit>> result = bankDepositApi.queryByCriteria(Criteria.of(BankDeposit.class).fields(BankDeposit::getFicon,BankDeposit::getFbankCode,BankDeposit::getFbankName));
         if (!result.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
@@ -367,7 +368,7 @@ public class WalletServiceImpl implements WalletService {
 
         passWord = Md5Utils.toMd5(passWord);
 
-        if (!passWord.equals(user.getFwithdrawPasswd())){
+        if (!passWord.equals(user.getFwithdrawPasswd())) {
 
             throw new BizException(MallResultStatus.WITHDRAW_PASSWORD_ERROR);
         }
@@ -395,12 +396,12 @@ public class WalletServiceImpl implements WalletService {
         //提现费率未配置则提现金额不得低于1元
         if (Objects.isNull(withdrawRate)) {
 
-            if (withdrawDto.getWithdrawAmount().compareTo(new BigDecimal("100"))<0){
+            if (withdrawDto.getWithdrawAmount().compareTo(new BigDecimal("100")) < 0) {
                 throw new BizException(MallResultStatus.LESS_THAN_ONE_RMB);
             }
 
-        //提现费率配置则提现金额不得低于配置金额
-        }else if(PriceUtil.toPenny(withdrawRate.getMinimumAmount()).compareTo(withdrawDto.getWithdrawAmount())>0){
+            //提现费率配置则提现金额不得低于配置金额
+        } else if (PriceUtil.toPenny(withdrawRate.getMinimumAmount()).compareTo(withdrawDto.getWithdrawAmount()) > 0) {
 
             throw new BizException(MallResultStatus.WITHDRAW_LES_MIN_AMOUNT);
         }
@@ -422,28 +423,28 @@ public class WalletServiceImpl implements WalletService {
 
     private User checkUser(Long uid) {
         Result<User> userResult = userApi.queryById(uid);
-        if (!userResult.isSuccess()){
+        if (!userResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
 
         User user = userResult.getData();
-        if (null == user){
+        if (null == user) {
             throw new BizException(MallResultStatus.NAME_NOT_EXIST);
         }
 
         // 是否删除：0否，1是
-        if (user.getFisDelete() == 1){
+        if (user.getFisDelete() == 1) {
             throw new BizException(MallResultStatus.ACCOUNT_NOT_EXIST);
         }
 
         // 冻结状态 ：1正常，2冻结
-        if (user.getFfreezeStatus() != 1){
+        if (user.getFfreezeStatus() != 1) {
             throw new BizException(MallResultStatus.ACCOUNT_FREEZE);
         }
 
         // 用户状态：1未认证，2 认证中，3 已认证，4未通过
         // 注册30天免认证
-        if (user.getFverifyStatus() != 3 && getDayDiff(DateUtil.formatDate(user.getFcreateTime()),DateUtil.formatDate(new Date()))>30){
+        if (user.getFverifyStatus() != 3 && getDayDiff(DateUtil.formatDate(user.getFcreateTime()), DateUtil.formatDate(new Date())) > 30) {
             throw new BizException(MallResultStatus.ACCOUNT_NOT_AUTH);
         }
 
@@ -455,17 +456,17 @@ public class WalletServiceImpl implements WalletService {
         return user;
     }
 
-    public Integer getDayDiff(String smdate,String bdate) {
+    public Integer getDayDiff(String smdate, String bdate) {
         long between_days = 0L;
         try {
-            SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             Calendar cal = Calendar.getInstance();
             cal.setTime(sdf.parse(smdate));
             long time1 = cal.getTimeInMillis();
             cal.setTime(sdf.parse(bdate));
             long time2 = cal.getTimeInMillis();
-            between_days=(time2-time1)/(1000*3600*24);
-        }catch (Exception e) {
+            between_days = (time2 - time1) / (1000 * 3600 * 24);
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return Integer.parseInt(String.valueOf(between_days));
@@ -531,8 +532,8 @@ public class WalletServiceImpl implements WalletService {
                 userAccountTrans.setFwithdrawType(1);
                 userAccountTrans.setFwithdrawAccount(withdrawDto.getAccountNumber());
 
-            //银行卡
-            }else if (withdrawDto.getWay() == 2){
+                //银行卡
+            } else if (withdrawDto.getWay() == 2) {
                 userAccountTrans.setFrechargeType(4);
                 userAccountTrans.setFtransStatus(2);
                 userAccountTrans.setFwithdrawType(2);

@@ -15,4 +15,7 @@ public class AccountBaseInfoVo implements Serializable {
 
     //提现中金额
     private BigDecimal cashInIng;
+
+    //待收益金额
+    private BigDecimal pengingIncome;
 }

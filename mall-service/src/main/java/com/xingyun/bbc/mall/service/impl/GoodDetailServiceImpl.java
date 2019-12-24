@@ -457,7 +457,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             this.dealGoodDetailPriceToYuan(priceResult);
         }
         //起始区间价 只有是单一价格PriceStart才计算运费、税费、折合单价
-        if (null == priceResult.getPriceEnd()) {
+        if (Objects.nonNull(priceResult.getPriceStart()) && Objects.isNull(priceResult.getPriceEnd())) {
             //查询批次价格类型 1.含邮含税 2.含邮不含税 3.不含邮含税 4.不含邮不含税
             Result<SkuBatch> skuBatchResult = skuBatchApi.queryOneByCriteria(Criteria.of(SkuBatch.class)
                     .andEqualTo(SkuBatch::getFsupplierSkuBatchId, goodsDetailMallDto.getFsupplierSkuBatchId())
@@ -688,7 +688,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         priceVo.setPriceEnd(zero);
         priceVo.setTaxStart(zero);
         priceVo.setTaxEnd(zero);
-
         //获取sku税率 sku是否支持打折
         if (null == param.getFskuTaxRate()) {
             SkuDiscountTaxDto isSkuDiscountTax = this.getIsSkuDiscountTax(param.getFskuId());
@@ -767,6 +766,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 if (i == 0) {
                     priceVo.setPriceStart(batchPrice.getPriceStart());
                     priceVo.setPriceEnd(batchPrice.getPriceEnd());
+                    priceVo.setTaxStart(batchPrice.getTaxStart());
+                    priceVo.setTaxEnd(batchPrice.getTaxEnd());
                 } else {
                     if (batchPrice.getPriceStart().compareTo(priceVo.getPriceStart()) < 0) {
                         priceVo.setPriceStart(batchPrice.getPriceStart());
@@ -994,8 +995,20 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     @Override
     public Result<List<CouponVo>> getSkuUserCouponLight(Long fskuId, Long fuid) {
         //所有券
-        List<CouponVo> allReceiveCoupon = this.getAllSkuUserCoupon(fskuId, fuid);
-        List<CouponVo> collect = allReceiveCoupon.stream().sorted(Comparator.comparing(CouponVo::getFthresholdAmount).reversed()).limit(3).collect(toList());
+        List<CouponVo> allCoupon = this.getAllSkuUserCoupon(fskuId, fuid);
+
+        //已领取券
+        Map<String, Object> alreadyReceiveCoupon = this.getAlreadyReceiveCoupon(fskuId, fuid);
+        List<CouponVo> receiveCoupon = (List<CouponVo>) alreadyReceiveCoupon.get("receiveCoupon");
+        List<Long> alCouponIds = (List<Long>) alreadyReceiveCoupon.get("removeCoupon");
+        //未领取券
+        List<CouponVo> unReceiceCoupon = allCoupon.stream().filter(item -> !alCouponIds.contains(item.getFcouponId())).collect(toList());
+
+        List<CouponVo> allCouponShow = new ArrayList<>();
+        allCouponShow.addAll(receiveCoupon);
+        allCouponShow.addAll(unReceiceCoupon);
+
+        List<CouponVo> collect = allCouponShow.stream().sorted(Comparator.comparing(CouponVo::getFthresholdAmount).reversed()).limit(3).collect(toList());
         this.dealAmount(collect);
         return Result.success(collect);
     }
@@ -1038,10 +1051,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         Date now = new Date();
         for (CouponQueryVo couponQueryVo : couponQueryVos) {
             Long fcouponId = couponQueryVo.getFcouponId();
-//            logger.info("券id{}",fcouponId);
-//            if (fcouponId.intValue() == 869) {
-//                System.out.println(869);
-//            }
             Result<Coupon> couponResult = couponApi.queryOneByCriteria(Criteria.of(Coupon.class)
                     .andEqualTo(Coupon::getFcouponId, fcouponId)
                     .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode())
@@ -1168,14 +1177,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     //获取该sku已领券
     private Map<String, Object> getAlreadyReceiveCoupon(Long fskuId, Long fuid) {
         Date now = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String nowStr = sdf.format(now);
         //查询已经领到的券
         Result<List<CouponReceive>> couponReceResult = couponReceiveApi.queryByCriteria(Criteria.of(CouponReceive.class)
                 .andEqualTo(CouponReceive::getFuid, fuid)
                 .andEqualTo(CouponReceive::getFuserCouponStatus, CouponReceiveStatusEnum.NOT_USED.getCode())
-                .andLessThanOrEqualTo(CouponReceive::getFvalidityStart, nowStr)//时间要转成string
-                .andGreaterThanOrEqualTo(CouponReceive::getFvalidityEnd, nowStr)
                 .fields(CouponReceive::getFcouponId, CouponReceive::getFvalidityStart, CouponReceive::getFvalidityEnd));
         if (!couponReceResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
@@ -1197,12 +1202,16 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 if (couponResult.isSuccess() && null != coupon) {
                     Long fcouponId = coupon.getFcouponId();
                     Integer fperLimit = coupon.getFperLimit();
-                    coupon.setFvalidityStart(couponReceive.getFvalidityStart());
-                    coupon.setFvalidityEnd(couponReceive.getFvalidityEnd());
+                    Date fvalidityStart = couponReceive.getFvalidityStart();
+                    Date fvalidityEnd = couponReceive.getFvalidityEnd();
+                    coupon.setFvalidityStart(fvalidityStart);
+                    coupon.setFvalidityEnd(fvalidityEnd);
                     //1全部商品、2指定商品可用、3指定商品不可用
                     int ableSku = coupon.getFapplicableSku().intValue();
                     if (ableSku == 1) {
-                        receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                        if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
+                            receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                        }
                         if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
                             removeCoupon.add(fcouponId);
                         }
@@ -1211,7 +1220,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                         //如果是单独存的skuid
                         Result<Integer> countCouponSku = this.getCouponSkuCount(fcouponId, fskuId);
                         if (countCouponSku.isSuccess() && countCouponSku.getData() > 0) {
-                            receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
+                                receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            }
                             if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
                                 removeCoupon.add(fcouponId);
                             }
@@ -1243,7 +1254,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                         Long tradeId = skuCondition.get("tradeId");
 
                         if (CollectionUtils.isNotEmpty(fbrandIds_coupon) && fbrandIds_coupon.contains(brandId)) {
-                            receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
+                                receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            }
                             if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
                                 removeCoupon.add(fcouponId);
                             }
@@ -1251,21 +1264,27 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                         }
                         if (Objects.nonNull(fcategoryIds_coupon)) {
                             if (null != fcategoryIds_coupon.get("1") && fcategoryIds_coupon.get("1").contains(categoryId1)) {
-                                receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                                if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
+                                    receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                                }
                                 if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
                                     removeCoupon.add(fcouponId);
                                 }
                                 continue;
                             }
                             if (null != fcategoryIds_coupon.get("2") && fcategoryIds_coupon.get("2").contains(categoryId2)) {
-                                receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                                if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
+                                    receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                                }
                                 if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
                                     removeCoupon.add(fcouponId);
                                 }
                                 continue;
                             }
                             if (null != fcategoryIds_coupon.get("3") && fcategoryIds_coupon.get("3").contains(categoryId3)) {
-                                receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                                if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
+                                    receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                                }
                                 if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
                                     removeCoupon.add(fcouponId);
                                 }
@@ -1273,14 +1292,18 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                             }
                         }
                         if (CollectionUtils.isNotEmpty(flabelIds_coupon) && flabelIds_coupon.contains(labelId)) {
-                            receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
+                                receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            }
                             if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
                                 removeCoupon.add(fcouponId);
                             }
                             continue;
                         }
                         if (CollectionUtils.isNotEmpty(ftradeId_coupon) && ftradeId_coupon.contains(tradeId)) {
-                            receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
+                                receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            }
                             if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
                                 removeCoupon.add(fcouponId);
                             }
@@ -1319,7 +1342,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                                             if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get("3") && !fcategoryIds_coupon.get("3").contains(categoryId3)) {
                                                 if (CollectionUtils.isNotEmpty(flabelIds_coupon) && !flabelIds_coupon.contains(labelId)) {
                                                     if (CollectionUtils.isNotEmpty(ftradeId_coupon) && !ftradeId_coupon.contains(tradeId)) {
-                                                        receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                                                        if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
+                                                            receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                                                        }
                                                         if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
                                                             removeCoupon.add(fcouponId);
                                                         }

@@ -11,7 +11,7 @@ import java.util.Date;
 
 @Data
 @ApiModel(value = "售后列表dto")
-public class AftersaleLisDto extends PageDto implements Serializable {
+public class AftersalePcLisDto extends PageDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -20,6 +20,9 @@ public class AftersaleLisDto extends PageDto implements Serializable {
 
     @ApiModelProperty(value = "订单号")
     private String forderId;
+
+    @ApiModelProperty(value = "售后单号")
+    private String forderAftersaleId;
 
     @ApiModelProperty(value = "商品名称")
     private String fskuName;
