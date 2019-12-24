@@ -14,7 +14,6 @@ import com.xingyun.bbc.core.market.enums.*;
 import com.xingyun.bbc.core.market.po.*;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
 import com.xingyun.bbc.core.operate.api.CountryApi;
-import com.xingyun.bbc.core.operate.po.CityRegion;
 import com.xingyun.bbc.core.operate.po.Country;
 import com.xingyun.bbc.core.order.api.RegularListApi;
 import com.xingyun.bbc.core.order.po.RegularList;
@@ -22,12 +21,6 @@ import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.sku.api.*;
 import com.xingyun.bbc.core.sku.enums.GoodsSkuEnums;
 import com.xingyun.bbc.core.sku.enums.SkuBatchEnums;
-import com.xingyun.bbc.core.sku.po.GoodsSku;
-import com.xingyun.bbc.core.sku.po.GoodsSkuBatchPrice;
-import com.xingyun.bbc.core.sku.po.SkuBatch;
-import com.xingyun.bbc.core.sku.po.SkuBatchPackage;
-import com.xingyun.bbc.core.sku.po.SkuBatchUserPrice;
-import com.xingyun.bbc.core.sku.po.SkuUserDiscountConfig;
 import com.xingyun.bbc.core.sku.po.*;
 import com.xingyun.bbc.core.supplier.enums.TradeTypeEnums;
 import com.xingyun.bbc.core.user.api.UserApi;
@@ -262,11 +255,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         //获取商品原产地名称
         goodsVo.setFgoodsOrigin("");
         if (null != goodsVo.getForiginId()) {
-            CityRegion cityRegion = cityRegionApi.queryOneByCriteria(Criteria.of(CityRegion.class)
-                    .andEqualTo(CityRegion::getFregionId, goodsVo.getForiginId())
-                    .fields(CityRegion::getFcrName)).getData();
-            if (null != cityRegion && null != cityRegion.getFcrName()) {
-                goodsVo.setFgoodsOrigin(cityRegion.getFcrName());
+            Country country = countryApi.queryOneByCriteria(Criteria.of(Country.class)
+                    .andEqualTo(Country::getFcountryId, goodsVo.getForiginId()).fields(Country::getFcountryName)).getData();
+            if (null != country && null != country.getFcountryName()) {
+                goodsVo.setFgoodsOrigin(country.getFcountryName());
             }
         }
         return Result.success(goodsVo);
