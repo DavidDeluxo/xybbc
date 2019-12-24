@@ -342,7 +342,6 @@ public class UserAccountServiceImpl implements UserAccountService {
         accountBaseInfoVo.setCashInAble(AccountUtil.divideOneHundred(userAccount.getFbalance()));
         accountBaseInfoVo.setCashInIng(AccountUtil.divideOneHundred(userAccount.getFfreezeWithdraw()));
         accountBaseInfoVo.setPengingIncome(AccountUtil.divideOneHundred(userAccount.getFpengingIncome()));
-
         return accountBaseInfoVo;
     }
 
