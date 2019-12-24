@@ -9,7 +9,6 @@ import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.BankDepositApi;
 import com.xingyun.bbc.core.operate.po.BankDeposit;
 import com.xingyun.bbc.core.order.api.OrderPaymentApi;
-import com.xingyun.bbc.core.order.po.OrderPayment;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.*;
 import com.xingyun.bbc.core.user.po.*;
@@ -45,10 +44,11 @@ import org.springframework.validation.annotation.Validated;
 import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
-
-import static com.xingyun.bbc.mall.common.enums.OrderPayMent.OrderPayStatusEnum.*;
 
 
 /**
@@ -104,26 +104,26 @@ public class WalletServiceImpl implements WalletService {
         amountVo.setBalance(PriceUtil.toYuan(account.getFbalance()));
         amountVo.setWithdrawalAmount(PriceUtil.toYuan(account.getFfreezeWithdraw()));
 
-        Criteria<OrderPayment, Object> op = Criteria.of(OrderPayment.class);
+//        Criteria<OrderPayment, Object> op = Criteria.of(OrderPayment.class);
+//
+//        op.andEqualTo(OrderPayment::getFuid, uid);
+//        op.andIn(OrderPayment::getForderStatus, Arrays.asList(TO_BE_DELIVERED.getValue(), PENDING_RECEIPT.getValue(), RECEIVED.getValue(), DONE.getValue()))
+//                .fields(OrderPayment::getFtotalAgentIncome);
+//        Result<List<OrderPayment>> orderListRes = orderPaymentApi.queryByCriteria(op);
+//
+//        if (!orderListRes.isSuccess()) {
+//            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+//        }
+//
+//        List<OrderPayment> orderList = orderListRes.getData();
+//        if (CollectionUtils.isEmpty(orderList)) {
+//            return amountVo;
+//        }
+//
+//        long sum = orderList.stream().mapToLong(OrderPayment::getFtotalAgentIncome).sum();
 
-        op.andEqualTo(OrderPayment::getFuid, uid);
-        op.andIn(OrderPayment::getForderStatus, Arrays.asList(TO_BE_DELIVERED.getValue(), PENDING_RECEIPT.getValue(), RECEIVED.getValue(), DONE.getValue()))
-                .fields(OrderPayment::getFtotalAgentIncome);
-        Result<List<OrderPayment>> orderListRes = orderPaymentApi.queryByCriteria(op);
 
-        if (!orderListRes.isSuccess()) {
-            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
-        }
-
-        List<OrderPayment> orderList = orderListRes.getData();
-        if (CollectionUtils.isEmpty(orderList)) {
-            return amountVo;
-        }
-
-        long sum = orderList.stream().mapToLong(OrderPayment::getFtotalAgentIncome).sum();
-
-
-        return amountVo.setWaitIncome(PriceUtil.toYuan(sum));
+        return amountVo.setWaitIncome(PriceUtil.toYuan(account.getFpengingIncome()));
     }
 
     @Override

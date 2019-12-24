@@ -38,8 +38,6 @@ import com.xingyun.bbc.mallpc.service.UserAccountService;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import javax.persistence.Column;
-import javax.persistence.Id;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -333,7 +331,7 @@ public class UserAccountServiceImpl implements UserAccountService {
     @Override
     public AccountBaseInfoVo accountInfo(Long uid) {
         Result<List<UserAccount>> listResult = userAccountApi.queryByCriteria(Criteria.of(UserAccount.class)
-                .fields(UserAccount::getFbalance, UserAccount::getFfreezeWithdraw)
+                .fields(UserAccount::getFbalance, UserAccount::getFfreezeWithdraw, UserAccount::getFpengingIncome)
                 .andEqualTo(UserAccount::getFuid, uid));
         Ensure.that(listResult).isNotEmptyData(MallPcExceptionCode.PARAM_ERROR);
 
@@ -343,7 +341,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         accountBaseInfoVo.setBanlance(AccountUtil.divideOneHundred(userAccount.getFbalance() + userAccount.getFfreezeWithdraw()));
         accountBaseInfoVo.setCashInAble(AccountUtil.divideOneHundred(userAccount.getFbalance()));
         accountBaseInfoVo.setCashInIng(AccountUtil.divideOneHundred(userAccount.getFfreezeWithdraw()));
-
+        accountBaseInfoVo.setPengingIncome(AccountUtil.divideOneHundred(userAccount.getFpengingIncome()));
 
         return accountBaseInfoVo;
     }
