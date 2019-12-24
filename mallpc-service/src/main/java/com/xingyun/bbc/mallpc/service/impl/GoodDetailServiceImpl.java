@@ -252,6 +252,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     .fields(GoodsBrand::getFbrandName, GoodsBrand::getFbrandLogo, GoodsBrand::getFcountryName)).getData();
             if (null != goodsBrand) {
                 goodsVo.setFbrandName(goodsBrand.getFbrandName());
+                // 商品原产地名称
+                goodsVo.setFgoodsOrigin(goodsBrand.getFcountryName());
                 goodsVo.setFbrandLogo(goodsBrand.getFbrandLogo() == null ? "" : goodsBrand.getFbrandLogo());
                 Country country = countryApi.queryOneByCriteria(Criteria.of(Country.class)
                         .andEqualTo(Country::getFcountryName, goodsBrand.getFcountryName())
@@ -262,16 +264,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             }
         }
 
-        //获取商品原产地名称
-        goodsVo.setFgoodsOrigin("");
-        if (null != goodsVo.getForiginId()) {
-            Country country = countryApi.queryOneByCriteria(Criteria.of(Country.class)
-                    .andEqualTo(Country::getFcountryId, goodsVo.getForiginId())
-                    .fields(Country::getFcountryName)).getData();
-            if (null != country) {
-                goodsVo.setFgoodsOrigin(country.getFcountryName());
-            }
-        }
         return Result.success(goodsVo);
     }
 
