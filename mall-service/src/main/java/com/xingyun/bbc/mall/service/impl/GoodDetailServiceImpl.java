@@ -252,7 +252,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             }
         }
 
-        //获取商品原产地名称
+        //获取商品原产地 名称
         goodsVo.setFgoodsOrigin("");
         if (null != goodsVo.getForiginId()) {
             Country country = countryApi.queryOneByCriteria(Criteria.of(Country.class)
