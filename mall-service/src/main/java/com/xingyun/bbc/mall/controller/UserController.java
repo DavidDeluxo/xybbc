@@ -34,7 +34,21 @@ public class UserController {
     @PostMapping("/via/userLogin")
     public Result<UserLoginVo> userLogin(@RequestBody UserLoginDto dto,HttpServletRequest request) {
         dto.setIpAddress(HttpUtil.getClientIP(request));
+        if(request.getHeader("source") != null){
+            if(request.getHeader("source").equals("android")){
+                dto.setFdeviceType(2);
+            }else if(request.getHeader("source").equals("ios")){
+                dto.setFdeviceType(1);
+            }
+        }
         return userService.userLogin(dto);
+    }
+
+    @ApiOperation("登出状态更新")
+    @PostMapping("/userLogout")
+    public Result<Integer> userLogout(HttpServletRequest request) {
+        Long fuid = RequestHolder.getUserId();
+        return userService.userLogout(fuid);
     }
 
     @ApiOperation("发送短信")
