@@ -45,7 +45,7 @@ public class UserController {
     }
 
     @ApiOperation("登出状态更新")
-    @PostMapping("/via/userLogout")
+    @PostMapping("/userLogout")
     public Result<Integer> userLogout(HttpServletRequest request) {
         Long fuid = RequestHolder.getUserId();
         return userService.userLogout(fuid);
