@@ -1,4 +1,4 @@
-package com.xingyun.bbc.mallpc.message.register;
+package com.xingyun.bbc.mallpc.infrastructure.event.register;
 
 import org.springframework.context.ApplicationEvent;
 
