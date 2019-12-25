@@ -1,4 +1,4 @@
-package com.xingyun.bbc.mall.common.enums;
+package com.xingyun.bbc.mallpc.common.enums;
 
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
@@ -12,7 +12,7 @@ import java.util.Objects;
  * @Author ming.yiFei
  * @Date 2019/12/23 19:58
  **/
-public enum MessageAutoTypeEnum {
+public enum MessageTypeEnum {
 
     /**
      * 发货单发货
@@ -42,11 +42,26 @@ public enum MessageAutoTypeEnum {
     /**
      * 用户认证成功
      */
-    USER_VERIFY(6);
+    USER_VERIFY(6),
+
+    /**
+     * 行云公告
+     */
+    XY_ANNOUNCEMENT(7),
+
+    /**
+     * 商品消息
+     */
+    GOODS_MESSAGE(8),
+
+    /**
+     * 其它
+     */
+    OTHER(9);
 
     private Integer code;
 
-    MessageAutoTypeEnum(Integer code) {
+    MessageTypeEnum(Integer code) {
         this.code = code;
     }
 
@@ -54,7 +69,7 @@ public enum MessageAutoTypeEnum {
         return code;
     }
 
-    public static MessageAutoTypeEnum getEnum(Integer code) {
+    public static MessageTypeEnum getEnum(Integer code) {
         return Arrays.stream(values())
                 .filter(value -> Objects.equals(code, value.getCode()))
                 .findFirst()

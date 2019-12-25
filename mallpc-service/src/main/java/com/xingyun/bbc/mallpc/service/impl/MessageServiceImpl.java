@@ -20,9 +20,8 @@ import com.xingyun.bbc.express.api.ExpressBillProviderApi;
 import com.xingyun.bbc.express.model.dto.ExpressBillDto;
 import com.xingyun.bbc.express.model.vo.ExpressBillDetailVo;
 import com.xingyun.bbc.express.model.vo.ExpressBillVo;
-import com.xingyun.bbc.mallpc.common.enums.MessageAutoTypeEnum;
+import com.xingyun.bbc.mallpc.common.enums.MessageTypeEnum;
 import com.xingyun.bbc.mallpc.common.enums.MessageGroupTypeEnum;
-import com.xingyun.bbc.mallpc.common.enums.MessageManualTypeEnum;
 import com.xingyun.bbc.mallpc.common.enums.MessagePushTypeEnum;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.model.dto.message.MessageQueryDto;
@@ -92,9 +91,6 @@ public class MessageServiceImpl implements MessageService {
     public Result<List<MessageCenterVo>> queryMessageGroupByUserId(Long userId) {
 
         Result<List<MessageUserRecord>> userRecordResult = userRecordApi.queryByCriteria(Criteria.of(MessageUserRecord.class)
-                .fields(MessageUserRecord::getFtype
-                        , MessageUserRecord::getFtitle
-                        , MessageUserRecord::getFcreateTime)
                 .andEqualTo(MessageUserRecord::getFreaded, 0)
                 .andEqualTo(MessageUserRecord::getFsendStatus, 2)
                 .andEqualTo(MessageUserRecord::getFuid, userId)
@@ -177,7 +173,7 @@ public class MessageServiceImpl implements MessageService {
             switch (pushTypeEnum) {
                 // 自动消息类型
                 case AUTO:
-                    MessageAutoTypeEnum autoTypeEnum = MessageAutoTypeEnum.getEnum(ftype);
+                    MessageTypeEnum autoTypeEnum = MessageTypeEnum.getEnum(ftype);
                     switch (autoTypeEnum) {
                         // 发货单发货
                         case GOODS_SHIPPED:
@@ -258,7 +254,7 @@ public class MessageServiceImpl implements MessageService {
                     break;
                 // 手动消息类型
                 case MANUAL:
-                    MessageManualTypeEnum manualTypeEnum = MessageManualTypeEnum.getEnum(ftype);
+                    MessageTypeEnum manualTypeEnum = MessageTypeEnum.getEnum(ftype);
                     switch (manualTypeEnum) {
                         case XY_ANNOUNCEMENT:
                             String recordFcontent = record.getFcontent();

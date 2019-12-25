@@ -45,10 +45,16 @@ public class UserController {
     }
 
     @ApiOperation("登出状态更新")
-    @PostMapping("/userLogout")
-    public Result<Integer> userLogout(HttpServletRequest request) {
-        Long fuid = RequestHolder.getUserId();
-        return userService.userLogout(fuid);
+    @PostMapping("/via/userLogout")
+    public Result<Integer> userLogout(@RequestParam(value = "fuid", required = true) String fuid) {
+        Long uid = Long.parseLong(fuid);
+        return userService.userLogout(uid);
+    }
+
+    @ApiOperation("未登录状态用户设备信息更新")
+    @PostMapping("/via/updateMessageUserDevice")
+    public Result<Integer> updateMessageUserDevice(@RequestParam(value = "deviceToken", required = true) String deviceToken) {
+        return userService.updateMessageUserDevice(deviceToken);
     }
 
     @ApiOperation("发送短信")
