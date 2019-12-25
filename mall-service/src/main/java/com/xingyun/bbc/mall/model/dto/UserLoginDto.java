@@ -42,8 +42,14 @@ public class UserLoginDto {
     @ApiModelProperty("MAC地址")
     private String mac;
 
+    @ApiModelProperty("设备类型: 1iOS 2安卓")
+    private Integer fdeviceType;
+
     @ApiModelProperty("是否触发滑块验证 0否 1是")
     private Integer isCheck;
+
+    @ApiModelProperty("友盟设备id")
+    private String deviceToken;
 
     @ApiModelProperty("是否触发手机号注册验证 0否 1是")
     private Integer isMobileCheck;

@@ -28,6 +28,9 @@ public class UserRegisterDto {
     @ApiModelProperty("邀请码")
     private String finviter;
 
+    @ApiModelProperty("友盟设备id")
+    private String deviceToken;
+
     @ApiModelProperty("注册来源：android，ios，web")
     private String fregisterFrom;
 
