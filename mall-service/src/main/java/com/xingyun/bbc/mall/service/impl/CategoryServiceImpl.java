@@ -227,7 +227,7 @@ public class CategoryServiceImpl implements CategoryService {
         List<GoodsCategoryVo> categoryVoList = new LinkedList<>();
         //查询一级类目列表
         Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class)
-                .fields(GoodsCategory::getFcategoryId)
+                .fields(GoodsCategory::getFcategoryId, GoodsCategory::getFcategoryName, GoodsCategory::getFcategoryDesc)
                 //一级类目父类目id为0
                 .andEqualTo(GoodsCategory::getFparentCategoryId,0)
                 //类目未删除
@@ -235,7 +235,7 @@ public class CategoryServiceImpl implements CategoryService {
                 //类目展示
                 .andEqualTo(GoodsCategory::getFisDisplay, 1)
                 //修改时间倒序
-                .sortDesc(GoodsCategory::getFmodifyTime));
+                .sortDesc(GoodsCategory::getFcategorySort));
         Ensure.that(categoryListResultAll.isSuccess()).isTrue(MallExceptionCode.PARAM_ERROR);
         if(CollectionUtils.isEmpty(categoryListResultAll.getData())){
             return Result.success(categoryVoList);
