@@ -80,7 +80,7 @@ public class MessageServiceImpl implements MessageService {
     /**
      * 匹配${...}
      */
-    private static final Pattern COMPILE = Pattern.compile("(\\$\\{)([\\S\\s]*)(\\})");
+    private static final Pattern COMPILE = Pattern.compile("(\\$\\{)([\\S\\s]*)(})");
 
     /**
      * @param userId
@@ -156,7 +156,7 @@ public class MessageServiceImpl implements MessageService {
         }
         List<MessageUserRecord> userRecords = userRecordsResult.getData();
         ArrayList<MessageListVo> messageListVos = Lists.newArrayList();
-        userRecords.stream().forEach(record -> {
+        userRecords.forEach(record -> {
             MessageListVo messageListVo = new MessageListVo();
             messageListVo.setMessageId(record.getFmessageUserRecordId());
             messageListVo.setTitle(record.getFtitle());
