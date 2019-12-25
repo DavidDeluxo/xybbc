@@ -1,11 +1,11 @@
-package com.xingyun.bbc.mallpc.infrastructure.event.register;
+package com.xingyun.bbc.mall.infrastructure.message.interceptor.register;
 
 import com.alibaba.fastjson.JSONObject;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
-import com.xingyun.bbc.mallpc.model.dto.user.UserRegisterDto;
+import com.xingyun.bbc.mall.base.utils.ResultUtils;
+import com.xingyun.bbc.mall.model.dto.UserRegisterDto;
 import com.xingyun.bbc.message.business.NotifyBusinessInterface;
 import com.xingyun.bbc.message.business.impl.AbstractNotifyBusiness;
 import org.springframework.context.ApplicationEvent;

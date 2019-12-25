@@ -1,4 +1,4 @@
-package com.xingyun.bbc.mall.message.modifymobile;
+package com.xingyun.bbc.mall.infrastructure.message.interceptor.mobile;
 
 import com.alibaba.fastjson.JSONObject;
 import com.xingyun.bbc.core.user.api.UserApi;
@@ -9,6 +9,7 @@ import com.xingyun.bbc.mall.model.dto.UserSecurityDto;
 import com.xingyun.bbc.message.business.NotifyBusinessInterface;
 import com.xingyun.bbc.message.business.impl.AbstractNotifyBusiness;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 
@@ -20,7 +21,7 @@ import javax.annotation.Resource;
  * Time: 17:54
  * Version:V1.0
  */
-//@Component
+@Component
 public class ModifyMobileMessage extends AbstractNotifyBusiness implements NotifyBusinessInterface {
 
     /**
@@ -68,22 +69,22 @@ public class ModifyMobileMessage extends AbstractNotifyBusiness implements Notif
 
     @Override
     public String getBusinessId() {
-        return null;
+        return this.businessId;
     }
 
     @Override
     public Long getTargetId() {
-        return null;
+        return this.targetId;
     }
 
     @Override
     public String getOldKey() {
-        return null;
+        return this.oldKey;
     }
 
     @Override
     public String getNewKey() {
-        return null;
+        return this.newKey;
     }
 
     @Override
@@ -93,6 +94,6 @@ public class ModifyMobileMessage extends AbstractNotifyBusiness implements Notif
 
     @Override
     public ApplicationEvent getApplicationEvent() {
-        return null;
+        return new ModifyMobileEvent(waitSendInfo);
     }
 }

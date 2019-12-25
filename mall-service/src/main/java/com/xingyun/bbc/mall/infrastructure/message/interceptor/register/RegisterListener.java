@@ -1,7 +1,7 @@
-package com.xingyun.bbc.mallpc.infrastructure.event.register;
+package com.xingyun.bbc.mall.infrastructure.message.interceptor.register;
 
 import com.xingyun.bbc.core.operate.enums.PushTypeEnum;
-import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
+import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.message.business.MessagePushChannel;
 import com.xingyun.bbc.message.business.WaitSendInfo;
 import com.xingyun.bbc.message.model.dto.MsgPushDto;
@@ -34,7 +34,7 @@ public class RegisterListener implements ApplicationListener<RegisterEvent> {
     public void onApplicationEvent(RegisterEvent event) {
         MsgPushDto msgPushDto = new MsgPushDto();
         MsgTemplateVariableDto msgTemplateVariableDto = new MsgTemplateVariableDto();
-        Assert.isTrue(event.getSource() instanceof WaitSendInfo, MallPcExceptionCode.SYSTEM_ERROR.getMsg());
+        Assert.isTrue(event.getSource() instanceof WaitSendInfo, MallExceptionCode.SYSTEM_ERROR.getCode());
         WaitSendInfo waitSendInfo =  (WaitSendInfo) event.getSource();
         msgTemplateVariableDto.setFmobile(waitSendInfo.getOldKey());
         msgPushDto.setMsgTemplateVariable(msgTemplateVariableDto);

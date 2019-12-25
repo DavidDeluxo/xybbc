@@ -1,7 +1,7 @@
-package com.xingyun.bbc.mallpc.infrastructure.event.register;
+package com.xingyun.bbc.mall.infrastructure.message.interceptor.mobile;
 
 import com.xingyun.bbc.core.operate.enums.PushTypeEnum;
-import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
+import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.message.business.MessagePushChannel;
 import com.xingyun.bbc.message.business.WaitSendInfo;
 import com.xingyun.bbc.message.model.dto.MsgPushDto;
@@ -16,26 +16,25 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 
 /**
- * 注册监听
  * @author: xuxianbei
- * Date: 2019/12/24
- * Time: 14:11
+ * Date: 2019/12/25
+ * Time: 20:10
  * Version:V1.0
  */
 @Component
 @EnableBinding(MessagePushChannel.class)
-public class RegisterListener implements ApplicationListener<RegisterEvent> {
+public class ModifyMobileListener implements ApplicationListener<ModifyMobileEvent> {
 
     @Resource
     MessagePushChannel registerChannel;
 
 
     @Override
-    public void onApplicationEvent(RegisterEvent event) {
+    public void onApplicationEvent(ModifyMobileEvent event) {
         MsgPushDto msgPushDto = new MsgPushDto();
         MsgTemplateVariableDto msgTemplateVariableDto = new MsgTemplateVariableDto();
-        Assert.isTrue(event.getSource() instanceof WaitSendInfo, MallPcExceptionCode.SYSTEM_ERROR.getMsg());
-        WaitSendInfo waitSendInfo =  (WaitSendInfo) event.getSource();
+        Assert.isTrue(event.getSource() instanceof WaitSendInfo, MallExceptionCode.SYSTEM_ERROR.getCode());
+        WaitSendInfo waitSendInfo = (WaitSendInfo) event.getSource();
         msgTemplateVariableDto.setFmobile(waitSendInfo.getOldKey());
         msgPushDto.setMsgTemplateVariable(msgTemplateVariableDto);
         msgPushDto.setPushType(PushTypeEnum.SYSTEM_NOTIFY.getKey());
@@ -44,5 +43,6 @@ public class RegisterListener implements ApplicationListener<RegisterEvent> {
         msgPushDto.setSubjectId(waitSendInfo.getTargetId());
         Message<MsgPushDto> message = MessageBuilder.withPayload(msgPushDto).build();
         registerChannel.systemNoticeOut().send(message);
+
     }
 }
