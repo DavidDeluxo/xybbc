@@ -42,7 +42,7 @@ public class RegisterListener implements ApplicationListener<RegisterEvent> {
         //平台会员
         msgPushDto.setSubjectType(1);
         msgPushDto.setSubjectId(waitSendInfo.getTargetId());
-        Message<Object> message = MessageBuilder.withPayload(event.getSource()).build();
+        Message<MsgPushDto> message = MessageBuilder.withPayload(msgPushDto).build();
         registerChannel.systemNoticeOut().send(message);
     }
 }

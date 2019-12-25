@@ -8,15 +8,13 @@ import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
 import com.xingyun.bbc.mallpc.model.dto.user.UserRegisterDto;
 import com.xingyun.bbc.message.business.NotifyBusinessInterface;
 import com.xingyun.bbc.message.business.impl.AbstractNotifyBusiness;
-import io.jsonwebtoken.lang.Assert;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.annotation.Resource;
 
 /**
- * 手机更新接收
+ * 手机注册消息
  *
  * @author: xuxianbei
  * Date: 2019/12/24
@@ -32,10 +30,19 @@ public class RegisterMessage extends AbstractNotifyBusiness implements NotifyBus
      */
     private String businessId;
 
+    /**
+     * 旧的key
+     */
     private String oldKey;
 
+    /**
+     * 新的key
+     */
     private String newKey;
 
+    /**
+     * 目标id;平台会员ID fuid /商家ID
+     */
     private Long targetId;
 
     @Resource
@@ -75,7 +82,6 @@ public class RegisterMessage extends AbstractNotifyBusiness implements NotifyBus
 
     @Override
     protected void doSetKey() {
-        Assert.isTrue(requestMethod == RequestMethod.POST, "");
         UserRegisterDto userRegisterDto = JSONObject.parseObject(requestBody, UserRegisterDto.class);
         this.newKey = userRegisterDto.getFmobile();
         User user = new User();
