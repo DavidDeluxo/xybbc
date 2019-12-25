@@ -1,5 +1,6 @@
-package com.xingyun.bbc.mall.model.vo;
+package com.xingyun.bbc.mallpc.model.vo.message;
 
+import com.xingyun.bbc.mallpc.model.vo.ImageVo;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
@@ -43,6 +44,5 @@ public class MessageListVo {
 
     @ApiModelProperty(value = "消息信息")
     private MessageSelfInfoVo selfInfoVo;
-
 
 }

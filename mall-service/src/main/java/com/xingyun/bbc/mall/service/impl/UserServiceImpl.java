@@ -22,9 +22,11 @@ import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.operate.api.CityRegionApi;
 import com.xingyun.bbc.core.operate.api.MarketUserApi;
 import com.xingyun.bbc.core.operate.api.MarketUserStatisticsApi;
+import com.xingyun.bbc.core.operate.api.MessageUserDeviceApi;
 import com.xingyun.bbc.core.operate.po.CityRegion;
 import com.xingyun.bbc.core.operate.po.MarketUser;
 import com.xingyun.bbc.core.operate.po.MarketUserStatistics;
+import com.xingyun.bbc.core.operate.po.MessageUserDevice;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserAccountApi;
 import com.xingyun.bbc.core.user.api.UserApi;
@@ -120,6 +122,8 @@ public class UserServiceImpl implements UserService {
     private MarketUserStatisticsApi marketUserStatisticsApi;
     @Autowired
     private UserLoginInformationApi userLoginInformationApi;
+    @Autowired
+    private MessageUserDeviceApi messageUserDeviceApi;
 
     @Override
     public Result<UserLoginVo> userLogin(UserLoginDto dto) {
@@ -150,10 +154,38 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         user.setFuid(userLoginVo.getFuid());
         user.setFlastloginTime(new Date());
+        user.setFisLogout(0);
         userApi.updateNotNull(user);
+        //更新用户设备信息
+        if(dto.getDeviceToken() != null){
+            updateUserDevice(dto,userLoginVo.getFuid());
+        }
         //更新用户登录信息
         updateUserLoginInformation(dto,userResult.getData().getFuid());
         return Result.success(userLoginVo);
+    }
+
+    private void updateUserDevice(UserLoginDto dto,Long fuid) {
+        //查询当前用户是否已存在设备信息
+        Criteria<MessageUserDevice, Object> messageUserDeviceCriteria = Criteria.of(MessageUserDevice.class)
+                .andEqualTo(MessageUserDevice::getFuid,fuid).fields(MessageUserDevice::getFmessageUserDeviceId);
+        Result<MessageUserDevice> messageUserDeviceResult = messageUserDeviceApi.queryOneByCriteria(messageUserDeviceCriteria);
+        if(messageUserDeviceResult.isSuccess()){
+            MessageUserDevice messageUserDevice = new MessageUserDevice();
+            messageUserDevice.setFuid(fuid);
+            if(dto.getDeviceToken() != null){
+                messageUserDevice.setFdeviceNum(dto.getDeviceToken());
+            }
+            if(dto.getFdeviceType() != null){
+                messageUserDevice.setFdeviceType(dto.getFdeviceType());
+            }
+            if(messageUserDeviceResult.getData() != null){
+                messageUserDevice.setFmessageUserDeviceId(messageUserDeviceResult.getData().getFmessageUserDeviceId());
+                messageUserDeviceApi.updateNotNull(messageUserDevice);
+            }else{
+                messageUserDeviceApi.create(messageUserDevice);
+            }
+        }
     }
 
     private void updateUserLoginInformation(UserLoginDto dto, Long fuid) {
@@ -446,6 +478,8 @@ public class UserServiceImpl implements UserService {
         if(marketUser != null){
             updateMarketUserStatistics(marketUser,userAccount.getFuid());
         }
+        //写入用户设备信息
+        createUserDevice(dto,userResult.getData().getFuid());
         //领取注册优惠券和新人邀请券
         Integer couponNum = 0;
 //        couponNum = queryRegistCoupon(userLoginVo.getFuid());
@@ -455,9 +489,33 @@ public class UserServiceImpl implements UserService {
         return Result.success(userLoginVo);
     }
 
+    private void createUserDevice(UserRegisterDto dto, Long fuid) {
+        MessageUserDevice messageUserDevice = new MessageUserDevice();
+        messageUserDevice.setFuid(fuid);
+        messageUserDevice.setFdeviceNum(dto.getDeviceToken());
+        if(dto.getFregisterFrom().equals("android")){
+            messageUserDevice.setFdeviceType(2);
+        }else if(dto.getFregisterFrom().equals("ios")){
+            messageUserDevice.setFdeviceType(1);
+        }
+        messageUserDeviceApi.create(messageUserDevice);
+    }
+
     @Override
     public Result<Integer> queryRegisterPopupWindows(Long fuid) {
         return Result.success(queryRegistCoupon(fuid));
+    }
+
+    @Override
+    public Result<Integer> userLogout(Long fuid) {
+        User user = new User();
+        user.setFuid(fuid);
+        user.setFisLogout(1);
+        Result<Integer> result = userApi.updateNotNull(user);
+        if(!result.isSuccess()){
+            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+        }
+        return result;
     }
 
     private void updateMarketUserStatistics(MarketUser marketUser, Long fuid) {

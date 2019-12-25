@@ -1,4 +1,4 @@
-package com.xingyun.bbc.mallpc.message.register;
+package com.xingyun.bbc.mallpc.infrastructure.event.register;
 
 import com.alibaba.fastjson.JSONObject;
 import com.xingyun.bbc.core.user.api.UserApi;

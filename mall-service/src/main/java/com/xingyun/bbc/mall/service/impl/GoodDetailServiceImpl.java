@@ -55,6 +55,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -70,88 +71,88 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     public static final Logger logger = LoggerFactory.getLogger(GoodDetailService.class);
 
-    @Autowired
+    @Resource
     private UserApi userApi;
 
-    @Autowired
+    @Resource
     private UserVerifyApi userVerifyApi;
 
-    @Autowired
+    @Resource
     private CityRegionApi cityRegionApi;
 
-    @Autowired
+    @Resource
     private GoodsApi goodsApi;
 
-    @Autowired
+    @Resource
     private GoodsBrandApi goodsBrandApi;
 
-    @Autowired
+    @Resource
     private GoodsCategoryApi goodsCategoryApi;
 
-    @Autowired
+    @Resource
     private GoodsTradeInfoApi goodsTradeInfoApi;
 
-    @Autowired
+    @Resource
     private CountryApi countryApi;
 
-    @Autowired
+    @Resource
     private GoodsThumbImageApi goodsThumbImageApi;
 
-    @Autowired
+    @Resource
     private GoodsSkuApi goodsSkuApi;
 
-    @Autowired
+    @Resource
     private GoodsAttributeApi goodsAttributeApi;
 
-    @Autowired
+    @Resource
     private SkuBatchApi skuBatchApi;
 
-    @Autowired
+    @Resource
     private SkuBatchPackageApi skuBatchPackageApi;
 
-    @Autowired
+    @Resource
     private GoodsSkuBatchPriceApi goodsSkuBatchPriceApi;
 
-    @Autowired
+    @Resource
     private SkuBatchUserPriceApi skuBatchUserPriceApi;
 
-    @Autowired
+    @Resource
     private SkuUserDiscountConfigApi skuUserDiscountConfigApi;
 
-    @Autowired
+    @Resource
     private UserDeliveryApi userDeliveryApi;
 
-    @Autowired
+    @Resource
     private FreightApi freightApi;
 
-    @Autowired
+    @Resource
     private RegularListApi regularListApi;
 
-    @Autowired
+    @Resource
     private CouponApi couponApi;
 
-    @Autowired
+    @Resource
     private CouponReceiveApi couponReceiveApi;
 
-    @Autowired
+    @Resource
     private CouponBindUserApi couponBindUserApi;
 
-    @Autowired
+    @Resource
     private CouponProviderApi couponProviderApi;
 
-    @Autowired
+    @Resource
     private CouponApplicableSkuApi couponApplicableSkuApi;
 
-    @Autowired
+    @Resource
     private CouponApplicableSkuConditionApi couponApplicableSkuConditionApi;
 
-    @Autowired
+    @Resource
     private CouponReleaseApi couponReleaseApi;
 
-    @Autowired
+    @Resource
     private CouponReleaseConditionApi couponReleaseConditionApi;
 
-    @Autowired
+    @Resource
     private GoodsService goodsService;
 
     @Autowired
@@ -233,8 +234,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             goodsVo.setGoodsSkuAlterVo(goodsSkuAlterVo);
         }
 
-        //获取品牌名称和国旗icon
+        //获取品牌名称、品牌国家名和国旗icon
         goodsVo.setFbrandName("");
+        goodsVo.setFbrandCountryName("");
         goodsVo.setFcountryIcon("");
         if (null != goodsVo.getFbrandId()) {
             GoodsBrand goodsBrand = goodsBrandApi.queryOneByCriteria(Criteria.of(GoodsBrand.class)
@@ -242,6 +244,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     .fields(GoodsBrand::getFbrandName, GoodsBrand::getFbrandLogo, GoodsBrand::getFcountryName)).getData();
             if (null != goodsBrand) {
                 goodsVo.setFbrandName(goodsBrand.getFbrandName());
+                goodsVo.setFbrandCountryName(goodsBrand.getFcountryName());
                 goodsVo.setFbrandLogo(goodsBrand.getFbrandLogo() == null ? "" : goodsBrand.getFbrandLogo());
                 Country country = countryApi.queryOneByCriteria(Criteria.of(Country.class)
                         .andEqualTo(Country::getFcountryName, goodsBrand.getFcountryName())
@@ -252,16 +255,16 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             }
         }
 
-        //获取商品原产地名称
-        goodsVo.setFgoodsOrigin("");
-        if (null != goodsVo.getForiginId()) {
-            Country country = countryApi.queryOneByCriteria(Criteria.of(Country.class)
-                    .andEqualTo(Country::getFcountryId, goodsVo.getForiginId())
-                    .fields(Country::getFcountryName)).getData();
-            if (null != country) {
-                goodsVo.setFgoodsOrigin(country.getFcountryName());
-            }
-        }
+//        //获取商品原产地名称
+//        goodsVo.setFgoodsOrigin("");
+//        if (null != goodsVo.getForiginId()) {
+//            Country country = countryApi.queryOneByCriteria(Criteria.of(Country.class)
+//                    .andEqualTo(Country::getFcountryId, goodsVo.getForiginId())
+//                    .fields(Country::getFcountryName)).getData();
+//            if (null != country) {
+//                goodsVo.setFgoodsOrigin(country.getFcountryName());
+//            }
+//        }
         return Result.success(goodsVo);
     }
 

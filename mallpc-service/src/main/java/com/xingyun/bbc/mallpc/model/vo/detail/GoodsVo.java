@@ -28,6 +28,9 @@ public class GoodsVo implements Serializable {
     @ApiModelProperty(value = "商品品牌名称")
     private String fbrandName;
 
+    @ApiModelProperty(value = "商品品牌国家名称")
+    private String fbrandCountryName;
+
     @ApiModelProperty(value = "商品品牌LOGO")
     private String fbrandLogo;
 

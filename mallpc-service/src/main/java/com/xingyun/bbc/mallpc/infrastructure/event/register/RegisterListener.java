@@ -1,4 +1,4 @@
-package com.xingyun.bbc.mallpc.message.register;
+package com.xingyun.bbc.mallpc.infrastructure.event.register;
 
 import com.xingyun.bbc.core.operate.enums.PushTypeEnum;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;

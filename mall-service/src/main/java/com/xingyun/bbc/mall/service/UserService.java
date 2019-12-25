@@ -70,5 +70,7 @@ public interface UserService {
 
     //返回注册可领取优惠券数量
     Result<Integer> queryRegisterPopupWindows(Long fuid);
+
+    Result<Integer> userLogout(Long fuid);
 }
 

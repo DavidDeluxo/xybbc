@@ -1,12 +1,12 @@
-package com.xingyun.bbc.mall.service;
+package com.xingyun.bbc.mallpc.service;
 
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mall.model.dto.MessageQueryDto;
-import com.xingyun.bbc.mall.model.dto.MessageUpdateDto;
-import com.xingyun.bbc.mall.model.vo.MessageCenterVo;
-import com.xingyun.bbc.mall.model.vo.MessageDetailVo;
-import com.xingyun.bbc.mall.model.vo.MessageListVo;
-import com.xingyun.bbc.mall.model.vo.PageVo;
+import com.xingyun.bbc.mallpc.model.dto.message.MessageQueryDto;
+import com.xingyun.bbc.mallpc.model.dto.message.MessageUpdateDto;
+import com.xingyun.bbc.mallpc.model.vo.PageVo;
+import com.xingyun.bbc.mallpc.model.vo.message.MessageCenterVo;
+import com.xingyun.bbc.mallpc.model.vo.message.MessageDetailVo;
+import com.xingyun.bbc.mallpc.model.vo.message.MessageListVo;
 
 import java.util.List;
 

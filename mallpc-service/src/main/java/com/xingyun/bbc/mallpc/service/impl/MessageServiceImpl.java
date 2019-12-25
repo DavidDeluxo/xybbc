@@ -1,4 +1,4 @@
-package com.xingyun.bbc.mall.service.impl;
+package com.xingyun.bbc.mallpc.service.impl;
 
 import com.google.common.collect.Lists;
 import com.xingyun.bbc.core.exception.BizException;
@@ -20,15 +20,20 @@ import com.xingyun.bbc.express.api.ExpressBillProviderApi;
 import com.xingyun.bbc.express.model.dto.ExpressBillDto;
 import com.xingyun.bbc.express.model.vo.ExpressBillDetailVo;
 import com.xingyun.bbc.express.model.vo.ExpressBillVo;
-import com.xingyun.bbc.mall.common.enums.MessageAutoTypeEnum;
-import com.xingyun.bbc.mall.common.enums.MessageGroupTypeEnum;
-import com.xingyun.bbc.mall.common.enums.MessageManualTypeEnum;
-import com.xingyun.bbc.mall.common.enums.MessagePushTypeEnum;
-import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
-import com.xingyun.bbc.mall.model.dto.MessageQueryDto;
-import com.xingyun.bbc.mall.model.dto.MessageUpdateDto;
-import com.xingyun.bbc.mall.model.vo.*;
-import com.xingyun.bbc.mall.service.MessageService;
+import com.xingyun.bbc.mallpc.common.enums.MessageAutoTypeEnum;
+import com.xingyun.bbc.mallpc.common.enums.MessageGroupTypeEnum;
+import com.xingyun.bbc.mallpc.common.enums.MessageManualTypeEnum;
+import com.xingyun.bbc.mallpc.common.enums.MessagePushTypeEnum;
+import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
+import com.xingyun.bbc.mallpc.model.dto.message.MessageQueryDto;
+import com.xingyun.bbc.mallpc.model.dto.message.MessageUpdateDto;
+import com.xingyun.bbc.mallpc.model.vo.ImageVo;
+import com.xingyun.bbc.mallpc.model.vo.PageVo;
+import com.xingyun.bbc.mallpc.model.vo.message.MessageCenterVo;
+import com.xingyun.bbc.mallpc.model.vo.message.MessageDetailVo;
+import com.xingyun.bbc.mallpc.model.vo.message.MessageListVo;
+import com.xingyun.bbc.mallpc.model.vo.message.MessageSelfInfoVo;
+import com.xingyun.bbc.mallpc.service.MessageService;
 import io.seata.spring.annotation.GlobalLock;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -96,7 +101,7 @@ public class MessageServiceImpl implements MessageService {
                 .andGreaterThanOrEqualTo(MessageUserRecord::getFexpirationDate, new Date())
                 .sortDesc(MessageUserRecord::getFcreateTime));
         if (!userRecordResult.isSuccess()) {
-            throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+            throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
         }
         List<MessageUserRecord> userRecords = userRecordResult.getData();
         if (CollectionUtils.isEmpty(userRecords)) {
@@ -143,7 +148,7 @@ public class MessageServiceImpl implements MessageService {
                 .sortDesc(MessageUserRecord::getFcreateTime);
         Result<Integer> userRecordResult = userRecordApi.countByCriteria(userRecordObjectCriteria);
         if (!userRecordResult.isSuccess()) {
-            throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+            throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
         }
         Integer count = userRecordResult.getData();
         if (count < 1) {
@@ -151,7 +156,7 @@ public class MessageServiceImpl implements MessageService {
         }
         Result<List<MessageUserRecord>> userRecordsResult = userRecordApi.queryByCriteria(userRecordObjectCriteria);
         if (!userRecordsResult.isSuccess()) {
-            throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+            throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
         }
         List<MessageUserRecord> userRecords = userRecordsResult.getData();
         ArrayList<MessageListVo> messageListVos = Lists.newArrayList();
@@ -177,12 +182,12 @@ public class MessageServiceImpl implements MessageService {
                         // 发货单发货
                         case GOODS_SHIPPED:
                             if (StringUtils.isBlank(frefId)) {
-                                throw new BizException(new MallExceptionCode("", "消息未绑定发货单号"));
+                                throw new BizException(new MallPcExceptionCode("", "消息未绑定发货单号"));
                             }
                             // 发货单号、商品数量、订单号、收件人
                             Result<SupplierTransportOrder> transportOrderResult = transportOrderApi.queryById(frefId);
                             if (!transportOrderResult.isSuccess() || transportOrderResult.getData() == null) {
-                                throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+                                throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
                             }
                             SupplierTransportOrder transportOrder = transportOrderResult.getData();
                             String fshippingCode = transportOrder.getFshippingCode();
@@ -193,12 +198,12 @@ public class MessageServiceImpl implements MessageService {
                             expressBillDto.setCompanyName(fshippingName);
                             Result<ExpressBillVo> billVoResult = expressBillProvider.query(expressBillDto);
                             if (!billVoResult.isSuccess()) {
-                                throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+                                throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
                             }
                             ExpressBillVo expressBillVo = billVoResult.getData();
                             List<ExpressBillDetailVo> expressBillVoData = expressBillVo.getData();
                             if (CollectionUtils.isEmpty(expressBillVoData)) {
-                                throw new BizException(new MallExceptionCode("", "未查到物流信息"));
+                                throw new BizException(new MallPcExceptionCode("", "未查到物流信息"));
                             }
                             ExpressBillDetailVo billDetailVo = expressBillVoData.get(0);
                             // 发货单号、订单号
@@ -211,14 +216,14 @@ public class MessageServiceImpl implements MessageService {
                             Result<List<SupplierOrderSku>> countByCriteria = supplierOrderSkuApi.queryByCriteria(Criteria.of(SupplierOrderSku.class)
                                     .andEqualTo(SupplierOrderSku::getFsupplierOrderId, transportOrder.getFsupplierOrderId()));
                             if (!countByCriteria.isSuccess()) {
-                                throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+                                throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
                             }
                             List<SupplierOrderSku> orderSkus = countByCriteria.getData();
                             selfInfoVo.setSkuNum(orderSkus.size());
                             // 收件人
                             Result<OrderPayment> orderPaymentResult = paymentApi.queryById(transportOrder.getForderPaymentId());
                             if (!orderPaymentResult.isSuccess()) {
-                                throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+                                throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
                             }
                             selfInfoVo.setDeliveryName(orderPaymentResult.getData().getFdeliveryName());
                             messageListVo.setSelfInfoVo(selfInfoVo);
@@ -237,18 +242,18 @@ public class MessageServiceImpl implements MessageService {
                         case USER_VERIFY:
                             Result<User> userResult = userApi.queryById(record.getFuid());
                             if (!userResult.isSuccess()) {
-                                throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+                                throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
                             }
                             User user = userResult.getData();
                             if (user == null) {
-                                throw new BizException(new MallExceptionCode("", "未查到该消息绑定用户"));
+                                throw new BizException(new MallPcExceptionCode("", "未查到该消息绑定用户"));
                             }
                             MessageSelfInfoVo userSelfInfoVo = new MessageSelfInfoVo();
                             userSelfInfoVo.setAuthenticationType(user.getFoperateType());
                             messageListVo.setDesc(record.getFcontent());
                             break;
                         default:
-                            throw new BizException(new MallExceptionCode("", "不存在的自动消息类型"));
+                            throw new BizException(new MallPcExceptionCode("", "不存在的自动消息类型"));
                     }
                     break;
                 // 手动消息类型
@@ -278,11 +283,11 @@ public class MessageServiceImpl implements MessageService {
                                             , GoodsSku::getFskuId
                                             , GoodsSku::getFgoodsId));
                             if (!goodsSkuResult.isSuccess()) {
-                                throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+                                throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
                             }
                             GoodsSku goodsSku = goodsSkuResult.getData();
                             if (goodsSku == null) {
-                                throw new BizException(new MallExceptionCode("", "商品消息未绑定SKU编码"));
+                                throw new BizException(new MallPcExceptionCode("", "商品消息未绑定SKU编码"));
                             }
                             MessageSelfInfoVo goodsSelfInfo = new MessageSelfInfoVo();
                             goodsSelfInfo.setGoodsId(goodsSku.getFgoodsId());
@@ -295,7 +300,7 @@ public class MessageServiceImpl implements MessageService {
                             messageListVo.setDesc(record.getFcontent());
                             break;
                         default:
-                            throw new BizException(new MallExceptionCode("", "不存在的手动消息类型"));
+                            throw new BizException(new MallPcExceptionCode("", "不存在的手动消息类型"));
                     }
                     break;
                 default:
@@ -316,11 +321,11 @@ public class MessageServiceImpl implements MessageService {
     public Result<MessageDetailVo> queryMessageDetailById(MessageQueryDto dto) {
         Result<MessageUserRecord> userRecordResult = userRecordApi.queryById(dto.getMessageId());
         if (!userRecordResult.isSuccess()) {
-            throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+            throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
         }
         MessageUserRecord userRecord = userRecordResult.getData();
         if (userRecord == null) {
-            throw new BizException(new MallExceptionCode("", "消息不存在"));
+            throw new BizException(new MallPcExceptionCode("", "消息不存在"));
         }
 
         return Result.success(new MessageDetailVo(userRecord.getFcontent(), userRecord.getFcreateTime(), userRecord.getFtitle()));
@@ -351,7 +356,7 @@ public class MessageServiceImpl implements MessageService {
             userRecord.setFreaded(1);
             Result<Integer> updateRecord = userRecordApi.updateNotNull(userRecord);
             if (!updateRecord.isSuccess()) {
-                throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+                throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
             }
         });
         return Result.success();
