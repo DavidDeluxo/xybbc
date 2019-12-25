@@ -154,6 +154,7 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         user.setFuid(userLoginVo.getFuid());
         user.setFlastloginTime(new Date());
+        user.setFisLogout(0);
         userApi.updateNotNull(user);
         //更新用户设备信息
         if(dto.getDeviceToken() != null){
