@@ -165,27 +165,45 @@ public class UserServiceImpl implements UserService {
         return Result.success(userLoginVo);
     }
 
+//    private void updateUserDevice(UserLoginDto dto,Long fuid) {
+//        //查询当前用户是否已存在设备信息
+//        Criteria<MessageUserDevice, Object> messageUserDeviceCriteria = Criteria.of(MessageUserDevice.class)
+//                .andEqualTo(MessageUserDevice::getFuid,fuid).fields(MessageUserDevice::getFmessageUserDeviceId);
+//        Result<MessageUserDevice> messageUserDeviceResult = messageUserDeviceApi.queryOneByCriteria(messageUserDeviceCriteria);
+//        if(messageUserDeviceResult.isSuccess()){
+//            MessageUserDevice messageUserDevice = new MessageUserDevice();
+//            messageUserDevice.setFuid(fuid);
+//            if(dto.getDeviceToken() != null){
+//                messageUserDevice.setFdeviceNum(dto.getDeviceToken());
+//            }
+//            if(dto.getFdeviceType() != null){
+//                messageUserDevice.setFdeviceType(dto.getFdeviceType());
+//            }
+//            if(messageUserDeviceResult.getData() != null){
+//                messageUserDevice.setFmessageUserDeviceId(messageUserDeviceResult.getData().getFmessageUserDeviceId());
+//                messageUserDeviceApi.updateNotNull(messageUserDevice);
+//            }else{
+//                messageUserDeviceApi.create(messageUserDevice);
+//            }
+//        }
+//    }
+
     private void updateUserDevice(UserLoginDto dto,Long fuid) {
-        //查询当前用户是否已存在设备信息
-        Criteria<MessageUserDevice, Object> messageUserDeviceCriteria = Criteria.of(MessageUserDevice.class)
-                .andEqualTo(MessageUserDevice::getFuid,fuid).fields(MessageUserDevice::getFmessageUserDeviceId);
-        Result<MessageUserDevice> messageUserDeviceResult = messageUserDeviceApi.queryOneByCriteria(messageUserDeviceCriteria);
-        if(messageUserDeviceResult.isSuccess()){
-            MessageUserDevice messageUserDevice = new MessageUserDevice();
-            messageUserDevice.setFuid(fuid);
-            if(dto.getDeviceToken() != null){
-                messageUserDevice.setFdeviceNum(dto.getDeviceToken());
-            }
-            if(dto.getFdeviceType() != null){
-                messageUserDevice.setFdeviceType(dto.getFdeviceType());
-            }
-            if(messageUserDeviceResult.getData() != null){
-                messageUserDevice.setFmessageUserDeviceId(messageUserDeviceResult.getData().getFmessageUserDeviceId());
-                messageUserDeviceApi.updateNotNull(messageUserDevice);
-            }else{
-                messageUserDeviceApi.create(messageUserDevice);
-            }
+        MessageUserDevice messageUserDevice = new MessageUserDevice();
+        MessageUserDevice device = new MessageUserDevice();
+        device.setFuid(fuid);
+        messageUserDeviceApi.delete(device);
+        messageUserDevice.setFuid(fuid);
+        if(dto.getDeviceToken() != null){
+            messageUserDevice.setFdeviceNum(dto.getDeviceToken());
+            device.setFdeviceNum(dto.getDeviceToken());
+            device.setFuid(null);
+            messageUserDeviceApi.delete(device);
         }
+        if(dto.getFdeviceType() != null){
+            messageUserDevice.setFdeviceType(dto.getFdeviceType());
+        }
+        messageUserDeviceApi.create(messageUserDevice);
     }
 
     private void updateUserLoginInformation(UserLoginDto dto, Long fuid) {
@@ -249,6 +267,23 @@ public class UserServiceImpl implements UserService {
             userLoginVo.setFwithdrawPasswdStatus(1);
         }
         return userLoginVo;
+    }
+
+    @Override
+    public Result<Integer> updateMessageUserDevice(String deviceToken) {
+        //查询当前deviceToken是否已存在
+        Result<Integer> result = null;
+        Criteria<MessageUserDevice, Object> messageUserDeviceCriteria = Criteria.of(MessageUserDevice.class)
+                .andEqualTo(MessageUserDevice::getFdeviceNum,deviceToken).fields(MessageUserDevice::getFmessageUserDeviceId);
+        Result<MessageUserDevice> messageUserDeviceResult = messageUserDeviceApi.queryOneByCriteria(messageUserDeviceCriteria);
+        if(messageUserDeviceResult.isSuccess()){
+            if(messageUserDeviceResult.getData() == null){
+                MessageUserDevice messageUserDevice = new MessageUserDevice();
+                messageUserDevice.setFdeviceNum(deviceToken);
+                result = messageUserDeviceApi.create(messageUserDevice);
+            }
+        }
+        return result;
     }
 
     @Override
@@ -491,8 +526,16 @@ public class UserServiceImpl implements UserService {
 
     private void createUserDevice(UserRegisterDto dto, Long fuid) {
         MessageUserDevice messageUserDevice = new MessageUserDevice();
+        MessageUserDevice device = new MessageUserDevice();
         messageUserDevice.setFuid(fuid);
-        messageUserDevice.setFdeviceNum(dto.getDeviceToken());
+        device.setFuid(fuid);
+        messageUserDeviceApi.delete(device);
+        if(dto.getDeviceToken() != null){
+            messageUserDevice.setFdeviceNum(dto.getDeviceToken());
+            device.setFdeviceNum(dto.getDeviceToken());
+            device.setFuid(null);
+            messageUserDeviceApi.delete(device);
+        }
         if(dto.getFregisterFrom().equals("android")){
             messageUserDevice.setFdeviceType(2);
         }else if(dto.getFregisterFrom().equals("ios")){
