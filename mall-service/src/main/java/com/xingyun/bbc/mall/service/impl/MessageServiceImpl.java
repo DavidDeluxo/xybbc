@@ -318,8 +318,19 @@ public class MessageServiceImpl implements MessageService {
         if (userRecord == null) {
             throw new BizException(new MallExceptionCode("", "消息不存在"));
         }
-
-        return Result.success(new MessageDetailVo(userRecord.getFcontent(), userRecord.getFcreateTime(), userRecord.getFtitle()));
+        String recordOthercontent = userRecord.getFcontent();
+        // 去除${}
+        Matcher matcherOther = COMPILE.matcher(recordOthercontent);
+        boolean isTrueOther = matcherOther.find();
+        if (!isTrueOther) {
+            return Result.success(new MessageDetailVo(userRecord.getFcontent(), userRecord.getFcreateTime(), userRecord.getFtitle()));
+        }
+        int indexOther = recordOthercontent.indexOf(matcherOther.group(0));
+        StringBuilder builder = new StringBuilder(recordOthercontent.substring(0, indexOther));
+        String replaceAll = matcherOther.group(0).replaceAll("[${|}]", "");
+        builder.append(replaceAll)
+                .append(recordOthercontent.substring(indexOther + matcherOther.group(0).length()));
+        return Result.success(new MessageDetailVo(builder.toString(), userRecord.getFcreateTime(), userRecord.getFtitle()));
     }
 
     /**
