@@ -30,9 +30,9 @@ public class RequestHolder {
      * @return
      */
     public static Long getUserId() {
-        /*String adminId = getRequest().getHeader(PermissionEnums.ACCESS_TOKEN_XYID.getCode());
-        Ensure.that(adminId).isNotBlank(MallExceptionCode.USER_NOT_LOGGED_IN);*/
-        return Long.valueOf("13235531699");
+        String adminId = getRequest().getHeader(PermissionEnums.ACCESS_TOKEN_XYID.getCode());
+        Ensure.that(adminId).isNotBlank(MallExceptionCode.USER_NOT_LOGGED_IN);
+        return Long.valueOf(adminId);
     }
 
     /**
