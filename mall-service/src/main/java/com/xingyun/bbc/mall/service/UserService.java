@@ -72,5 +72,7 @@ public interface UserService {
     Result<Integer> queryRegisterPopupWindows(Long fuid);
 
     Result<Integer> userLogout(Long fuid);
+
+    Result<Integer> updateMessageUserDevice(String deviceToken);
 }
 
