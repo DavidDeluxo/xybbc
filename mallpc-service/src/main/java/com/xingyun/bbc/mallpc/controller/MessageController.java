@@ -1,14 +1,14 @@
-package com.xingyun.bbc.mall.controller;
+package com.xingyun.bbc.mallpc.controller;
 
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mall.common.utils.RequestHolder;
-import com.xingyun.bbc.mall.model.dto.MessageQueryDto;
-import com.xingyun.bbc.mall.model.dto.MessageUpdateDto;
-import com.xingyun.bbc.mall.model.vo.MessageCenterVo;
-import com.xingyun.bbc.mall.model.vo.MessageDetailVo;
-import com.xingyun.bbc.mall.model.vo.MessageListVo;
-import com.xingyun.bbc.mall.model.vo.PageVo;
-import com.xingyun.bbc.mall.service.MessageService;
+import com.xingyun.bbc.mallpc.common.utils.RequestHolder;
+import com.xingyun.bbc.mallpc.model.dto.message.MessageQueryDto;
+import com.xingyun.bbc.mallpc.model.dto.message.MessageUpdateDto;
+import com.xingyun.bbc.mallpc.model.vo.PageVo;
+import com.xingyun.bbc.mallpc.model.vo.message.MessageCenterVo;
+import com.xingyun.bbc.mallpc.model.vo.message.MessageDetailVo;
+import com.xingyun.bbc.mallpc.model.vo.message.MessageListVo;
+import com.xingyun.bbc.mallpc.service.MessageService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;

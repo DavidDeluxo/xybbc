@@ -1,4 +1,4 @@
-package com.xingyun.bbc.mall.model.dto;
+package com.xingyun.bbc.mallpc.model.dto.message;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;

@@ -1,4 +1,4 @@
-package com.xingyun.bbc.mall.model.vo;
+package com.xingyun.bbc.mallpc.model.vo.message;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
