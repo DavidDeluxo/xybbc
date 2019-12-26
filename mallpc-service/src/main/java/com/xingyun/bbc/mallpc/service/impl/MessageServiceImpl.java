@@ -149,7 +149,7 @@ public class MessageServiceImpl implements MessageService {
         if (count < 1) {
             return Result.success(new PageVo(0, dto.getCurrentPage(), dto.getPageSize(), Lists.newArrayList()));
         }
-        Result<List<MessageUserRecord>> userRecordsResult = userRecordApi.queryByCriteria(userRecordObjectCriteria);
+        Result<List<MessageUserRecord>> userRecordsResult = userRecordApi.queryByCriteria(userRecordObjectCriteria.page(dto.getCurrentPage(), dto.getPageSize()));
         if (!userRecordsResult.isSuccess()) {
             throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
         }
