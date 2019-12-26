@@ -663,7 +663,7 @@ public class IndexServiceImpl implements IndexService {
                 //查询未删除的，可显示的数据
                 Criteria.of(GoodsCategory.class)
                         .fields(GoodsCategory::getFcategoryName, GoodsCategory::getFcategoryId, GoodsCategory::getFcategoryDesc)
-                        .sortDesc(GoodsCategory::getFmodifyTime)
+                        .sort(GoodsCategory::getFcategorySort)
                         .andEqualTo(GoodsCategory::getFparentCategoryId, 0)
                         .andEqualTo(GoodsCategory::getFisDelete, 0)
                         .andEqualTo(GoodsCategory::getFisDisplay, 1));
