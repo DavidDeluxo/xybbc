@@ -216,7 +216,8 @@ public class MessageServiceImpl implements MessageService {
                             selfInfoVo.setOrderId(transportOrder.getForderId());
                             // 商品数量
                             Result<List<SupplierOrderSku>> countByCriteria = supplierOrderSkuApi.queryByCriteria(Criteria.of(SupplierOrderSku.class)
-                                    .andEqualTo(SupplierOrderSku::getFsupplierOrderId, transportOrder.getFsupplierOrderId()));
+                                    .andEqualTo(SupplierOrderSku::getFsupplierOrderId, transportOrder.getFsupplierOrderId())
+                                    .sortDesc(SupplierOrderSku::getFcreateTime));
                             if (!countByCriteria.isSuccess()) {
                                 throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
                             }
@@ -224,6 +225,15 @@ public class MessageServiceImpl implements MessageService {
                             selfInfoVo.setSkuNum(orderSkus.size());
                             // 收件人
                             selfInfoVo.setDeliveryName(orderPaymentResult.getData().getFdeliveryName());
+                            String fskuCode = orderSkus.get(0).getFskuCode();
+                            Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
+                                    .andEqualTo(GoodsSku::getFskuCode, fskuCode)
+                                    .fields(GoodsSku::getFskuThumbImage));
+                            if (!goodsSkuResult.isSuccess()) {
+                                throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
+                            }
+                            String fskuThumbImage = goodsSkuResult.getData().getFskuThumbImage();
+                            messageListVo.setImageUrl(new ImageVo(fskuThumbImage));
                             messageListVo.setSelfInfoVo(selfInfoVo);
                             break;
                         // 注册成功
