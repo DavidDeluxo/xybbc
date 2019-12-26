@@ -131,7 +131,6 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public Result<PageVo<MessageListVo>> queryMessageList(MessageQueryDto dto) {
         Criteria<MessageUserRecord, Object> userRecordObjectCriteria = Criteria.of(MessageUserRecord.class)
-                .andEqualTo(MessageUserRecord::getFreaded, 0)
                 .andEqualTo(MessageUserRecord::getFsendStatus, 2)
                 .andEqualTo(MessageUserRecord::getFuid, dto.getUserId())
                 .andEqualTo(MessageUserRecord::getFmessageGroup, dto.getMessageCenterType())
