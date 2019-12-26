@@ -257,6 +257,7 @@ public class MessageServiceImpl implements MessageService {
                             }
                             MessageSelfInfoVo userSelfInfoVo = new MessageSelfInfoVo();
                             userSelfInfoVo.setAuthenticationType(user.getFoperateType());
+                            messageListVo.setSelfInfoVo(userSelfInfoVo);
                             messageListVo.setDesc(record.getFcontent());
                             break;
                         default:
@@ -293,7 +294,8 @@ public class MessageServiceImpl implements MessageService {
                                     .andEqualTo(GoodsSku::getFskuCode, frefId)
                                     .fields(GoodsSku::getFskuName
                                             , GoodsSku::getFskuId
-                                            , GoodsSku::getFgoodsId));
+                                            , GoodsSku::getFgoodsId
+                                            , GoodsSku::getFskuThumbImage));
                             if (!goodsSkuResult.isSuccess()) {
                                 throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
                             }
