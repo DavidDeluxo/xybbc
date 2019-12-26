@@ -91,7 +91,6 @@ public class MessageServiceImpl implements MessageService {
     public Result<List<MessageCenterVo>> queryMessageGroupByUserId(Long userId) {
 
         Result<List<MessageUserRecord>> userRecordResult = userRecordApi.queryByCriteria(Criteria.of(MessageUserRecord.class)
-                .andEqualTo(MessageUserRecord::getFreaded, 0)
                 .andEqualTo(MessageUserRecord::getFsendStatus, 2)
                 .andEqualTo(MessageUserRecord::getFuid, userId)
                 .andGreaterThanOrEqualTo(MessageUserRecord::getFexpirationDate, new Date())
@@ -113,9 +112,10 @@ public class MessageServiceImpl implements MessageService {
             Integer recordEntryKey = recordEntry.getKey();
             List<MessageUserRecord> recordList = recordEntry.getValue();
             MessageUserRecord messageUserRecord = recordList.get(0);
+            int size = (int) recordList.stream().filter(r -> r.getFreaded().equals(0)).count();
             messageCenterVos.add(new MessageCenterVo(recordEntryKey
                     , messageUserRecord.getFtitle()
-                    , recordList.size()
+                    , size
                     , messageUserRecord.getFcreateTime().getTime()));
         }
         List<Integer> types = messageCenterVos.stream().map(MessageCenterVo::getMessageGroupType).collect(Collectors.toList());
@@ -276,7 +276,12 @@ public class MessageServiceImpl implements MessageService {
                             // 从${xxx}后开始截取
                             Matcher matcher = COMPILE.matcher(recordFcontent);
                             boolean isTrue = matcher.find();
+                            String imageFlag = "<img";
                             if (!isTrue) {
+                                if (recordFcontent.contains(imageFlag)) {
+                                    messageListVo.setDesc("");
+                                    break;
+                                }
                                 messageListVo.setDesc(recordFcontent);
                                 break;
                             }
