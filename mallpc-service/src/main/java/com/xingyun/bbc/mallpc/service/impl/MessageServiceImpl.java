@@ -136,7 +136,6 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public Result<PageVo<MessageListVo>> queryMessageList(MessageQueryDto dto) {
         Criteria<MessageUserRecord, Object> userRecordObjectCriteria = Criteria.of(MessageUserRecord.class)
-                .andEqualTo(MessageUserRecord::getFreaded, 0)
                 .andEqualTo(MessageUserRecord::getFsendStatus, 2)
                 .andEqualTo(MessageUserRecord::getFuid, dto.getUserId())
                 .andEqualTo(MessageUserRecord::getFmessageGroup, dto.getMessageCenterType())
@@ -186,10 +185,16 @@ public class MessageServiceImpl implements MessageService {
                                 throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
                             }
                             SupplierTransportOrder transportOrder = transportOrderResult.getData();
+                            String logisticsNo = transportOrder.getForderLogisticsNo();
                             String fshippingCode = transportOrder.getFshippingCode();
                             String fshippingName = transportOrder.getFshippingName();
+                            Result<OrderPayment> orderPaymentResult = paymentApi.queryById(transportOrder.getForderPaymentId());
+                            if (!orderPaymentResult.isSuccess()) {
+                                throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
+                            }
                             ExpressBillDto expressBillDto = new ExpressBillDto();
-                            expressBillDto.setTransportOrderId(frefId);
+                            expressBillDto.setPhone(orderPaymentResult.getData().getFdeliveryMobile());
+                            expressBillDto.setBillNo(logisticsNo);
                             expressBillDto.setCompanyCode(fshippingCode);
                             expressBillDto.setCompanyName(fshippingName);
                             Result<ExpressBillVo> billVoResult = expressBillProvider.query(expressBillDto);
@@ -210,18 +215,24 @@ public class MessageServiceImpl implements MessageService {
                             selfInfoVo.setOrderId(transportOrder.getForderId());
                             // 商品数量
                             Result<List<SupplierOrderSku>> countByCriteria = supplierOrderSkuApi.queryByCriteria(Criteria.of(SupplierOrderSku.class)
-                                    .andEqualTo(SupplierOrderSku::getFsupplierOrderId, transportOrder.getFsupplierOrderId()));
+                                    .andEqualTo(SupplierOrderSku::getFsupplierOrderId, transportOrder.getFsupplierOrderId())
+                                    .sortDesc(SupplierOrderSku::getFcreateTime));
                             if (!countByCriteria.isSuccess()) {
                                 throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
                             }
                             List<SupplierOrderSku> orderSkus = countByCriteria.getData();
                             selfInfoVo.setSkuNum(orderSkus.size());
                             // 收件人
-                            Result<OrderPayment> orderPaymentResult = paymentApi.queryById(transportOrder.getForderPaymentId());
-                            if (!orderPaymentResult.isSuccess()) {
+                            selfInfoVo.setDeliveryName(orderPaymentResult.getData().getFdeliveryName());
+                            String fskuCode = orderSkus.get(0).getFskuCode();
+                            Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
+                                    .andEqualTo(GoodsSku::getFskuCode, fskuCode)
+                                    .fields(GoodsSku::getFskuThumbImage));
+                            if (!goodsSkuResult.isSuccess()) {
                                 throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
                             }
-                            selfInfoVo.setDeliveryName(orderPaymentResult.getData().getFdeliveryName());
+                            String fskuThumbImage = goodsSkuResult.getData().getFskuThumbImage();
+                            messageListVo.setImageUrl(new ImageVo(fskuThumbImage));
                             messageListVo.setSelfInfoVo(selfInfoVo);
                             break;
                         // 注册成功
