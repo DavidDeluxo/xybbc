@@ -35,15 +35,22 @@ import com.xingyun.bbc.mall.model.vo.AftersaleDetailVo;
 import com.xingyun.bbc.mall.model.vo.AftersaleListVo;
 import com.xingyun.bbc.mall.model.vo.PageVo;
 import com.xingyun.bbc.mall.service.AftersaleService;
+import com.xingyun.bbc.message.business.MessagePushChannel;
+import com.xingyun.bbc.message.model.dto.MsgPushDto;
+import com.xingyun.bbc.message.model.dto.MsgTemplateVariableDto;
+import com.xingyun.bbc.message.model.enums.PushTypeEnum;
 import io.seata.spring.annotation.GlobalTransactional;
 import org.apache.commons.lang3.StringUtils;
 import org.dozer.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -88,6 +95,10 @@ public class AftersaleServiceImpl implements AftersaleService {
     private DozerHolder dozerHolder;
 
 
+    @Resource
+    private MessagePushChannel messagePushChannel;
+
+
     @Override
     public Result<PageVo<AftersaleListVo>> getAftersaleLis(AftersaleLisDto aftersaleLisDto) {
         //获取售后列表信息
@@ -104,9 +115,9 @@ public class AftersaleServiceImpl implements AftersaleService {
 
         //售后状态1待客服审核 2待采购审核 3待仓库审核 4待财务审核 5已拒绝 6待退货 7待退款 8已成功 9已撤销  列表查询不限制状态
         criteria.fields(OrderAftersale::getForderAftersaleId, OrderAftersale::getFskuCode,
-                        OrderAftersale::getFaftersaleNum, OrderAftersale::getFaftersaleStatus,
-                        OrderAftersale::getFunitPrice, OrderAftersale::getFbatchPackageNum,
-                        OrderAftersale::getFtransportOrderId)
+                OrderAftersale::getFaftersaleNum, OrderAftersale::getFaftersaleStatus,
+                OrderAftersale::getFunitPrice, OrderAftersale::getFbatchPackageNum,
+                OrderAftersale::getFtransportOrderId)
                 .page(aftersaleLisDto.getCurrentPage(), aftersaleLisDto.getPageSize())
                 .sortDesc(OrderAftersale::getFcreateTime);
 
@@ -147,7 +158,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         return Result.success(result);
     }
 
-    private String getAftersaleNumShow (Integer faftersaleNum, String ftransportOrderId, String fskuCode) {
+    private String getAftersaleNumShow(Integer faftersaleNum, String ftransportOrderId, String fskuCode) {
         //发货前直接展示 faftersaleNum 发货后(有发货单) 展示faftersaleNum/发货总数
         if (StringUtils.isEmpty(ftransportOrderId)) {
             return faftersaleNum.toString();
@@ -310,7 +321,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         //更新售后状态--修改时间加了乐观锁--先查询再保存
         Result<OrderAftersale> queryAfterSaleResult = orderAftersaleApi.queryOneByCriteria(Criteria.of(OrderAftersale.class)
                 .andEqualTo(OrderAftersale::getForderAftersaleId, aftersaleBackDto.getForderAftersaleId())
-                .fields(OrderAftersale::getFmodifyTime));
+                .fields(OrderAftersale::getFmodifyTime,OrderAftersale::getFsupplierId));
         if (!queryAfterSaleResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
@@ -321,6 +332,9 @@ public class AftersaleServiceImpl implements AftersaleService {
         if (!aftersaleResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
+        //售后订单变为待退款 发送站内信
+        sendMessage(upAftersale);
+
         return Result.success();
     }
 
@@ -382,5 +396,20 @@ public class AftersaleServiceImpl implements AftersaleService {
         goodsSku.setFskuName(skuName);
         goodsSku.setFskuThumbImage(skuPic);
         return goodsSku;
+    }
+
+    private void sendMessage(OrderAftersale orderAftersale) {
+        MsgPushDto msgPushDto = new MsgPushDto();
+        MsgTemplateVariableDto msgTemplateVariableDto = new MsgTemplateVariableDto();
+        if (orderAftersale.getFaftersaleStatus().equals(OrderAftersaleStatus.WAIT_RETURN_MONEY.getCode().toString())) {
+            msgTemplateVariableDto.setFsupplierWorkOrder(orderAftersale.getForderAftersaleId());
+            msgPushDto.setMsgTemplateVariable(msgTemplateVariableDto);
+            msgPushDto.setSystemTemplateType(8);
+            msgPushDto.setPushType(PushTypeEnum.SYSTEM_NOTIFY.getKey());
+            msgPushDto.setSubjectType(2);
+            msgPushDto.setSubjectId(orderAftersale.getFsupplierId());
+            Message<MsgPushDto> message = MessageBuilder.withPayload(msgPushDto).build();
+            messagePushChannel.systemNoticeOut().send(message);
+        }
     }
 }
