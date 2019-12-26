@@ -40,6 +40,7 @@ import com.xingyun.bbc.message.model.dto.MsgPushDto;
 import com.xingyun.bbc.message.model.dto.MsgTemplateVariableDto;
 import com.xingyun.bbc.message.model.enums.PushTypeEnum;
 import io.seata.spring.annotation.GlobalTransactional;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.dozer.Mapper;
 import org.slf4j.Logger;
@@ -57,6 +58,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
+@Slf4j
 @Service
 @EnableBinding(MessagePushChannel.class)
 public class AftersaleServiceImpl implements AftersaleService {
@@ -335,7 +337,11 @@ public class AftersaleServiceImpl implements AftersaleService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         //售后订单变为待退款 发送站内信
-        sendMessage(upAftersale);
+        try {
+            sendMessage(upAftersale);
+        }catch (Exception e){
+            log.info("售后订单变为待退款,发送站内信失败{}",e.getMessage(),e);
+        }
 
         return Result.success();
     }
