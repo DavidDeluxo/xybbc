@@ -272,19 +272,24 @@ public class UserServiceImpl implements UserService {
     @Override
     public Result<Integer> updateMessageUserDevice(String deviceToken) {
         //查询当前deviceToken是否已存在
-        Result<Integer> result = null;
-        Criteria<MessageUserDevice, Object> messageUserDeviceCriteria = Criteria.of(MessageUserDevice.class)
-                .andEqualTo(MessageUserDevice::getFdeviceNum,deviceToken).fields(MessageUserDevice::getFmessageUserDeviceId);
-        Result<MessageUserDevice> messageUserDeviceResult = messageUserDeviceApi.queryOneByCriteria(messageUserDeviceCriteria);
-        if(messageUserDeviceResult.isSuccess()){
-            if(messageUserDeviceResult.getData() == null){
-                MessageUserDevice messageUserDevice = new MessageUserDevice();
-                messageUserDevice.setFdeviceNum(deviceToken);
-                messageUserDevice.setFuid(0L);
-                result = messageUserDeviceApi.create(messageUserDevice);
+        Integer flag = 0;
+        if(!deviceToken.equals("")){
+            Criteria<MessageUserDevice, Object> messageUserDeviceCriteria = Criteria.of(MessageUserDevice.class)
+                    .andEqualTo(MessageUserDevice::getFdeviceNum,deviceToken).fields(MessageUserDevice::getFmessageUserDeviceId);
+            Result<MessageUserDevice> messageUserDeviceResult = messageUserDeviceApi.queryOneByCriteria(messageUserDeviceCriteria);
+            if(messageUserDeviceResult.isSuccess()){
+                if(messageUserDeviceResult.getData() == null){
+                    MessageUserDevice messageUserDevice = new MessageUserDevice();
+                    messageUserDevice.setFdeviceNum(deviceToken);
+                    messageUserDevice.setFuid(0L);
+                    Result<Integer> result = messageUserDeviceApi.create(messageUserDevice);
+                    if(result.isSuccess()){
+                        flag = result.getData();
+                    }
+                }
             }
         }
-        return result;
+        return Result.success(flag);
     }
 
     @Override
