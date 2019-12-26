@@ -181,10 +181,16 @@ public class MessageServiceImpl implements MessageService {
                                 throw new BizException(MallExceptionCode.SYSTEM_ERROR);
                             }
                             SupplierTransportOrder transportOrder = transportOrderResult.getData();
+                            String logisticsNo = transportOrder.getForderLogisticsNo();
                             String fshippingCode = transportOrder.getFshippingCode();
                             String fshippingName = transportOrder.getFshippingName();
+                            Result<OrderPayment> orderPaymentResult = paymentApi.queryById(transportOrder.getForderPaymentId());
+                            if (!orderPaymentResult.isSuccess()) {
+                                throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+                            }
                             ExpressBillDto expressBillDto = new ExpressBillDto();
-                            expressBillDto.setTransportOrderId(frefId);
+                            expressBillDto.setPhone(orderPaymentResult.getData().getFdeliveryMobile());
+                            expressBillDto.setBillNo(logisticsNo);
                             expressBillDto.setCompanyCode(fshippingCode);
                             expressBillDto.setCompanyName(fshippingName);
                             Result<ExpressBillVo> billVoResult = expressBillProvider.query(expressBillDto);
@@ -212,10 +218,6 @@ public class MessageServiceImpl implements MessageService {
                             List<SupplierOrderSku> orderSkus = countByCriteria.getData();
                             selfInfoVo.setSkuNum(orderSkus.size());
                             // 收件人
-                            Result<OrderPayment> orderPaymentResult = paymentApi.queryById(transportOrder.getForderPaymentId());
-                            if (!orderPaymentResult.isSuccess()) {
-                                throw new BizException(MallExceptionCode.SYSTEM_ERROR);
-                            }
                             selfInfoVo.setDeliveryName(orderPaymentResult.getData().getFdeliveryName());
                             messageListVo.setSelfInfoVo(selfInfoVo);
                             break;
