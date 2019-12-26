@@ -280,6 +280,7 @@ public class UserServiceImpl implements UserService {
             if(messageUserDeviceResult.getData() == null){
                 MessageUserDevice messageUserDevice = new MessageUserDevice();
                 messageUserDevice.setFdeviceNum(deviceToken);
+                messageUserDevice.setFuid(0L);
                 result = messageUserDeviceApi.create(messageUserDevice);
             }
         }
