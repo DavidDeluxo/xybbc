@@ -37,15 +37,22 @@ import com.xingyun.bbc.mallpc.model.vo.aftersale.AftersaleBackVo;
 import com.xingyun.bbc.mallpc.model.vo.aftersale.AftersaleDetailVo;
 import com.xingyun.bbc.mallpc.model.vo.aftersale.AftersaleListVo;
 import com.xingyun.bbc.mallpc.service.AftersaleService;
+import com.xingyun.bbc.message.business.MessagePushChannel;
+import com.xingyun.bbc.message.model.dto.MsgPushDto;
+import com.xingyun.bbc.message.model.dto.MsgTemplateVariableDto;
+import com.xingyun.bbc.message.model.enums.PushTypeEnum;
 import io.seata.spring.annotation.GlobalTransactional;
 import org.apache.commons.lang3.StringUtils;
 import org.dozer.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -105,6 +112,9 @@ public class AftersaleServiceImpl implements AftersaleService {
 
     @Autowired
     private DozerHolder dozerHolder;
+
+    @Resource
+    private MessagePushChannel messagePushChannel;
 
 
     @Override
@@ -348,7 +358,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         //更新售后状态--修改时间加了乐观锁--先查询再保存
         Result<OrderAftersale> queryAfterSaleResult = orderAftersaleApi.queryOneByCriteria(Criteria.of(OrderAftersale.class)
                 .andEqualTo(OrderAftersale::getForderAftersaleId, aftersaleBackDto.getForderAftersaleId())
-                .fields(OrderAftersale::getFmodifyTime));
+                .fields(OrderAftersale::getFmodifyTime,OrderAftersale::getFsupplierId));
         if (!queryAfterSaleResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
@@ -359,6 +369,8 @@ public class AftersaleServiceImpl implements AftersaleService {
         if (!aftersaleResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
+        //售后订单变为待退款 发送站内信
+        sendMessage(upAftersale);
         return Result.success();
     }
 
@@ -505,4 +517,18 @@ public class AftersaleServiceImpl implements AftersaleService {
         return aftersaleAdjustResult.getData().getFaftersaleTotalAmount();
     }
 
+    private void sendMessage(OrderAftersale orderAftersale) {
+        MsgPushDto msgPushDto = new MsgPushDto();
+        MsgTemplateVariableDto msgTemplateVariableDto = new MsgTemplateVariableDto();
+        if (orderAftersale.getFaftersaleStatus().toString().equals(OrderAftersaleStatus.WAIT_RETURN_MONEY.getCode().toString())) {
+            msgTemplateVariableDto.setFsupplierWorkOrder(orderAftersale.getForderAftersaleId());
+            msgPushDto.setMsgTemplateVariable(msgTemplateVariableDto);
+            msgPushDto.setSystemTemplateType(8);
+            msgPushDto.setPushType(PushTypeEnum.SYSTEM_NOTIFY.getKey());
+            msgPushDto.setSubjectType(2);
+            msgPushDto.setSubjectId(orderAftersale.getFsupplierId());
+            Message<MsgPushDto> message = MessageBuilder.withPayload(msgPushDto).build();
+            messagePushChannel.systemNoticeOut().send(message);
+        }
+    }
 }
