@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.infrastructure.message.interceptor.mobile;
 
+import com.xingyun.bbc.core.operate.enums.TemplateTypeEnum;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.message.business.MessagePushChannel;
 import com.xingyun.bbc.message.business.WaitSendInfo;
@@ -37,6 +38,7 @@ public class ModifyMobileListener implements ApplicationListener<ModifyMobileEve
         WaitSendInfo waitSendInfo = (WaitSendInfo) event.getSource();
         msgTemplateVariableDto.setFmobile(waitSendInfo.getOldKey());
         msgPushDto.setMsgTemplateVariable(msgTemplateVariableDto);
+        msgPushDto.setSystemTemplateType(TemplateTypeEnum.MODIFY_NUMBER.getKey());
         msgPushDto.setPushType(PushTypeEnum.SYSTEM_NOTIFY.getKey());
         //平台会员
         msgPushDto.setSubjectType(1);
