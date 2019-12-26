@@ -117,6 +117,7 @@ public class CategoryServiceImpl implements CategoryService {
                         GoodsCategory::getFparentCategoryId,
                         GoodsCategory::getFisRecommed,
                         GoodsCategory::getFcategorySort,
+                        GoodsCategory::getFmodifyTime,
                         GoodsCategory::getFcreateTime)
                 .andEqualTo(GoodsCategory::getFisDisplay, 1)
                 .andEqualTo(GoodsCategory::getFisDelete, 0));
