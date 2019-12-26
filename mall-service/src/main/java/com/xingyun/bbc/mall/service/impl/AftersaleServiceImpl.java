@@ -402,7 +402,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         MsgPushDto msgPushDto = new MsgPushDto();
         MsgTemplateVariableDto msgTemplateVariableDto = new MsgTemplateVariableDto();
         if (orderAftersale.getFaftersaleStatus().toString().equals(OrderAftersaleStatus.WAIT_RETURN_MONEY.getCode().toString())) {
-            msgTemplateVariableDto.setFsupplierWorkOrder(orderAftersale.getForderAftersaleId());
+            msgTemplateVariableDto.setForderAftersaleId(orderAftersale.getForderAftersaleId());
             msgPushDto.setMsgTemplateVariable(msgTemplateVariableDto);
             msgPushDto.setSystemTemplateType(8);
             msgPushDto.setPushType(PushTypeEnum.SYSTEM_NOTIFY.getKey());
