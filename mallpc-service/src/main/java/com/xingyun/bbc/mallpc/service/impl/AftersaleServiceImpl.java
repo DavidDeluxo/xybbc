@@ -42,12 +42,14 @@ import com.xingyun.bbc.message.model.dto.MsgPushDto;
 import com.xingyun.bbc.message.model.dto.MsgTemplateVariableDto;
 import com.xingyun.bbc.message.model.enums.PushTypeEnum;
 import io.seata.spring.annotation.GlobalTransactional;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.dozer.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
@@ -60,7 +62,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
+@Slf4j
 @Service
 @EnableBinding(MessagePushChannel.class)
 public class AftersaleServiceImpl implements AftersaleService {
@@ -117,6 +119,9 @@ public class AftersaleServiceImpl implements AftersaleService {
 
     @Resource
     private MessagePushChannel messagePushChannel;
+
+    @Autowired
+    private AsyncTaskExecutor asyncTaskExecutor;
 
 
     @Override
@@ -278,7 +283,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         return Result.success(aftersaleDetailVo);
     }
 
-    private String getAftersaleNumShow (Integer faftersaleNum, String ftransportOrderId, String fskuCode) {
+    private String getAftersaleNumShow(Integer faftersaleNum, String ftransportOrderId, String fskuCode) {
         //发货前直接展示 faftersaleNum 发货后(有发货单) 展示faftersaleNum/发货总数
         if (StringUtils.isEmpty(ftransportOrderId)) {
             return faftersaleNum.toString();
@@ -360,7 +365,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         //更新售后状态--修改时间加了乐观锁--先查询再保存
         Result<OrderAftersale> queryAfterSaleResult = orderAftersaleApi.queryOneByCriteria(Criteria.of(OrderAftersale.class)
                 .andEqualTo(OrderAftersale::getForderAftersaleId, aftersaleBackDto.getForderAftersaleId())
-                .fields(OrderAftersale::getFmodifyTime,OrderAftersale::getFsupplierId));
+                .fields(OrderAftersale::getFmodifyTime, OrderAftersale::getFsupplierId));
         if (!queryAfterSaleResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
@@ -372,7 +377,9 @@ public class AftersaleServiceImpl implements AftersaleService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         //售后订单变为待退款 发送站内信
-        sendMessage(upAftersale);
+
+        asyncTaskExecutor.execute(() -> sendMessage(upAftersale));
+
         return Result.success();
     }
 
@@ -446,7 +453,7 @@ public class AftersaleServiceImpl implements AftersaleService {
     }
 
     //查询贸易类型
-    private String getTradeType (String fskuCode) {
+    private String getTradeType(String fskuCode) {
         String tradeType = "";
         Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
                 .andEqualTo(GoodsSku::getFskuCode, fskuCode)
@@ -468,7 +475,7 @@ public class AftersaleServiceImpl implements AftersaleService {
     }
 
     //效期
-    private String getValidityPeriod (String fbatchId) {
+    private String getValidityPeriod(String fbatchId) {
         String validityPeriod = "";
         DateFormat sdf = new SimpleDateFormat("yyyy-MM");
         Result<SkuBatch> skuBatchResult = skuBatchApi.queryOneByCriteria(Criteria.of(SkuBatch.class)
@@ -483,7 +490,7 @@ public class AftersaleServiceImpl implements AftersaleService {
     }
 
     //获取订单收件人信息
-    private OrderAftersaleBack getNameMobile (String forderId) {
+    private OrderAftersaleBack getNameMobile(String forderId) {
         String name = "";
         String mobile = "";
         Result<Order> orderResult = orderApi.queryOneByCriteria(Criteria.of(Order.class)
@@ -507,7 +514,7 @@ public class AftersaleServiceImpl implements AftersaleService {
     }
 
     //获取售后总金额
-    private Long getAftersaleTotalAmount (String faftersaleId) {
+    private Long getAftersaleTotalAmount(String faftersaleId) {
         //获取售后总金额
         Result<OrderAftersaleAdjust> aftersaleAdjustResult = orderAftersaleAdjustApi.queryOneByCriteria(Criteria.of(OrderAftersaleAdjust.class)
                 .andEqualTo(OrderAftersaleAdjust::getForderAftersaleId, faftersaleId)
