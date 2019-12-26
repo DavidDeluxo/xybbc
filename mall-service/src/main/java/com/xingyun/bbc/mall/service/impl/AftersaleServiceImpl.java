@@ -45,6 +45,7 @@ import org.dozer.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
@@ -57,6 +58,7 @@ import java.util.stream.Collectors;
 
 
 @Service
+@EnableBinding(MessagePushChannel.class)
 public class AftersaleServiceImpl implements AftersaleService {
 
     public static final Logger logger = LoggerFactory.getLogger(AftersaleService.class);
