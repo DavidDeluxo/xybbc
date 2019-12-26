@@ -49,15 +49,21 @@ public class GoodsCategoryVo implements Comparable<GoodsCategoryVo>{
 
     @Override
     public int compareTo(GoodsCategoryVo compare) {
+        int i = 0;
+        if(compare == null){
+            throw new IllegalArgumentException();
+        }
+
         //升序排列排序字段
-        int i = this.getFcategorySort().compareTo(compare.getFcategorySort());
-        //倒叙排列修改时间
-        if (i == 0) {
-//            i = this.getFmodifyTime().compareTo(compare.getFmodifyTime());
+        if(this.getFcategorySort() != null && compare.getFcategorySort() != null){
+            i = this.getFcategorySort().compareTo(compare.getFcategorySort());
+        }
+        //降叙排列修改时间
+        if (i == 0 && this.getFmodifyTime() != null && compare.getFmodifyTime() != null ) {
             i = compare.getFmodifyTime().compareTo(this.getFmodifyTime());
         }
-        //倒叙排列主键id
-        if (i == 0) {
+        //降叙排列主键id
+        if (i == 0 && this.getFcategoryId() != null && compare.getFcategoryId() != null) {
             i = compare.getFcategoryId().compareTo(this.getFcategoryId());
         }
         return i;
