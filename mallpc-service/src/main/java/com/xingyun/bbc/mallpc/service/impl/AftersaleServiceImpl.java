@@ -365,7 +365,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         //更新售后状态--修改时间加了乐观锁--先查询再保存
         Result<OrderAftersale> queryAfterSaleResult = orderAftersaleApi.queryOneByCriteria(Criteria.of(OrderAftersale.class)
                 .andEqualTo(OrderAftersale::getForderAftersaleId, aftersaleBackDto.getForderAftersaleId())
-                .fields(OrderAftersale::getFmodifyTime, OrderAftersale::getFsupplierId));
+                .fields(OrderAftersale::getFmodifyTime, OrderAftersale::getFsupplierId,OrderAftersale::getFsupplierOrderId));
         if (!queryAfterSaleResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
@@ -531,6 +531,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         MsgTemplateVariableDto msgTemplateVariableDto = new MsgTemplateVariableDto();
         if (orderAftersale.getFaftersaleStatus().toString().equals(OrderAftersaleStatus.WAIT_RETURN_MONEY.getCode().toString())) {
             msgTemplateVariableDto.setForderAftersaleId(orderAftersale.getForderAftersaleId());
+            msgTemplateVariableDto.setFsupplierOrderId(orderAftersale.getFsupplierOrderId());
             msgPushDto.setMsgTemplateVariable(msgTemplateVariableDto);
             msgPushDto.setSystemTemplateType(8);
             msgPushDto.setPushType(PushTypeEnum.SYSTEM_NOTIFY.getKey());
