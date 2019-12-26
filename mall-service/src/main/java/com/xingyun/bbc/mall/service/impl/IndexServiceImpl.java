@@ -662,7 +662,11 @@ public class IndexServiceImpl implements IndexService {
         Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(
                 //查询未删除的，可显示的数据
                 Criteria.of(GoodsCategory.class)
-                        .fields(GoodsCategory::getFcategoryName, GoodsCategory::getFcategoryId, GoodsCategory::getFcategoryDesc)
+                        .fields(GoodsCategory::getFcategoryName,
+                                GoodsCategory::getFcategoryId,
+                                GoodsCategory::getFcategoryDesc,
+                                GoodsCategory::getFcategorySort,
+                                GoodsCategory::getFmodifyTime)
                         .sort(GoodsCategory::getFcategorySort)
                         .andEqualTo(GoodsCategory::getFparentCategoryId, 0)
                         .andEqualTo(GoodsCategory::getFisDelete, 0)
@@ -675,6 +679,7 @@ public class IndexServiceImpl implements IndexService {
             //类型转换
             categoryVoList = dozerHolder.convert(categoryListResultAll.getData(), GoodsCategoryVo.class);
         }
+        categoryVoList = categoryVoList.stream().sorted().collect(Collectors.toList());
         return Result.success(categoryVoList);
     }
     

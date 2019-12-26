@@ -227,7 +227,11 @@ public class CategoryServiceImpl implements CategoryService {
         List<GoodsCategoryVo> categoryVoList = new LinkedList<>();
         //查询一级类目列表
         Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class)
-                .fields(GoodsCategory::getFcategoryId, GoodsCategory::getFcategoryName, GoodsCategory::getFcategoryDesc)
+                .fields(GoodsCategory::getFcategoryId,
+                        GoodsCategory::getFcategoryName,
+                        GoodsCategory::getFcategoryDesc,
+                        GoodsCategory::getFcategorySort,
+                        GoodsCategory::getFmodifyTime)
                 //一级类目父类目id为0
                 .andEqualTo(GoodsCategory::getFparentCategoryId,0)
                 //类目未删除
@@ -257,9 +261,12 @@ public class CategoryServiceImpl implements CategoryService {
                 categoryVo.setFcategoryId(category.getFcategoryId());
                 categoryVo.setFcategoryName(category.getFcategoryName());
                 categoryVo.setFcategoryDesc(category.getFcategoryDesc());
+                categoryVo.setFcategorySort(category.getFcategorySort());
+                categoryVo.setFmodifyTime(category.getFmodifyTime());
                 categoryVoList.add(categoryVo);
             }
         }
+        categoryVoList = categoryVoList.stream().sorted().collect(Collectors.toList());
         return Result.success(categoryVoList);
     }
 

@@ -37,6 +37,10 @@ public class GoodsCategoryVo implements Comparable<GoodsCategoryVo>{
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private Date fcreateTime;
 
+    @ApiModelProperty("修改时间")
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    private Date fmodifyTime;
+
     @ApiModelProperty("子类目列表")
     private List<GoodsCategoryVo> childrenList;
 
@@ -45,9 +49,16 @@ public class GoodsCategoryVo implements Comparable<GoodsCategoryVo>{
 
     @Override
     public int compareTo(GoodsCategoryVo compare) {
+        //升序排列排序字段
         int i = this.getFcategorySort().compareTo(compare.getFcategorySort());
+        //倒叙排列修改时间
         if (i == 0) {
-            i = this.getFcreateTime().compareTo(compare.fcreateTime);
+//            i = this.getFmodifyTime().compareTo(compare.getFmodifyTime());
+            i = compare.getFmodifyTime().compareTo(this.getFmodifyTime());
+        }
+        //倒叙排列主键id
+        if (i == 0) {
+            i = compare.getFcategoryId().compareTo(this.getFcategoryId());
         }
         return i;
     }
