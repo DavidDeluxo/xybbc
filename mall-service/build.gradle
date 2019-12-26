@@ -38,13 +38,13 @@ dependencies {
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-common', version: '1.0'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-supplier-api', version: '1.0.70'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-sku-api', version: '1.0.27'
-    compile group: 'com.xingyun.bbc', name: 'xybbc-core-operate-api', version: '1.0.73'
+    compile group: 'com.xingyun.bbc', name: 'xybbc-core-operate-api', version: '1.0.81'
     compile group: 'com.xingyun.bbc', name: 'xybbc-express-service-api', version: '1.0.2'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-helper-api', version: '1.0.5'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-user-api', version: '1.0.34'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-order-api', version: '1.0.38'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-market-api', version: '1.0.44'
-    compile group: 'com.xingyun.bbc', name: 'xybbc-center-order-api', version: '1.1.62'
+    compile group: 'com.xingyun.bbc', name: 'xybbc-center-order-api', version: '1.1.63'
     compile group: 'com.xingyun.bbc', name: 'xybbc-center-activity-api', version: '1.0.21'
     compile group: 'com.xingyun.bbc', name: 'xybbc-pay-service-api', version: '1.0.39'
     compile group: 'com.xingyun.bbc', name: 'xybbc-jwt-common', version: '1.0'
@@ -63,7 +63,7 @@ dependencies {
     compile group: 'cn.hutool', name: 'hutool-all', version: '4.1.1'
     compile group: 'com.fasterxml.uuid', name: 'java-uuid-generator', version: '3.2.0'
     compile group: 'redis.clients', name: 'jedis', version: '2.9.0'
-    compile group: 'com.xingyun.bbc', name: 'xybbc-message-service-api', version: '1.0.6'
+    compile group: 'com.xingyun.bbc', name: 'xybbc-message-service-api', version: '1.0.7'
     compile project(':mall-common-elasticsearch')
     compile("net.logstash.logback:logstash-logback-encoder:6.2")
 }

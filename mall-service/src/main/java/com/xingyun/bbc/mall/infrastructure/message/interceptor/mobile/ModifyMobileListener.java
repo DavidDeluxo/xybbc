@@ -1,11 +1,11 @@
 package com.xingyun.bbc.mall.infrastructure.message.interceptor.mobile;
 
-import com.xingyun.bbc.core.operate.enums.PushTypeEnum;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.message.business.MessagePushChannel;
 import com.xingyun.bbc.message.business.WaitSendInfo;
 import com.xingyun.bbc.message.model.dto.MsgPushDto;
 import com.xingyun.bbc.message.model.dto.MsgTemplateVariableDto;
+import com.xingyun.bbc.message.model.enums.PushTypeEnum;
 import io.jsonwebtoken.lang.Assert;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.context.ApplicationListener;

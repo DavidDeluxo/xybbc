@@ -83,4 +83,12 @@ public class OrderController {
 		shipAddressDto.setFuid(fuid);
 		return userDeliveryCenterApi.queryDefaultAddress(shipAddressDto);
 	}
+
+	@ApiOperation("发货提醒")
+	@PostMapping("/remindDelivery")
+	public Result<Void> remindDelivery(@RequestBody @Validated OnlyOrderIdDto orderIdDto) {
+		//异步处理提醒，直接返回前端提醒成功
+		orderApi.remindDelivery(orderIdDto);
+		return Result.success();
+	}
 }
