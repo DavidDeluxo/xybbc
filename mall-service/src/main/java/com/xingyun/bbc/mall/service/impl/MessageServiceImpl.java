@@ -20,9 +20,9 @@ import com.xingyun.bbc.express.api.ExpressBillProviderApi;
 import com.xingyun.bbc.express.model.dto.ExpressBillDto;
 import com.xingyun.bbc.express.model.vo.ExpressBillDetailVo;
 import com.xingyun.bbc.express.model.vo.ExpressBillVo;
-import com.xingyun.bbc.mall.common.enums.MessageTypeEnum;
 import com.xingyun.bbc.mall.common.enums.MessageGroupTypeEnum;
 import com.xingyun.bbc.mall.common.enums.MessagePushTypeEnum;
+import com.xingyun.bbc.mall.common.enums.MessageTypeEnum;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.MessageQueryDto;
 import com.xingyun.bbc.mall.model.dto.MessageUpdateDto;
@@ -86,7 +86,6 @@ public class MessageServiceImpl implements MessageService {
     public Result<List<MessageCenterVo>> queryMessageGroupByUserId(Long userId) {
 
         Result<List<MessageUserRecord>> userRecordResult = userRecordApi.queryByCriteria(Criteria.of(MessageUserRecord.class)
-                .andEqualTo(MessageUserRecord::getFreaded, 0)
                 .andEqualTo(MessageUserRecord::getFsendStatus, 2)
                 .andEqualTo(MessageUserRecord::getFuid, userId)
                 .andGreaterThanOrEqualTo(MessageUserRecord::getFexpirationDate, new Date())
@@ -108,9 +107,10 @@ public class MessageServiceImpl implements MessageService {
             Integer recordEntryKey = recordEntry.getKey();
             List<MessageUserRecord> recordList = recordEntry.getValue();
             MessageUserRecord messageUserRecord = recordList.get(0);
+            int size = (int) recordList.stream().filter(r -> r.getFreaded().equals(0)).count();
             messageCenterVos.add(new MessageCenterVo(recordEntryKey
                     , messageUserRecord.getFtitle()
-                    , recordList.size()
+                    , size
                     , messageUserRecord.getFcreateTime().getTime()));
         }
         List<Integer> types = messageCenterVos.stream().map(MessageCenterVo::getMessageGroupType).collect(Collectors.toList());
@@ -131,7 +131,6 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public Result<PageVo<MessageListVo>> queryMessageList(MessageQueryDto dto) {
         Criteria<MessageUserRecord, Object> userRecordObjectCriteria = Criteria.of(MessageUserRecord.class)
-                .andEqualTo(MessageUserRecord::getFreaded, 0)
                 .andEqualTo(MessageUserRecord::getFsendStatus, 2)
                 .andEqualTo(MessageUserRecord::getFuid, dto.getUserId())
                 .andEqualTo(MessageUserRecord::getFmessageGroup, dto.getMessageCenterType())
@@ -145,7 +144,7 @@ public class MessageServiceImpl implements MessageService {
         if (count < 1) {
             return Result.success(new PageVo(0, dto.getCurrentPage(), dto.getPageSize(), Lists.newArrayList()));
         }
-        Result<List<MessageUserRecord>> userRecordsResult = userRecordApi.queryByCriteria(userRecordObjectCriteria);
+        Result<List<MessageUserRecord>> userRecordsResult = userRecordApi.queryByCriteria(userRecordObjectCriteria.page(dto.getCurrentPage(), dto.getPageSize()));
         if (!userRecordsResult.isSuccess()) {
             throw new BizException(MallExceptionCode.SYSTEM_ERROR);
         }
@@ -211,7 +210,8 @@ public class MessageServiceImpl implements MessageService {
                             selfInfoVo.setOrderId(transportOrder.getForderId());
                             // 商品数量
                             Result<List<SupplierOrderSku>> countByCriteria = supplierOrderSkuApi.queryByCriteria(Criteria.of(SupplierOrderSku.class)
-                                    .andEqualTo(SupplierOrderSku::getFsupplierOrderId, transportOrder.getFsupplierOrderId()));
+                                    .andEqualTo(SupplierOrderSku::getFsupplierOrderId, transportOrder.getFsupplierOrderId())
+                                    .sortDesc(SupplierOrderSku::getFcreateTime));
                             if (!countByCriteria.isSuccess()) {
                                 throw new BizException(MallExceptionCode.SYSTEM_ERROR);
                             }
@@ -219,6 +219,15 @@ public class MessageServiceImpl implements MessageService {
                             selfInfoVo.setSkuNum(orderSkus.size());
                             // 收件人
                             selfInfoVo.setDeliveryName(orderPaymentResult.getData().getFdeliveryName());
+                            String fskuCode = orderSkus.get(0).getFskuCode();
+                            Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
+                                    .andEqualTo(GoodsSku::getFskuCode, fskuCode)
+                                    .fields(GoodsSku::getFskuThumbImage));
+                            if (!goodsSkuResult.isSuccess()) {
+                                throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+                            }
+                            String fskuThumbImage = goodsSkuResult.getData().getFskuThumbImage();
+                            messageListVo.setImageUrl(new ImageVo(fskuThumbImage));
                             messageListVo.setSelfInfoVo(selfInfoVo);
                             break;
                         // 注册成功
@@ -243,6 +252,7 @@ public class MessageServiceImpl implements MessageService {
                             }
                             MessageSelfInfoVo userSelfInfoVo = new MessageSelfInfoVo();
                             userSelfInfoVo.setAuthenticationType(user.getFoperateType());
+                            messageListVo.setSelfInfoVo(userSelfInfoVo);
                             messageListVo.setDesc(record.getFcontent());
                             break;
                         default:
@@ -262,7 +272,12 @@ public class MessageServiceImpl implements MessageService {
                             // 从${xxx}后开始截取
                             Matcher matcher = COMPILE.matcher(recordFcontent);
                             boolean isTrue = matcher.find();
+                            String imageFlag = "<img";
                             if (!isTrue) {
+                                if (recordFcontent.contains(imageFlag)) {
+                                    messageListVo.setDesc("");
+                                    break;
+                                }
                                 messageListVo.setDesc(recordFcontent);
                                 break;
                             }
@@ -274,7 +289,8 @@ public class MessageServiceImpl implements MessageService {
                                     .andEqualTo(GoodsSku::getFskuCode, frefId)
                                     .fields(GoodsSku::getFskuName
                                             , GoodsSku::getFskuId
-                                            , GoodsSku::getFgoodsId));
+                                            , GoodsSku::getFgoodsId
+                                            , GoodsSku::getFskuThumbImage));
                             if (!goodsSkuResult.isSuccess()) {
                                 throw new BizException(MallExceptionCode.SYSTEM_ERROR);
                             }

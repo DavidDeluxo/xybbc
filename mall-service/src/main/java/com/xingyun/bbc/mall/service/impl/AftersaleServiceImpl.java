@@ -40,11 +40,13 @@ import com.xingyun.bbc.message.model.dto.MsgPushDto;
 import com.xingyun.bbc.message.model.dto.MsgTemplateVariableDto;
 import com.xingyun.bbc.message.model.enums.PushTypeEnum;
 import io.seata.spring.annotation.GlobalTransactional;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.dozer.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
@@ -56,7 +58,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
+@Slf4j
 @Service
+@EnableBinding(MessagePushChannel.class)
 public class AftersaleServiceImpl implements AftersaleService {
 
     public static final Logger logger = LoggerFactory.getLogger(AftersaleService.class);
@@ -321,7 +325,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         //更新售后状态--修改时间加了乐观锁--先查询再保存
         Result<OrderAftersale> queryAfterSaleResult = orderAftersaleApi.queryOneByCriteria(Criteria.of(OrderAftersale.class)
                 .andEqualTo(OrderAftersale::getForderAftersaleId, aftersaleBackDto.getForderAftersaleId())
-                .fields(OrderAftersale::getFmodifyTime,OrderAftersale::getFsupplierId));
+                .fields(OrderAftersale::getFmodifyTime,OrderAftersale::getFsupplierId,OrderAftersale::getFsupplierOrderId));
         if (!queryAfterSaleResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
@@ -333,7 +337,11 @@ public class AftersaleServiceImpl implements AftersaleService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         //售后订单变为待退款 发送站内信
-        sendMessage(upAftersale);
+        try {
+            sendMessage(upAftersale);
+        }catch (Exception e){
+            log.info("售后订单变为待退款,发送站内信失败{}",e.getMessage(),e);
+        }
 
         return Result.success();
     }
@@ -403,6 +411,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         MsgTemplateVariableDto msgTemplateVariableDto = new MsgTemplateVariableDto();
         if (orderAftersale.getFaftersaleStatus().toString().equals(OrderAftersaleStatus.WAIT_RETURN_MONEY.getCode().toString())) {
             msgTemplateVariableDto.setForderAftersaleId(orderAftersale.getForderAftersaleId());
+            msgTemplateVariableDto.setFsupplierOrderId(orderAftersale.getFsupplierOrderId());
             msgPushDto.setMsgTemplateVariable(msgTemplateVariableDto);
             msgPushDto.setSystemTemplateType(8);
             msgPushDto.setPushType(PushTypeEnum.SYSTEM_NOTIFY.getKey());
