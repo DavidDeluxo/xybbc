@@ -44,6 +44,7 @@ import com.xingyun.bbc.mallpc.common.constants.UserConstants;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.common.utils.*;
+import com.xingyun.bbc.mallpc.infrastructure.interceptor.register.RegisterMessage;
 import com.xingyun.bbc.mallpc.model.dto.PageDto;
 import com.xingyun.bbc.mallpc.model.dto.user.ResetPasswordDto;
 import com.xingyun.bbc.mallpc.model.dto.user.SendSmsCodeDto;
@@ -56,6 +57,7 @@ import com.xingyun.bbc.mallpc.model.vo.coupon.MyCouponVo;
 import com.xingyun.bbc.mallpc.model.vo.user.SendSmsCodeVo;
 import com.xingyun.bbc.mallpc.model.vo.user.UserLoginVo;
 import com.xingyun.bbc.mallpc.service.UserService;
+import com.xingyun.bbc.message.business.WaitSendInfo;
 import eu.bitwalker.useragentutils.UserAgent;
 import io.seata.spring.annotation.GlobalTransactional;
 import org.apache.commons.lang.time.DateUtils;
@@ -71,8 +73,9 @@ import java.util.*;
 
 import static com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant.USER_COUNT;
 import static com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant.USER_COUNT_LOCK;
-import static java.util.Comparator.*;
-import static java.util.stream.Collectors.*;
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.reverseOrder;
+import static java.util.stream.Collectors.toList;
 
 /**
  * @author nick
@@ -130,6 +133,9 @@ public class UserServiceImpl implements UserService {
 
     @Resource
     private UserLoginInformationApi userLoginInformationApi;
+
+    @Resource
+    private RegisterMessage registerMessage;
 
     /**
      * @author nick
@@ -200,7 +206,7 @@ public class UserServiceImpl implements UserService {
         userLoginVo.setFreeVerifyEndTime(verifyEndTime);
         //剩余时间
         Days days = Days.daysBetween(DateTime.now(), new DateTime(verifyEndTime));
-        int remainDays = days.getDays() < 0 ? 0 : days.getDays()+1;
+        int remainDays = days.getDays() < 0 ? 0 : days.getDays() + 1;
         userLoginVo.setFreeVerifyRemainDays(remainDays + "天");
         return userLoginVo;
     }
@@ -266,7 +272,11 @@ public class UserServiceImpl implements UserService {
         receiveCoupon(fuid);
         // 异步更新用户数量
         incrUserCount();
-        return Result.success(userLoginVo);
+        WaitSendInfo waitSendInfo = new WaitSendInfo();
+        waitSendInfo.setTargetId(fuid);
+        waitSendInfo.setBusinessId(fmobile);
+        registerMessage.onApplicationEvent(waitSendInfo);
+        return Result.success(null);
     }
 
     /**
@@ -346,7 +356,7 @@ public class UserServiceImpl implements UserService {
 
     private void sendSms(String ipAddress, String fmobile) {
         // 发送验证码
-        String verifyCode =generateAuthNum(4);
+        String verifyCode = generateAuthNum(4);
         String content = StringUtils.join("您的验证码是：", verifyCode, "，请勿泄露）。若非本人操作，请忽略本短信", "【行云全球汇】");
         smsApi.sendSms(fmobile, content);
         // 令牌放进redis
@@ -546,7 +556,7 @@ public class UserServiceImpl implements UserService {
                 .fields(GuidePage::getFimgUrl, GuidePage::getFguideId)
         );
         Ensure.that(guidePageResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
-        return Result.success(Objects.nonNull(guidePageResult.getData())&&StringUtil.isNotBlank(guidePageResult.getData().getFimgUrl()) ? guidePageResult.getData().getFimgUrl() : "");
+        return Result.success(Objects.nonNull(guidePageResult.getData()) && StringUtil.isNotBlank(guidePageResult.getData().getFimgUrl()) ? guidePageResult.getData().getFimgUrl() : "");
     }
 
     /**

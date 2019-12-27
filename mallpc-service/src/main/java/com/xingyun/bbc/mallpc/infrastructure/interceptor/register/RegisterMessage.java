@@ -1,93 +1,51 @@
 package com.xingyun.bbc.mallpc.infrastructure.interceptor.register;
 
 import com.alibaba.fastjson.JSONObject;
-import com.xingyun.bbc.core.user.api.UserApi;
-import com.xingyun.bbc.core.user.po.User;
-import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
-import com.xingyun.bbc.mallpc.model.dto.user.UserRegisterDto;
-import com.xingyun.bbc.message.business.NotifyBusinessInterface;
-import com.xingyun.bbc.message.business.impl.AbstractNotifyBusiness;
-import org.springframework.context.ApplicationEvent;
+import com.xingyun.bbc.core.operate.enums.TemplateTypeEnum;
+import com.xingyun.bbc.message.business.MessagePushChannel;
+import com.xingyun.bbc.message.business.WaitSendInfo;
+import com.xingyun.bbc.message.model.dto.MsgPushDto;
+import com.xingyun.bbc.message.model.dto.MsgTemplateVariableDto;
+import com.xingyun.bbc.message.model.enums.PushTypeEnum;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 
 /**
- * 手机注册消息
+ * 注册监听
  *
  * @author: xuxianbei
  * Date: 2019/12/24
- * Time: 13:44
+ * Time: 14:11
  * Version:V1.0
  */
+@Slf4j
 @Component
-public class RegisterMessage extends AbstractNotifyBusiness implements NotifyBusinessInterface {
-
-    /**
-     * 业务ID
-     * @return
-     */
-    private String businessId;
-
-    /**
-     * 旧的key
-     */
-    private String oldKey;
-
-    /**
-     * 新的key
-     */
-    private String newKey;
-
-    /**
-     * 目标id;平台会员ID fuid /商家ID
-     */
-    private Long targetId;
+@EnableBinding(MessagePushChannel.class)
+public class RegisterMessage {
 
     @Resource
-    private UserApi userApi;
+    private MessagePushChannel registerChannel;
 
 
-    @Override
-    public String getBusinessId() {
-        return this.businessId;
-    }
-
-    @Override
-    public Long getTargetId() {
-        return this.targetId;
-    }
-
-    @Override
-    public String getOldKey() {
-        return this.oldKey;
-    }
-
-    @Override
-    public String getNewKey() {
-        return this.newKey;
-    }
-
-
-    @Override
-    public String[] getUris() {
-        return new String[]{"/user/via/register"};
-    }
-
-    @Override
-    public ApplicationEvent getApplicationEvent() {
-        return new RegisterEvent(waitSendInfo);
-    }
-
-    @Override
-    protected void doSetKey() {
-        UserRegisterDto userRegisterDto = JSONObject.parseObject(requestBody, UserRegisterDto.class);
-        this.newKey = userRegisterDto.getFmobile();
-        User user = new User();
-        user.setFmobile(newKey);
-        Result<User> userResult = userApi.queryOne(user);
-        user = ResultUtils.getData(userResult);
-        targetId = user.getFuid();
+    public void onApplicationEvent(WaitSendInfo waitSendInfo) {
+        MsgPushDto msgPushDto = new MsgPushDto();
+        MsgTemplateVariableDto msgTemplateVariableDto = new MsgTemplateVariableDto();
+        msgTemplateVariableDto.setFmobile(waitSendInfo.getBusinessId());
+        msgPushDto.setMsgTemplateVariable(msgTemplateVariableDto);
+        msgPushDto.setSystemTemplateType(TemplateTypeEnum.REGISTER_SUCCESSED.getKey());
+        msgPushDto.setPushType(PushTypeEnum.SYSTEM_NOTIFY.getKey());
+        //平台会员
+        msgPushDto.setSubjectType(1);
+        msgPushDto.setSubjectId(waitSendInfo.getTargetId());
+        Message<MsgPushDto> message = MessageBuilder.withPayload(msgPushDto).build();
+        boolean result = registerChannel.systemNoticeOut().send(message);
+        if (result) {
+            log.info("消息发送成功" + JSONObject.toJSONString(message));
+        }
     }
 }
