@@ -33,19 +33,23 @@ public class RegisterMessage {
 
 
     public void onApplicationEvent(WaitSendInfo waitSendInfo) {
-        MsgPushDto msgPushDto = new MsgPushDto();
-        MsgTemplateVariableDto msgTemplateVariableDto = new MsgTemplateVariableDto();
-        msgTemplateVariableDto.setFmobile(waitSendInfo.getBusinessId());
-        msgPushDto.setMsgTemplateVariable(msgTemplateVariableDto);
-        msgPushDto.setSystemTemplateType(TemplateTypeEnum.REGISTER_SUCCESSED.getKey());
-        msgPushDto.setPushType(PushTypeEnum.SYSTEM_NOTIFY.getKey());
-        //平台会员
-        msgPushDto.setSubjectType(1);
-        msgPushDto.setSubjectId(waitSendInfo.getTargetId());
-        Message<MsgPushDto> message = MessageBuilder.withPayload(msgPushDto).build();
-        boolean result = registerChannel.systemNoticeOut().send(message);
-        if (result) {
-            log.info("消息发送成功" + JSONObject.toJSONString(message));
+        try {
+            MsgPushDto msgPushDto = new MsgPushDto();
+            MsgTemplateVariableDto msgTemplateVariableDto = new MsgTemplateVariableDto();
+            msgTemplateVariableDto.setFmobile(waitSendInfo.getBusinessId());
+            msgPushDto.setMsgTemplateVariable(msgTemplateVariableDto);
+            msgPushDto.setSystemTemplateType(TemplateTypeEnum.REGISTER_SUCCESSED.getKey());
+            msgPushDto.setPushType(PushTypeEnum.SYSTEM_NOTIFY.getKey());
+            //平台会员
+            msgPushDto.setSubjectType(1);
+            msgPushDto.setSubjectId(waitSendInfo.getTargetId());
+            Message<MsgPushDto> message = MessageBuilder.withPayload(msgPushDto).build();
+            boolean result = registerChannel.systemNoticeOut().send(message);
+            if (result) {
+                log.info("消息发送成功" + JSONObject.toJSONString(message));
+            }
+        } catch (Exception e) {
+            log.error("消息异常", e);
         }
     }
 }
