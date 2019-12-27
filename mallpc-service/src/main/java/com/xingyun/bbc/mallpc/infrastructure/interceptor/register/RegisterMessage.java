@@ -6,6 +6,7 @@ import com.xingyun.bbc.message.business.MessagePushChannel;
 import com.xingyun.bbc.message.business.WaitSendInfo;
 import com.xingyun.bbc.message.model.dto.MsgPushDto;
 import com.xingyun.bbc.message.model.dto.MsgTemplateVariableDto;
+import com.xingyun.bbc.message.model.enums.MsgSubjectType;
 import com.xingyun.bbc.message.model.enums.PushTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -41,7 +42,7 @@ public class RegisterMessage {
             msgPushDto.setSystemTemplateType(TemplateTypeEnum.REGISTER_SUCCESSED.getKey());
             msgPushDto.setPushType(PushTypeEnum.SYSTEM_NOTIFY.getKey());
             //平台会员
-            msgPushDto.setSubjectType(1);
+            msgPushDto.setSubjectType(MsgSubjectType.USER.getCode());
             msgPushDto.setSubjectId(waitSendInfo.getTargetId());
             Message<MsgPushDto> message = MessageBuilder.withPayload(msgPushDto).build();
             boolean result = registerChannel.systemNoticeOut().send(message);
