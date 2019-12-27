@@ -276,7 +276,7 @@ public class UserServiceImpl implements UserService {
         waitSendInfo.setTargetId(fuid);
         waitSendInfo.setBusinessId(fmobile);
         registerMessage.onApplicationEvent(waitSendInfo);
-        return Result.success(null);
+        return Result.success(userLoginVo);
     }
 
     /**

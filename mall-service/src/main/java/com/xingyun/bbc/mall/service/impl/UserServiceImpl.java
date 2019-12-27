@@ -46,9 +46,12 @@ import com.xingyun.bbc.mall.common.RedisHolder;
 import com.xingyun.bbc.mall.common.constans.UserConstants;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.common.lock.XybbcLock;
+import com.xingyun.bbc.mall.infrastructure.message.interceptor.ModifyMobileMessage;
+import com.xingyun.bbc.mall.infrastructure.message.interceptor.RegisterListenerMessage;
 import com.xingyun.bbc.mall.model.dto.*;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.UserService;
+import com.xingyun.bbc.message.business.WaitSendInfo;
 import io.jsonwebtoken.Claims;
 import io.seata.spring.annotation.GlobalTransactional;
 import org.apache.commons.lang.StringUtils;
@@ -124,6 +127,10 @@ public class UserServiceImpl implements UserService {
     private UserLoginInformationApi userLoginInformationApi;
     @Autowired
     private MessageUserDeviceApi messageUserDeviceApi;
+    @Autowired
+    private ModifyMobileMessage modifyMobileMessage;
+    @Autowired
+    private RegisterListenerMessage registerListenerMessage;
 
     @Override
     public Result<UserLoginVo> userLogin(UserLoginDto dto) {
@@ -138,9 +145,9 @@ public class UserServiceImpl implements UserService {
                 .andLeft().orEqualTo(User::getFmobile, dto.getUserAccount())
                 .orEqualTo(User::getFmail, dto.getUserAccount())
                 .orEqualTo(User::getFuname, dto.getUserAccount()).addRight()
-                .fields(User::getFuid,User::getFfreezeStatus,User::getFheadpic,
-                        User::getFnickname,User::getFoperateType,User::getFuname,User::getFregisterFrom,
-                        User::getFverifyStatus,User::getFverifyStatus,User::getFmobile,User::getFmail,
+                .fields(User::getFuid, User::getFfreezeStatus, User::getFheadpic,
+                        User::getFnickname, User::getFoperateType, User::getFuname, User::getFregisterFrom,
+                        User::getFverifyStatus, User::getFverifyStatus, User::getFmobile, User::getFmail,
                         User::getFwithdrawPasswd);
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
         if (userResult.getData() == null) {
@@ -157,11 +164,11 @@ public class UserServiceImpl implements UserService {
         user.setFisLogout(0);
         userApi.updateNotNull(user);
         //更新用户设备信息
-        if(dto.getDeviceToken() != null){
-            updateUserDevice(dto,userLoginVo.getFuid());
+        if (dto.getDeviceToken() != null) {
+            updateUserDevice(dto, userLoginVo.getFuid());
         }
         //更新用户登录信息
-        updateUserLoginInformation(dto,userResult.getData().getFuid());
+        updateUserLoginInformation(dto, userResult.getData().getFuid());
         return Result.success(userLoginVo);
     }
 
@@ -188,19 +195,19 @@ public class UserServiceImpl implements UserService {
 //        }
 //    }
 
-    private void updateUserDevice(UserLoginDto dto,Long fuid) {
+    private void updateUserDevice(UserLoginDto dto, Long fuid) {
         MessageUserDevice messageUserDevice = new MessageUserDevice();
         MessageUserDevice device = new MessageUserDevice();
         device.setFuid(fuid);
         messageUserDeviceApi.delete(device);
         messageUserDevice.setFuid(fuid);
-        if(dto.getDeviceToken() != null){
+        if (dto.getDeviceToken() != null) {
             messageUserDevice.setFdeviceNum(dto.getDeviceToken());
             device.setFdeviceNum(dto.getDeviceToken());
             device.setFuid(null);
             messageUserDeviceApi.delete(device);
         }
-        if(dto.getFdeviceType() != null){
+        if (dto.getFdeviceType() != null) {
             messageUserDevice.setFdeviceType(dto.getFdeviceType());
         }
         messageUserDeviceApi.create(messageUserDevice);
@@ -212,24 +219,24 @@ public class UserServiceImpl implements UserService {
         information.setFloginMethod("手机端");
         information.setFloginSite("");
         information.setFipAdress(dto.getIpAddress());
-        if(dto.getOsVersion() != null){
+        if (dto.getOsVersion() != null) {
             information.setFoperatingSystem(dto.getOsVersion());
-        }else{
+        } else {
             information.setFoperatingSystem("");
         }
-        if(dto.getDeviceName() != null){
+        if (dto.getDeviceName() != null) {
             information.setFunitType(dto.getDeviceName());
-        }else{
+        } else {
             information.setFunitType("");
         }
-        if(dto.getImei() != null){
+        if (dto.getImei() != null) {
             information.setFuniqueIdentificationCode(dto.getImei());
-        }else{
+        } else {
             information.setFuniqueIdentificationCode("");
         }
-        if(dto.getMac() != null){
+        if (dto.getMac() != null) {
             information.setFphysicalAddress(dto.getMac());
-        }else{
+        } else {
             information.setFphysicalAddress("");
         }
         userLoginInformationApi.create(information);
@@ -273,17 +280,17 @@ public class UserServiceImpl implements UserService {
     public Result<Integer> updateMessageUserDevice(String deviceToken) {
         //查询当前deviceToken是否已存在
         Integer flag = 0;
-        if(!deviceToken.equals("")){
+        if (!deviceToken.equals("")) {
             Criteria<MessageUserDevice, Object> messageUserDeviceCriteria = Criteria.of(MessageUserDevice.class)
-                    .andEqualTo(MessageUserDevice::getFdeviceNum,deviceToken).fields(MessageUserDevice::getFmessageUserDeviceId);
+                    .andEqualTo(MessageUserDevice::getFdeviceNum, deviceToken).fields(MessageUserDevice::getFmessageUserDeviceId);
             Result<MessageUserDevice> messageUserDeviceResult = messageUserDeviceApi.queryOneByCriteria(messageUserDeviceCriteria);
-            if(messageUserDeviceResult.isSuccess()){
-                if(messageUserDeviceResult.getData() == null){
+            if (messageUserDeviceResult.isSuccess()) {
+                if (messageUserDeviceResult.getData() == null) {
                     MessageUserDevice messageUserDevice = new MessageUserDevice();
                     messageUserDevice.setFdeviceNum(deviceToken);
                     messageUserDevice.setFuid(0L);
                     Result<Integer> result = messageUserDeviceApi.create(messageUserDevice);
-                    if(result.isSuccess()){
+                    if (result.isSuccess()) {
                         flag = result.getData();
                     }
                 }
@@ -471,13 +478,13 @@ public class UserServiceImpl implements UserService {
             throw new BizException(MallResultStatus.LOGIN_FAILURE);
         }
         passWord = Md5Utils.toMd5(passWord);
-        if(dto.getFinviter() != null && !dto.getFinviter().equals("")){
+        if (dto.getFinviter() != null && !dto.getFinviter().equals("")) {
             Result<MarketUser> marketUserResult = marketUserApi.queryOneByCriteria(Criteria.of(MarketUser.class)
                     .fields(MarketUser::getFuid, MarketUser::getFextensionCode)
                     .andEqualTo(MarketUser::getFextensionCode, dto.getFinviter()));
-            if(marketUserResult.getData() != null){
+            if (marketUserResult.getData() != null) {
                 marketUser = marketUserResult.getData();
-            }else {
+            } else {
                 return Result.failure(MallResultStatus.EXTENSION_CODE_NOT_EXIST);
             }
             user.setFinviter(dto.getFinviter());
@@ -498,10 +505,10 @@ public class UserServiceImpl implements UserService {
         Criteria<User, Object> criteria = Criteria.of(User.class);
         criteria.andEqualTo(User::getFuid, idResult.getData().getFuid())
                 .andEqualTo(User::getFisDelete, "0")
-                .fields(User::getFuid,User::getFfreezeStatus,User::getFheadpic,
-                User::getFnickname,User::getFoperateType,User::getFuname,User::getFregisterFrom,
-                User::getFverifyStatus,User::getFverifyStatus,User::getFmobile,User::getFmail,
-                User::getFwithdrawPasswd);
+                .fields(User::getFuid, User::getFfreezeStatus, User::getFheadpic,
+                        User::getFnickname, User::getFoperateType, User::getFuname, User::getFregisterFrom,
+                        User::getFverifyStatus, User::getFverifyStatus, User::getFmobile, User::getFmail,
+                        User::getFwithdrawPasswd);
         Result<User> userResult = userApi.queryOneByCriteria(criteria);
         if (userResult.getData() == null) {
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
@@ -516,17 +523,21 @@ public class UserServiceImpl implements UserService {
         if (userLoginVo == null) {
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
         }
-        if(marketUser != null){
-            updateMarketUserStatistics(marketUser,userAccount.getFuid());
+        if (marketUser != null) {
+            updateMarketUserStatistics(marketUser, userAccount.getFuid());
         }
         //写入用户设备信息
-        createUserDevice(dto,userResult.getData().getFuid());
+        createUserDevice(dto, userResult.getData().getFuid());
         //领取注册优惠券和新人邀请券
         Integer couponNum = 0;
 //        couponNum = queryRegistCoupon(userLoginVo.getFuid());
         //当couponNum大于0时,前端提示"你有注册优惠券发放到账户"
         userLoginVo.setCouponRegisterNum(couponNum);
         incrUserCount();
+        WaitSendInfo waitSendInfo = new WaitSendInfo();
+        waitSendInfo.setTargetId(userResult.getData().getFuid());
+        waitSendInfo.setBusinessId(mobile);
+        registerListenerMessage.onApplicationEvent(waitSendInfo);
         return Result.success(userLoginVo);
     }
 
@@ -536,15 +547,15 @@ public class UserServiceImpl implements UserService {
         messageUserDevice.setFuid(fuid);
         device.setFuid(fuid);
         messageUserDeviceApi.delete(device);
-        if(dto.getDeviceToken() != null){
+        if (dto.getDeviceToken() != null) {
             messageUserDevice.setFdeviceNum(dto.getDeviceToken());
             device.setFdeviceNum(dto.getDeviceToken());
             device.setFuid(null);
             messageUserDeviceApi.delete(device);
         }
-        if(dto.getFregisterFrom().equals("android")){
+        if (dto.getFregisterFrom().equals("android")) {
             messageUserDevice.setFdeviceType(2);
-        }else if(dto.getFregisterFrom().equals("ios")){
+        } else if (dto.getFregisterFrom().equals("ios")) {
             messageUserDevice.setFdeviceType(1);
         }
         messageUserDeviceApi.create(messageUserDevice);
@@ -561,7 +572,7 @@ public class UserServiceImpl implements UserService {
         user.setFuid(fuid);
         user.setFisLogout(1);
         Result<Integer> result = userApi.updateNotNull(user);
-        if(!result.isSuccess()){
+        if (!result.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
         return result;
@@ -583,15 +594,15 @@ public class UserServiceImpl implements UserService {
                 .andEqualTo(Coupon::getFreleaseType, 3)
                 .andGreaterThan(Coupon::getFsurplusReleaseQty, 0)
                 .andLeft()
-                .andEqualTo(Coupon::getFvalidityType,2)
+                .andEqualTo(Coupon::getFvalidityType, 2)
                 .orLeft()
-                .orEqualTo(Coupon::getFvalidityType,1)
-                .andGreaterThan(Coupon::getFvalidityEnd,0)
+                .orEqualTo(Coupon::getFvalidityType, 1)
+                .andGreaterThan(Coupon::getFvalidityEnd, 0)
                 .addRight()
                 .addRight();
         Result<Integer> integerResult = couponApi.countByCriteria(couponCriteria);
-        if(integerResult.getData() != null){
-            if(!integerResult.getData().equals(count)){
+        if (integerResult.getData() != null) {
+            if (!integerResult.getData().equals(count)) {
                 count = integerResult.getData();
             }
         }
@@ -629,16 +640,16 @@ public class UserServiceImpl implements UserService {
                 .andEqualTo(Coupon::getFcouponStatus, 2)
                 .andEqualTo(Coupon::getFreleaseType, 3)
                 .andNotEqualTo(Coupon::getFsurplusReleaseQty, 0)
-                .fields(Coupon::getFsurplusReleaseQty,Coupon::getFvalidityType,Coupon::getFvalidityEnd,Coupon::getFperLimit,Coupon::getFcouponId);
+                .fields(Coupon::getFsurplusReleaseQty, Coupon::getFvalidityType, Coupon::getFvalidityEnd, Coupon::getFperLimit, Coupon::getFcouponId);
         Result<List<Coupon>> listResult = couponApi.queryByCriteria(couponCriteria);
         if (listResult.isSuccess()) {
             for (Coupon coupon : listResult.getData()) {
-                if(coupon.getFsurplusReleaseQty().equals(0)){
+                if (coupon.getFsurplusReleaseQty().equals(0)) {
                     continue;
                 }
-                if(coupon.getFvalidityType().equals(1)){
+                if (coupon.getFvalidityType().equals(1)) {
                     //判断是否在有效期内
-                    if(date.compareTo(coupon.getFvalidityEnd()) > 0){
+                    if (date.compareTo(coupon.getFvalidityEnd()) > 0) {
                         continue;
                     }
                 }
@@ -730,12 +741,12 @@ public class UserServiceImpl implements UserService {
 
         //查询是否已认证
         Criteria<UserVerify, Object> criteria = Criteria.of(UserVerify.class);
-        criteria.andEqualTo(UserVerify::getFuid, dto.getFuid()).fields(UserVerify::getFuserVerifyId,UserVerify::getFmodifyTime);
+        criteria.andEqualTo(UserVerify::getFuid, dto.getFuid()).fields(UserVerify::getFuserVerifyId, UserVerify::getFmodifyTime);
         Result<UserVerify> result = userVerifyApi.queryOneByCriteria(criteria);
         UserVerify userVerify = dozerHolder.convert(dto, UserVerify.class);
         userVerify.setFuid(dto.getFuid());
         Integer verResult = 0;
-        if(!result.isSuccess()){
+        if (!result.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
         if (result.getData() != null) {
@@ -773,14 +784,14 @@ public class UserServiceImpl implements UserService {
         if (userResult.getData().getFoperateType().equals(dto.getFoperateType())) {
             Criteria<UserVerify, Object> criteria = Criteria.of(UserVerify.class);
             criteria.andEqualTo(UserVerify::getFuid, dto.getFuid())
-                    .fields(UserVerify::getFuid,UserVerify::getFoperateMethod,UserVerify::getFshopName,
-                            UserVerify::getFshopWeb,UserVerify::getFinterestItem,UserVerify::getFcategory,
-                            UserVerify::getFshopFront,UserVerify::getFshopInside,UserVerify::getFshopProvinceId,
-                            UserVerify::getFshopCityId,UserVerify::getFshopAreaId,UserVerify::getFshopAddress,
-                            UserVerify::getFplatform,UserVerify::getFsalesVolume,UserVerify::getFcustomerNum,
-                            UserVerify::getFcompanyName,UserVerify::getFbusinessLicenseNo,UserVerify::getFbusinessLicensePic,
-                            UserVerify::getFname,UserVerify::getFidcardNo,UserVerify::getFidcardFront,
-                            UserVerify::getFidcardBack,UserVerify::getFremark,UserVerify::getFcreateTime,UserVerify::getFmodifyTime);
+                    .fields(UserVerify::getFuid, UserVerify::getFoperateMethod, UserVerify::getFshopName,
+                            UserVerify::getFshopWeb, UserVerify::getFinterestItem, UserVerify::getFcategory,
+                            UserVerify::getFshopFront, UserVerify::getFshopInside, UserVerify::getFshopProvinceId,
+                            UserVerify::getFshopCityId, UserVerify::getFshopAreaId, UserVerify::getFshopAddress,
+                            UserVerify::getFplatform, UserVerify::getFsalesVolume, UserVerify::getFcustomerNum,
+                            UserVerify::getFcompanyName, UserVerify::getFbusinessLicenseNo, UserVerify::getFbusinessLicensePic,
+                            UserVerify::getFname, UserVerify::getFidcardNo, UserVerify::getFidcardFront,
+                            UserVerify::getFidcardBack, UserVerify::getFremark, UserVerify::getFcreateTime, UserVerify::getFmodifyTime);
             Result<UserVerify> result = userVerifyApi.queryOneByCriteria(criteria);
             if (result.getData() != null) {
                 userVerifyVo = dozerHolder.convert(result.getData(), UserVerifyVo.class);
@@ -877,7 +888,7 @@ public class UserServiceImpl implements UserService {
                 .andEqualTo(User::getFuid, fuid)
                 .fields(User::getFverifyStatus, User::getFoperateType);
         Result<User> userResult = userApi.queryOneByCriteria(userCriteria);
-        if(!userResult.isSuccess()){
+        if (!userResult.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
         if (userResult.getData() != null) {
@@ -899,7 +910,7 @@ public class UserServiceImpl implements UserService {
                         , User::getFmobile, User::getFmail, User::getFwithdrawPasswd
                         , User::getFlastloginTime, User::getFuserValidTime);
         Result<User> userResult = userApi.queryOneByCriteria(userCriteria);
-        if(!userResult.isSuccess()){
+        if (!userResult.isSuccess()) {
             throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
         }
         if (userResult.getData() != null) {
@@ -973,7 +984,7 @@ public class UserServiceImpl implements UserService {
         Integer couponStatus = couponResult.getData().getFcouponStatus();
         if (couponStatus.equals(3)) {
             return Result.failure(MallExceptionCode.COUPON_IS_INVALID);
-        }else if(!couponStatus.equals(2)){
+        } else if (!couponStatus.equals(2)) {
             return Result.failure(MallExceptionCode.COUPON_LINK_INEXUSTENCE);
         }
         Long couponId = couponResult.getData().getFcouponId();
@@ -1310,7 +1321,12 @@ public class UserServiceImpl implements UserService {
         user.setFmobile(dto.getFmobile());
         user.setFmobileValidTime(new Date());
         user.setFuid(dto.getFuid());
-        return userApi.updateNotNull(user);
+        Result<Integer> result1 = userApi.updateNotNull(user);
+        WaitSendInfo waitSendInfo = new WaitSendInfo();
+        waitSendInfo.setBusinessId(dto.getFmobile());
+        waitSendInfo.setTargetId(dto.getFuid());
+        modifyMobileMessage.onApplicationEvent(waitSendInfo);
+        return result1;
     }
 
     private Map<String, Object> checkSendSmsFrequency(UserSecurityDto dto) {
