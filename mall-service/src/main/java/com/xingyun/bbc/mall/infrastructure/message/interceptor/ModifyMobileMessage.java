@@ -1,4 +1,4 @@
-package com.xingyun.bbc.mallpc.infrastructure.interceptor.register;
+package com.xingyun.bbc.mall.infrastructure.message.interceptor;
 
 import com.alibaba.fastjson.JSONObject;
 import com.xingyun.bbc.core.operate.enums.TemplateTypeEnum;
@@ -6,6 +6,7 @@ import com.xingyun.bbc.message.business.MessagePushChannel;
 import com.xingyun.bbc.message.business.WaitSendInfo;
 import com.xingyun.bbc.message.model.dto.MsgPushDto;
 import com.xingyun.bbc.message.model.dto.MsgTemplateVariableDto;
+import com.xingyun.bbc.message.model.enums.MsgSubjectType;
 import com.xingyun.bbc.message.model.enums.PushTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -16,20 +17,18 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 
 /**
- * 注册监听
- *
  * @author: xuxianbei
- * Date: 2019/12/24
- * Time: 14:11
+ * Date: 2019/12/25
+ * Time: 20:10
  * Version:V1.0
  */
-@Slf4j
 @Component
 @EnableBinding(MessagePushChannel.class)
-public class RegisterMessage {
+@Slf4j
+public class ModifyMobileMessage {
 
     @Resource
-    private MessagePushChannel registerChannel;
+    MessagePushChannel registerChannel;
 
 
     public void onApplicationEvent(WaitSendInfo waitSendInfo) {
@@ -38,15 +37,15 @@ public class RegisterMessage {
             MsgTemplateVariableDto msgTemplateVariableDto = new MsgTemplateVariableDto();
             msgTemplateVariableDto.setFmobile(waitSendInfo.getBusinessId());
             msgPushDto.setMsgTemplateVariable(msgTemplateVariableDto);
-            msgPushDto.setSystemTemplateType(TemplateTypeEnum.REGISTER_SUCCESSED.getKey());
+            msgPushDto.setSystemTemplateType(TemplateTypeEnum.MODIFY_NUMBER.getKey());
             msgPushDto.setPushType(PushTypeEnum.SYSTEM_NOTIFY.getKey());
             //平台会员
-            msgPushDto.setSubjectType(1);
+            msgPushDto.setSubjectType(MsgSubjectType.USER.getCode());
             msgPushDto.setSubjectId(waitSendInfo.getTargetId());
             Message<MsgPushDto> message = MessageBuilder.withPayload(msgPushDto).build();
             boolean result = registerChannel.systemNoticeOut().send(message);
             if (result) {
-                log.info("消息发送成功" + JSONObject.toJSONString(message));
+                log.info("发送消息成功->" + JSONObject.toJSONString(message));
             }
         } catch (Exception e) {
             log.error("消息异常", e);
