@@ -32,12 +32,11 @@ public class RegisterListenerMessage {
     @Resource
     MessagePushChannel registerChannel;
 
-
     public void onApplicationEvent(WaitSendInfo waitSendInfo) {
         try {
             MsgPushDto msgPushDto = new MsgPushDto();
             MsgTemplateVariableDto msgTemplateVariableDto = new MsgTemplateVariableDto();
-            msgTemplateVariableDto.setFmobile(waitSendInfo.getOldKey());
+            msgTemplateVariableDto.setFmobile(waitSendInfo.getBusinessId());
             msgPushDto.setMsgTemplateVariable(msgTemplateVariableDto);
             msgPushDto.setSystemTemplateType(TemplateTypeEnum.REGISTER_SUCCESSED.getKey());
             msgPushDto.setPushType(PushTypeEnum.SYSTEM_NOTIFY.getKey());
