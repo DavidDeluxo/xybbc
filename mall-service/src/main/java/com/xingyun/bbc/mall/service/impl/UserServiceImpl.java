@@ -499,6 +499,7 @@ public class UserServiceImpl implements UserService {
         user.setFlastloginTime(date);
         user.setFmobileValidTime(date);
         Result<User> idResult = userApi.saveAndReturn(user);
+
         if (!idResult.isSuccess()) {
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
         }
@@ -519,6 +520,7 @@ public class UserServiceImpl implements UserService {
         if (!result.isSuccess()) {
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
         }
+
         UserLoginVo userLoginVo = createToken(userResult.getData());
         if (userLoginVo == null) {
             throw new BizException((MallExceptionCode.SYSTEM_ERROR));
@@ -553,9 +555,9 @@ public class UserServiceImpl implements UserService {
             device.setFuid(null);
             messageUserDeviceApi.delete(device);
         }
-        if (dto.getFregisterFrom().equals("android")) {
+        if (dto.getFregisterFrom().equals("Android")) {
             messageUserDevice.setFdeviceType(2);
-        } else if (dto.getFregisterFrom().equals("ios")) {
+        } else if (dto.getFregisterFrom().equals("iOS")) {
             messageUserDevice.setFdeviceType(1);
         }
         messageUserDeviceApi.create(messageUserDevice);
