@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mallpc.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.OrderConfigApi;
@@ -365,7 +366,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         //更新售后状态--修改时间加了乐观锁--先查询再保存
         Result<OrderAftersale> queryAfterSaleResult = orderAftersaleApi.queryOneByCriteria(Criteria.of(OrderAftersale.class)
                 .andEqualTo(OrderAftersale::getForderAftersaleId, aftersaleBackDto.getForderAftersaleId())
-                .fields(OrderAftersale::getFmodifyTime, OrderAftersale::getFsupplierId,OrderAftersale::getFsupplierOrderId));
+                .fields(OrderAftersale::getFmodifyTime, OrderAftersale::getFsupplierId, OrderAftersale::getFsupplierOrderId));
         if (!queryAfterSaleResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
@@ -538,7 +539,12 @@ public class AftersaleServiceImpl implements AftersaleService {
             msgPushDto.setSubjectType(2);
             msgPushDto.setSubjectId(orderAftersale.getFsupplierId());
             Message<MsgPushDto> message = MessageBuilder.withPayload(msgPushDto).build();
-            messagePushChannel.systemNoticeOut().send(message);
+            boolean result = messagePushChannel.systemNoticeOut().send(message);
+            if (result) {
+                log.info("发送售后订单系统消息成功，message={}", JSON.toJSONString(msgPushDto));
+            } else {
+                log.warn("发送售后订单系统消息失败，message={}", JSON.toJSONString(msgPushDto));
+            }
         }
     }
 }
