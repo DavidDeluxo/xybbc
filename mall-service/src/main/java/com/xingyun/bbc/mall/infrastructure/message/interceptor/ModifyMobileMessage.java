@@ -45,7 +45,7 @@ public class ModifyMobileMessage {
             Message<MsgPushDto> message = MessageBuilder.withPayload(msgPushDto).build();
             boolean result = registerChannel.systemNoticeOut().send(message);
             if (result) {
-                log.info("发送消息成功->" + JSONObject.toJSONString(message));
+                log.info("修改手机发送消息成功->" + JSONObject.toJSONString(message));
             }
         } catch (Exception e) {
             log.error("消息异常", e);

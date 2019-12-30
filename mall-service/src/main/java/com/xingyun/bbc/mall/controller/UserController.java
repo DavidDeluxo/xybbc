@@ -34,7 +34,7 @@ public class UserController {
         if(request.getHeader("source") != null){
             if(request.getHeader("source").equals("Android")){
                 dto.setFdeviceType(2);
-            }else if(request.getHeader("source").equalsIgnoreCase("ios")){
+            }else if(request.getHeader("source").equals("iOS")){
                 dto.setFdeviceType(1);
             }
         }
