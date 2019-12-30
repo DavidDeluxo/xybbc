@@ -1,8 +1,6 @@
 package com.xingyun.bbc.mall.controller;
 
 import cn.hutool.http.HttpUtil;
-import com.xingyun.bbc.core.query.Criteria;
-import com.xingyun.bbc.core.user.po.UserVerify;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.common.utils.RequestHolder;
 import com.xingyun.bbc.mall.model.dto.*;
@@ -10,7 +8,6 @@ import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.GoodDetailService;
 import com.xingyun.bbc.mall.service.UserService;
 import io.swagger.annotations.ApiOperation;
-import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,9 +32,9 @@ public class UserController {
     public Result<UserLoginVo> userLogin(@RequestBody UserLoginDto dto,HttpServletRequest request) {
         dto.setIpAddress(HttpUtil.getClientIP(request));
         if(request.getHeader("source") != null){
-            if(request.getHeader("source").equals("android")){
+            if(request.getHeader("source").equals("Android")){
                 dto.setFdeviceType(2);
-            }else if(request.getHeader("source").equals("ios")){
+            }else if(request.getHeader("source").equalsIgnoreCase("ios")){
                 dto.setFdeviceType(1);
             }
         }
