@@ -120,7 +120,7 @@ public class AftersaleServiceImpl implements AftersaleService {
     @Resource
     private MessagePushChannel messagePushChannel;
 
-    @Autowired
+    @Resource(name="taskExecutor")
     private AsyncTaskExecutor asyncTaskExecutor;
 
 
