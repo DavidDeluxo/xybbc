@@ -167,6 +167,7 @@ public class GoodsServiceImpl implements GoodsService {
             //商品一级分类
             List<Map<String, Object>> categoryAggs = (List<Map<String, Object>>) aggregationMap.get("fcategory_id1");
             List<CategoryFilterVo> categoryFilterList = EsBeanUtil.getValueObjectList(CategoryFilterVo.class, categoryAggs);
+
             if (!CollectionUtils.isEmpty(categoryFilterList)) {
                 List<Integer> cateIds = categoryFilterList.stream().map(item -> item.getFcategoryId()).collect(Collectors.toList());
                 Criteria<GoodsCategory, Object> criteriaCate = Criteria.of(GoodsCategory.class)
@@ -399,13 +400,13 @@ public class GoodsServiceImpl implements GoodsService {
         }
 
         // 无货商品置底
-        if (StringUtils.isNotEmpty(searchItemDto.getPriceOrderBy()) || StringUtils.isNotEmpty(searchItemDto.getSellAmountOrderBy())) {
-            DisMaxQueryBuilder disMaxQueryBuilder = QueryBuilders.disMaxQuery();
-            RangeQueryBuilder onOut = QueryBuilders.rangeQuery("fstock_remain_num_total").gt(0);
-            TermQueryBuilder soldOut = QueryBuilders.termQuery("fstock_remain_num_total", 0).boost(Integer.MIN_VALUE);
-            disMaxQueryBuilder.add(onOut).add(soldOut);
-            criteria.getFilterBuilder().must(disMaxQueryBuilder);
-        }
+//        if (StringUtils.isNotEmpty(searchItemDto.getPriceOrderBy()) || StringUtils.isNotEmpty(searchItemDto.getSellAmountOrderBy())) {
+        DisMaxQueryBuilder disMaxQueryBuilder = QueryBuilders.disMaxQuery();
+        RangeQueryBuilder onOut = QueryBuilders.rangeQuery("fstock_remain_num_total").gt(0);
+        TermQueryBuilder soldOut = QueryBuilders.termQuery("fstock_remain_num_total", 0).boost(Integer.MIN_VALUE);
+        disMaxQueryBuilder.add(onOut).add(soldOut);
+        criteria.getFilterBuilder().must(disMaxQueryBuilder);
+//        }
     }
 
 
