@@ -155,7 +155,7 @@ public class CategoryServiceImpl implements CategoryService {
         this.fillBrandsForL1Categories(level1Categories, hotBrandListResult.getData());
 
         //添加热门推荐
-        GoodsCategoryVo hotRecommend = this.getHotRecommendCategory(goodsCategoryVoList, hotBrandListResult.getData());
+        GoodsCategoryVo hotRecommend = this.getHotRecommendCategory(level1Categories, hotBrandListResult.getData());
         List<GoodsCategoryVo> resultList = new LinkedList<>();
         resultList.add(hotRecommend);
         resultList.addAll(level1Categories);
@@ -198,7 +198,7 @@ public class CategoryServiceImpl implements CategoryService {
         for (GoodsCategoryVo recommendL1 : goodsCategories) {
             if (!CollectionUtils.isEmpty(recommendL1.getChildrenList())) {
                 for (GoodsCategoryVo l2Vo : recommendL1.getChildrenList()) {
-                    if (!CollectionUtils.isEmpty(l2Vo.getChildrenList())) {
+                    if (!CollectionUtils.isEmpty(l2Vo.getChildrenList()) && l2Vo.getFisRecommed() == 1) {
                         List<GoodsCategoryVo> l3VoList = l2Vo.getChildrenList();
                         List<GoodsCategoryVo> l3RecommendList = l3VoList.stream().filter(l3Category->l3Category.getFisRecommed() == 1).collect(Collectors.toList());
                         if(!CollectionUtils.isEmpty(l3RecommendList)){
