@@ -19,7 +19,7 @@ public class SearchRecordServiceImpl implements SearchRecordService {
     @Resource
     private GoodsSearchHistoryApi goodsSearchHistoryApi;
 
-    @Async("threadPoolTaskExecutor")
+    @Async
     @Override
     public Result<Integer> insertSearchRecordAsync(String keyword, Integer fuid) {
         log.info("插入搜索历史:{}", keyword);

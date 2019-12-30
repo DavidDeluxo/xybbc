@@ -26,14 +26,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class AsyncTaskConfig implements AsyncConfigurer {
 
     @Bean
-    public AsyncTaskExecutor taskExecutor() {
+    public AsyncTaskExecutor asyncTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setThreadFactory(MallPcThreadFactory.create("mall-pc-async-task", false));
         executor.setCorePoolSize(Runtime.getRuntime().availableProcessors() + 1);
         executor.setMaxPoolSize(Runtime.getRuntime().availableProcessors() + 1);
         executor.setKeepAliveSeconds(0);
-        executor.setQueueCapacity(10);
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setQueueCapacity(100);
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
         executor.initialize();
         return executor;
     }

@@ -121,7 +121,7 @@ public class AftersaleServiceImpl implements AftersaleService {
     @Resource
     private MessagePushChannel messagePushChannel;
 
-    @Resource(name="taskExecutor")
+    @Autowired
     private AsyncTaskExecutor asyncTaskExecutor;
 
 
@@ -366,7 +366,7 @@ public class AftersaleServiceImpl implements AftersaleService {
         //更新售后状态--修改时间加了乐观锁--先查询再保存
         Result<OrderAftersale> queryAfterSaleResult = orderAftersaleApi.queryOneByCriteria(Criteria.of(OrderAftersale.class)
                 .andEqualTo(OrderAftersale::getForderAftersaleId, aftersaleBackDto.getForderAftersaleId())
-                .fields(OrderAftersale::getFmodifyTime, OrderAftersale::getFsupplierId,OrderAftersale::getFsupplierOrderId));
+                .fields(OrderAftersale::getFmodifyTime, OrderAftersale::getFsupplierId, OrderAftersale::getFsupplierOrderId));
         if (!queryAfterSaleResult.isSuccess()) {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
