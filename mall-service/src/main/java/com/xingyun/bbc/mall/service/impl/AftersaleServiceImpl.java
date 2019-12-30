@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.OrderConfigApi;
@@ -418,7 +419,12 @@ public class AftersaleServiceImpl implements AftersaleService {
             msgPushDto.setSubjectType(2);
             msgPushDto.setSubjectId(orderAftersale.getFsupplierId());
             Message<MsgPushDto> message = MessageBuilder.withPayload(msgPushDto).build();
-            messagePushChannel.systemNoticeOut().send(message);
+            boolean result = messagePushChannel.systemNoticeOut().send(message);
+            if (result) {
+                log.info("发送售后订单系统消息成功，message={}", JSON.toJSONString(msgPushDto));
+            } else {
+                log.warn("发送售后订单系统消息失败，message={}", JSON.toJSONString(msgPushDto));
+            }
         }
     }
 }
