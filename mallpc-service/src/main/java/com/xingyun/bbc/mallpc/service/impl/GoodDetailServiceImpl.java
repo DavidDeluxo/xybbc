@@ -500,8 +500,11 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             Result<SkuBatch> skuBatchResult = skuBatchApi.queryOneByCriteria(Criteria.of(SkuBatch.class)
                     .andEqualTo(SkuBatch::getFsupplierSkuBatchId, goodsDetailMallDto.getFsupplierSkuBatchId())
                     .fields(SkuBatch::getFbatchPriceType, SkuBatch::getFfreightId, SkuBatch::getFsupplierSkuBatchId));
-            SkuBatch fskuBatch = skuBatchResult.getData();
             Ensure.that(skuBatchResult.isSuccess()).isTrue(new MallPcExceptionCode(skuBatchResult.getCode(), skuBatchResult.getMsg()));
+            SkuBatch fskuBatch = skuBatchResult.getData();
+            if (fskuBatch == null) {
+                throw new BizException(new MallPcExceptionCode("", "sku批次不存在，批次id：" + goodsDetailMallDto.getFsupplierSkuBatchId()));
+            }
             Integer fbatchPriceType = fskuBatch.getFbatchPriceType();
             //运费先判断--价格类型--不含邮才计算运费
             BigDecimal freightPrice = BigDecimal.ZERO;
