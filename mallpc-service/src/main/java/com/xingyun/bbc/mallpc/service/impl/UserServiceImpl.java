@@ -233,7 +233,8 @@ public class UserServiceImpl implements UserService {
             Ensure.that(marketUserResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
             marketUser = marketUserResult.getData();
             Ensure.that(Objects.nonNull(marketUser)).isTrue(MallPcExceptionCode.EXTENSION_CODE_NOT_EXIST);
-            user.setFinviter(userRegisterDto.getFinviter());
+            user.setFinviter(marketUser.getFextensionCode());
+            user.setFmarketBdId(marketUser.getFmarketUserId());
         }
         passWord = MD5Util.toMd5(passWord);
         user.setFregisterFrom("web");
