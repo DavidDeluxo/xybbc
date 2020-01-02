@@ -201,6 +201,22 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         return Result.success(result);
     }
 
+    /**
+     * @see GoodDetailService#getGoodSkuPic(Long)
+     * @param fskuId
+     * @return
+     */
+    @Override
+    public Result<String> getGoodSkuPic(Long fskuId) {
+        Result<GoodsSku> skuPic = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
+                .andEqualTo(GoodsSku::getFskuId, fskuId)
+                .fields(GoodsSku::getFskuThumbImage));
+        if (skuPic.getData() == null) {
+            throw new BizException(new MallPcExceptionCode("", "sku 不存在"));
+        }
+        return Result.success(skuPic.getData().getFskuThumbImage());
+    }
+
     @Override
     public Result<GoodsVo> getGoodDetailBasic(Long fgoodsId, Long fskuId) {
         //获取商品spu基本信息
