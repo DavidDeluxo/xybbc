@@ -301,6 +301,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Result<SendSmsVo> sendSmsAuthNum(UserLoginDto dto) {
+        UserSecurityDto userSecurityDto = new UserSecurityDto();
         Integer isMobileCheck = 1;
         if (dto.getIsMobileCheck() != null) {
             isMobileCheck = dto.getIsMobileCheck();
@@ -329,15 +330,18 @@ public class UserServiceImpl implements UserService {
         if (xyRedisManager.get(mobile) != null) {
             return Result.failure(MallResultStatus.SMS_AUTH_IS_SEND);
         }
-        if (xyRedisManager.get(dto.getImei()) != null) {
-            String IMEINum = String.valueOf(xyRedisManager.get(dto.getImei()));
-            if (Integer.valueOf(IMEINum) < 10) {
-                if (Integer.valueOf(IMEINum) > 5 && dto.getIsCheck() == 0) {
-                    sendSmsVo.setIsCheck(0);
-                    return Result.success(sendSmsVo);
+        if(dto.getImei() != null && !dto.getImei().equals("")){
+            userSecurityDto.setImei(dto.getImei());
+            if (xyRedisManager.get(dto.getImei()) != null) {
+                String IMEINum = String.valueOf(xyRedisManager.get(dto.getImei()));
+                if (Integer.valueOf(IMEINum) < 10) {
+                    if (Integer.valueOf(IMEINum) > 5 && dto.getIsCheck() == 0) {
+                        sendSmsVo.setIsCheck(0);
+                        return Result.success(sendSmsVo);
+                    }
+                } else {
+                    return Result.failure(MallResultStatus.USER_SEND_SMS_FAILD);
                 }
-            } else {
-                return Result.failure(MallResultStatus.USER_SEND_SMS_FAILD);
             }
         }
 //        if(xyRedisManager.get(dto.getIpAddress()) != null){
@@ -346,9 +350,7 @@ public class UserServiceImpl implements UserService {
 //                return Result.failure(MallResultStatus.USER_SEND_SMS_FAILD);
 //            }
 //        }
-        UserSecurityDto userSecurityDto = new UserSecurityDto();
         userSecurityDto.setFmobile(dto.getFmobile());
-        userSecurityDto.setImei(dto.getImei());
         userSecurityDto.setIpAddress(dto.getIpAddress());
         sendSmsVo = sendSms(sendSmsVo, userSecurityDto);
         return Result.success(sendSmsVo);
@@ -424,11 +426,13 @@ public class UserServiceImpl implements UserService {
         //发送短信后将手机号加入60S限制
         xyRedisManager.set(mobile, mobile, UserConstants.Sms.MOBILE_AUTH_CODE_EXPIRE_TIME / 1000);
         //设备当天短信发送次数增加
-        if (xyRedisManager.get(dto.getImei()) != null) {
-            String IMEINum = String.valueOf(xyRedisManager.get(dto.getImei()));
-            xyRedisManager.set(dto.getImei(), Integer.valueOf(IMEINum) + 1, secondsLeftToday);
-        } else {
-            xyRedisManager.set(dto.getImei(), 1, secondsLeftToday);
+        if(dto.getImei() != null && !dto.getImei().equals("")){
+            if (xyRedisManager.get(dto.getImei()) != null) {
+                String IMEINum = String.valueOf(xyRedisManager.get(dto.getImei()));
+                xyRedisManager.set(dto.getImei(), Integer.valueOf(IMEINum) + 1, secondsLeftToday);
+            } else {
+                xyRedisManager.set(dto.getImei(), 1, secondsLeftToday);
+            }
         }
         //IP当天短信发送次数增加
 //        if(xyRedisManager.get(dto.getIpAddress()) != null){
@@ -1299,7 +1303,9 @@ public class UserServiceImpl implements UserService {
         }
         UserSecurityDto userSecurityDto = new UserSecurityDto();
         userSecurityDto.setFmobile(dto.getFmobile());
-        userSecurityDto.setImei(dto.getImei());
+        if(dto.getImei() != null && !dto.getImei().equals("")){
+            userSecurityDto.setImei(dto.getImei());
+        }
         userSecurityDto.setIpAddress(dto.getIpAddress());
         sendSmsVo = sendSms(sendSmsVo, userSecurityDto);
         return Result.success(sendSmsVo);
@@ -1342,15 +1348,17 @@ public class UserServiceImpl implements UserService {
         if (xyRedisManager.get(dto.getFmobile()) != null) {
             code = MallResultStatus.SMS_AUTH_IS_SEND.getCode();
         }
-        if (xyRedisManager.get(dto.getImei()) != null) {
-            String IMEINum = String.valueOf(xyRedisManager.get(dto.getImei()));
-            if (Integer.valueOf(IMEINum) < 10) {
-                if (Integer.valueOf(IMEINum) > 5 && isCheck == 0) {
-                    map.put("isCheck", "0");
-                    return map;
+        if(dto.getImei() != null && !dto.getImei().equals("")){
+            if (xyRedisManager.get(dto.getImei()) != null) {
+                String IMEINum = String.valueOf(xyRedisManager.get(dto.getImei()));
+                if (Integer.valueOf(IMEINum) < 10) {
+                    if (Integer.valueOf(IMEINum) > 5 && isCheck == 0) {
+                        map.put("isCheck", "0");
+                        return map;
+                    }
+                } else {
+                    code = MallResultStatus.USER_SEND_SMS_FAILD.getCode();
                 }
-            } else {
-                code = MallResultStatus.USER_SEND_SMS_FAILD.getCode();
             }
         }
 //        if(xyRedisManager.get(dto.getIpAddress()) != null){
