@@ -142,11 +142,11 @@ public class AppVersionServiceImpl implements AppVersionService {
             log.error("APP版本更新配置查询json转换出错", e);
             throw new BizException(MallExceptionCode.SYSTEM_ERROR);
         }
-//        if (VersionPlatformEnum.IOS.getCode().equals(fplatform)) {
-//            redisHolder.set(iosKey, vo, TIMEOUT);
-//        } else {
-//            redisHolder.set(androidKey, vo, TIMEOUT);
-//        }
+        if (VersionPlatformEnum.IOS.getCode().equals(fplatform)) {
+            redisHolder.set(iosKey, vo, TIMEOUT);
+        } else {
+            redisHolder.set(androidKey, vo, TIMEOUT);
+        }
         return vo;
     }
 
