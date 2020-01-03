@@ -100,11 +100,9 @@ public class AppVersionServiceImpl implements AppVersionService {
         AppVersion appVersion = appVersions.get(0);
         //将版本号转换成主键id
         Optional<AppVersion> versionOptional = appVersions.stream().filter(item -> item.getFversionNo().equals(version)).findFirst();
-        Integer reqId;
+        Integer reqId = null;
         if (versionOptional.isPresent()) {
             reqId = versionOptional.get().getFid();
-        } else {
-            throw new BizException(MallExceptionCode.VERSION_NOT_EXIST);
         }
         for (AppVersion item : appVersions) {
             if (VersionUpdateConditionEnum.ALL.getCode().equals(item.getFcondition())) {
@@ -144,11 +142,11 @@ public class AppVersionServiceImpl implements AppVersionService {
             log.error("APP版本更新配置查询json转换出错", e);
             throw new BizException(MallExceptionCode.SYSTEM_ERROR);
         }
-        if (VersionPlatformEnum.IOS.getCode().equals(fplatform)) {
-            redisHolder.set(iosKey, vo, TIMEOUT);
-        } else {
-            redisHolder.set(androidKey, vo, TIMEOUT);
-        }
+//        if (VersionPlatformEnum.IOS.getCode().equals(fplatform)) {
+//            redisHolder.set(iosKey, vo, TIMEOUT);
+//        } else {
+//            redisHolder.set(androidKey, vo, TIMEOUT);
+//        }
         return vo;
     }
 
