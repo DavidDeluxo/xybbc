@@ -6,10 +6,10 @@ public interface AppVersionService {
 
     /**
      * 查询最新的app版本更新信息
-     *
      * @param fplatform
+     * @param version
      * @return
      */
-    VersionVo getAppVersionInfo(Integer fplatform);
+    VersionVo getAppVersionInfo(Integer fplatform, String version);
 
 }

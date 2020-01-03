@@ -27,6 +27,7 @@ import org.springframework.util.CollectionUtils;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -57,19 +58,21 @@ public class AppVersionServiceImpl implements AppVersionService {
     private RedisHolder redisHolder;
 
     @Override
-    public VersionVo getAppVersionInfo(Integer fplatform) {
+    public VersionVo getAppVersionInfo(Integer fplatform, String version) {
         if (!VersionPlatformEnum.IOS.getCode().equals(fplatform) && !VersionPlatformEnum.ANDROID.getCode().equals(fplatform)) {
             throw new BizException(MallExceptionCode.PARAM_ERROR);
         }
+        String iosKey = MallRedisConstant.LASTEST_APP_VERSION_IOS + version;
+        String androidKey = MallRedisConstant.LASTEST_APP_VERSION_ANDROID + version;
         if (VersionPlatformEnum.IOS.getCode().equals(fplatform)) {
             //若缓存存在，查询并返回
-            if (redisHolder.exists(MallRedisConstant.LASTEST_APP_VERSION_IOS)) {
-                return (VersionVo) redisHolder.getObject(MallRedisConstant.LASTEST_APP_VERSION_IOS);
+            if (redisHolder.exists(iosKey)) {
+                return (VersionVo) redisHolder.getObject(iosKey);
             }
         } else {
             //若缓存存在，查询并返回
-            if (redisHolder.exists(MallRedisConstant.LASTEST_APP_VERSION_ANDROID)) {
-                return (VersionVo) redisHolder.getObject(MallRedisConstant.LASTEST_APP_VERSION_ANDROID);
+            if (redisHolder.exists(androidKey)) {
+                return (VersionVo) redisHolder.getObject(androidKey);
             }
         }
         log.info("APP版本信息缓存失效，查询数据库");
@@ -85,33 +88,49 @@ public class AppVersionServiceImpl implements AppVersionService {
                         AppVersion::getFupdateType,
                         AppVersion::getFcontent,
                         AppVersion::getFcondition,
-                        AppVersion::getFconditionVersions)
+                        AppVersion::getFconditionVersions,
+                        AppVersion::getFid)
                 .sortDesc(AppVersion::getFappVersionId);
-        AppVersion appVersion = ResultUtils.getData(appVersionApi.queryOneByCriteria(appVersionCriteria));
+        List<AppVersion> appVersions = ResultUtils.getData(appVersionApi.queryByCriteria(appVersionCriteria));
+        if (CollectionUtils.isEmpty(appVersions)) {
+            log.error("版本控制数据为空");
+            return new VersionVo();
+        }
+        //默认取最新的版本配置
+        AppVersion appVersion = appVersions.get(0);
+        //将版本号转换成主键id
+        Optional<AppVersion> versionOptional = appVersions.stream().filter(item -> item.getFversionNo().equals(version)).findFirst();
+        Integer reqId;
+        if (versionOptional.isPresent()) {
+            reqId = versionOptional.get().getFid();
+        } else {
+            throw new BizException(MallExceptionCode.VERSION_NOT_EXIST);
+        }
+        for (AppVersion item : appVersions) {
+            if (VersionUpdateConditionEnum.ALL.getCode().equals(item.getFcondition())) {
+                appVersion = item;
+                break;
+            }
+            Set<Integer> ids = getRelationIds(fplatform, item.getFconditionVersions());
+            boolean isContains = false;
+            if (ids.contains(reqId)) {
+                isContains = true;
+            }
+            if (VersionUpdateConditionEnum.APPOINT.getCode().equals(item.getFcondition()) && isContains) {
+                appVersion = item;
+                break;
+            }
+            if (VersionUpdateConditionEnum.REMOVE.getCode().equals(item.getFcondition()) && !isContains) {
+                appVersion = item;
+                break;
+            }
+        }
         VersionVo vo = dozerHolder.convert(appVersion, VersionVo.class);
         if (VersionUpdateConditionEnum.ALL.getCode().equals(appVersion.getFcondition())) {
             vo.setFVersionNos(new ArrayList<>());
         } else {
-            Set<Integer> ids;
-            try {
-                AppVersionCondition appVersionCondition = JacksonUtils.jsonTopojo(appVersion.getFconditionVersions(), AppVersionCondition.class);
-                if (VersionPlatformEnum.IOS.getCode().equals(fplatform)) {
-                    ids = appVersionCondition.getIos();
-                } else {
-                    ids = appVersionCondition.getAndroid();
-                }
-            } catch (Exception e) {
-                throw new BizException(MallExceptionCode.BALANCE_NOT_ENOUGH);
-            }
-            Criteria<AppVersion, Object> condition = Criteria.of(AppVersion.class)
-                    .fields(AppVersion::getFversionNo)
-                    .andIn(AppVersion::getFid, ids)
-                    .sortDesc(AppVersion::getFmodifyTime);
-            List<AppVersion> appVersions = ResultUtils.getData(appVersionApi.queryByCriteria(condition));
-            if (CollectionUtils.isEmpty(appVersions)) {
-                throw new BizException(MallExceptionCode.RELATION_VERSION_IS_EMPTY);
-            }
-            vo.setFVersionNos(appVersions.stream().map(item -> item.getFversionNo()).collect(Collectors.toList()));
+            Set<Integer> ids = getRelationIds(fplatform, appVersion.getFconditionVersions());
+            vo.setFVersionNos(appVersions.stream().filter(item -> ids.contains(item.getFid())).map(item -> item.getFversionNo()).collect(Collectors.toList()));
         }
         Criteria<Config, Object> criteria = Criteria.of(Config.class)
                 .andEqualTo(Config::getFkey, APP_UPDATE_CONFIG)
@@ -126,10 +145,31 @@ public class AppVersionServiceImpl implements AppVersionService {
             throw new BizException(MallExceptionCode.SYSTEM_ERROR);
         }
         if (VersionPlatformEnum.IOS.getCode().equals(fplatform)) {
-            redisHolder.set(MallRedisConstant.LASTEST_APP_VERSION_IOS, vo, TIMEOUT);
+            redisHolder.set(iosKey, vo, TIMEOUT);
         } else {
-            redisHolder.set(MallRedisConstant.LASTEST_APP_VERSION_ANDROID, vo, TIMEOUT);
+            redisHolder.set(androidKey, vo, TIMEOUT);
         }
         return vo;
+    }
+
+    /**
+     * 获取当前配置关联的版本控制id
+     *
+     * @param fplatform
+     * @return
+     */
+    private Set<Integer> getRelationIds(Integer fplatform, String conditionVersions) {
+        Set<Integer> ids;
+        try {
+            AppVersionCondition appVersionCondition = JacksonUtils.jsonTopojo(conditionVersions, AppVersionCondition.class);
+            if (VersionPlatformEnum.IOS.getCode().equals(fplatform)) {
+                ids = appVersionCondition.getIos();
+            } else {
+                ids = appVersionCondition.getAndroid();
+            }
+        } catch (Exception e) {
+            throw new BizException(MallExceptionCode.JSON_PARSE_ERROR);
+        }
+        return ids;
     }
 }
