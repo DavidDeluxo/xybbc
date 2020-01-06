@@ -54,4 +54,12 @@ public interface MessageService {
      **/
     Result updateMessageForRead(MessageUpdateDto dto);
 
+    /**
+     * @Description 统计未读消息数量
+     * @Author ming.yiFei
+     * @Date 11:22 2020/1/6
+     * @Param [userId]
+     * @return com.xingyun.bbc.core.utils.Result<java.lang.Integer>
+     **/
+    Result<Integer> countMessageForUnRead(Long userId);
 }

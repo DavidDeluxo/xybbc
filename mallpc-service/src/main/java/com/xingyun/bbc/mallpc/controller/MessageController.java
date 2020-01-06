@@ -62,4 +62,9 @@ public class MessageController {
         return messageService.updateMessageForRead(dto);
     }
 
+    @ApiOperation("统计未读消息数量")
+    @PostMapping(value = "/countMessageForUnRead")
+    public Result<Integer> countMessageForUnRead(){
+        return messageService.countMessageForUnRead(RequestHolder.getUserId());
+    }
 }

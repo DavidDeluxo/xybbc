@@ -243,7 +243,7 @@ public class MessageServiceImpl implements MessageService {
                         case COUPON_RECEIVE:
                             // 优惠券即将到期(24小时)
                         case COUPON_ALMOST_OVERDUE:
-                            messageListVo.setDesc(record.getFcontent());
+                            messageListVo.setDesc(record.getFcontent().replaceAll("((<)([\\S\\s]*)(>))",""));
                             break;
                         // 用户认证成功
                         case USER_VERIFY:
@@ -258,7 +258,7 @@ public class MessageServiceImpl implements MessageService {
                             MessageSelfInfoVo userSelfInfoVo = new MessageSelfInfoVo();
                             userSelfInfoVo.setAuthenticationType(user.getFoperateType());
                             messageListVo.setSelfInfoVo(userSelfInfoVo);
-                            messageListVo.setDesc(record.getFcontent());
+                            messageListVo.setDesc(record.getFcontent().replaceAll("((<)([\\S\\s]*)(>))",""));
                             break;
                         default:
                             throw new BizException(new MallPcExceptionCode("", "不存在的自动消息类型"));
@@ -283,11 +283,12 @@ public class MessageServiceImpl implements MessageService {
                                     messageListVo.setDesc("");
                                     break;
                                 }
-                                messageListVo.setDesc(recordFcontent);
+                                messageListVo.setDesc(recordFcontent.replaceAll("((<)([\\S\\s]*)(>))", ""));
                                 break;
                             }
                             int index = recordFcontent.indexOf(matcher.group(0));
-                            messageListVo.setDesc(recordFcontent.substring(index + matcher.group(0).length()));
+                            String substring = recordFcontent.substring(index + matcher.group(0).length());
+                            messageListVo.setDesc(substring.replaceAll("((<)([\\S\\s]*)(>))", ""));
                             break;
                         case GOODS_MESSAGE:
                             Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
@@ -311,7 +312,7 @@ public class MessageServiceImpl implements MessageService {
                             messageListVo.setSelfInfoVo(goodsSelfInfo);
                             break;
                         case OTHER:
-                            messageListVo.setDesc(record.getFcontent());
+                            messageListVo.setDesc(record.getFcontent().replaceAll("((<)([\\S\\s]*)(>))",""));
                             break;
                         default:
                             throw new BizException(new MallPcExceptionCode("", "不存在的手动消息类型"));
@@ -374,5 +375,26 @@ public class MessageServiceImpl implements MessageService {
             }
         });
         return Result.success();
+    }
+
+    /**
+     * @see MessageService#countMessageForUnRead(Long)
+     * @param userId
+     * @return
+     */
+    @Override
+    public Result<Integer> countMessageForUnRead(Long userId) {
+        Criteria<MessageUserRecord, Object> userRecordObjectCriteria = Criteria.of(MessageUserRecord.class)
+                .andEqualTo(MessageUserRecord::getFsendStatus, 2)
+                .andEqualTo(MessageUserRecord::getFreaded, 0)
+                .andEqualTo(MessageUserRecord::getFuid, userId)
+                .andGreaterThanOrEqualTo(MessageUserRecord::getFexpirationDate, new Date())
+                .sortDesc(MessageUserRecord::getFcreateTime);
+        Result<Integer> userRecordResult = userRecordApi.countByCriteria(userRecordObjectCriteria);
+        if (!userRecordResult.isSuccess()) {
+            throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
+        }
+        Integer count = userRecordResult.getData();
+        return Result.success(count == null ? 0 : count);
     }
 }
