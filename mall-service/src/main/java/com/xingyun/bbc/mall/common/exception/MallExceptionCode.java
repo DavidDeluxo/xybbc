@@ -42,6 +42,7 @@ public class MallExceptionCode implements IResultStatus {
     public static final MallExceptionCode BATCH_PACKAGE_NUM_NOT_EXIST = new MallExceptionCode("6673", "查不到包装规格值");
     public static final MallExceptionCode RELATION_VERSION_IS_EMPTY = new MallExceptionCode("6674", "关联的版本号为空");
     public static final MallExceptionCode JSON_PARSE_ERROR = new MallExceptionCode("6675", "json字符串解析异常！");
+    public static final MallExceptionCode VERSION_NOT_EXIST = new MallExceptionCode("6676", "请求的版本号不存在");
 
     /**
      * pay模块错误信息

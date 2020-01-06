@@ -10,16 +10,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 
+/**
+ * 版本控制
+ */
 @RestController
-@RequestMapping("/appVersion/via")
+@RequestMapping("/verInfo/via")
 public class AppVersionController {
 
     @Resource
     private AppVersionService appVersionService;
 
     @GetMapping()
-    public Result<VersionVo> query(@RequestParam Integer fplatform) {
-        return Result.success(appVersionService.getAppVersionInfo(fplatform));
+    public Result<VersionVo> query(@RequestParam Integer fplatform, @RequestParam String fversion) {
+        return Result.success(appVersionService.getAppVersionInfo(fplatform, fversion));
     }
 
 }
