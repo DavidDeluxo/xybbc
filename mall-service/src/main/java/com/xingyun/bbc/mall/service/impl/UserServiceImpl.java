@@ -197,15 +197,9 @@ public class UserServiceImpl implements UserService {
 
     private void updateUserDevice(UserLoginDto dto, Long fuid) {
         MessageUserDevice messageUserDevice = new MessageUserDevice();
-        MessageUserDevice device = new MessageUserDevice();
-        device.setFuid(fuid);
-        messageUserDeviceApi.delete(device);
         messageUserDevice.setFuid(fuid);
         if (dto.getDeviceToken() != null) {
             messageUserDevice.setFdeviceNum(dto.getDeviceToken());
-            device.setFdeviceNum(dto.getDeviceToken());
-            device.setFuid(null);
-            messageUserDeviceApi.delete(device);
         }
         if (dto.getFdeviceType() != null) {
             messageUserDevice.setFdeviceType(dto.getFdeviceType());
