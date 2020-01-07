@@ -105,27 +105,15 @@ public class AppVersionServiceImpl implements AppVersionService {
         if (versionOptional.isPresent()) {
             reqId = versionOptional.get().getFid();
         }
-        for (AppVersion item : appVersions) {
-            if (VersionUpdateTypeEnum.SILENCE.getCode().equals(item.getFupdateType())) {
-                continue;
-            }
-            if (VersionUpdateConditionEnum.ALL.getCode().equals(item.getFcondition())) {
-                appVersion = item;
-                break;
-            }
-            Set<Integer> ids = getRelationIds(fplatform, item.getFconditionVersions());
-            boolean isContains = false;
-            if (ids.contains(reqId)) {
-                isContains = true;
-            }
-            if (VersionUpdateConditionEnum.APPOINT.getCode().equals(item.getFcondition()) && isContains) {
-                appVersion = item;
-                break;
-            }
-            if (VersionUpdateConditionEnum.REMOVE.getCode().equals(item.getFcondition()) && !isContains) {
-                appVersion = item;
-                break;
-            }
+
+        //静默的不用管，若有强制，优先以强制为主，这里分成强制和非强制两组，强制没有则从非强制取
+        List<AppVersion> filters = appVersions.stream().filter(item -> VersionUpdateTypeEnum.FORCE.getCode().equals(item.getFupdateType())).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(filters)) {
+            filters = appVersions.stream().filter(item -> VersionUpdateTypeEnum.NOT_FORCE.getCode().equals(item.getFupdateType())).collect(Collectors.toList());
+        }
+        AppVersion filter = filterAppVersion(filters, fplatform, reqId);
+        if (filter != null) {
+            appVersion = filter;
         }
 
         //弹窗展示内容都是展示最新的那条的展示内容
@@ -156,6 +144,41 @@ public class AppVersionServiceImpl implements AppVersionService {
             redisHolder.set(androidKey, vo, TIMEOUT);
         }
         return vo;
+    }
+
+    /**
+     * 过滤关联条件符合的版本
+     *
+     * @param appVersions
+     * @param fplatform
+     * @param reqId
+     * @return
+     */
+    private AppVersion filterAppVersion(List<AppVersion> appVersions, Integer fplatform, Integer reqId) {
+        if (CollectionUtils.isEmpty(appVersions)) {
+            return null;
+        }
+        AppVersion appVersion = null;
+        for (AppVersion item : appVersions) {
+            if (VersionUpdateConditionEnum.ALL.getCode().equals(item.getFcondition())) {
+                appVersion = item;
+                break;
+            }
+            Set<Integer> ids = getRelationIds(fplatform, item.getFconditionVersions());
+            boolean isContains = false;
+            if (ids.contains(reqId)) {
+                isContains = true;
+            }
+            if (VersionUpdateConditionEnum.APPOINT.getCode().equals(item.getFcondition()) && isContains) {
+                appVersion = item;
+                break;
+            }
+            if (VersionUpdateConditionEnum.REMOVE.getCode().equals(item.getFcondition()) && !isContains) {
+                appVersion = item;
+                break;
+            }
+        }
+        return appVersion;
     }
 
     /**
