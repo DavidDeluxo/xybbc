@@ -7,6 +7,7 @@ import com.xingyun.bbc.core.operate.dto.AppVersionCondition;
 import com.xingyun.bbc.core.operate.enums.VersionPlatformEnum;
 import com.xingyun.bbc.core.operate.enums.VersionStatusEnum;
 import com.xingyun.bbc.core.operate.enums.VersionUpdateConditionEnum;
+import com.xingyun.bbc.core.operate.enums.VersionUpdateTypeEnum;
 import com.xingyun.bbc.core.operate.po.AppVersion;
 import com.xingyun.bbc.core.operate.po.Config;
 import com.xingyun.bbc.core.query.Criteria;
@@ -105,6 +106,9 @@ public class AppVersionServiceImpl implements AppVersionService {
             reqId = versionOptional.get().getFid();
         }
         for (AppVersion item : appVersions) {
+            if(VersionUpdateTypeEnum.SILENCE.getCode().equals(item.getFupdateType())){
+                continue;
+            }
             if (VersionUpdateConditionEnum.ALL.getCode().equals(item.getFcondition())) {
                 appVersion = item;
                 break;
