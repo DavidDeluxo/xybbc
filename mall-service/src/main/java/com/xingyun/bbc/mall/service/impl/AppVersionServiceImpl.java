@@ -127,7 +127,10 @@ public class AppVersionServiceImpl implements AppVersionService {
                 break;
             }
         }
+
+        //弹窗展示内容都是展示最新的那条的展示内容
         appVersion.setFcontent(appVersions.get(0).getFcontent());
+
         VersionVo vo = dozerHolder.convert(appVersion, VersionVo.class);
         if (VersionUpdateConditionEnum.ALL.getCode().equals(appVersion.getFcondition())) {
             vo.setFVersionNos(new ArrayList<>());
