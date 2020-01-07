@@ -228,7 +228,7 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         if (StringUtils.isNotBlank(userRegisterDto.getFinviter())) {
             Result<MarketUser> marketUserResult = marketUserApi.queryOneByCriteria(Criteria.of(MarketUser.class)
-                    .fields(MarketUser::getFuid, MarketUser::getFextensionCode)
+                    .fields(MarketUser::getFuid, MarketUser::getFextensionCode,MarketUser::getFmarketUserId)
                     .andEqualTo(MarketUser::getFextensionCode, userRegisterDto.getFinviter()));
             Ensure.that(marketUserResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
             marketUser = marketUserResult.getData();
