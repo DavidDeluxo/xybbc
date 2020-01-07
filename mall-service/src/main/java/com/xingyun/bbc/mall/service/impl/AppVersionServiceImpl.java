@@ -106,7 +106,7 @@ public class AppVersionServiceImpl implements AppVersionService {
             reqId = versionOptional.get().getFid();
         }
         for (AppVersion item : appVersions) {
-            if(VersionUpdateTypeEnum.SILENCE.getCode().equals(item.getFupdateType())){
+            if (VersionUpdateTypeEnum.SILENCE.getCode().equals(item.getFupdateType())) {
                 continue;
             }
             if (VersionUpdateConditionEnum.ALL.getCode().equals(item.getFcondition())) {
@@ -127,6 +127,7 @@ public class AppVersionServiceImpl implements AppVersionService {
                 break;
             }
         }
+        appVersion.setFcontent(appVersions.get(0).getFcontent());
         VersionVo vo = dozerHolder.convert(appVersion, VersionVo.class);
         if (VersionUpdateConditionEnum.ALL.getCode().equals(appVersion.getFcondition())) {
             vo.setFVersionNos(new ArrayList<>());
