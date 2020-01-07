@@ -404,7 +404,7 @@ public class UserServiceImpl implements UserService {
         passWord = Md5Utils.toMd5(passWord);
         if(dto.getFinviter() != null && !dto.getFinviter().equals("")){
             Result<MarketUser> marketUserResult = marketUserApi.queryOneByCriteria(Criteria.of(MarketUser.class)
-                    .fields(MarketUser::getFuid, MarketUser::getFextensionCode)
+                    .fields(MarketUser::getFuid, MarketUser::getFextensionCode,MarketUser::getFmarketUserId)
                     .andEqualTo(MarketUser::getFextensionCode, dto.getFinviter()));
             if(marketUserResult.getData() != null){
                 marketUser = marketUserResult.getData();
@@ -412,6 +412,7 @@ public class UserServiceImpl implements UserService {
                 return Result.failure(MallResultStatus.EXTENSION_CODE_NOT_EXIST);
             }
             user.setFinviter(dto.getFinviter());
+            user.setFmarketBdId(marketUser.getFmarketUserId());
         }
         user.setFregisterFrom(dto.getFregisterFrom());
         user.setFmobile(dto.getFmobile());
