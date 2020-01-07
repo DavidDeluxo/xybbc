@@ -98,7 +98,8 @@ public class AppVersionServiceImpl implements AppVersionService {
             return new VersionVo();
         }
         //默认取最新的版本配置
-        AppVersion appVersion = appVersions.get(0);
+        AppVersion latest = appVersions.get(0);
+        AppVersion appVersion = latest;
         //将版本号转换成主键id
         Optional<AppVersion> versionOptional = appVersions.stream().filter(item -> item.getFversionNo().equals(version)).findFirst();
         Integer reqId = null;
@@ -116,8 +117,9 @@ public class AppVersionServiceImpl implements AppVersionService {
             appVersion = filter;
         }
 
-        //弹窗展示内容都是展示最新的那条的展示内容
-        appVersion.setFcontent(appVersions.get(0).getFcontent());
+        //弹窗展示内容都是展示最新的那条的展示内容和版本号
+        appVersion.setFcontent(latest.getFcontent());
+        appVersion.setFversionNo(latest.getFversionNo());
 
         VersionVo vo = dozerHolder.convert(appVersion, VersionVo.class);
         if (VersionUpdateConditionEnum.ALL.getCode().equals(appVersion.getFcondition())) {
