@@ -6,11 +6,9 @@ import com.alibaba.fastjson.TypeReference;
 import com.google.common.base.Strings;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
-import com.xingyun.bbc.core.operate.api.OrderConfigApi;
-import com.xingyun.bbc.core.operate.po.OrderConfig;
+//import com.xingyun.bbc.core.operate.api.OrderConfigApi;
 import com.xingyun.bbc.core.order.api.OrderPaymentApi;
 import com.xingyun.bbc.core.order.po.OrderPayment;
-import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserAccountApi;
 import com.xingyun.bbc.core.user.api.UserAccountTransApi;
 import com.xingyun.bbc.core.user.api.UserAccountTransWaterApi;
@@ -39,8 +37,6 @@ import com.xingyun.bbc.pay.model.dto.ThirdPayDto;
 import com.xingyun.bbc.pay.model.dto.ThirdPayResponseDto;
 import com.xingyun.bbc.pay.model.vo.PayInfoVo;
 import io.seata.spring.annotation.GlobalTransactional;
-
-import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,7 +51,6 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -70,7 +65,7 @@ public class PayServiceImpl implements PayService {
 
 	private static Logger logger = LoggerFactory.getLogger(PayServiceImpl.class);
 	
-	private static final Long DEFAULT_LOCK_TIME = 2l*60l;
+//	private static final Long DEFAULT_LOCK_TIME = 2l*60l;
 
 	@Autowired
 	private PayChannelApi payApi;
@@ -93,8 +88,8 @@ public class PayServiceImpl implements PayService {
 	@Autowired
 	private UserAccountTransWaterApi userAccountTransWaterApi;
 	
-	@Autowired
-	private OrderConfigApi orderConfigApi;
+//	@Autowired
+//	private OrderConfigApi orderConfigApi;
     
     @Autowired
     private DozerHolder dozerHolder;
@@ -229,7 +224,7 @@ public class PayServiceImpl implements PayService {
 		{
 			return result;
 		}
-		logger.info("充值参数，订单号：" + dto.getForderId()+"订单金额："+dto.getPayAmount());
+		logger.info("订单号：" + dto.getForderId()+"订单金额："+dto.getPayAmount());
 		return payApi.createThirdPayCode(dto);
 	}
 	

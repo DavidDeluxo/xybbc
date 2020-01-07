@@ -3,11 +3,9 @@ package com.xingyun.bbc.mallpc.service.impl;
 import com.google.common.base.Strings;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
-import com.xingyun.bbc.core.operate.api.OrderConfigApi;
-import com.xingyun.bbc.core.operate.po.OrderConfig;
+//import com.xingyun.bbc.core.operate.api.OrderConfigApi;
 import com.xingyun.bbc.core.order.api.OrderPaymentApi;
 import com.xingyun.bbc.core.order.po.OrderPayment;
-import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.UserAccountApi;
 import com.xingyun.bbc.core.user.api.UserAccountTransApi;
 import com.xingyun.bbc.core.user.api.UserApi;
@@ -17,12 +15,12 @@ import com.xingyun.bbc.core.user.po.UserAccountTrans;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.constants.PayConstants;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
+import com.xingyun.bbc.mallpc.common.utils.DateUtils;
 import com.xingyun.bbc.mallpc.common.utils.DecodeUtil;
 import com.xingyun.bbc.mallpc.common.utils.EncryptUtils;
 import com.xingyun.bbc.mallpc.common.utils.Md5Utils;
 import com.xingyun.bbc.mallpc.common.utils.PriceUtil;
 import com.xingyun.bbc.mallpc.common.utils.RequestHolder;
-import com.xingyun.bbc.mallpc.common.utils.TimeAddUtil;
 import com.xingyun.bbc.mallpc.model.dto.pay.BalancePayDto;
 import com.xingyun.bbc.mallpc.model.dto.pay.CheckPayDto;
 import com.xingyun.bbc.mallpc.model.vo.pay.OrderResultVo;
@@ -42,7 +40,6 @@ import org.springframework.stereotype.Service;
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.List;
 
 /**
  * @author jianghui
@@ -55,7 +52,7 @@ public class PayServiceImpl implements PayService {
 
 	private static Logger logger = LoggerFactory.getLogger(PayServiceImpl.class);
 
-	private static final Long DEFAULT_LOCK_TIME = 2l * 60l;
+//	private static final Long DEFAULT_LOCK_TIME = 2l * 60l;
 
 	@Autowired
 	private PayChannelApi payApi;
@@ -75,8 +72,8 @@ public class PayServiceImpl implements PayService {
 	@Autowired
 	private UserAccountTransApi userAccountTransApi;
 
-	@Autowired
-	private OrderConfigApi orderConfigApi;
+//	@Autowired
+//	private OrderConfigApi orderConfigApi;
 
 	/**
 	 * @author jianghui
@@ -179,7 +176,7 @@ public class PayServiceImpl implements PayService {
 		if (result != null) {
 			return result;
 		}
-		logger.info("充值参数，订单号：" + dto.getForderId() + "订单金额：" + dto.getPayAmount());
+		logger.info("订单号：" + dto.getForderId() + "订单金额：" + dto.getPayAmount());
 		dto.setAppVersion(appVersion);
 		return payApi.createThirdPayUrl(dto);
 	}
@@ -375,45 +372,49 @@ public class PayServiceImpl implements PayService {
 	// 校验订单是否能支付
 	private Result<?> checkOrderIsEnablePay(ThirdPayDto dto) {
 		Date lockTime = null; // 订单超时时间
-		Long orderTotalAmount = null; // 订单总金额
-		Long fbalancePayAmount = null; // 订单已付金额
+//		Long orderTotalAmount = null; // 订单总金额
+//		Long fbalancePayAmount = null; // 订单已付金额
 		int orderStatus = -1; // 订单状态
 		int thirdTradeStatus = -1; // 第三方支付状态
-		Result<OrderPayment> orderPaymentResult = orderPaymentApi.queryById(dto.getForderId());
+//		Result<OrderPayment> orderPaymentResult = orderPaymentApi.queryById(dto.getForderId());
+		OrderPaymentInfoDto orderPaymentInfoDto =new OrderPaymentInfoDto();
+		orderPaymentInfoDto.setForderPaymentId(dto.getForderId());
+		Result<OrderPaymentInfoVo> orderPaymentResult = orderPayApi.getPaymentInfo(orderPaymentInfoDto);
 		
 		if (!orderPaymentResult.isSuccess()) {
             logger.error("查询支付单失败");
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
 		}
 		
-		OrderPayment orderPayment=orderPaymentResult.getData();
+		OrderPaymentInfoVo orderPayment=orderPaymentResult.getData();
 		
 		if (orderPayment == null) {
 			logger.info("支付订单号查询返回结果为空！ 订单号：" + dto.getForderId());
 			return Result.failure(MallPcExceptionCode.ORDER_NOT_EXIST);
 		}
 
-		Long fminute = 0l;
-
-		Criteria<OrderConfig, Object> orderConfigCriteria = Criteria.of(OrderConfig.class);
-		orderConfigCriteria.andEqualTo(OrderConfig::getForderConfigType, 0);// 0待支付订单限时支付
-		orderConfigCriteria.andEqualTo(OrderConfig::getFstatus, 0);
-		orderConfigCriteria.fields(OrderConfig::getForderConfigType, OrderConfig::getFminute);
-		Result<List<OrderConfig>> orderConfigResult = orderConfigApi.queryByCriteria(orderConfigCriteria);
-		if (!orderConfigResult.isSuccess()) {
-			fminute = DEFAULT_LOCK_TIME;
-		} else {
-			List<OrderConfig> orderConfigList = orderConfigResult.getData();
-			if (orderConfigList.size() > 0) {
-				fminute = orderConfigList.get(0).getFminute();
-			} else {
-				fminute = DEFAULT_LOCK_TIME;
-			}
-		}
-
-		lockTime = TimeAddUtil.addMinute(orderPayment.getFcreateTime(), fminute.intValue());
-		orderTotalAmount = orderPayment.getFtotalOrderAmount();
-		fbalancePayAmount = orderPayment.getFbalancePayAmount();
+//		Long fminute = 0l;
+//
+//		Criteria<OrderConfig, Object> orderConfigCriteria = Criteria.of(OrderConfig.class);
+//		orderConfigCriteria.andEqualTo(OrderConfig::getForderConfigType, 0);// 0待支付订单限时支付
+//		orderConfigCriteria.andEqualTo(OrderConfig::getFstatus, 0);
+//		orderConfigCriteria.fields(OrderConfig::getForderConfigType, OrderConfig::getFminute);
+//		Result<List<OrderConfig>> orderConfigResult = orderConfigApi.queryByCriteria(orderConfigCriteria);
+//		if (!orderConfigResult.isSuccess()) {
+//			fminute = DEFAULT_LOCK_TIME;
+//		} else {
+//			List<OrderConfig> orderConfigList = orderConfigResult.getData();
+//			if (orderConfigList.size() > 0) {
+//				fminute = orderConfigList.get(0).getFminute();
+//			} else {
+//				fminute = DEFAULT_LOCK_TIME;
+//			}
+//		}
+//
+//		lockTime = TimeAddUtil.addMinute(orderPayment.getFcreateTime(), fminute.intValue());
+		lockTime = DateUtils.parseDate(orderPayment.getFlockTime());
+//		orderTotalAmount = orderPayment.getFtotalOrderAmount();
+//		fbalancePayAmount = orderPayment.getFbalancePayAmount();
 		orderStatus = orderPayment.getForderStatus();
 		thirdTradeStatus = orderPayment.getFthirdTradeStatus();
 
@@ -430,9 +431,11 @@ public class PayServiceImpl implements PayService {
 			return Result.failure(MallPcExceptionCode.ORDER_IS_COMPLETION);
 		}
 
-		Long payAmouts = orderTotalAmount - fbalancePayAmount;
+//		Long payAmouts = orderTotalAmount - fbalancePayAmount;
+		//剩余应付金额
+		String fremainAmount=orderPayment.getFremainAmount();
 		dto.setLockTime(lockTime);
-		dto.setPayAmount(PriceUtil.toYuan(payAmouts).toString());
+		dto.setPayAmount(fremainAmount);
 		dto.setRecieveName(orderPayment.getFpayerName());
 		return null;
 	}
