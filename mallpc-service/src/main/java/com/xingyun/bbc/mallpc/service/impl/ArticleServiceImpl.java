@@ -40,6 +40,7 @@ public class ArticleServiceImpl implements ArticleService {
     @Override
     public Result<List<ArticleMenuVo>> queryArticleMenu() {
         Criteria<ArticleMenu, Object> articleMenuCriteria = Criteria.of(ArticleMenu.class)
+                .andEqualTo(ArticleMenu::getFmenuType,0)
                 .fields(ArticleMenu::getFmenuId,ArticleMenu::getFmenuName,ArticleMenu::getFcolumnId,ArticleMenu::getFmenuSort,
                         ArticleMenu::getFarticleSortType,ArticleMenu::getFarticleShowNumber).sort(ArticleMenu::getFmenuSort);
         Result<List<ArticleMenu>> listResult = articleMenuApi.queryByCriteria(articleMenuCriteria);
