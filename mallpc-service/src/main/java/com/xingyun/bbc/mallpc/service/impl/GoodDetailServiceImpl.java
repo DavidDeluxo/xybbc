@@ -1167,16 +1167,12 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     Date createTime = (Date) userCondition.get("createTime");
                     Date userValidTime = (Date) userCondition.get("userValidTime");
                     if ((CollectionUtils.isNotEmpty(foperate_coupon) && foperate_coupon.contains(operateType)) || (CollectionUtils.isNotEmpty(fuserLevelId_coupon) && fuserLevelId_coupon.contains(userLevelId)) || (CollectionUtils.isNotEmpty(fmarketBdId_coupon) && fmarketBdId_coupon.contains(marketBdId))) {
-                        result.add(dozerMapper.map(coupon, CouponVo.class));
-                        continue;
-                    }
-                    if (createTime.after(fuserRegisterTimeStart) && createTime.before(fuserRegisterTimeEnd)) {
-                        result.add(dozerMapper.map(coupon, CouponVo.class));
-                        continue;
-                    }
-                    if (!sdf.format(userValidTime).equals("1970-01-01 00:00:00") && userValidTime.after(fuserValidTimeStart) && userValidTime.before(fuserValidTimeEnd)) {
-                        result.add(dozerMapper.map(coupon, CouponVo.class));
-                        continue;
+                        if (createTime.after(fuserRegisterTimeStart) && createTime.before(fuserRegisterTimeEnd)) {
+                            if (!sdf.format(userValidTime).equals("1970-01-01 00:00:00") && userValidTime.after(fuserValidTimeStart) && userValidTime.before(fuserValidTimeEnd)) {
+                                result.add(dozerMapper.map(coupon, CouponVo.class));
+                                continue;
+                            }
+                        }
                     }
                 } else {
                     //指定用户不可用--所有条件都不满足才可以
@@ -1210,7 +1206,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                             Date createTime = (Date) userCondition.get("createTime");
                             Date userValidTime = (Date) userCondition.get("userValidTime");
 
-                            if ((CollectionUtils.isNotEmpty(foperate_coupon) && !foperate_coupon.contains(operateType)) && (CollectionUtils.isNotEmpty(fuserLevelId_coupon) && !fuserLevelId_coupon.contains(userLevelId)) && (CollectionUtils.isNotEmpty(fmarketBdId_coupon) && !fmarketBdId_coupon.contains(marketBdId))) {
+                            if ((CollectionUtils.isNotEmpty(foperate_coupon) && !foperate_coupon.contains(operateType)) || (CollectionUtils.isNotEmpty(fuserLevelId_coupon) && !fuserLevelId_coupon.contains(userLevelId)) || (CollectionUtils.isNotEmpty(fmarketBdId_coupon) && !fmarketBdId_coupon.contains(marketBdId))) {
                                 if (createTime.before(fuserRegisterTimeStart) || createTime.after(fuserRegisterTimeEnd)) {
                                     if (sdf.format(userValidTime).equals("1970-01-01 00:00:00") || userValidTime.before(fuserValidTimeStart) || userValidTime.after(fuserValidTimeEnd)) {
                                         result.add(dozerMapper.map(coupon, CouponVo.class));
@@ -1305,61 +1301,22 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                         Long labelId = skuCondition.get("labelId");
                         Long tradeId = skuCondition.get("tradeId");
 
-                        if (CollectionUtils.isNotEmpty(fbrandIds_coupon) && fbrandIds_coupon.contains(brandId)) {
-                            if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
-                                receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
-                            }
-                            if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
-                                removeCoupon.add(fcouponId);
-                            }
-                            continue;
-                        }
                         if (Objects.nonNull(fcategoryIds_coupon)) {
-                            if (null != fcategoryIds_coupon.get("1") && fcategoryIds_coupon.get("1").contains(categoryId1)) {
-                                if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
-                                    receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                            if ((Objects.nonNull(fcategoryIds_coupon.get("1")) && fcategoryIds_coupon.get("1").contains(categoryId1)) || (Objects.nonNull(fcategoryIds_coupon.get("2")) && fcategoryIds_coupon.get("2").contains(categoryId2)) || (Objects.nonNull(fcategoryIds_coupon.get("3")) && fcategoryIds_coupon.get("3").contains(categoryId3))) {
+                                if (CollectionUtils.isNotEmpty(fbrandIds_coupon) && fbrandIds_coupon.contains(brandId)) {
+                                    if (CollectionUtils.isNotEmpty(flabelIds_coupon) && flabelIds_coupon.contains(labelId)) {
+                                        if (CollectionUtils.isNotEmpty(ftradeId_coupon) && ftradeId_coupon.contains(tradeId)) {
+                                            if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
+                                                receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                                            }
+                                            if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
+                                                removeCoupon.add(fcouponId);
+                                            }
+                                            continue;
+                                        }
+                                    }
                                 }
-                                if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
-                                    removeCoupon.add(fcouponId);
-                                }
-                                continue;
                             }
-                            if (null != fcategoryIds_coupon.get("2") && fcategoryIds_coupon.get("2").contains(categoryId2)) {
-                                if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
-                                    receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
-                                }
-                                if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
-                                    removeCoupon.add(fcouponId);
-                                }
-                                continue;
-                            }
-                            if (null != fcategoryIds_coupon.get("3") && fcategoryIds_coupon.get("3").contains(categoryId3)) {
-                                if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
-                                    receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
-                                }
-                                if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
-                                    removeCoupon.add(fcouponId);
-                                }
-                                continue;
-                            }
-                        }
-                        if (CollectionUtils.isNotEmpty(flabelIds_coupon) && flabelIds_coupon.contains(labelId)) {
-                            if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
-                                receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
-                            }
-                            if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
-                                removeCoupon.add(fcouponId);
-                            }
-                            continue;
-                        }
-                        if (CollectionUtils.isNotEmpty(ftradeId_coupon) && ftradeId_coupon.contains(tradeId)) {
-                            if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
-                                receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
-                            }
-                            if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
-                                removeCoupon.add(fcouponId);
-                            }
-                            continue;
                         }
                     } else {
                         //指定商品不可用--sku和条件都不满足才可以
@@ -1388,24 +1345,46 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                                 Long labelId = skuCondition.get("labelId");
                                 Long tradeId = skuCondition.get("tradeId");
 
-                                if (CollectionUtils.isNotEmpty(fbrandIds_coupon) && !fbrandIds_coupon.contains(brandId)) {
-                                    if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get("1") && !fcategoryIds_coupon.get("1").contains(categoryId1)) {
-                                        if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get("2") && !fcategoryIds_coupon.get("2").contains(categoryId2)) {
-                                            if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get("3") && !fcategoryIds_coupon.get("3").contains(categoryId3)) {
-                                                if (CollectionUtils.isNotEmpty(flabelIds_coupon) && !flabelIds_coupon.contains(labelId)) {
-                                                    if (CollectionUtils.isNotEmpty(ftradeId_coupon) && !ftradeId_coupon.contains(tradeId)) {
-                                                        if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
-                                                            receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
-                                                        }
-                                                        if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
-                                                            removeCoupon.add(fcouponId);
-                                                        }
-                                                        continue;
-                                                    }
-                                                }
+                                if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get("1") && !fcategoryIds_coupon.get("1").contains(categoryId1)) {
+                                    if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get("2") && !fcategoryIds_coupon.get("2").contains(categoryId2)) {
+                                        if (Objects.nonNull(fcategoryIds_coupon) && null != fcategoryIds_coupon.get("3") && !fcategoryIds_coupon.get("3").contains(categoryId3)) {
+                                            if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
+                                                receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
                                             }
+                                            if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
+                                                removeCoupon.add(fcouponId);
+                                            }
+                                            continue;
                                         }
                                     }
+                                }
+
+                                if (CollectionUtils.isNotEmpty(fbrandIds_coupon) && !fbrandIds_coupon.contains(brandId)) {
+                                    if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
+                                        receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                                    }
+                                    if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
+                                        removeCoupon.add(fcouponId);
+                                    }
+                                    continue;
+                                }
+                                if (CollectionUtils.isNotEmpty(flabelIds_coupon) && !flabelIds_coupon.contains(labelId)) {
+                                    if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
+                                        receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                                    }
+                                    if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
+                                        removeCoupon.add(fcouponId);
+                                    }
+                                    continue;
+                                }
+                                if (CollectionUtils.isNotEmpty(ftradeId_coupon) && !ftradeId_coupon.contains(tradeId)) {
+                                    if (now.after(fvalidityStart) && now.before(fvalidityEnd)) {
+                                        receiveCoupon.add(dozerMapper.map(coupon, CouponVo.class));
+                                    }
+                                    if (!isDealCouponLis.contains(fcouponId) && !this.isCanReceive(fcouponId, fuid, fperLimit)) {
+                                        removeCoupon.add(fcouponId);
+                                    }
+                                    continue;
                                 }
                             }
                         }
@@ -1413,6 +1392,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 }
             }
         }
+
         Map<String, Object> result = new HashMap<>(2);
         result.put("receiveCoupon", receiveCoupon);
         result.put("removeCoupon", removeCoupon);
