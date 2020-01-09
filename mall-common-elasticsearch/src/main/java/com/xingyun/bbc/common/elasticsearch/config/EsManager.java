@@ -91,6 +91,8 @@ public class EsManager {
         searchSourceBuilder.highlighter(criteria.getHighlightBuilder());
         searchRequest.source(searchSourceBuilder);
         SearchResponse sResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+        log.debug("请求es地址:{}", properties.getIp());
+        log.debug("请求返回条数:{}", sResponse.getHits().totalHits);
         return sResponse;
     }
 
