@@ -141,7 +141,7 @@ public class MyCouponServiceImpl implements MyCouponService {
             if (coupon.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
                 couponVo.setFdeductionValue(PriceUtil.toYuan(coupon.getFdeductionValue()));
             } else {
-                couponVo.setFdeductionValue(new BigDecimal(coupon.getFdeductionValue()).divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP));
+                couponVo.setFdeductionValue(new BigDecimal(coupon.getFdeductionValue()).divide(new BigDecimal("100"), 1, BigDecimal.ROUND_HALF_UP));
             }
             couponVo.setFvalidityType(coupon.getFvalidityType());
             couponVo.setFvalidityDays(coupon.getFvalidityDays());
@@ -342,7 +342,7 @@ public class MyCouponServiceImpl implements MyCouponService {
                     if (couponQueryVo.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
                         receiveCenterCouponVo.setFdeductionValue(PriceUtil.toYuan(couponQueryVo.getFdeductionValue()));
                     } else {
-                        receiveCenterCouponVo.setFdeductionValue(new BigDecimal(couponQueryVo.getFdeductionValue()).divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP));
+                        receiveCenterCouponVo.setFdeductionValue(new BigDecimal(couponQueryVo.getFdeductionValue()).divide(new BigDecimal("100"), 1, BigDecimal.ROUND_HALF_UP));
                     }
                     receiveCenterCouponVoList.add(receiveCenterCouponVo);
                 }
