@@ -6,6 +6,7 @@ import com.xingyun.bbc.core.market.api.CouponApi;
 import com.xingyun.bbc.core.market.api.CouponReceiveApi;
 import com.xingyun.bbc.core.market.dto.MyCoupinReceiveDto;
 import com.xingyun.bbc.core.market.enums.CouponReceiveStatusEnum;
+import com.xingyun.bbc.core.market.enums.CouponTypeEnum;
 import com.xingyun.bbc.core.market.po.Coupon;
 import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.query.Criteria;
@@ -25,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -86,11 +88,11 @@ public class MyCouponServiceImpl implements MyCouponService {
                         couponVo.setFthresholdAmount(PriceUtil.toYuan(coupon.getFthresholdAmount()));
 
                         //优惠券类型，1满减券、2折扣券
-//                        if (coupon.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
+                        if (coupon.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
                             couponVo.setFdeductionValue(PriceUtil.toYuan(coupon.getFdeductionValue()));
-//                        } else {
-//                            couponVo.setFdeductionValue(new BigDecimal(coupon.getFdeductionValue()).divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP));
-//                        }
+                        } else {
+                            couponVo.setFdeductionValue(new BigDecimal(coupon.getFdeductionValue()).divide(new BigDecimal("100"), 2));
+                        }
                         couponVo.setFvalidityType(coupon.getFvalidityType());
                         couponVo.setFvalidityDays(coupon.getFvalidityDays());
                         couponVo.setFreleaseType(coupon.getFreleaseType());

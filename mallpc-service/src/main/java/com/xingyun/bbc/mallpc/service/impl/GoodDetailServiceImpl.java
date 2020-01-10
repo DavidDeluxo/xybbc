@@ -1519,11 +1519,11 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         for (CouponVo couponMap : result) {
             couponMap.setFthresholdAmount(PriceUtil.toYuan(couponMap.getFthresholdAmount()));
             //优惠券类型，1满减券、2折扣券
-//            if (couponMap.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
+            if (couponMap.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
                 couponMap.setFdeductionValue(PriceUtil.toYuan(couponMap.getFdeductionValue()));
-//            } else {
-//                couponMap.setFdeductionValue(couponMap.getFdeductionValue().divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP));
-//            }
+            } else {
+                couponMap.setFdeductionValue(couponMap.getFdeductionValue().divide(new BigDecimal("100"), 2));
+            }
         }
         return result;
     }
