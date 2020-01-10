@@ -1522,7 +1522,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             if (couponMap.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
                 couponMap.setFdeductionValue(PriceUtil.toYuan(couponMap.getFdeductionValue()));
             } else {
-                couponMap.setFdeductionValue(couponMap.getFdeductionValue().divide(new BigDecimal("100"), 2));
+                couponMap.setFdeductionValue(couponMap.getFdeductionValue().divide(new BigDecimal("100"), 2, BigDecimal.ROUND_DOWN));
             }
         }
         return result;
