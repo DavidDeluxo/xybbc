@@ -263,7 +263,7 @@ public class ReceiveCenterServiceImpl implements ReceiveCenterService {
                     if (couponQueryVo.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
                         receiveCenterCouponVo.setFdeductionValue(PriceUtil.toYuan(couponQueryVo.getFdeductionValue()));
                     } else {
-                        receiveCenterCouponVo.setFdeductionValue(new BigDecimal(couponQueryVo.getFdeductionValue()).divide(new BigDecimal("100"), 2));
+                        receiveCenterCouponVo.setFdeductionValue(new BigDecimal(couponQueryVo.getFdeductionValue()).divide(new BigDecimal("100"), 2,BigDecimal.ROUND_DOWN));
                     }
                     receiveCenterCouponVoList.add(receiveCenterCouponVo);
                 }
