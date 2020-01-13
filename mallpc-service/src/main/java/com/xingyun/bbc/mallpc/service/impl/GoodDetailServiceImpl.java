@@ -314,6 +314,10 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             List<GoodsSkuBatchVo> batchVert = dozerHolder.convert(skuPatchMap.get(skuVo.getFskuId()), GoodsSkuBatchVo.class);
             List<String> batchIds = batchVert.stream().map(GoodsSkuBatchVo::getFsupplierSkuBatchId).collect(toList());
             if (CollectionUtils.isEmpty(batchIds)) {
+                GoodspecificationDetailVo detailVo = new GoodspecificationDetailVo();
+                detailVo.setFskuCode(skuVo.getFskuCode());
+                detailVo.setFskuId(skuVo.getFskuId());
+                detailRes.add(detailVo);
                 continue;
             }
             Result<List<SkuBatchPackage>> skuBatchPackageResult = skuBatchPackageApi.queryByCriteria(Criteria.of(SkuBatchPackage.class)
@@ -354,9 +358,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             MallTVo tVoSku = new MallTVo();
             tVoSku.setTId(skuRe.getFskuId());
             tVoSku.setTName(skuRe.getFskuSpecValue());
-            if (CollectionUtils.isNotEmpty(skuPatchMap.get(skuRe.getFskuId()))) {
-                skuMall.add(tVoSku);
-            }
+            skuMall.add(tVoSku);
         }
         GoodspecificationExVo skuEx = new GoodspecificationExVo();
         skuEx.setIdType(1);

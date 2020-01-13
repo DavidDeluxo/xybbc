@@ -501,7 +501,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             Ensure.that(skuTaxResult.isSuccess()).isTrue(new MallExceptionCode(skuTaxResult.getCode(), skuTaxResult.getMsg()));
             Long fskuTaxRate = 0l;
             fskuTaxRate = skuTaxResult.getData().getFskuTaxRate();
-                    //(原始价*购买数量)
+            //(原始价*购买数量)
             BigDecimal orgPrice = priceResult.getPriceStart().multiply(new BigDecimal(goodsDetailMallDto.getFnum()));
             //税费 = (原始价*购买数量 + 运费) * 税率
             BigDecimal taxPrice = BigDecimal.ZERO;
