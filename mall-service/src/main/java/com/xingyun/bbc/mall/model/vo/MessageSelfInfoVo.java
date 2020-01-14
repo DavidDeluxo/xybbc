@@ -44,4 +44,10 @@ public class MessageSelfInfoVo {
 
     @ApiModelProperty(value = "物流轨迹节点时间")
     private String trajectoryTime;
+
+    @ApiModelProperty(value = "活动url")
+    private String url;
+
+    @ApiModelProperty(value = "过期 0否 1是")
+    private Integer expire;
 }
