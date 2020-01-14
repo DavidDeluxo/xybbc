@@ -95,7 +95,6 @@ public class EsManager {
         log.debug("请求返回条数:{}", sResponse.getHits().totalHits);
         return sResponse;
     }
-
     private SearchResponse queryForResponse(EsCriteria criteria) throws Exception {
         return this.queryForResponse(criteria, criteria.getFilterBuilder());
     }

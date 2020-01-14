@@ -1,7 +1,7 @@
 package com.xingyun.bbc.mall.service.impl;
 
 
-import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.xingyun.bbc.core.enums.ResultStatus;
@@ -35,7 +35,6 @@ import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -66,6 +65,9 @@ public class UserAddressServiceImpl implements UserAddressService {
 
     @Value("${commonfile.addressFile.fileUrl}")
     private String url;
+
+    @Value("${commonfile.versionFile.fileUrl}")
+    private String versionUrl;
 
     @Value("${commonfile.addressFile.fileName}")
     private String fileName;
@@ -291,14 +293,11 @@ public class UserAddressServiceImpl implements UserAddressService {
         AddressFileInfoVo info = new AddressFileInfoVo();
         info.setFileAddress(url);
         info.setFileName(fileName);
-        String jsonString = FileUtil.getRemoteFile(url);
+        String jsonString = FileUtil.getRemoteFile(versionUrl);
         if (!StringUtils.isEmpty(jsonString)) {
-            List<JSONObject> objectList = JSONArray.parseArray(jsonString, JSONObject.class);
-            for (Map<String, Object> objectMap : objectList) {
-                if (objectMap.get("version") != null) {
-                    info.setFileVersion(String.valueOf(objectMap.get("version")));
-                    break;
-                }
+            JSONObject  jsonObject = JSON.parseObject(jsonString);
+            if (jsonObject.get("version") != null) {
+                info.setFileVersion(String.valueOf(jsonObject.get("version")));
             }
         }
         return info;
