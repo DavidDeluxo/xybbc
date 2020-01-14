@@ -1,8 +1,12 @@
 package com.xingyun.bbc.mall.controller;
 
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mall.base.utils.JwtParser;
 import com.xingyun.bbc.mall.model.dto.SubjectQueryDto;
+import com.xingyun.bbc.mall.model.vo.SearchItemListVo;
+import com.xingyun.bbc.mall.model.vo.SearchItemVo;
 import com.xingyun.bbc.mall.model.vo.SubjectVo;
+import com.xingyun.bbc.mall.model.vo.TokenInfoVo;
 import com.xingyun.bbc.mall.service.SubjectService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -15,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author lchm
@@ -33,9 +38,22 @@ public class SubjectController {
     @Resource
     private SubjectService subjectService;
 
+    @Resource
+    private JwtParser jwtParser;
+
     @ApiOperation(value = "查询专题信息", httpMethod = "POST")
     @PostMapping("/via/getById")
-    public Result<SubjectVo> getGoodPrice(@Validated @RequestBody SubjectQueryDto subjectQueryDto) {
+    public Result<SubjectVo> getSubjectInfo(@Validated @RequestBody SubjectQueryDto subjectQueryDto) {
         return Result.success(subjectService.getById(subjectQueryDto));
+    }
+
+    @ApiOperation(value = "查询专题商品", httpMethod = "POST")
+    @PostMapping("/via/searchGoods")
+    public Result<SearchItemListVo<SearchItemVo>> getSubjectGoods(@Validated @RequestBody SubjectQueryDto subjectQueryDto, HttpServletRequest request) {
+        TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
+        subjectQueryDto.setIsLogin(infoVo.getIsLogin());
+        subjectQueryDto.setFuid(infoVo.getFuid());
+        subjectQueryDto.setFoperateType(infoVo.getFoperateType());
+        return Result.success(subjectService.getSubjectGoods(subjectQueryDto));
     }
 }
