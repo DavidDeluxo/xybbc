@@ -181,10 +181,14 @@ public class MessageServiceImpl implements MessageService {
                             }
                             // 发货单号、商品数量、订单号、收件人
                             Result<SupplierTransportOrder> transportOrderResult = transportOrderApi.queryById(frefId);
-                            if (!transportOrderResult.isSuccess() || transportOrderResult.getData() == null) {
+                            if (!transportOrderResult.isSuccess()) {
                                 throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
                             }
                             SupplierTransportOrder transportOrder = transportOrderResult.getData();
+                            if (transportOrder == null) {
+                                throw new BizException(new MallPcExceptionCode("", "消息绑定发货单号错误"));
+                            }
+
                             String logisticsNo = transportOrder.getForderLogisticsNo();
                             String fshippingCode = transportOrder.getFshippingCode();
                             String fshippingName = transportOrder.getFshippingName();
