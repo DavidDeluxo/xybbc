@@ -57,7 +57,12 @@ public enum MessageTypeEnum {
     /**
      * 其它
      */
-    OTHER(9);
+    OTHER(9),
+
+    /**
+     * 专题活动
+     */
+    SUBJECT_ACTIVITY(10);
 
     private Integer code;
 
