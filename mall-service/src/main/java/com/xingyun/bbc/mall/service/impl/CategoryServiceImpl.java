@@ -42,7 +42,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public Result<List<GoodsCategoryVo>> queryCategoryLevelOne(){
 
-        
+
 
         return null;
     }
@@ -248,11 +248,11 @@ public class CategoryServiceImpl implements CategoryService {
         //过滤没有商品的一级类目
         List<GoodsCategory> filteredCategories = new LinkedList<>();
         for (GoodsCategory category : categoryListResultAll.getData()){
-           Result<Integer> countResult = goodsApi.countByCriteria(Criteria.of(Goods.class).andEqualTo(Goods::getFcategoryId1, category.getFcategoryId()));
-           Ensure.that(countResult).isNotNull(MallExceptionCode.SYSTEM_ERROR);
-           if(countResult.getData() > 0){
+            Result<Integer> countResult = goodsApi.countByCriteria(Criteria.of(Goods.class).andEqualTo(Goods::getFcategoryId1, category.getFcategoryId()));
+            Ensure.that(countResult).isNotNull(MallExceptionCode.SYSTEM_ERROR);
+            if(countResult.getData() > 0){
                 filteredCategories.add(category);
-           }
+            }
         }
         //转化Vo
         if (!CollectionUtils.isEmpty(filteredCategories)) {

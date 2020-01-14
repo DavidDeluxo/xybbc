@@ -3,6 +3,7 @@ package com.xingyun.bbc.mall.model.vo;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import java.util.Date;
 /**
  * @Description 消息信息
  * @ClassName MessageSelfInfoVo
@@ -50,4 +51,11 @@ public class MessageSelfInfoVo {
 
     @ApiModelProperty(value = "过期 0否 1是")
     private Integer expire;
+
+
+    @ApiModelProperty(value = "过期时间")
+    private Date fendTime;
+
+    @ApiModelProperty(value = "专题id")
+    private Long fsubjectId;
 }

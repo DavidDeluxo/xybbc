@@ -3,7 +3,9 @@ package com.xingyun.bbc.mall.service.impl;
 import com.google.common.collect.Lists;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.operate.api.MessageUserRecordApi;
+import com.xingyun.bbc.core.operate.api.SubjectApi;
 import com.xingyun.bbc.core.operate.po.MessageUserRecord;
+import com.xingyun.bbc.core.operate.po.Subject;
 import com.xingyun.bbc.core.order.api.OrderPaymentApi;
 import com.xingyun.bbc.core.order.po.OrderPayment;
 import com.xingyun.bbc.core.query.Criteria;
@@ -20,6 +22,7 @@ import com.xingyun.bbc.express.api.ExpressBillProviderApi;
 import com.xingyun.bbc.express.model.dto.ExpressBillDto;
 import com.xingyun.bbc.express.model.vo.ExpressBillDetailVo;
 import com.xingyun.bbc.express.model.vo.ExpressBillVo;
+import com.xingyun.bbc.mall.base.utils.ResultUtils;
 import com.xingyun.bbc.mall.common.enums.MessageGroupTypeEnum;
 import com.xingyun.bbc.mall.common.enums.MessagePushTypeEnum;
 import com.xingyun.bbc.mall.common.enums.MessageTypeEnum;
@@ -29,8 +32,10 @@ import com.xingyun.bbc.mall.model.dto.MessageUpdateDto;
 import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.MessageService;
 import io.seata.spring.annotation.GlobalLock;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -48,6 +53,7 @@ import java.util.stream.Collectors;
  * @Author ming.yiFei
  * @Date 2019/12/23 11:37
  **/
+@Slf4j
 @Service
 public class MessageServiceImpl implements MessageService {
 
@@ -71,6 +77,9 @@ public class MessageServiceImpl implements MessageService {
 
     @Resource
     private UserApi userApi;
+
+    @Resource
+    private SubjectApi subjectApi;
 
     /**
      * 匹配${...}
@@ -130,6 +139,7 @@ public class MessageServiceImpl implements MessageService {
      */
     @Override
     public Result<PageVo<MessageListVo>> queryMessageList(MessageQueryDto dto) {
+
         Criteria<MessageUserRecord, Object> userRecordObjectCriteria = Criteria.of(MessageUserRecord.class)
                 .andEqualTo(MessageUserRecord::getFsendStatus, 2)
                 .andEqualTo(MessageUserRecord::getFuid, dto.getUserId())
@@ -312,6 +322,19 @@ public class MessageServiceImpl implements MessageService {
                             break;
                         case OTHER:
                             messageListVo.setDesc(record.getFcontent().replaceAll("((<)([\\S\\s]*)(>))", ""));
+                            break;
+                        case SUBJECT_ACTIVITY:
+                            if (NumberUtils.isCreatable(record.getFrefId())) {
+                                Long fsubjectId = Long.parseLong(record.getFrefId());
+                                Subject subject = ResultUtils.getDataNotNull(subjectApi.queryById(fsubjectId));
+                                messageListVo.setTitle(subject.getFsubjectName());
+                                messageListVo.setDesc(subject.getFsubjectDescription());
+                                messageListVo.setImageUrl(new ImageVo(subject.getFsubjectMobilePic()));
+                                MessageSelfInfoVo selfInfoVoForSubject = new MessageSelfInfoVo();
+                                selfInfoVoForSubject.setFsubjectId(subject.getFsubjectId());
+                                selfInfoVoForSubject.setFendTime(subject.getFsubjectEndTime());
+                                messageListVo.setSelfInfoVo(selfInfoVoForSubject);
+                            }
                             break;
                         default:
                             throw new BizException(new MallExceptionCode("", "不存在的手动消息类型"));
