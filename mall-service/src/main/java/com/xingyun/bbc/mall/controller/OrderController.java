@@ -106,22 +106,6 @@ public class OrderController {
 		return userDeliveryCenterApi.queryDefaultAddress(shipAddressDto);
 	}
 
-	@ApiOperation("发货提醒")
-	@PostMapping("/remindDelivery")
-	public Result<Void> remindDelivery(@RequestBody @Validated OnlyOrderIdDto orderIdDto) {
-		//异步处理提醒，直接返回前端提醒成功
-		orderApi.remindDelivery(orderIdDto);
-		return Result.success();
-	}
-    @ApiOperation("查询用户默认收货地址")
-    @PostMapping("/queryDefaultAddress")
-    public Result<AddressVo> confirmReceipt(HttpServletRequest request) {
-        Long fuid = Long.valueOf(request.getHeader("xyid"));
-        ShipAddressDto shipAddressDto = new ShipAddressDto();
-        shipAddressDto.setFuid(fuid);
-        return userDeliveryCenterApi.queryDefaultAddress(shipAddressDto);
-    }
-
     @ApiOperation("查询旧系统是否存在历史订单")
     @PostMapping("/hasOldOrder")
     public Result hasOldOrder(HttpServletRequest request) {
