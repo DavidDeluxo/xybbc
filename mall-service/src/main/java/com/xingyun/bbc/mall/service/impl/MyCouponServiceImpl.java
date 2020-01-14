@@ -91,7 +91,7 @@ public class MyCouponServiceImpl implements MyCouponService {
                         if (coupon.getFcouponType().equals(CouponTypeEnum.FULL_REDUCTION.getCode())) {
                             couponVo.setFdeductionValue(PriceUtil.toYuan(coupon.getFdeductionValue()));
                         } else {
-                            couponVo.setFdeductionValue(new BigDecimal(coupon.getFdeductionValue()).divide(new BigDecimal("10"), 1, BigDecimal.ROUND_HALF_UP));
+                            couponVo.setFdeductionValue(new BigDecimal(coupon.getFdeductionValue()).divide(new BigDecimal("100"), 2, BigDecimal.ROUND_DOWN));
                         }
                         couponVo.setFvalidityType(coupon.getFvalidityType());
                         couponVo.setFvalidityDays(coupon.getFvalidityDays());

@@ -231,16 +231,18 @@ public class UserServiceImpl implements UserService {
         // 校验密码长度
         Ensure.that(passWord.length()).isGt(5, MallPcExceptionCode.PASSWORD_ILLEGAL).isLt(33, MallPcExceptionCode.PASSWORD_ILLEGAL);
         // 验证推广码
+        User user = new User();
         if (StringUtils.isNotBlank(userRegisterDto.getFinviter())) {
             Result<MarketUser> marketUserResult = marketUserApi.queryOneByCriteria(Criteria.of(MarketUser.class)
-                    .fields(MarketUser::getFuid, MarketUser::getFextensionCode)
+                    .fields(MarketUser::getFuid, MarketUser::getFextensionCode,MarketUser::getFmarketUserId)
                     .andEqualTo(MarketUser::getFextensionCode, userRegisterDto.getFinviter()));
             Ensure.that(marketUserResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
             marketUser = marketUserResult.getData();
             Ensure.that(Objects.nonNull(marketUser)).isTrue(MallPcExceptionCode.EXTENSION_CODE_NOT_EXIST);
+            user.setFinviter(marketUser.getFextensionCode());
+            user.setFmarketBdId(marketUser.getFmarketUserId());
         }
         passWord = MD5Util.toMd5(passWord);
-        User user = new User();
         user.setFregisterFrom("web");
         user.setFmobile(fmobile);
         user.setFuname(fmobile);

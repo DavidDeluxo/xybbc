@@ -62,4 +62,13 @@ public interface GoodDetailService {
      * @return
      */
     Result<Map<String, Long>> getCategoryBySkuId(Long skuId);
+
+    /**
+     * @Description 获取sku缩略图
+     * @Author ming.yiFei
+     * @Date 18:21 2020/1/2
+     * @Param [fskuId]
+     * @return com.xingyun.bbc.core.utils.Result<jjava.lang.String>
+     **/
+    Result<String> getGoodSkuPic(Long fskuId);
 }

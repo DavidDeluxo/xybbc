@@ -117,6 +117,7 @@ public class CategoryServiceImpl implements CategoryService {
                         GoodsCategory::getFparentCategoryId,
                         GoodsCategory::getFisRecommed,
                         GoodsCategory::getFcategorySort,
+                        GoodsCategory::getFmodifyTime,
                         GoodsCategory::getFcreateTime)
                 .andEqualTo(GoodsCategory::getFisDisplay, 1)
                 .andEqualTo(GoodsCategory::getFisDelete, 0));
@@ -154,7 +155,7 @@ public class CategoryServiceImpl implements CategoryService {
         this.fillBrandsForL1Categories(level1Categories, hotBrandListResult.getData());
 
         //添加热门推荐
-        GoodsCategoryVo hotRecommend = this.getHotRecommendCategory(goodsCategoryVoList, hotBrandListResult.getData());
+        GoodsCategoryVo hotRecommend = this.getHotRecommendCategory(level1Categories, hotBrandListResult.getData());
         List<GoodsCategoryVo> resultList = new LinkedList<>();
         resultList.add(hotRecommend);
         resultList.addAll(level1Categories);
@@ -197,7 +198,7 @@ public class CategoryServiceImpl implements CategoryService {
         for (GoodsCategoryVo recommendL1 : goodsCategories) {
             if (!CollectionUtils.isEmpty(recommendL1.getChildrenList())) {
                 for (GoodsCategoryVo l2Vo : recommendL1.getChildrenList()) {
-                    if (!CollectionUtils.isEmpty(l2Vo.getChildrenList())) {
+                    if (!CollectionUtils.isEmpty(l2Vo.getChildrenList()) && l2Vo.getFisRecommed() == 1) {
                         List<GoodsCategoryVo> l3VoList = l2Vo.getChildrenList();
                         List<GoodsCategoryVo> l3RecommendList = l3VoList.stream().filter(l3Category->l3Category.getFisRecommed() == 1).collect(Collectors.toList());
                         if(!CollectionUtils.isEmpty(l3RecommendList)){
@@ -227,15 +228,19 @@ public class CategoryServiceImpl implements CategoryService {
         List<GoodsCategoryVo> categoryVoList = new LinkedList<>();
         //查询一级类目列表
         Result<List<GoodsCategory>> categoryListResultAll = goodsCategoryApi.queryByCriteria(Criteria.of(GoodsCategory.class)
-                .fields(GoodsCategory::getFcategoryId, GoodsCategory::getFcategoryName, GoodsCategory::getFcategoryDesc)
+                .fields(GoodsCategory::getFcategoryId,
+                        GoodsCategory::getFcategoryName,
+                        GoodsCategory::getFcategoryDesc,
+                        GoodsCategory::getFcategorySort,
+                        GoodsCategory::getFmodifyTime)
                 //一级类目父类目id为0
                 .andEqualTo(GoodsCategory::getFparentCategoryId,0)
                 //类目未删除
                 .andEqualTo(GoodsCategory::getFisDelete, 0)
                 //类目展示
                 .andEqualTo(GoodsCategory::getFisDisplay, 1)
-                //修改排序字段排序
-                .sort(GoodsCategory::getFcategorySort));
+                //修改时间倒序
+                .sortDesc(GoodsCategory::getFcategorySort));
         Ensure.that(categoryListResultAll.isSuccess()).isTrue(MallExceptionCode.PARAM_ERROR);
         if(CollectionUtils.isEmpty(categoryListResultAll.getData())){
             return Result.success(categoryVoList);
@@ -256,9 +261,12 @@ public class CategoryServiceImpl implements CategoryService {
                 categoryVo.setFcategoryId(category.getFcategoryId());
                 categoryVo.setFcategoryName(category.getFcategoryName());
                 categoryVo.setFcategoryDesc(category.getFcategoryDesc());
+                categoryVo.setFcategorySort(category.getFcategorySort());
+                categoryVo.setFmodifyTime(category.getFmodifyTime());
                 categoryVoList.add(categoryVo);
             }
         }
+        categoryVoList = categoryVoList.stream().sorted().collect(Collectors.toList());
         return Result.success(categoryVoList);
     }
 

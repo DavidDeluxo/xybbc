@@ -14,6 +14,7 @@ import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -39,6 +40,14 @@ public class GoodsDetailController {
     public Result<List<String>> getGoodDetailPic(@RequestParam Long fgoodsId, @RequestParam (required = false) Long fskuId){
         logger.info("获取商品主图入参 fgoodsId {} fskuId {}", fgoodsId, fskuId);
         return goodDetailService.getGoodDetailPic(fgoodsId, fskuId);
+    }
+
+    @ApiOperation(value = "获取sku缩略图", httpMethod = "GET")
+    @GetMapping("/via/getGoodSkuPic")
+    public Result<String> getGoodSkuPic(@RequestParam Long fskuId){
+        logger.info("获取sku缩略图 fskuId {}", fskuId);
+        Assert.isTrue(fskuId != null, "skuId 不能为空");
+        return goodDetailService.getGoodSkuPic(fskuId);
     }
 
     @ApiOperation(value = "获取商品基本信息", httpMethod = "GET")
