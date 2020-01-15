@@ -37,4 +37,11 @@ public interface SubjectService {
      */
     void deleteCouponInfoFromEsByAlias(Subject subject);
 
+    /**
+     * 根据id获取专题Alias名称
+     * @param fsubjectId
+     * @return
+     */
+    String getSubjectAliasName(Long fsubjectId);
+
 }

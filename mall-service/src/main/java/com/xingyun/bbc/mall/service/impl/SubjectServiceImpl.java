@@ -565,7 +565,8 @@ public class SubjectServiceImpl implements SubjectService {
         }
     }
 
-    private String getSubjectAliasName(Long fsubjectId) {
+    @Override
+    public String getSubjectAliasName(Long fsubjectId) {
         if (Objects.isNull(fsubjectId)) {
             throw new IllegalArgumentException("优惠券id不能为空");
         }
