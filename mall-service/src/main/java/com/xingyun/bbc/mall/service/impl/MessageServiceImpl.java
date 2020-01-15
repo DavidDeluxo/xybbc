@@ -255,7 +255,7 @@ public class MessageServiceImpl implements MessageService {
                         case COUPON_RECEIVE:
                             // 优惠券即将到期(24小时)
                         case COUPON_ALMOST_OVERDUE:
-                            messageListVo.setDesc(record.getFcontent().replaceAll("((<)([\\S\\s]*)(>))", ""));
+                            messageListVo.setDesc(record.getFcontent().replaceAll("<(?:[^\"'>]|\"[^\"]*\"|'[^']*')*>", ""));
                             break;
                         // 用户认证成功
                         case USER_VERIFY:
@@ -270,7 +270,7 @@ public class MessageServiceImpl implements MessageService {
                             MessageSelfInfoVo userSelfInfoVo = new MessageSelfInfoVo();
                             userSelfInfoVo.setAuthenticationType(user.getFoperateType());
                             messageListVo.setSelfInfoVo(userSelfInfoVo);
-                            messageListVo.setDesc(record.getFcontent().replaceAll("((<)([\\S\\s]*)(>))", ""));
+                            messageListVo.setDesc(record.getFcontent().replaceAll("<(?:[^\"'>]|\"[^\"]*\"|'[^']*')*>", ""));
                             break;
                         default:
                             throw new BizException(new MallExceptionCode("", "不存在的自动消息类型"));
@@ -283,7 +283,7 @@ public class MessageServiceImpl implements MessageService {
                         case XY_ANNOUNCEMENT:
                             String recordFcontent = record.getFcontent();
                             if (StringUtils.isBlank(recordFcontent)) {
-                                messageListVo.setDesc(recordFcontent.replaceAll("((<)([\\S\\s]*)(>))", ""));
+                                messageListVo.setDesc(recordFcontent.replaceAll("<(?:[^\"'>]|\"[^\"]*\"|'[^']*')*>", ""));
                                 break;
                             }
                             // 从${xxx}后开始截取
@@ -295,12 +295,12 @@ public class MessageServiceImpl implements MessageService {
                                     messageListVo.setDesc("");
                                     break;
                                 }
-                                messageListVo.setDesc(recordFcontent.replaceAll("((<)([\\S\\s]*)(>))", ""));
+                                messageListVo.setDesc(recordFcontent.replaceAll("<(?:[^\"'>]|\"[^\"]*\"|'[^']*')*>", ""));
                                 break;
                             }
                             int index = recordFcontent.indexOf(matcher.group(0));
                             String substring = recordFcontent.substring(index + matcher.group(0).length());
-                            messageListVo.setDesc(substring.replaceAll("((<)([\\S\\s]*)(>))", ""));
+                            messageListVo.setDesc(substring.replaceAll("<(?:[^\"'>]|\"[^\"]*\"|'[^']*')*>", ""));
                             break;
                         case GOODS_MESSAGE:
                             Result<GoodsSku> goodsSkuResult = goodsSkuApi.queryOneByCriteria(Criteria.of(GoodsSku.class)
@@ -324,7 +324,7 @@ public class MessageServiceImpl implements MessageService {
                             messageListVo.setSelfInfoVo(goodsSelfInfo);
                             break;
                         case OTHER:
-                            messageListVo.setDesc(record.getFcontent().replaceAll("((<)([\\S\\s]*)(>))", ""));
+                            messageListVo.setDesc(record.getFcontent().replaceAll("<(?:[^\"'>]|\"[^\"]*\"|'[^']*')*>", ""));
                             break;
                         case SUBJECT_ACTIVITY:
                             if (NumberUtils.isCreatable(record.getFrefId())) {
