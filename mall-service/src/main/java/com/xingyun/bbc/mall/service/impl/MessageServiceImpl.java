@@ -37,6 +37,7 @@ import io.seata.spring.annotation.GlobalTransactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -82,6 +83,9 @@ public class MessageServiceImpl implements MessageService {
 
     @Resource
     private SubjectApi subjectApi;
+
+    @Value("${urlConfig.subjectActivity}")
+    String subjectPageUrl;
 
     @Resource
     private MessageSignApi messageSignApi;
@@ -358,6 +362,7 @@ public class MessageServiceImpl implements MessageService {
                             messageListVo.setDesc(subject.getFsubjectDescription());
                             messageListVo.setImageUrl(new ImageVo(subject.getFsubjectMobilePic()));
                             MessageSelfInfoVo selfInfoVoForSubject = new MessageSelfInfoVo();
+                            selfInfoVoForSubject.setUrl(subjectPageUrl + subject.getFsubjectId());
                             selfInfoVoForSubject.setFsubjectId(subject.getFsubjectId());
                             //判断是否过期
                             if (subject.getFsubjectEndTime().compareTo(new Date()) < 0) {

@@ -4,8 +4,6 @@ package com.xingyun.bbc.mall.service.impl;
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONException;
-import com.google.common.collect.Sets;
-import com.xingyun.bbc.activity.model.dto.CouponQueryDto;
 import com.xingyun.bbc.common.elasticsearch.config.EsBeanUtil;
 import com.xingyun.bbc.common.elasticsearch.config.EsCriteria;
 import com.xingyun.bbc.common.elasticsearch.config.EsManager;
@@ -42,15 +40,14 @@ import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.CouponService;
 import com.xingyun.bbc.mall.service.GoodsService;
 import com.xingyun.bbc.mall.service.SearchRecordService;
+import com.xingyun.bbc.mall.service.SubjectService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.search.join.ScoreMode;
-import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
-import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.index.query.*;
@@ -111,6 +108,9 @@ public class GoodsServiceImpl implements GoodsService {
 
     @Resource
     private CouponApplicableSkuConditionApi couponApplicableSkuConditionApi;
+
+    @Resource
+    private SubjectService subjectService;
 
 
     @Override
@@ -181,6 +181,7 @@ public class GoodsServiceImpl implements GoodsService {
 
     /**
      * 设定类目条件
+     *
      * @param searchItemDto
      */
     private void setCategoryCondition(SearchItemDto searchItemDto) {
@@ -301,7 +302,7 @@ public class GoodsServiceImpl implements GoodsService {
 
 
     @Override
-    public void updateEsSkuWithBaseInfo(Map<String, Object> skuSourceMap, boolean isBaseInfoUpdate){
+    public void updateEsSkuWithBaseInfo(Map<String, Object> skuSourceMap, boolean isBaseInfoUpdate) {
         if (MapUtils.isEmpty(skuSourceMap)) {
             return;
         }
@@ -582,6 +583,7 @@ public class GoodsServiceImpl implements GoodsService {
 
     /**
      * 根据优惠券id查询指定可用skuId
+     *
      * @param coupon
      * @return
      */
@@ -600,6 +602,7 @@ public class GoodsServiceImpl implements GoodsService {
 
     /**
      * 根据优惠券id获取Alias名称
+     *
      * @param fcouponId
      * @return
      */
@@ -608,6 +611,19 @@ public class GoodsServiceImpl implements GoodsService {
             throw new IllegalArgumentException("优惠券id不能为空");
         }
         return COUPON_ALIAS_PREFIX + fcouponId;
+    }
+
+    /**
+     * 查询条件设定Alias
+     * @param searchItemDto
+     * @param criteria
+     */
+    private void setAlias(SearchItemDto searchItemDto, EsCriteria criteria) {
+        if (searchItemDto.getCouponId() != null) {
+            criteria.setIndexName(this.getCouponAliasName(Long.parseLong(String.valueOf(searchItemDto.getCouponId()))));
+        } else if (searchItemDto.getFsubjectId() != null) {
+            criteria.setIndexName(subjectService.getSubjectAliasName(searchItemDto.getFsubjectId()));
+        }
     }
 
     @Override
@@ -623,9 +639,8 @@ public class GoodsServiceImpl implements GoodsService {
 
         this.setCategoryCondition(searchItemDto);
         EsCriteria criteria = EsCriteria.build(searchItemDto);
-        if (searchItemDto.getCouponId() != null) {
-            criteria.setIndexName(this.getCouponAliasName(Long.parseLong(String.valueOf(searchItemDto.getCouponId()))));
-        }
+        // 设定Alias
+        setAlias(searchItemDto, criteria);
         this.setSearchCondition(searchItemDto, criteria);
         String soldAmountScript = "1-Math.pow(doc['fsell_total'].value + 1, -1)";
         Map<String, Object> resultMap = esManager.functionQueryForResponse(criteria, soldAmountScript, CombineFunction.SUM);
