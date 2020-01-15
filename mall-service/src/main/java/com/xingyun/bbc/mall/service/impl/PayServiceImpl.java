@@ -526,8 +526,8 @@ public class PayServiceImpl implements PayService {
 				String inputLine;
 				StringBuffer notityXml = new StringBuffer();
 				Map<String, String> params = new HashMap<>();
-				try {
-					while ((inputLine = request.getReader().readLine()) != null) {
+				try(BufferedReader reader = request.getReader()) {
+					while ((inputLine = reader.readLine()) != null) {
 						notityXml.append(inputLine);
 					}
 				} catch (IOException e) {
