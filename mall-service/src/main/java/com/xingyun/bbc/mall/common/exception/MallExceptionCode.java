@@ -82,6 +82,9 @@ public class MallExceptionCode implements IResultStatus {
     public static final MallExceptionCode COUPON_IS_OUT_OF_LIMIT = new MallExceptionCode("9010", "兑换数量已上限");
     public static final MallExceptionCode CODE_IS_USED = new MallExceptionCode("9011", "该券码已兑换过");
 
+    public static final MallExceptionCode SUBJECT_NOT_FOUND = new MallExceptionCode("5000", "没有找到主题");
+    public static final MallExceptionCode SUBJECT_NOT_PUBLISHED = new MallExceptionCode("5000", "主题不是发布状态");
+
     private String code;
     private String msg;
 

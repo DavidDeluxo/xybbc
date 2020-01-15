@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.service;
 
+import com.xingyun.bbc.core.operate.po.Subject;
 import com.xingyun.bbc.mall.model.dto.SubjectQueryDto;
 import com.xingyun.bbc.mall.model.vo.SearchItemListVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemVo;
@@ -22,4 +23,18 @@ public interface SubjectService {
      * @return
      */
     SearchItemListVo<SearchItemVo> getSubjectGoods(SubjectQueryDto subjectQueryDto);
+
+    /**
+     * 同步ES专题活动sku信息
+     * @param subject
+     * @throws Exception
+     */
+    void updateSubjectInfoToEsByAlias(Subject subject) throws Exception;
+
+    /**
+     * 删除ES专题活动sku信息
+     * @param subject
+     */
+    void deleteCouponInfoFromEsByAlias(Subject subject);
+
 }

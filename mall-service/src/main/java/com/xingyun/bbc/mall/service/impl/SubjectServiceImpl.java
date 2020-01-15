@@ -1,10 +1,15 @@
 package com.xingyun.bbc.mall.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.TypeReference;
 import com.google.common.collect.Lists;
+import com.xingyun.bbc.common.elasticsearch.config.EsCriteria;
+import com.xingyun.bbc.common.elasticsearch.config.EsManager;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
+import com.xingyun.bbc.core.market.enums.CouponApplicableSkuEnum;
 import com.xingyun.bbc.core.operate.api.SubjectApi;
 import com.xingyun.bbc.core.operate.api.SubjectApplicableSkuApi;
 import com.xingyun.bbc.core.operate.api.SubjectApplicableSkuConditionApi;
@@ -18,14 +23,23 @@ import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.PriceUtil;
 import com.xingyun.bbc.mall.base.utils.ResultUtils;
+import com.xingyun.bbc.mall.common.ensure.Ensure;
+import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.SubjectQueryDto;
+import com.xingyun.bbc.mall.model.dto.SubjectSkuQueryDto;
 import com.xingyun.bbc.mall.model.vo.SearchItemListVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemVo;
 import com.xingyun.bbc.mall.model.vo.SubjectVo;
 import com.xingyun.bbc.mall.service.SubjectService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.DisMaxQueryBuilder;
+import org.elasticsearch.index.query.IdsQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -47,10 +61,13 @@ import static java.util.stream.Collectors.toList;
  * @description:
  * @package com.xingyun.bbc.mall.service.impl
  */
+@Slf4j
 @Service
 public class SubjectServiceImpl implements SubjectService {
 
     public static final Logger logger = LoggerFactory.getLogger(SubjectServiceImpl.class);
+
+    private static final String SUBJECT_ALIAS_PREFIX = "subject_";
 
     @Resource
     private SubjectApi subjectApi;
@@ -87,6 +104,9 @@ public class SubjectServiceImpl implements SubjectService {
 
     @Resource
     private GoodsTradeInfoApi goodsTradeInfoApi;
+
+    @Resource
+    private EsManager esManager;
 
     @Override
     public SubjectVo getById(SubjectQueryDto subjectQueryDto) {
@@ -309,17 +329,6 @@ public class SubjectServiceImpl implements SubjectService {
         return ResultUtils.getData(skuBatchPackageApi.queryList(sbp));
     }
 
-    /**
-     * 根据贸易类型获取商品
-     *
-     * @param tradeIds
-     * @return
-     */
-    private List<Goods> getGoodsByTradeIds(List<Long> tradeIds) {
-        Criteria<Goods, Object> goodsObjectCriteria = Criteria.of(Goods.class)
-                .andIn(Goods::getFtradeId, tradeIds);
-        return ResultUtils.getData(goodsApi.queryByCriteria(goodsObjectCriteria));
-    }
 
     private Goods getGoods(Long fgoodsId) {
         return ResultUtils.getData(goodsApi.queryById(fgoodsId));
@@ -369,5 +378,197 @@ public class SubjectServiceImpl implements SubjectService {
         goodsSkuBatchPrice = ResultUtils.getData(goodsSkuBatchPriceApi.queryOne(goodsSkuBatchPrice));
         BigDecimal skuPrice = new BigDecimal(goodsSkuBatchPrice.getFbatchSellPrice());
         return skuPrice;
+    }
+
+    @Override
+    public void updateSubjectInfoToEsByAlias(Subject subject) throws Exception {
+        //查询主题信息
+        Result<Subject> subjectResult = subjectApi.queryOneByCriteria(Criteria.of(Subject.class).andEqualTo(Subject::getFsubjectId, subject.getFsubjectId()));
+        Subject subjectDB = ResultUtils.getDataNotNull(subjectResult, MallExceptionCode.SUBJECT_NOT_FOUND);
+        //校验优惠券状态
+        if (subjectDB.getFsubjectStatus() != 2) {
+            log.info("主题不是已发布状态, id:{}, status:{}", subject.getFsubjectId(), subject.getFsubjectStatus());
+            return;
+        }
+        //校验主题Alias是否存在
+        String aliasName = getSubjectAliasName(subjectDB.getFsubjectId());
+        AliasActions action = new AliasActions(AliasActions.Type.ADD).alias(aliasName);
+        if (esManager.isAliasExist(aliasName)) {
+            AliasActions deleteAction = new AliasActions(AliasActions.Type.REMOVE).alias(aliasName);
+            esManager.updateAlias(deleteAction);
+        }
+        this.setActionFilter(subjectDB, action);
+        esManager.updateAlias(action);
+    }
+
+    @Override
+    public void deleteCouponInfoFromEsByAlias(Subject subject) {
+        try {
+            Long fsubjectId = subject.getFsubjectId();
+            String aliasName = this.getSubjectAliasName(fsubjectId);
+            if (esManager.isAliasExist(aliasName)) {
+                AliasActions deleteAction = new AliasActions(AliasActions.Type.REMOVE).alias(aliasName);
+                esManager.updateAlias(deleteAction);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 根据优惠券id查询指定可用skuId
+     *
+     * @param coupon
+     * @return
+     */
+    private List<String> getApplicableSkuIds(Subject subject) {
+
+        Criteria<SubjectApplicableSku, Object> criteria = Criteria.of(SubjectApplicableSku.class)
+                .fields(SubjectApplicableSku::getFskuId).andEqualTo(SubjectApplicableSku::getFsubjectId, subject.getFsubjectId());
+
+        Result<List<SubjectApplicableSku>> skuResult = subjectApplicableSkuApi.queryByCriteria(criteria);
+        List<SubjectApplicableSku> subjectApplicableSkus = ResultUtils.getData(skuResult);
+        if (CollectionUtil.isNotEmpty(subjectApplicableSkus)) {
+            List<String> skuIds = subjectApplicableSkus.stream().map(SubjectApplicableSku::getFskuId).map(String::valueOf).collect(toList());
+            return skuIds;
+        }
+        return Lists.newArrayList();
+    }
+
+
+    /**
+     * @param coupon
+     * @param action
+     */
+    private void setActionFilter(Subject subject, AliasActions action) {
+        //全部商品可用
+        if (subject.getFapplicableSku().equals(CouponApplicableSkuEnum.ALL.getCode())) {
+            return;
+        }
+        //指定商品可用
+        if (subject.getFapplicableSku().equals(CouponApplicableSkuEnum.SOME.getCode())) {
+            //指定sku
+            List<String> applicableSkuIds = this.getApplicableSkuIds(subject);
+            if (CollectionUtils.isNotEmpty(applicableSkuIds)) {
+                IdsQueryBuilder queryBuilder = new IdsQueryBuilder();
+                queryBuilder.addIds(EsCriteria.listToArray(applicableSkuIds));
+                action.filter(queryBuilder);
+                return;
+            }
+            //指定sku条件
+            List<SubjectSkuQueryDto> conditionList = this.getApplicableSkuCondition(subject);
+            Ensure.that(!CollectionUtils.isEmpty(conditionList)).isTrue(MallExceptionCode.SYSTEM_ERROR);
+            DisMaxQueryBuilder orConditions = new DisMaxQueryBuilder();
+            for (SubjectSkuQueryDto skuQueryDto : conditionList) {
+                BoolQueryBuilder condition = new BoolQueryBuilder();
+
+                List<Long> oneLevel = Lists.newArrayList();
+                List<Long> twoLevel = Lists.newArrayList();
+                List<Long> threeLevel = Lists.newArrayList();
+                if (skuQueryDto.getCategoryIds() != null) {
+                    oneLevel = skuQueryDto.getCategoryIds().get("1");
+                    twoLevel = skuQueryDto.getCategoryIds().get("2");
+                    threeLevel = skuQueryDto.getCategoryIds().get("3");
+                }
+                // 品牌id
+                List<Long> brandIds = skuQueryDto.getBrandIds();
+                // 标签id
+                List<Long> labelIds = skuQueryDto.getLabelIds();
+                // 贸易类型
+                List<Long> tradeIds = skuQueryDto.getTradeIds();
+                // sku code
+                String skuCode = skuQueryDto.getSkuCode();
+                // 商品id
+                List<Long> goodsIds = null;
+                if (CollectionUtils.isNotEmpty(tradeIds)) {
+                    List<Goods> goods = getGoodsByTradeIds(tradeIds);
+                    goodsIds = goods.stream().map(Goods::getFgoodsId).collect(Collectors.toList());
+                }
+                // 分类间或关系开始
+                if (CollectionUtils.isNotEmpty(oneLevel) || CollectionUtils.isNotEmpty(twoLevel) || CollectionUtils.isNotEmpty(threeLevel)) {
+                    DisMaxQueryBuilder orCategory = new DisMaxQueryBuilder();
+                    if (CollectionUtils.isNotEmpty(oneLevel)) {
+                        orCategory.add(QueryBuilders.termsQuery("fcategory_id1", oneLevel));
+                    }
+                    if (CollectionUtils.isNotEmpty(twoLevel)) {
+                        orCategory.add(QueryBuilders.termsQuery("fcategory_id2", twoLevel));
+                    }
+                    if (CollectionUtils.isNotEmpty(threeLevel)) {
+                        orCategory.add(QueryBuilders.termsQuery("fcategory_id3", threeLevel));
+                    }
+                    condition.must(orCategory);
+                }
+                //品牌
+                if (CollectionUtils.isNotEmpty(brandIds)) {
+                    condition.must(QueryBuilders.termsQuery("fbrand_id", brandIds));
+                }
+                //标签
+                if (CollectionUtils.isNotEmpty(labelIds)) {
+                    condition.must(QueryBuilders.termsQuery("flabel_id", labelIds));
+                }
+                //商品id
+                if (CollectionUtils.isNotEmpty(goodsIds)) {
+                    condition.must(QueryBuilders.termsQuery("fgoods_id", goodsIds));
+                }
+                orConditions.add(condition);
+            }
+            action.filter(orConditions);
+        }
+
+    }
+
+    /**
+     * 根据贸易类型获取商品
+     *
+     * @param tradeIds
+     * @return
+     */
+    private List<Goods> getGoodsByTradeIds(List<Long> tradeIds) {
+        Criteria<Goods, Object> goodsObjectCriteria = Criteria.of(Goods.class)
+                .andIn(Goods::getFtradeId, tradeIds);
+        Result<List<Goods>> goodsResult = goodsApi.queryByCriteria(goodsObjectCriteria);
+        if (!goodsResult.isSuccess()) {
+            throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        }
+        return goodsResult.getData();
+    }
+
+
+    private List<SubjectSkuQueryDto> getApplicableSkuCondition(Subject subject) {
+        List<SubjectSkuQueryDto> subjectSkuQueryDtos = Lists.newArrayList();
+
+        Result<List<SubjectApplicableSkuCondition>> conditionResult = subjectApplicableSkuConditionApi.queryByCriteria(Criteria.of(SubjectApplicableSkuCondition.class)
+                .andEqualTo(SubjectApplicableSkuCondition::getFsubjectId, subject.getFsubjectId()));
+
+        Ensure.that(conditionResult.isSuccess()).isTrue(MallExceptionCode.SYSTEM_ERROR);
+        List<SubjectApplicableSkuCondition> conditionList = conditionResult.getData();
+        if (CollectionUtils.isEmpty(conditionList)) {
+            return subjectSkuQueryDtos;
+        }
+        conditionList.stream().forEach(couponApplicableSkuCondition -> {
+            //对应字段转成java object
+            SubjectSkuQueryDto subjectSkuQueryDto = new SubjectSkuQueryDto();
+            parseJsonAndSetFields(subjectSkuQueryDto, couponApplicableSkuCondition);
+            subjectSkuQueryDtos.add(subjectSkuQueryDto);
+        });
+        return subjectSkuQueryDtos;
+    }
+
+    private void parseJsonAndSetFields(SubjectSkuQueryDto subjectSkuQueryDto, SubjectApplicableSkuCondition subjectApplicableSkuCondition) {
+        try {
+            subjectSkuQueryDto.setCategoryIds(JSON.parseObject(subjectApplicableSkuCondition.getFcategoryId(), Map.class));
+            subjectSkuQueryDto.setBrandIds(JSON.parseArray(subjectApplicableSkuCondition.getFbrandId(), Long.class));
+            subjectSkuQueryDto.setLabelIds(JSON.parseArray(subjectApplicableSkuCondition.getFlabelId(), Long.class));
+            subjectSkuQueryDto.setTradeIds(JSON.parseArray(subjectApplicableSkuCondition.getFtradeCode(), Long.class));
+        } catch (JSONException e) {
+            throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private String getSubjectAliasName(Long fsubjectId) {
+        if (Objects.isNull(fsubjectId)) {
+            throw new IllegalArgumentException("优惠券id不能为空");
+        }
+        return SUBJECT_ALIAS_PREFIX + fsubjectId;
     }
 }
