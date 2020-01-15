@@ -535,10 +535,6 @@ public class PayServiceImpl implements PayService {
 				}	
 				params = WeixinPayUtil.getMapFromXML(notityXml.toString());
 				logger.info("微信支付回调解析前字符串：" + notityXml.toString());
-				try {
-					request.getReader().close();
-				} catch (IOException e) {
-				}
 				if (params != null) {
 					logger.info("微信支付回调参数：" + JSON.toJSONString(params));
 					request.setAttribute("notifyParams", params);
