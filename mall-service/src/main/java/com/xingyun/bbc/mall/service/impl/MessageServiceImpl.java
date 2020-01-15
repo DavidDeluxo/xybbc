@@ -332,7 +332,12 @@ public class MessageServiceImpl implements MessageService {
                                 messageListVo.setImageUrl(new ImageVo(subject.getFsubjectMobilePic()));
                                 MessageSelfInfoVo selfInfoVoForSubject = new MessageSelfInfoVo();
                                 selfInfoVoForSubject.setFsubjectId(subject.getFsubjectId());
-                                selfInfoVoForSubject.setFendTime(subject.getFsubjectEndTime());
+                                //判断是否过期
+                                if(subject.getFsubjectEndTime().compareTo(new Date()) < 0){
+                                    selfInfoVoForSubject.setExpire(1);
+                                }else {
+                                    selfInfoVoForSubject.setExpire(0);
+                                }
                                 messageListVo.setSelfInfoVo(selfInfoVoForSubject);
                             }
                             break;
