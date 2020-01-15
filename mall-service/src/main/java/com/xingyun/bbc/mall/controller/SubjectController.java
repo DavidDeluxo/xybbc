@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.controller;
 
+import com.xingyun.bbc.core.operate.po.Subject;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.JwtParser;
 import com.xingyun.bbc.mall.model.dto.SubjectQueryDto;
@@ -13,10 +14,7 @@ import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -55,5 +53,18 @@ public class SubjectController {
         subjectQueryDto.setFuid(infoVo.getFuid());
         subjectQueryDto.setFoperateType(infoVo.getFoperateType());
         return Result.success(subjectService.getSubjectGoods(subjectQueryDto));
+    }
+
+    @ApiOperation(value = "测试专题同步", httpMethod = "POST")
+    @PostMapping("/via/testSubjectAlias")
+    public Result<?> testAlias(@RequestParam Long fsubjectId){
+        Subject param = new Subject();
+        param.setFsubjectId(fsubjectId);
+        try {
+            subjectService.updateSubjectInfoToEsByAlias(param);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return Result.success();
     }
 }
