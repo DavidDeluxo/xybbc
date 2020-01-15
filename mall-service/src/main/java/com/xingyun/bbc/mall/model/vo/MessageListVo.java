@@ -35,7 +35,7 @@ public class MessageListVo {
     @ApiModelProperty(value = "消息推送类型 0手动 1自动")
     private Integer pushType;
 
-    @ApiModelProperty(value = "消息类型 1发货单发货 2注册成功 3修改绑定手机号 4优惠券到账 5优惠券将要过期 6认证成功 7行云公告 8商品消息 9其它")
+    @ApiModelProperty(value = "消息类型 1发货单发货 2注册成功 3修改绑定手机号 4优惠券到账 5优惠券将要过期 6认证成功 7行云公告 8商品消息 9其它 10专题活动")
     private Integer messageType;
 
     @ApiModelProperty(value = "跳转类型 1该订单对应发货单的物流轨迹 2我的->认证页面 3个人信息页 4 我的->优惠券->未使用页签 5认证成功页面 6公告详情 7商品详情")
