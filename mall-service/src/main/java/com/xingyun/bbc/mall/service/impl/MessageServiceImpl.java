@@ -42,7 +42,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -124,24 +123,39 @@ public class MessageServiceImpl implements MessageService {
             Integer recordEntryKey = recordEntry.getKey();
             List<MessageUserRecord> recordList = recordEntry.getValue();
             MessageUserRecord messageUserRecord = recordList.get(0);
-            AtomicInteger size = new AtomicInteger((int) recordList.stream().filter(r -> r.getFreaded().equals(0)).count());
-            // 统计全局未读
-            recordList.stream().filter(r -> r.getFisCommon().equals(1)).forEach(record -> {
-                Result<Integer> messageSignResult = messageSignApi.countByCriteria(Criteria.of(MessageSign.class)
-                        .andEqualTo(MessageSign::getFsubjectId, userId)
-                        .andEqualTo(MessageSign::getFrecordId, record.getFmessageUserRecordId()));
-                if (!messageSignResult.isSuccess()) {
-                    throw new BizException(MallExceptionCode.SYSTEM_ERROR);
-                }
-                Integer count = messageSignResult.getData() == null ? 0 : messageSignResult.getData();
-                if (count > 0) {
-                    size.decrementAndGet();
-                }
-            });
-
+            Map<Integer, List<MessageUserRecord>> records = recordList.stream().filter(r -> r.getFreaded().equals(0)).collect(Collectors.groupingBy(MessageUserRecord::getFisCommon));
+            // 全局消息
+            List<MessageUserRecord> global = records.get(1);
+            List<MessageUserRecord> local = records.get(0);
+            if (CollectionUtils.isEmpty(global)) {
+                messageCenterVos.add(new MessageCenterVo(recordEntryKey
+                        , messageUserRecord.getFtitle()
+                        , local.size()
+                        , messageUserRecord.getFcreateTime().getTime()));
+                continue;
+            }
+            List<Long> recordIds = global.stream().map(MessageUserRecord::getFmessageUserRecordId).collect(Collectors.toList());
+            Result<List<MessageSign>> readResult = messageSignApi.queryByCriteria(Criteria.of(MessageSign.class)
+                    .andIn(MessageSign::getFrecordId, recordIds)
+                    .andEqualTo(MessageSign::getFsubjectType, 1)
+                    .andEqualTo(MessageSign::getFsubjectId, userId));
+            if (!readResult.isSuccess()) {
+                throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+            }
+            // 全都未读
+            List<MessageSign> signs = readResult.getData();
+            if (CollectionUtils.isEmpty(signs)) {
+                messageCenterVos.add(new MessageCenterVo(recordEntryKey
+                        , messageUserRecord.getFtitle()
+                        , local.size() + global.size()
+                        , messageUserRecord.getFcreateTime().getTime()));
+                continue;
+            }
+            // 已读ID
+            Set<Long> signSets = signs.stream().map(MessageSign::getFrecordId).collect(Collectors.toSet());
             messageCenterVos.add(new MessageCenterVo(recordEntryKey
                     , messageUserRecord.getFtitle()
-                    , size.get()
+                    , local.size() + global.size() - signSets.size()
                     , messageUserRecord.getFcreateTime().getTime()));
         }
         List<Integer> types = messageCenterVos.stream().map(MessageCenterVo::getMessageGroupType).collect(Collectors.toList());
@@ -450,7 +464,9 @@ public class MessageServiceImpl implements MessageService {
         // 单机暂用
         synchronized (object) {
             Result<List<MessageSign>> checkRecordResult = messageSignApi.queryByCriteria(Criteria.of(MessageSign.class)
-                    .andIn(MessageSign::getFrecordId, userRecordIds));
+                    .andIn(MessageSign::getFrecordId, userRecordIds)
+                    .andEqualTo(MessageSign::getFsubjectType, 1)
+                    .andEqualTo(MessageSign::getFsubjectId, dto.getUserId()));
             if (!checkRecordResult.isSuccess()) {
                 throw new BizException(MallExceptionCode.SYSTEM_ERROR);
             }
@@ -509,7 +525,10 @@ public class MessageServiceImpl implements MessageService {
             return Result.success(messageCount);
         }
         List<Long> recordIds = records.stream().map(MessageUserRecord::getFmessageUserRecordId).collect(Collectors.toList());
-        Result<List<MessageSign>> readResult = messageSignApi.queryByCriteria(Criteria.of(MessageSign.class).andIn(MessageSign::getFrecordId, recordIds));
+        Result<List<MessageSign>> readResult = messageSignApi.queryByCriteria(Criteria.of(MessageSign.class)
+                .andIn(MessageSign::getFrecordId, recordIds)
+                .andEqualTo(MessageSign::getFsubjectType, 1)
+                .andEqualTo(MessageSign::getFsubjectId, userId));
         if (!readResult.isSuccess()) {
             throw new BizException(MallExceptionCode.SYSTEM_ERROR);
         }
