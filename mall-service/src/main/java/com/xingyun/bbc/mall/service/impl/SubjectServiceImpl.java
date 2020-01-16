@@ -285,7 +285,7 @@ public class SubjectServiceImpl implements SubjectService {
             Long stockRemainNum = skuBatchList.stream().mapToLong(SkuBatch::getFstockRemianNum).sum();
             Long sellNum = skuBatchList.stream().mapToLong(SkuBatch::getFsellNum).sum();
             searchItemVo.setFsellNum(sellNum);
-            searchItemVo.setFremainTotal(stockRemainNum.intValue());
+            searchItemVo.setFremainTotal(stockRemainNum);
 
             BigDecimal price = BigDecimal.ZERO;
             if (Objects.nonNull(subjectQueryDto.getFuid())) {
