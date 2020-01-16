@@ -25,11 +25,13 @@ import com.xingyun.bbc.mall.base.utils.PriceUtil;
 import com.xingyun.bbc.mall.base.utils.ResultUtils;
 import com.xingyun.bbc.mall.common.ensure.Ensure;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
+import com.xingyun.bbc.mall.model.dto.SearchItemDto;
 import com.xingyun.bbc.mall.model.dto.SubjectQueryDto;
 import com.xingyun.bbc.mall.model.dto.SubjectSkuQueryDto;
 import com.xingyun.bbc.mall.model.vo.SearchItemListVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemVo;
 import com.xingyun.bbc.mall.model.vo.SubjectVo;
+import com.xingyun.bbc.mall.service.GoodsService;
 import com.xingyun.bbc.mall.service.SubjectService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -108,10 +110,12 @@ public class SubjectServiceImpl implements SubjectService {
     @Resource
     private EsManager esManager;
 
+    @Resource
+    private GoodsService goodsService;
+
     @Override
     public SubjectVo getById(SubjectQueryDto subjectQueryDto) {
         Long fsubjectId = subjectQueryDto.getFsubjectId();
-        SubjectVo subjectVo = new SubjectVo();
         Result<Subject> subjectResult = subjectApi.queryById(fsubjectId);
         if (!subjectResult.isSuccess()) {
             logger.info("查询专题信息异常，专题id[{}],error:{}", fsubjectId, subjectResult.getMsg());
@@ -120,7 +124,7 @@ public class SubjectServiceImpl implements SubjectService {
         Subject subject = subjectResult.getData();
         if (subject == null) {
             logger.info("专题id[{}]信息不存在", fsubjectId);
-            return subjectVo;
+            return null;
         }
         return dozerHolder.convert(subject, SubjectVo.class);
     }
@@ -134,8 +138,13 @@ public class SubjectServiceImpl implements SubjectService {
         pageVo.setPageSize(subjectQueryDto.getPageSize());
         pageVo.setPageCount(0);
         pageVo.setList(Lists.newArrayList());
-        getSubjectSkuIdList(subjectQueryDto, pageVo);
-        return pageVo;
+        try {
+            return goodsService.searchSkuList(dozerHolder.convert(subjectQueryDto, SearchItemDto.class)).getData();
+        } catch (Exception e) {
+            logger.info("es 查询专题id[{}]商品失败，转查数据库", subjectQueryDto.getFsubjectId());
+            getSubjectSkuIdList(subjectQueryDto, pageVo);
+            return pageVo;
+        }
     }
 
     /**
@@ -184,6 +193,8 @@ public class SubjectServiceImpl implements SubjectService {
                         GoodsSku::getFskuThumbImage,
                         GoodsSku::getFskuCode,
                         GoodsSku::getFlabelId)
+                .andEqualTo(GoodsSku::getFskuStatus, 1)
+                .andEqualTo(GoodsSku::getFisDelete, 0)
                 .sortDesc(GoodsSku::getFmodifyTime);
         skuConditionList.forEach(skuCondition -> {
 
@@ -258,6 +269,8 @@ public class SubjectServiceImpl implements SubjectService {
                         GoodsSku::getFskuThumbImage,
                         GoodsSku::getFskuCode,
                         GoodsSku::getFlabelId)
+                .andEqualTo(GoodsSku::getFskuStatus, 1)
+                .andEqualTo(GoodsSku::getFisDelete, 0)
                 .sortDesc(GoodsSku::getFmodifyTime);
         skuObjectCriteria.andIn(GoodsSku::getFskuId, fskuIds);
         Result<List<GoodsSku>> goodsSkuResult = goodsSkuApi.queryByCriteria(skuObjectCriteria);
