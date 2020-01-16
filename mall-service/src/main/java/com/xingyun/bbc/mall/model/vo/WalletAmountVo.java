@@ -25,4 +25,7 @@ public class WalletAmountVo {
 
     @ApiModelProperty("提现中的金额")
     private BigDecimal withdrawalAmount = new BigDecimal("0.00");
+
+    @ApiModelProperty("系统当前时间:毫秒")
+    private String currentTimeMillis = String.valueOf(System.currentTimeMillis());
 }
