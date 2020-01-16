@@ -486,14 +486,35 @@ public class MessageServiceImpl implements MessageService {
         Criteria<MessageUserRecord, Object> userRecordObjectCriteria = Criteria.of(MessageUserRecord.class)
                 .andEqualTo(MessageUserRecord::getFsendStatus, 2)
                 .andEqualTo(MessageUserRecord::getFreaded, 0)
-                .andEqualTo(MessageUserRecord::getFuid, userId)
+                .andIn(MessageUserRecord::getFuid, Lists.newArrayList(userId, 0))
                 .andGreaterThanOrEqualTo(MessageUserRecord::getFexpirationDate, new Date())
                 .sortDesc(MessageUserRecord::getFcreateTime);
-        Result<Integer> userRecordResult = userRecordApi.countByCriteria(userRecordObjectCriteria);
+        Result<List<MessageUserRecord>> userRecordResult = userRecordApi.queryByCriteria(userRecordObjectCriteria);
         if (!userRecordResult.isSuccess()) {
             throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
         }
-        Integer count = userRecordResult.getData();
-        return Result.success(count == null ? 0 : count);
+        int messageCount = 0;
+        if ((messageCount = userRecordResult.getData().size()) == 0) {
+            return Result.success(messageCount);
+        }
+        Map<Integer, List<MessageUserRecord>> map = userRecordResult.getData().stream().collect(Collectors.groupingBy(MessageUserRecord::getFisCommon));
+        // 全局消息
+        List<MessageUserRecord> records = map.get(1);
+        if (CollectionUtils.isEmpty(records)) {
+            return Result.success(messageCount);
+        }
+        List<Long> recordIds = records.stream().map(MessageUserRecord::getFmessageUserRecordId).collect(Collectors.toList());
+        Result<List<MessageSign>> readResult = messageSignApi.queryByCriteria(Criteria.of(MessageSign.class).andIn(MessageSign::getFrecordId, recordIds));
+        if (!readResult.isSuccess()) {
+            throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
+        }
+        // 全都未读
+        List<MessageSign> signs = readResult.getData();
+        if (CollectionUtils.isEmpty(signs)) {
+            return Result.success(messageCount);
+        }
+        // 已读ID
+        Set<Long> signSets = signs.stream().map(MessageSign::getFrecordId).collect(Collectors.toSet());
+        return Result.success(messageCount - signSets.size());
     }
 }
