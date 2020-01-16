@@ -249,18 +249,15 @@ public class MessageServiceImpl implements MessageService {
                             }
                             ExpressBillVo expressBillVo = billVoResult.getData();
                             List<ExpressBillDetailVo> expressBillVoData = expressBillVo.getData();
-                            if (CollectionUtils.isEmpty(expressBillVoData)) {
-                                MessageSelfInfoVo selfInfoVo = new MessageSelfInfoVo();
-                                selfInfoVo.setOrderId(transportOrder.getForderId());
-                                messageListVo.setSelfInfoVo(selfInfoVo);
-                                break;
-                            }
-                            ExpressBillDetailVo billDetailVo = expressBillVoData.get(0);
                             // 发货单号、订单号
                             MessageSelfInfoVo selfInfoVo = new MessageSelfInfoVo();
+                            if (CollectionUtils.isNotEmpty(expressBillVoData)) {
+                                ExpressBillDetailVo billDetailVo = expressBillVoData.get(0);
+                                selfInfoVo.setTrajectoryContext(billDetailVo.getContext());
+                                selfInfoVo.setTrajectoryTime(billDetailVo.getFtime());
+                            }
+
                             selfInfoVo.setOrderLogisticsNo(frefId);
-                            selfInfoVo.setTrajectoryContext(billDetailVo.getContext());
-                            selfInfoVo.setTrajectoryTime(billDetailVo.getFtime());
                             selfInfoVo.setOrderId(transportOrder.getForderId());
                             // 商品数量
                             Result<List<SupplierOrderSku>> countByCriteria = supplierOrderSkuApi.queryByCriteria(Criteria.of(SupplierOrderSku.class)
