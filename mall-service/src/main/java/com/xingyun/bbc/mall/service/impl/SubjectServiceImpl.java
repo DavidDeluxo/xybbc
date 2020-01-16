@@ -386,10 +386,10 @@ public class SubjectServiceImpl implements SubjectService {
         Result<Subject> subjectResult = subjectApi.queryOneByCriteria(Criteria.of(Subject.class).andEqualTo(Subject::getFsubjectId, subject.getFsubjectId()));
         Subject subjectDB = ResultUtils.getDataNotNull(subjectResult, MallExceptionCode.SUBJECT_NOT_FOUND);
         //校验优惠券状态
-        if (subjectDB.getFsubjectStatus() != 2) {
-            log.info("主题不是已发布状态, id:{}, status:{}", subject.getFsubjectId(), subject.getFsubjectStatus());
-            return;
-        }
+//        if (subjectDB.getFsubjectStatus() != 2) {
+//            log.info("主题不是已发布状态, id:{}, status:{}", subject.getFsubjectId(), subject.getFsubjectStatus());
+//            return;
+//        }
         //校验主题Alias是否存在
         String aliasName = getSubjectAliasName(subjectDB.getFsubjectId());
         AliasActions action = new AliasActions(AliasActions.Type.ADD).alias(aliasName);
