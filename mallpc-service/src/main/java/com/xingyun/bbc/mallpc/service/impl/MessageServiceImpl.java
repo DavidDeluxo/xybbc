@@ -131,11 +131,11 @@ public class MessageServiceImpl implements MessageService {
             Map<Integer, List<MessageUserRecord>> records = recordList.stream().filter(r -> r.getFreaded().equals(0)).collect(Collectors.groupingBy(MessageUserRecord::getFisCommon));
             // 全局消息
             List<MessageUserRecord> global = records.get(1);
-            List<MessageUserRecord> local = records.get(0);
+            int local = CollectionUtils.isEmpty(records.get(0)) ? 0 : records.get(0).size();
             if (CollectionUtils.isEmpty(global)) {
                 messageCenterVos.add(new MessageCenterVo(recordEntryKey
                         , messageUserRecord.getFtitle()
-                        , local.size()
+                        , local
                         , messageUserRecord.getFcreateTime().getTime()));
                 continue;
             }
@@ -152,7 +152,7 @@ public class MessageServiceImpl implements MessageService {
             if (CollectionUtils.isEmpty(signs)) {
                 messageCenterVos.add(new MessageCenterVo(recordEntryKey
                         , messageUserRecord.getFtitle()
-                        , local.size() + global.size()
+                        , local + global.size()
                         , messageUserRecord.getFcreateTime().getTime()));
                 continue;
             }
@@ -160,7 +160,7 @@ public class MessageServiceImpl implements MessageService {
             Set<Long> signSets = signs.stream().map(MessageSign::getFrecordId).collect(Collectors.toSet());
             messageCenterVos.add(new MessageCenterVo(recordEntryKey
                     , messageUserRecord.getFtitle()
-                    , local.size() + global.size() - signSets.size()
+                    , local + global.size() - signSets.size()
                     , messageUserRecord.getFcreateTime().getTime()));
         }
         List<Integer> types = messageCenterVos.stream().map(MessageCenterVo::getMessageGroupType).collect(Collectors.toList());
@@ -254,7 +254,10 @@ public class MessageServiceImpl implements MessageService {
                             ExpressBillVo expressBillVo = billVoResult.getData();
                             List<ExpressBillDetailVo> expressBillVoData = expressBillVo.getData();
                             if (CollectionUtils.isEmpty(expressBillVoData)) {
-                                throw new BizException(new MallPcExceptionCode("", "未查到物流信息"));
+                                MessageSelfInfoVo selfInfoVo = new MessageSelfInfoVo();
+                                selfInfoVo.setOrderId(transportOrder.getForderId());
+                                messageListVo.setSelfInfoVo(selfInfoVo);
+                                break;
                             }
                             ExpressBillDetailVo billDetailVo = expressBillVoData.get(0);
                             // 发货单号、订单号
@@ -439,8 +442,9 @@ public class MessageServiceImpl implements MessageService {
             return Result.success();
         }
         Map<Integer, List<MessageUserRecord>> userGroup = userRecords.stream().collect(Collectors.groupingBy(MessageUserRecord::getFisCommon));
-        if (CollectionUtils.isNotEmpty(userGroup.get(0))) {
-            userGroup.get(0).forEach(messageUserRecord -> {
+        List<MessageUserRecord> local = userGroup.get(0);
+        if (CollectionUtils.isNotEmpty(local)) {
+            local.forEach(messageUserRecord -> {
                 MessageUserRecord userRecord = new MessageUserRecord();
                 userRecord.setFmessageUserRecordId(messageUserRecord.getFmessageUserRecordId());
                 userRecord.setFreaded(1);

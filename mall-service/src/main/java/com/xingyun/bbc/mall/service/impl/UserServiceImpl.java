@@ -42,6 +42,7 @@ import com.xingyun.bbc.mall.base.enums.*;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
 import com.xingyun.bbc.mall.base.utils.EncryptUtils;
 import com.xingyun.bbc.mall.base.utils.Md5Utils;
+import com.xingyun.bbc.mall.base.utils.ResultUtils;
 import com.xingyun.bbc.mall.common.RedisHolder;
 import com.xingyun.bbc.mall.common.constans.UserConstants;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
@@ -200,6 +201,10 @@ public class UserServiceImpl implements UserService {
         messageUserDevice.setFuid(fuid);
         if (dto.getDeviceToken() != null) {
             messageUserDevice.setFdeviceNum(dto.getDeviceToken());
+            Result<MessageUserDevice> messageUserDeviceResult = messageUserDeviceApi.queryOne(messageUserDevice);
+            if (Objects.nonNull(ResultUtils.getData(messageUserDeviceResult))) {
+                return;
+            }
         }
         if (dto.getFdeviceType() != null) {
             messageUserDevice.setFdeviceType(dto.getFdeviceType());
@@ -324,7 +329,7 @@ public class UserServiceImpl implements UserService {
         if (xyRedisManager.get(mobile) != null) {
             return Result.failure(MallResultStatus.SMS_AUTH_IS_SEND);
         }
-        if(dto.getImei() != null && !dto.getImei().equals("")){
+        if (dto.getImei() != null && !dto.getImei().equals("")) {
             userSecurityDto.setImei(dto.getImei());
             if (xyRedisManager.get(dto.getImei()) != null) {
                 String IMEINum = String.valueOf(xyRedisManager.get(dto.getImei()));
@@ -420,7 +425,7 @@ public class UserServiceImpl implements UserService {
         //发送短信后将手机号加入60S限制
         xyRedisManager.set(mobile, mobile, UserConstants.Sms.MOBILE_AUTH_CODE_EXPIRE_TIME / 1000);
         //设备当天短信发送次数增加
-        if(dto.getImei() != null && !dto.getImei().equals("")){
+        if (dto.getImei() != null && !dto.getImei().equals("")) {
             if (xyRedisManager.get(dto.getImei()) != null) {
                 String IMEINum = String.valueOf(xyRedisManager.get(dto.getImei()));
                 xyRedisManager.set(dto.getImei(), Integer.valueOf(IMEINum) + 1, secondsLeftToday);
@@ -478,7 +483,7 @@ public class UserServiceImpl implements UserService {
         passWord = Md5Utils.toMd5(passWord);
         if (dto.getFinviter() != null && !dto.getFinviter().equals("")) {
             Result<MarketUser> marketUserResult = marketUserApi.queryOneByCriteria(Criteria.of(MarketUser.class)
-                    .fields(MarketUser::getFuid, MarketUser::getFextensionCode,MarketUser::getFmarketUserId)
+                    .fields(MarketUser::getFuid, MarketUser::getFextensionCode, MarketUser::getFmarketUserId)
                     .andEqualTo(MarketUser::getFextensionCode, dto.getFinviter()));
             if (marketUserResult.getData() != null) {
                 marketUser = marketUserResult.getData();
@@ -1298,7 +1303,7 @@ public class UserServiceImpl implements UserService {
         }
         UserSecurityDto userSecurityDto = new UserSecurityDto();
         userSecurityDto.setFmobile(dto.getFmobile());
-        if(dto.getImei() != null && !dto.getImei().equals("")){
+        if (dto.getImei() != null && !dto.getImei().equals("")) {
             userSecurityDto.setImei(dto.getImei());
         }
         userSecurityDto.setIpAddress(dto.getIpAddress());
@@ -1343,7 +1348,7 @@ public class UserServiceImpl implements UserService {
         if (xyRedisManager.get(dto.getFmobile()) != null) {
             code = MallResultStatus.SMS_AUTH_IS_SEND.getCode();
         }
-        if(dto.getImei() != null && !dto.getImei().equals("")){
+        if (dto.getImei() != null && !dto.getImei().equals("")) {
             if (xyRedisManager.get(dto.getImei()) != null) {
                 String IMEINum = String.valueOf(xyRedisManager.get(dto.getImei()));
                 if (Integer.valueOf(IMEINum) < 10) {
