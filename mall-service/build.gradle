@@ -27,7 +27,7 @@ dependencies {
     compile("org.springframework.cloud:spring-cloud-config-client")
     compile("org.springframework.cloud:spring-cloud-starter-openfeign")
     compile("org.springframework.cloud:spring-cloud-starter-sleuth")
-    compile group: 'org.springframework.cloud', name: 'spring-cloud-alibaba-seata', version: '0.9.1.BUILD-SNAPSHOT'
+    compile group: 'com.alibaba.cloud', name: 'spring-cloud-alibaba-seata', version: '2.1.1.RELEASE'
     compile("org.springframework.cloud:spring-cloud-stream-binder-rabbit")
     compile group: 'joda-time', name: 'joda-time', version: '2.10.1'
     compile('io.seata:seata-all:0.7.1')

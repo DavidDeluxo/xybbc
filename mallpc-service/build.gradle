@@ -17,7 +17,7 @@ dependencyManagement {
 
 dependencies {
     compile('io.seata:seata-all:0.8.0')
-    compile group: 'org.springframework.cloud', name: 'spring-cloud-alibaba-seata', version: '0.9.1.BUILD-SNAPSHOT'
+    compile group: 'com.alibaba.cloud', name: 'spring-cloud-alibaba-seata', version: '2.1.1.RELEASE'
     compile("org.springframework.boot:spring-boot-starter-web")
     compile "org.springframework.boot:spring-boot-starter-actuator"
     compile("org.springframework.boot:spring-boot-starter-test")
