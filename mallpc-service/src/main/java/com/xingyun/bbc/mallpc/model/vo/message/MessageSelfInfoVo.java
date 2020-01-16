@@ -50,4 +50,7 @@ public class MessageSelfInfoVo {
 
     @ApiModelProperty(value = "过期 0否 1是")
     private Integer expire;
+
+    @ApiModelProperty(value = "专题id")
+    private Long fsubjectId;
 }

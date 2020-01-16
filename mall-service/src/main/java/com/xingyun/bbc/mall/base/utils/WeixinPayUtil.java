@@ -153,8 +153,8 @@ public class WeixinPayUtil implements ThirdPayUtil{
 		String inputLine;
 		StringBuffer notityXml = new StringBuffer();
 		Map<String, String> params = new HashMap<>();
-		try {
-			while ((inputLine = request.getReader().readLine()) != null) {
+		try (BufferedReader reader = request.getReader()){
+			while ((inputLine = reader.readLine()) != null) {
 				notityXml.append(inputLine);
 			}
 		} catch (Exception e) {
@@ -167,12 +167,7 @@ public class WeixinPayUtil implements ThirdPayUtil{
 		} else {
 			params = getMapFromXML(notityXml.toString());
 		}
-		
-		try {
-			request.getReader().close();
-		} catch (IOException e) {
-			logger.info("-----微信输入流为空或已经关闭。");
-		}
+
 		
 		boolean flag = checkIsSignValidFromResponseString(params, wxPayConfig.getApi_key(), wxPayConfig.getInput_charset());
 
@@ -409,8 +404,8 @@ public class WeixinPayUtil implements ThirdPayUtil{
 		String inputLine;
 		StringBuffer notityXml = new StringBuffer();
 		Map<String, String> params = new HashMap<>();
-		try {
-			while ((inputLine = request.getReader().readLine()) != null) {
+		try(BufferedReader reader = request.getReader()){
+			while ((inputLine = reader.readLine()) != null) {
 				notityXml.append(inputLine);
 			}
 		} catch (Exception e) {
@@ -423,12 +418,7 @@ public class WeixinPayUtil implements ThirdPayUtil{
 		} else {
 			params = getMapFromXML(notityXml.toString());
 		}
-		
-		try {
-			request.getReader().close();
-		} catch (IOException e) {
-			logger.info("-----微信输入流为空或已经关闭。");
-		}
+
 		return params;
 	}
 	
