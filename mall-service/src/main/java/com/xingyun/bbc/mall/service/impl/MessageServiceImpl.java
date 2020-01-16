@@ -41,11 +41,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -127,24 +123,39 @@ public class MessageServiceImpl implements MessageService {
             Integer recordEntryKey = recordEntry.getKey();
             List<MessageUserRecord> recordList = recordEntry.getValue();
             MessageUserRecord messageUserRecord = recordList.get(0);
-            AtomicInteger size = new AtomicInteger((int) recordList.stream().filter(r -> r.getFreaded().equals(0)).count());
-            // 统计全局未读
-            recordList.stream().filter(r -> r.getFisCommon().equals(1)).forEach(record -> {
-                Result<Integer> messageSignResult = messageSignApi.countByCriteria(Criteria.of(MessageSign.class)
-                        .andEqualTo(MessageSign::getFsubjectId, userId)
-                        .andEqualTo(MessageSign::getFrecordId, record.getFmessageUserRecordId()));
-                if (!messageSignResult.isSuccess()) {
-                    throw new BizException(MallExceptionCode.SYSTEM_ERROR);
-                }
-                Integer count = messageSignResult.getData() == null ? 0 : messageSignResult.getData();
-                if (count > 0) {
-                    size.decrementAndGet();
-                }
-            });
-
+            Map<Integer, List<MessageUserRecord>> records = recordList.stream().filter(r -> r.getFreaded().equals(0)).collect(Collectors.groupingBy(MessageUserRecord::getFisCommon));
+            // 全局消息
+            List<MessageUserRecord> global = records.get(1);
+            int local = CollectionUtils.isEmpty(records.get(0)) ? 0 : records.get(0).size();
+            if (CollectionUtils.isEmpty(global)) {
+                messageCenterVos.add(new MessageCenterVo(recordEntryKey
+                        , messageUserRecord.getFtitle()
+                        , local
+                        , messageUserRecord.getFcreateTime().getTime()));
+                continue;
+            }
+            List<Long> recordIds = global.stream().map(MessageUserRecord::getFmessageUserRecordId).collect(Collectors.toList());
+            Result<List<MessageSign>> readResult = messageSignApi.queryByCriteria(Criteria.of(MessageSign.class)
+                    .andIn(MessageSign::getFrecordId, recordIds)
+                    .andEqualTo(MessageSign::getFsubjectType, 1)
+                    .andEqualTo(MessageSign::getFsubjectId, userId));
+            if (!readResult.isSuccess()) {
+                throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+            }
+            // 全都未读
+            List<MessageSign> signs = readResult.getData();
+            if (CollectionUtils.isEmpty(signs)) {
+                messageCenterVos.add(new MessageCenterVo(recordEntryKey
+                        , messageUserRecord.getFtitle()
+                        , local + global.size()
+                        , messageUserRecord.getFcreateTime().getTime()));
+                continue;
+            }
+            // 已读ID
+            Set<Long> signSets = signs.stream().map(MessageSign::getFrecordId).collect(Collectors.toSet());
             messageCenterVos.add(new MessageCenterVo(recordEntryKey
                     , messageUserRecord.getFtitle()
-                    , size.get()
+                    , local + global.size() - signSets.size()
                     , messageUserRecord.getFcreateTime().getTime()));
         }
         List<Integer> types = messageCenterVos.stream().map(MessageCenterVo::getMessageGroupType).collect(Collectors.toList());
@@ -238,15 +249,15 @@ public class MessageServiceImpl implements MessageService {
                             }
                             ExpressBillVo expressBillVo = billVoResult.getData();
                             List<ExpressBillDetailVo> expressBillVoData = expressBillVo.getData();
-                            if (CollectionUtils.isEmpty(expressBillVoData)) {
-                                throw new BizException(new MallExceptionCode("", "未查到物流信息"));
-                            }
-                            ExpressBillDetailVo billDetailVo = expressBillVoData.get(0);
                             // 发货单号、订单号
                             MessageSelfInfoVo selfInfoVo = new MessageSelfInfoVo();
+                            if (CollectionUtils.isNotEmpty(expressBillVoData)) {
+                                ExpressBillDetailVo billDetailVo = expressBillVoData.get(0);
+                                selfInfoVo.setTrajectoryContext(billDetailVo.getContext());
+                                selfInfoVo.setTrajectoryTime(billDetailVo.getFtime());
+                            }
+
                             selfInfoVo.setOrderLogisticsNo(frefId);
-                            selfInfoVo.setTrajectoryContext(billDetailVo.getContext());
-                            selfInfoVo.setTrajectoryTime(billDetailVo.getFtime());
                             selfInfoVo.setOrderId(transportOrder.getForderId());
                             // 商品数量
                             Result<List<SupplierOrderSku>> countByCriteria = supplierOrderSkuApi.queryByCriteria(Criteria.of(SupplierOrderSku.class)
@@ -434,34 +445,45 @@ public class MessageServiceImpl implements MessageService {
         if (CollectionUtils.isEmpty(userRecords)) {
             return Result.success();
         }
-        Map<Long, List<MessageUserRecord>> userGroup = userRecords.stream().collect(Collectors.groupingBy(MessageUserRecord::getFuid));
-        userGroup.get(dto.getUserId()).forEach(messageUserRecord -> {
-            MessageUserRecord userRecord = new MessageUserRecord();
-            userRecord.setFmessageUserRecordId(messageUserRecord.getFmessageUserRecordId());
-            userRecord.setFreaded(1);
-            Result<Integer> updateRecord = userRecordApi.updateNotNull(userRecord);
-            if (!updateRecord.isSuccess()) {
-                throw new BizException(MallExceptionCode.SYSTEM_ERROR);
-            }
-        });
-        List<MessageUserRecord> messageUserRecords = userGroup.get(0);
+        Map<Integer, List<MessageUserRecord>> userGroup = userRecords.stream().collect(Collectors.groupingBy(MessageUserRecord::getFisCommon));
+        List<MessageUserRecord> local = userGroup.get(0);
+        if (CollectionUtils.isNotEmpty(local)) {
+            local.forEach(messageUserRecord -> {
+                MessageUserRecord userRecord = new MessageUserRecord();
+                userRecord.setFmessageUserRecordId(messageUserRecord.getFmessageUserRecordId());
+                userRecord.setFreaded(1);
+                Result<Integer> updateRecord = userRecordApi.updateNotNull(userRecord);
+                if (!updateRecord.isSuccess()) {
+                    throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+                }
+            });
+        }
+
+        List<MessageUserRecord> messageUserRecords = userGroup.get(1);
         if (CollectionUtils.isEmpty(messageUserRecords)) {
             return Result.success();
         }
-        List<Long> userRecordIds = messageUserRecords.stream().map(MessageUserRecord::getFmessageUserRecordId).collect(Collectors.toList());
+        // 全局消息ID
+        Set<Long> userRecordIds = messageUserRecords.stream().map(MessageUserRecord::getFmessageUserRecordId).collect(Collectors.toSet());
         // 单机暂用
         synchronized (object) {
-            Result<Integer> checkRecordResult = messageSignApi.countByCriteria(Criteria.of(MessageSign.class)
-                    .andIn(MessageSign::getFrecordId, userRecordIds));
+            Result<List<MessageSign>> checkRecordResult = messageSignApi.queryByCriteria(Criteria.of(MessageSign.class)
+                    .andIn(MessageSign::getFrecordId, userRecordIds)
+                    .andEqualTo(MessageSign::getFsubjectType, 1)
+                    .andEqualTo(MessageSign::getFsubjectId, dto.getUserId()));
             if (!checkRecordResult.isSuccess()) {
                 throw new BizException(MallExceptionCode.SYSTEM_ERROR);
             }
             // 说明已新增
-            if (checkRecordResult.getData() != 0) {
+            List<MessageSign> messageSigns = checkRecordResult.getData();
+            // 已插入全局消息ID
+            Set<Long> set = messageSigns.stream().map(MessageSign::getFrecordId).collect(Collectors.toSet());
+            userRecordIds.removeAll(set);
+            if (CollectionUtils.isEmpty(userRecordIds)) {
                 return Result.success();
             }
             ArrayList<MessageSign> capacity = new ArrayList<>();
-            messageUserRecords.forEach(messageUserRecord -> {
+            messageUserRecords.stream().filter(m -> userRecordIds.contains(m.getFmessageUserRecordId())).forEach(messageUserRecord -> {
                 MessageSign messageSign = new MessageSign();
                 messageSign.setFrecordId(messageUserRecord.getFmessageUserRecordId());
                 messageSign.setFsubjectId(dto.getUserId());
@@ -489,14 +511,38 @@ public class MessageServiceImpl implements MessageService {
         Criteria<MessageUserRecord, Object> userRecordObjectCriteria = Criteria.of(MessageUserRecord.class)
                 .andEqualTo(MessageUserRecord::getFsendStatus, 2)
                 .andEqualTo(MessageUserRecord::getFreaded, 0)
-                .andEqualTo(MessageUserRecord::getFuid, userId)
+                .andIn(MessageUserRecord::getFuid, Lists.newArrayList(userId, 0))
                 .andGreaterThanOrEqualTo(MessageUserRecord::getFexpirationDate, new Date())
                 .sortDesc(MessageUserRecord::getFcreateTime);
-        Result<Integer> userRecordResult = userRecordApi.countByCriteria(userRecordObjectCriteria);
+        Result<List<MessageUserRecord>> userRecordResult = userRecordApi.queryByCriteria(userRecordObjectCriteria);
         if (!userRecordResult.isSuccess()) {
             throw new BizException(MallExceptionCode.SYSTEM_ERROR);
         }
-        Integer count = userRecordResult.getData();
-        return Result.success(count == null ? 0 : count);
+        int messageCount = 0;
+        if ((messageCount = userRecordResult.getData().size()) == 0) {
+            return Result.success(messageCount);
+        }
+        Map<Integer, List<MessageUserRecord>> map = userRecordResult.getData().stream().collect(Collectors.groupingBy(MessageUserRecord::getFisCommon));
+        // 全局消息
+        List<MessageUserRecord> records = map.get(1);
+        if (CollectionUtils.isEmpty(records)) {
+            return Result.success(messageCount);
+        }
+        List<Long> recordIds = records.stream().map(MessageUserRecord::getFmessageUserRecordId).collect(Collectors.toList());
+        Result<List<MessageSign>> readResult = messageSignApi.queryByCriteria(Criteria.of(MessageSign.class)
+                .andIn(MessageSign::getFrecordId, recordIds)
+                .andEqualTo(MessageSign::getFsubjectType, 1)
+                .andEqualTo(MessageSign::getFsubjectId, userId));
+        if (!readResult.isSuccess()) {
+            throw new BizException(MallExceptionCode.SYSTEM_ERROR);
+        }
+        // 全都未读
+        List<MessageSign> signs = readResult.getData();
+        if (CollectionUtils.isEmpty(signs)) {
+            return Result.success(messageCount);
+        }
+        // 已读ID
+        Set<Long> signSets = signs.stream().map(MessageSign::getFrecordId).collect(Collectors.toSet());
+        return Result.success(messageCount - signSets.size());
     }
 }

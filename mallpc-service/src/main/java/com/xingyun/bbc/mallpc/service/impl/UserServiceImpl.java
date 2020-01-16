@@ -60,6 +60,7 @@ import com.xingyun.bbc.mallpc.service.UserService;
 import com.xingyun.bbc.message.business.WaitSendInfo;
 import eu.bitwalker.useragentutils.UserAgent;
 import io.seata.spring.annotation.GlobalTransactional;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
@@ -84,6 +85,7 @@ import static java.util.stream.Collectors.toList;
  * @copyright 本内容仅限于深圳市天行云供应链有限公司内部传阅，禁止外泄以及用于其他的商业目的
  */
 @Service
+@Slf4j
 public class UserServiceImpl implements UserService {
 
     @Resource
@@ -395,6 +397,7 @@ public class UserServiceImpl implements UserService {
                 .andEqualTo(Coupon::getFreleaseType, CouponReleaseTypeEnum.REGISTER.getCode())
                 .andGreaterThan(Coupon::getFsurplusReleaseQty, 0));
         Ensure.that(couponResult.isSuccess()).isTrue(MallPcExceptionCode.SYSTEM_ERROR);
+        log.info("发送新人优惠券,数量{}",couponResult.getData().size());
         couponResult.getData().stream().forEach(coupon -> couponProviderApi.receive(new CouponReleaseDto()
                 .setCouponId(coupon.getFcouponId())
                 .setCouponScene(CouponScene.REGISTER)

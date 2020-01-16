@@ -27,7 +27,7 @@ dependencies {
     compile("org.springframework.cloud:spring-cloud-config-client")
     compile("org.springframework.cloud:spring-cloud-starter-openfeign")
     compile("org.springframework.cloud:spring-cloud-starter-sleuth")
-    compile group: 'org.springframework.cloud', name: 'spring-cloud-alibaba-seata', version: '0.9.1.BUILD-SNAPSHOT'
+    compile group: 'com.alibaba.cloud', name: 'spring-cloud-alibaba-seata', version: '2.1.1.RELEASE'
     compile("org.springframework.cloud:spring-cloud-stream-binder-rabbit")
     compile group: 'joda-time', name: 'joda-time', version: '2.10.1'
     compile('io.seata:seata-all:0.7.1')
@@ -44,7 +44,7 @@ dependencies {
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-user-api', version: '1.0.34'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-order-api', version: '1.0.44'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-market-api', version: '1.0.44'
-    compile group: 'com.xingyun.bbc', name: 'xybbc-center-order-api', version: '1.1.66'
+    compile group: 'com.xingyun.bbc', name: 'xybbc-center-order-api', version: '1.1.67'
     compile group: 'com.xingyun.bbc', name: 'xybbc-center-activity-api', version: '1.0.21'
     compile group: 'com.xingyun.bbc', name: 'xybbc-pay-service-api', version: '1.0.39'
     compile group: 'com.xingyun.bbc', name: 'xybbc-jwt-common', version: '1.0'
@@ -63,7 +63,7 @@ dependencies {
     compile group: 'cn.hutool', name: 'hutool-all', version: '4.1.1'
     compile group: 'com.fasterxml.uuid', name: 'java-uuid-generator', version: '3.2.0'
     compile group: 'redis.clients', name: 'jedis', version: '2.9.0'
-    compile group: 'com.xingyun.bbc', name: 'xybbc-message-service-api', version: '1.0.23'
+    compile group: 'com.xingyun.bbc', name: 'xybbc-message-service-api', version: '1.0.26'
     compile project(':mall-common-elasticsearch')
     compile("net.logstash.logback:logstash-logback-encoder:6.2")
 }

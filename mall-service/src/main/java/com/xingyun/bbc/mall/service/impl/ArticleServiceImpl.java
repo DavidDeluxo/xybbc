@@ -64,7 +64,7 @@ public class ArticleServiceImpl implements ArticleService {
                             .andEqualTo(ArticleContent::getFarticleStatus,1)
                             .fields(ArticleContent::getFarticleId,ArticleContent::getFarticleSubjectId)
                             .page(1,articleMenu.getFarticleShowNumber())
-                            .sort(ArticleContent::getFarticleSort);
+                            .sortDesc(ArticleContent::getFarticleSort);
                 }else{
                     Criteria<ArticleMenuRelation,Object> articleMenuRelationCriteria = Criteria.of(ArticleMenuRelation.class)
                             .andEqualTo(ArticleMenuRelation::getFmenuId,articleMenu.getFmenuId())
@@ -84,6 +84,7 @@ public class ArticleServiceImpl implements ArticleService {
                     }
                 }
                 Result<List<ArticleContent>> ContentResult = articleContentApi.queryByCriteria(articleContentCriteria);
+//                logger.info(articleContentCriteria.buildSql());
                 if(!ContentResult.isSuccess()){
                     throw new BizException(ResultStatus.INTERNAL_SERVER_ERROR);
                 }
