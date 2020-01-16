@@ -126,11 +126,11 @@ public class MessageServiceImpl implements MessageService {
             Map<Integer, List<MessageUserRecord>> records = recordList.stream().filter(r -> r.getFreaded().equals(0)).collect(Collectors.groupingBy(MessageUserRecord::getFisCommon));
             // 全局消息
             List<MessageUserRecord> global = records.get(1);
-            List<MessageUserRecord> local = records.get(0);
+            int local = CollectionUtils.isEmpty(records.get(0)) ? 0 : records.get(0).size();
             if (CollectionUtils.isEmpty(global)) {
                 messageCenterVos.add(new MessageCenterVo(recordEntryKey
                         , messageUserRecord.getFtitle()
-                        , local.size()
+                        , local
                         , messageUserRecord.getFcreateTime().getTime()));
                 continue;
             }
@@ -147,7 +147,7 @@ public class MessageServiceImpl implements MessageService {
             if (CollectionUtils.isEmpty(signs)) {
                 messageCenterVos.add(new MessageCenterVo(recordEntryKey
                         , messageUserRecord.getFtitle()
-                        , local.size() + global.size()
+                        , local + global.size()
                         , messageUserRecord.getFcreateTime().getTime()));
                 continue;
             }
@@ -155,7 +155,7 @@ public class MessageServiceImpl implements MessageService {
             Set<Long> signSets = signs.stream().map(MessageSign::getFrecordId).collect(Collectors.toSet());
             messageCenterVos.add(new MessageCenterVo(recordEntryKey
                     , messageUserRecord.getFtitle()
-                    , local.size() + global.size() - signSets.size()
+                    , local + global.size() - signSets.size()
                     , messageUserRecord.getFcreateTime().getTime()));
         }
         List<Integer> types = messageCenterVos.stream().map(MessageCenterVo::getMessageGroupType).collect(Collectors.toList());
