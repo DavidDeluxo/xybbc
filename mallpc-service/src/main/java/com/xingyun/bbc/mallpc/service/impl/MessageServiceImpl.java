@@ -254,7 +254,10 @@ public class MessageServiceImpl implements MessageService {
                             ExpressBillVo expressBillVo = billVoResult.getData();
                             List<ExpressBillDetailVo> expressBillVoData = expressBillVo.getData();
                             if (CollectionUtils.isEmpty(expressBillVoData)) {
-                                throw new BizException(new MallPcExceptionCode("", "未查到物流信息"));
+                                MessageSelfInfoVo selfInfoVo = new MessageSelfInfoVo();
+                                selfInfoVo.setOrderId(transportOrder.getForderId());
+                                messageListVo.setSelfInfoVo(selfInfoVo);
+                                break;
                             }
                             ExpressBillDetailVo billDetailVo = expressBillVoData.get(0);
                             // 发货单号、订单号
@@ -439,8 +442,9 @@ public class MessageServiceImpl implements MessageService {
             return Result.success();
         }
         Map<Integer, List<MessageUserRecord>> userGroup = userRecords.stream().collect(Collectors.groupingBy(MessageUserRecord::getFisCommon));
-        if (CollectionUtils.isNotEmpty(userGroup.get(0))) {
-            userGroup.get(0).forEach(messageUserRecord -> {
+        List<MessageUserRecord> local = userGroup.get(0);
+        if (CollectionUtils.isNotEmpty(local)) {
+            local.forEach(messageUserRecord -> {
                 MessageUserRecord userRecord = new MessageUserRecord();
                 userRecord.setFmessageUserRecordId(messageUserRecord.getFmessageUserRecordId());
                 userRecord.setFreaded(1);
