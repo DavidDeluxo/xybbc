@@ -41,10 +41,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -448,20 +445,25 @@ public class MessageServiceImpl implements MessageService {
         if (CollectionUtils.isEmpty(messageUserRecords)) {
             return Result.success();
         }
-        List<Long> userRecordIds = messageUserRecords.stream().map(MessageUserRecord::getFmessageUserRecordId).collect(Collectors.toList());
+        // 全局消息ID
+        Set<Long> userRecordIds = messageUserRecords.stream().map(MessageUserRecord::getFmessageUserRecordId).collect(Collectors.toSet());
         // 单机暂用
         synchronized (object) {
-            Result<Integer> checkRecordResult = messageSignApi.countByCriteria(Criteria.of(MessageSign.class)
+            Result<List<MessageSign>> checkRecordResult = messageSignApi.queryByCriteria(Criteria.of(MessageSign.class)
                     .andIn(MessageSign::getFrecordId, userRecordIds));
             if (!checkRecordResult.isSuccess()) {
                 throw new BizException(MallExceptionCode.SYSTEM_ERROR);
             }
             // 说明已新增
-            if (checkRecordResult.getData() != 0) {
+            List<MessageSign> messageSigns = checkRecordResult.getData();
+            // 已插入全局消息ID
+            Set<Long> set = messageSigns.stream().map(MessageSign::getFrecordId).collect(Collectors.toSet());
+            userRecordIds.removeAll(set);
+            if (CollectionUtils.isEmpty(userRecordIds)) {
                 return Result.success();
             }
             ArrayList<MessageSign> capacity = new ArrayList<>();
-            messageUserRecords.forEach(messageUserRecord -> {
+            messageUserRecords.stream().filter(m -> userRecordIds.contains(m.getFmessageUserRecordId())).forEach(messageUserRecord -> {
                 MessageSign messageSign = new MessageSign();
                 messageSign.setFrecordId(messageUserRecord.getFmessageUserRecordId());
                 messageSign.setFsubjectId(dto.getUserId());
