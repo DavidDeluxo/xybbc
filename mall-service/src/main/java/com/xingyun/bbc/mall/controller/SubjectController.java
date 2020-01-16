@@ -3,6 +3,7 @@ package com.xingyun.bbc.mall.controller;
 import com.xingyun.bbc.core.operate.po.Subject;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.JwtParser;
+import com.xingyun.bbc.mall.model.dto.SubjectEsSkuUpdateDto;
 import com.xingyun.bbc.mall.model.dto.SubjectQueryDto;
 import com.xingyun.bbc.mall.model.vo.SearchItemListVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemVo;
@@ -55,16 +56,13 @@ public class SubjectController {
         return Result.success(subjectService.getSubjectGoods(subjectQueryDto));
     }
 
-    @ApiOperation(value = "测试专题同步", httpMethod = "POST")
-    @PostMapping("/via/testSubjectAlias")
-    public Result<?> testAlias(@RequestParam Long fsubjectId){
-        Subject param = new Subject();
-        param.setFsubjectId(fsubjectId);
-        try {
-            subjectService.updateSubjectInfoToEsByAlias(param);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+    @ApiOperation(value = "ES专题商品全量同步", httpMethod = "POST")
+    @PostMapping("/via/updateSubjectAliasAll")
+    public Result<?> updateAliasAll(@RequestBody SubjectEsSkuUpdateDto subjectEsSkuUpdateDto) {
+        subjectService.updateSubjectInfoToEsByAliasAll(
+                subjectEsSkuUpdateDto.getFsubjectIds(),
+                subjectEsSkuUpdateDto.getPageSize(),
+                subjectEsSkuUpdateDto.getPageIndex());
         return Result.success();
     }
 }

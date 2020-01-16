@@ -394,6 +394,24 @@ public class SubjectServiceImpl implements SubjectService {
     }
 
     @Override
+    public void updateSubjectInfoToEsByAliasAll(List<Long> fsubjectIds, Integer pageSize, Integer pageIndex){
+        Criteria<Subject, Object> criteria = Criteria.of(Subject.class).fields(Subject::getFsubjectId).page(pageIndex, pageSize);
+        if (CollectionUtils.isNotEmpty(fsubjectIds)) {
+            criteria.andIn(Subject::getFsubjectId, fsubjectIds);
+        }
+        Result<List<Subject>> subjectResult = subjectApi.queryByCriteria(criteria);
+        List<Subject> updateList = ResultUtils.getData(subjectResult);
+        for (Subject subject : updateList) {
+            try {
+                this.updateSubjectInfoToEsByAlias(subject);
+            }catch (Exception e){
+                log.info("更新专题:{}失败",subject.getFsubjectId());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
     public void updateSubjectInfoToEsByAlias(Subject subject) throws Exception {
         //查询主题信息
         Result<Subject> subjectResult = subjectApi.queryOneByCriteria(Criteria.of(Subject.class).andEqualTo(Subject::getFsubjectId, subject.getFsubjectId()));

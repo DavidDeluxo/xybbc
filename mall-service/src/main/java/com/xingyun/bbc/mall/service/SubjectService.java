@@ -6,6 +6,8 @@ import com.xingyun.bbc.mall.model.vo.SearchItemListVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemVo;
 import com.xingyun.bbc.mall.model.vo.SubjectVo;
 
+import java.util.List;
+
 public interface SubjectService {
 
     /**
@@ -44,4 +46,12 @@ public interface SubjectService {
      */
     String getSubjectAliasName(Long fsubjectId);
 
+    /**
+     * 全量更新专题ES商品
+     * @param fsubjectIds
+     * @param pageSize
+     * @param pageIndex
+     * @throws Exception
+     */
+    void updateSubjectInfoToEsByAliasAll(List<Long> fsubjectIds, Integer pageSize, Integer pageIndex);
 }
