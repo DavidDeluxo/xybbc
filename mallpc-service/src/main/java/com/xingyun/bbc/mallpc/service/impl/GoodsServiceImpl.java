@@ -47,7 +47,7 @@ public class GoodsServiceImpl implements GoodsService {
     private static final String PRICE_TYPE_SUFFIX = ".min_price";
     private static Pattern humpPattern = Pattern.compile("[A-Z0-9]");
     private static final String COUPON_ALIAS_PREFIX = "coupon_";
-
+    private static final String SUBJECT_ALIAS_PREFIX = "subject_";
     @Autowired
     private EsManager esManager;
     @Resource
@@ -77,10 +77,7 @@ public class GoodsServiceImpl implements GoodsService {
         pageVo.setPageSize(1);
         this.setCategoryCondition(searchItemDto);
         EsCriteria criteria = EsCriteria.build(searchItemDto);
-        if (searchItemDto.getFcouponId() != null) {
-            criteria.setIndexName(this.getCouponAliasName(Long.parseLong(String.valueOf(searchItemDto.getFcouponId()))));
-        }
-
+        setAlias(searchItemDto, criteria);
         String priceName = searchItemDto.getPriceName();
         if (StringUtils.isEmpty(priceName)) {
             priceName = this.getUserPriceType(searchItemDto.getIsLogin(), searchItemDto.getFuid(), searchItemDto.getFoperateType(), searchItemDto.getFverifyStatus());
@@ -106,6 +103,22 @@ public class GoodsServiceImpl implements GoodsService {
         }
 
         return Result.success(pageVo);
+    }
+
+    private void setAlias(SearchItemDto searchItemDto, EsCriteria criteria) {
+        if (searchItemDto.getFcouponId() != null) {
+            criteria.setIndexName(this.getCouponAliasName(Long.parseLong(String.valueOf(searchItemDto.getFcouponId()))));
+        } else if (searchItemDto.getFsubjectId() != null) {
+            criteria.setIndexName(getSubjectAliasName(searchItemDto.getFsubjectId()));
+        }
+    }
+
+
+    public String getSubjectAliasName(Long fsubjectId) {
+        if (Objects.isNull(fsubjectId)) {
+            throw new IllegalArgumentException("主题id不能为空");
+        }
+        return SUBJECT_ALIAS_PREFIX + fsubjectId;
     }
 
     /**

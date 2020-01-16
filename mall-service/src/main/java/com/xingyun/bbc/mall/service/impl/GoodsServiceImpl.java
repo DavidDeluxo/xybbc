@@ -696,7 +696,7 @@ public class GoodsServiceImpl implements GoodsService {
                     }
                 }
                 if (map.get("fstockRemainNumTotal") != null) {
-                    vo.setFremainTotal(Integer.parseInt(String.valueOf(map.get("fstockRemainNumTotal"))));
+                    vo.setFremainTotal(Long.parseLong(String.valueOf(map.get("fstockRemainNumTotal"))));
                 }
                 voList.add(vo);
             }
