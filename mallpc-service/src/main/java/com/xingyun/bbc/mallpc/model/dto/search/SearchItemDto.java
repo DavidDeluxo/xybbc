@@ -129,6 +129,9 @@ public class SearchItemDto {
     @ApiModelProperty(value = "类目等级")
     private Integer fcategoryLevel;
 
+    @ApiModelProperty(value = "专题id")
+    private Long fsubjectId;
+
     /**
      * 判断是否查询用户表中转用
      */
