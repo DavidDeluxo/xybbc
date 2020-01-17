@@ -242,7 +242,7 @@ public class WalletServiceImpl implements WalletService {
         log.info("|用户id:{}|提现金额:{}(分)|手续费:{}(分)|", uid, transAmount, accountTrans.getUserAccountTrans().getFtransPoundage());
 
         // 申请数据插入流水表
-        this.addAccountTransWater(transId);
+        this.addAccountTransWater(accountTrans.getUserAccountTrans());
 
         // 修改用户账户表，冻结提现金额
         this.modifyAccount(uid, transAmount, checkAfterMoney.getNewBalance(), checkAfterMoney.getFreezeWithdraw());
@@ -297,6 +297,18 @@ public class WalletServiceImpl implements WalletService {
             throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
         }
         if (accountResult.getData() < 0) {
+            throw new BizException(ResultStatus.NOT_IMPLEMENTED);
+        }
+    }
+
+    private void addAccountTransWater(UserAccountTrans userAccountTrans) {
+        UserAccountTransWater accountTransWater = new UserAccountTransWater();
+        BeanUtils.copyProperties(userAccountTrans, accountTransWater);
+        Result<Integer> accountWaterResult = userAccountTransWaterApi.create(accountTransWater);
+        if (!accountWaterResult.isSuccess()) {
+            throw new BizException(ResultStatus.REMOTE_SERVICE_ERROR);
+        }
+        if (accountWaterResult.getData() < 0) {
             throw new BizException(ResultStatus.NOT_IMPLEMENTED);
         }
     }
