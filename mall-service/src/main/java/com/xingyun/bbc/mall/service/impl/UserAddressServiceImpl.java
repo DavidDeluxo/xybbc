@@ -90,8 +90,26 @@ public class UserAddressServiceImpl implements UserAddressService {
         Criteria<UserDelivery, Object> criteria = Criteria.of(UserDelivery.class);
         if (!StringUtils.isEmpty(userDeliveryDto.getFuid())) {
             criteria.andEqualTo(UserDelivery::getFuid, userDeliveryDto.getFuid())
-                    .andEqualTo(UserDelivery::getFisDelete, 0).sortDesc(UserDelivery::getFmodifyTime);
+                    .andEqualTo(UserDelivery::getFisDelete, 0);
         }
+        if (!StringUtils.isEmpty(userDeliveryDto.getKeyWord())) {
+
+            String keyWord = "%" + userDeliveryDto.getKeyWord() + "%";
+
+            criteria.andLeft();
+            criteria.andLike(UserDelivery::getFdeliveryName,keyWord);
+
+            criteria.orLeft();
+            criteria.andLike(UserDelivery::getFdeliveryMobile,keyWord);
+            criteria.addRight();
+
+            criteria.orLeft();
+            criteria.andLike(UserDelivery::getFdeliveryAddr,keyWord);
+            criteria.addRight();
+
+            criteria.addRight();
+        }
+        criteria.sortDesc(UserDelivery::getFmodifyTime);
         //查询总数分页
         Result<Integer> totalResult = userDeliveryApi.countByCriteria(criteria.page(userDeliveryDto.getCurrentPage(), userDeliveryDto.getPageSize()));
         if (!totalResult.isSuccess()) {

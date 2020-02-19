@@ -73,4 +73,8 @@ public class UserDeliveryDto extends PageDto{
     /** 用户收货地址IDS */
     @ApiModelProperty("用户IDS")
     private String fuids;
+
+    /** 用户收货地址查询关键词 */
+    @ApiModelProperty("地址查询关键词")
+    private String keyWord;
 }
