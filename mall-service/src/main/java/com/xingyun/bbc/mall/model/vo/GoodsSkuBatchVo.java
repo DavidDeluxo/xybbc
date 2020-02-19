@@ -105,11 +105,11 @@ public class GoodsSkuBatchVo implements Serializable{
     @ApiModelProperty(value = "批次状态 1下架 2上架 3 已售完 4已过期")
     private Integer fbatchStatus;
 
-    /** 库存有效期起始日期 */
+    /** 批次有效期起始日期 */
     @ApiModelProperty(value = "批次有效期起始日期--商品保质期")
     private Date fqualityStartDate;
 
-    /** 库存有效期结束日期 */
+    /** 批次有效期结束日期 */
     @ApiModelProperty(value = "批次有效期结束日期--商品保质期")
     private Date fqualityEndDate;
 

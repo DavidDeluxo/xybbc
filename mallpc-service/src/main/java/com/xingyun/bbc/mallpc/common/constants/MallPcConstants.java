@@ -17,6 +17,10 @@ public interface MallPcConstants {
 
     String FULL_STANDARD_PATTERN_1 = "yyyy.MM.dd HH:mm:ss";
 
+    String DATE_PATTERN_YYYY_MM_DD  = "yyyy-MM-dd";
+
+    String DATE_PATTERN_YYYY_MM  = "yyyy-MM";
+
     int EASYPOI_EXPORT_EXCEL_APPEND_OFFSET = 1000;
 
     int MAX_EASYPOI_EXPORT_EXCEL_APPEND_OFFSET = 10000;
