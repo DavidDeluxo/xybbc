@@ -385,7 +385,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         for (GoodsSkuBatchVo batchRe : batchRes) {
             MallTVo tVoBatch = new MallTVo();
             tVoBatch.setTId(batchRe.getFsupplierSkuBatchId());
-            tVoBatch.setTName(new SimpleDateFormat("yyyy-MM-dd").format(batchRe.getFqualityEndDate()));
+            tVoBatch.setTName(new SimpleDateFormat("yyyy-MM").format(batchRe.getFqualityEndDate()));
             batchMall.add(tVoBatch);
         }
         GoodspecificationExVo batchEx = new GoodspecificationExVo();

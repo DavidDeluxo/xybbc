@@ -22,7 +22,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
-@Api("商品详情")
+@Api(tags = "商品详情")
 @RestController
 @RequestMapping("/goodsDetail")
 public class GoodsDetailController {
