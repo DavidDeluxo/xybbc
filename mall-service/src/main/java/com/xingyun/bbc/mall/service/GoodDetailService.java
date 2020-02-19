@@ -31,6 +31,9 @@ public interface GoodDetailService {
     //获取销量
     Result<GoodStockSellVo> getGoodSell(GoodsDetailMallDto goodsDetailMallDto);
 
+    //获取
+    Result<String> getdeliveryAddress(String fsupplierSkuBatchId);
+
     //查询是否已经加入常购清单
     Result<Integer> getIsRegular(Long fgoodsId, Long fuid);
 

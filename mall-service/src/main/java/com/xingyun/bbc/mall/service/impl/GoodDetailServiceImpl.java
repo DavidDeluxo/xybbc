@@ -22,7 +22,10 @@ import com.xingyun.bbc.core.sku.api.*;
 import com.xingyun.bbc.core.sku.enums.GoodsSkuEnums;
 import com.xingyun.bbc.core.sku.enums.SkuBatchEnums;
 import com.xingyun.bbc.core.sku.po.*;
+import com.xingyun.bbc.core.supplier.api.SupplierSkuBatchWarehouseApi;
+import com.xingyun.bbc.core.supplier.enums.SupplierWarehouseTypeEnums;
 import com.xingyun.bbc.core.supplier.enums.TradeTypeEnums;
+import com.xingyun.bbc.core.supplier.po.SupplierSkuBatchWarehouse;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.api.UserDeliveryApi;
 import com.xingyun.bbc.core.user.api.UserVerifyApi;
@@ -156,6 +159,9 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     @Resource
     private GoodsService goodsService;
+
+    @Resource
+    private SupplierSkuBatchWarehouseApi supplierSkuBatchWarehouseApi;
 
     @Autowired
     private Mapper dozerMapper;
@@ -974,6 +980,29 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             result.setFsellNum(sumSkuSellNum);
         }
         return result;
+    }
+
+    @Override
+    public Result<String> getdeliveryAddress(String fsupplierSkuBatchId) {
+
+        Result<SupplierSkuBatchWarehouse> warehouseResult = supplierSkuBatchWarehouseApi.queryOneByCriteria(Criteria.of(SupplierSkuBatchWarehouse.class)
+                .andEqualTo(SupplierSkuBatchWarehouse::getFsupplierSkuBatchId, fsupplierSkuBatchId)
+                .fields(SupplierSkuBatchWarehouse::getFwarehouseType, SupplierSkuBatchWarehouse::getFcountryName,
+                        SupplierSkuBatchWarehouse::getFproviceName, SupplierSkuBatchWarehouse::getFcityName,
+                        SupplierSkuBatchWarehouse::getFareaName, SupplierSkuBatchWarehouse::getFwarehouseName));
+        Ensure.that(warehouseResult.isSuccess()).isTrue(new MallExceptionCode(warehouseResult.getCode(), warehouseResult.getMsg()));
+        String result = "";
+        SupplierSkuBatchWarehouse data = warehouseResult.getData();
+        if (Objects.nonNull(data)){
+            if (SupplierWarehouseTypeEnums.BONDED_WAREHOUSE.getCode().equals(data.getFwarehouseType())) {
+                result = data.getFwarehouseName();
+            } else if (SupplierWarehouseTypeEnums.DIRECT_MAIL_WAREHOUSE.getCode().equals(data.getFwarehouseType())) {
+                result = data.getFcountryName() + "直发";
+            } else if (SupplierWarehouseTypeEnums.TAX_PAID_WAREHOUSE.getCode().equals(data.getFwarehouseType())) {
+                result = data.getFproviceName() + data.getFcityName();
+            }
+        }
+        return Result.success(result);
     }
 
     @Override

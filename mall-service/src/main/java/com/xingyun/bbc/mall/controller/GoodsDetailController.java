@@ -86,6 +86,13 @@ public class GoodsDetailController {
         return goodDetailService.getGoodSell(goodsDetailMallDto);
     }
 
+    @ApiOperation(value = "获取发货地址", httpMethod = "GET")
+    @PostMapping("/via/getdeliveryAddress")
+    public Result<String> getdeliveryAddress(@RequestParam String fsupplierSkuBatchId){
+        logger.info("发货地址通过效期--批次号 {}", fsupplierSkuBatchId);
+        return goodDetailService.getdeliveryAddress(fsupplierSkuBatchId);
+    }
+
     @ApiOperation(value = "获取是否加入常购清单", httpMethod = "GET")
     @GetMapping("/getIsRegular")
     public Result<Integer> getIsRegular(@RequestParam Long fgoodsId, HttpServletRequest request){
