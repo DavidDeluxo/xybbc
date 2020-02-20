@@ -87,8 +87,8 @@ public class GoodsDetailController {
     }
 
     @ApiOperation(value = "获取发货地址", httpMethod = "GET")
-    @PostMapping("/via/getdeliveryAddress")
-    public Result<String> getdeliveryAddress(@RequestParam String fsupplierSkuBatchId){
+    @GetMapping("/via/getdeliveryAddress")
+    public Result<String> getdeliveryAddress(@RequestParam String fsupplierSkuBatchId, HttpServletRequest request){
         logger.info("通过批次号：{}获取发货地址", fsupplierSkuBatchId);
         return goodDetailService.getdeliveryAddress(fsupplierSkuBatchId);
     }
