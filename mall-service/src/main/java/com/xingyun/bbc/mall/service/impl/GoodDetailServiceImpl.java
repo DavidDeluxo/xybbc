@@ -296,7 +296,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 .andIn(SkuBatch::getFskuId, skuIds)
                 .andEqualTo(SkuBatch::getFbatchStatus, SkuBatchEnums.Status.OnShelves.getValue())
                 .andEqualTo(SkuBatch::getFbatchPutwaySort, 1)//只用取上架排序为1的
-                .fields(SkuBatch::getFqualityEndDate, SkuBatch::getFsupplierSkuBatchId, SkuBatch::getFskuId));
+                .fields(SkuBatch::getFqualityStartDate, SkuBatch::getFqualityEndDate, SkuBatch::getFsupplierSkuBatchId, SkuBatch::getFskuId));
 
         List<SkuBatch> skuBatchList = ResultUtils.getListNotEmpty(skuBatchResult, MallExceptionCode.SKU_BATCH_IS_NONE);
         Map<Long, List<SkuBatch>> skuPatchMap = skuBatchList.stream().collect(Collectors.groupingBy(SkuBatch::getFskuId));
