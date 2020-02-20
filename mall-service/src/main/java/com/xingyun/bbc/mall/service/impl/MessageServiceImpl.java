@@ -25,6 +25,7 @@ import com.xingyun.bbc.express.model.dto.ExpressBillDto;
 import com.xingyun.bbc.express.model.vo.ExpressBillDetailVo;
 import com.xingyun.bbc.express.model.vo.ExpressBillVo;
 import com.xingyun.bbc.mall.base.utils.ResultUtils;
+import com.xingyun.bbc.mall.common.ensure.Ensure;
 import com.xingyun.bbc.mall.common.enums.MessageGroupTypeEnum;
 import com.xingyun.bbc.mall.common.enums.MessagePushTypeEnum;
 import com.xingyun.bbc.mall.common.enums.MessageTypeEnum;
@@ -175,12 +176,16 @@ public class MessageServiceImpl implements MessageService {
      */
     @Override
     public Result<PageVo<MessageListVo>> queryMessageList(MessageQueryDto dto) {
-
+        // fix 新注册的用户，历史的站内信息，无需预留
+        Result<User> userInfoResult = userApi.queryOneByCriteria(Criteria.of(User.class).fields(User::getFcreateTime).andEqualTo(User::getFuid, dto.getUserId()));
+        User userInfo = userInfoResult.getData();
+        Ensure.that(userInfo).isNotNull(MallExceptionCode.SYSTEM_ERROR);
         Criteria<MessageUserRecord, Object> userRecordObjectCriteria = Criteria.of(MessageUserRecord.class)
                 .andEqualTo(MessageUserRecord::getFsendStatus, 2)
                 .andIn(MessageUserRecord::getFuid, Lists.newArrayList(dto.getUserId(), 0))
                 .andEqualTo(MessageUserRecord::getFmessageGroup, dto.getMessageCenterType())
                 .andGreaterThanOrEqualTo(MessageUserRecord::getFexpirationDate, new Date())
+                .andGreaterThan(MessageUserRecord::getFcreateTime,userInfo.getFcreateTime())
                 .sortDesc(MessageUserRecord::getFcreateTime);
         Result<Integer> userRecordResult = userRecordApi.countByCriteria(userRecordObjectCriteria);
         if (!userRecordResult.isSuccess()) {
