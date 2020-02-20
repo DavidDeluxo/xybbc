@@ -615,6 +615,7 @@ public class GoodsServiceImpl implements GoodsService {
 
     /**
      * 查询条件设定Alias
+     *
      * @param searchItemDto
      * @param criteria
      */
@@ -697,6 +698,9 @@ public class GoodsServiceImpl implements GoodsService {
                 }
                 if (map.get("fstockRemainNumTotal") != null) {
                     vo.setFremainTotal(Long.parseLong(String.valueOf(map.get("fstockRemainNumTotal"))));
+                }
+                if (map.get("flabelUrl") != null){
+                    vo.setFlabelUrl(String.valueOf(map.get("flabelUrl")));
                 }
                 voList.add(vo);
             }

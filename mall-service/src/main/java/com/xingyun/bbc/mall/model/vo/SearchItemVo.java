@@ -32,6 +32,9 @@ public class SearchItemVo {
     @ApiModelProperty("商品图片")
     private String fimgUrl;
 
+    @ApiModelProperty("商品标签图片")
+    private String flabelUrl;
+
     @ApiModelProperty("商品(spu)id")
     private Integer fgoodsId;
 
