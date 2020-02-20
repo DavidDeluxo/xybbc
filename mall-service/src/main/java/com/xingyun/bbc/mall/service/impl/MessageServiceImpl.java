@@ -101,11 +101,15 @@ public class MessageServiceImpl implements MessageService {
      */
     @Override
     public Result<List<MessageCenterVo>> queryMessageGroupByUserId(Long userId) {
-
+        // fix 新注册的用户，历史的站内信息，无需预留
+        Result<User> userInfoResult = userApi.queryOneByCriteria(Criteria.of(User.class).fields(User::getFcreateTime).andEqualTo(User::getFuid, userId));
+        User userInfo = userInfoResult.getData();
+        Ensure.that(userInfo).isNotNull(MallExceptionCode.SYSTEM_ERROR);
         Result<List<MessageUserRecord>> userRecordResult = userRecordApi.queryByCriteria(Criteria.of(MessageUserRecord.class)
                 .andEqualTo(MessageUserRecord::getFsendStatus, 2)
                 .andIn(MessageUserRecord::getFuid, Lists.newArrayList(userId, 0))
                 .andGreaterThanOrEqualTo(MessageUserRecord::getFexpirationDate, new Date())
+                .andGreaterThan(MessageUserRecord::getFcreateTime,userInfo.getFcreateTime())
                 .sortDesc(MessageUserRecord::getFcreateTime));
         if (!userRecordResult.isSuccess()) {
             throw new BizException(MallExceptionCode.SYSTEM_ERROR);
