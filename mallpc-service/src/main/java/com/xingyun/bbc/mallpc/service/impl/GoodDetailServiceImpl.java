@@ -33,12 +33,14 @@ import com.xingyun.bbc.core.user.api.UserVerifyApi;
 import com.xingyun.bbc.core.user.enums.UserVerifyStatusEnum;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.user.po.UserDelivery;
+import com.xingyun.bbc.core.utils.DateUtil;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.components.DozerHolder;
 import com.xingyun.bbc.mallpc.common.components.lock.XybbcLock;
 import com.xingyun.bbc.mallpc.common.constants.MallPcConstants;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
+import com.xingyun.bbc.mallpc.common.utils.DateUtils;
 import com.xingyun.bbc.mallpc.common.utils.PriceUtil;
 import com.xingyun.bbc.mallpc.common.utils.RandomUtils;
 import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
@@ -353,7 +355,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     detailVo.setFskuCode(skuVo.getFskuCode());
                     detailVo.setFskuSpecValue(skuVo.getFskuSpecValue());
                     detailVo.setFskuBatchId(batchVo.getFsupplierSkuBatchId());
-                    detailVo.setFqualityEndDate(batchVo.getFqualityEndDate());
+                    detailVo.setFqualityEndDate(this.fillFqualityDateStr(batchVo.getFqualityStartDate(), batchVo.getFqualityEndDate()));
                     detailVo.setFbatchPackageId(packageVo.getFbatchPackageId());
                     detailVo.setFbatchPackageNum(packageVo.getFbatchPackageNum());
                     detailVo.setFbatchStartNum(packageVo.getFbatchStartNum());
@@ -385,11 +387,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         for (GoodsSkuBatchVo batchRe : batchRes) {
             MallTVo tVoBatch = new MallTVo();
             tVoBatch.setTId(batchRe.getFsupplierSkuBatchId());
-            tVoBatch.setTName("");
-            if (Objects.nonNull(batchRe.getFqualityStartDate()) && Objects.nonNull(batchRe.getFqualityEndDate())) {
-                SimpleDateFormat sdf = new SimpleDateFormat(MallPcConstants.DATE_PATTERN_YYYY_MM);
-                tVoBatch.setTName(StringUtils.join(Lists.newArrayList(sdf.format(batchRe.getFqualityStartDate()), sdf.format(batchRe.getFqualityEndDate())), "~"));
-            }
+            tVoBatch.setTName(this.fillFqualityDateStr(batchRe.getFqualityStartDate(), batchRe.getFqualityEndDate()));
             batchMall.add(tVoBatch);
         }
         GoodspecificationExVo batchEx = new GoodspecificationExVo();
@@ -420,12 +418,27 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         return Result.success(result);
     }
 
-
     private static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
         Map<Object, Boolean> seen = new ConcurrentHashMap<>();
         return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
+    //效期拼装字符串
+    private String fillFqualityDateStr(Date fqualityStartDate, Date fqualityEndDate) {
+        if (Objects.nonNull(fqualityStartDate) && Objects.nonNull(fqualityEndDate)) {
+            Calendar startCal = Calendar.getInstance();
+            startCal.setTime(fqualityStartDate);
+            Calendar endCal = Calendar.getInstance();
+            endCal.setTime(fqualityEndDate);
+            StringBuffer sbf = new StringBuffer();
+            sbf.append(String.valueOf(startCal.get(Calendar.YEAR)).substring(2, 4)).append("年")
+                    .append(startCal.get(Calendar.MONTH) + 1).append("月").append("~")
+                    .append(String.valueOf(endCal.get(Calendar.YEAR)).substring(2, 4)).append("年")
+                    .append(endCal.get(Calendar.MONTH) + 1).append("月");
+            return sbf.toString();
+        }
+        return "";
+    }
 
     @Override
     public Result<Map<String, List<GoodsAttributeVo>>> getGoodsAttribute(Long fgoodsId) {
