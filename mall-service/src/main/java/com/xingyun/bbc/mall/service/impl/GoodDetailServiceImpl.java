@@ -74,8 +74,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     public static final Logger logger = LoggerFactory.getLogger(GoodDetailService.class);
 
-    public static final SimpleDateFormat sdf = new SimpleDateFormat(MallConstants.DATE_PATTERN_YYYY_MM);
-
     @Resource
     private UserApi userApi;
 
@@ -366,6 +364,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         for (GoodsSkuBatchVo batchRe : batchRes) {
             MallTVo tVoBatch = new MallTVo();
             tVoBatch.setTId(batchRe.getFsupplierSkuBatchId());
+            SimpleDateFormat sdf = new SimpleDateFormat(MallConstants.DATE_PATTERN_YYYY_MM);
             tVoBatch.setTName(StringUtils.join(Lists.newArrayList(sdf.format(batchRe.getFqualityStartDate()), sdf.format(batchRe.getFqualityEndDate())), "~"));
             batchMall.add(tVoBatch);
         }
