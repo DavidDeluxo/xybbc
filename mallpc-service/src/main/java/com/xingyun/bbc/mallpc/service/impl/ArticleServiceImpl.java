@@ -11,6 +11,7 @@ import com.xingyun.bbc.core.operate.po.ArticleMenuRelation;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.components.DozerHolder;
+import com.xingyun.bbc.mallpc.common.ensure.EnsureHelper;
 import com.xingyun.bbc.mallpc.model.dto.article.ArticleContentDto;
 import com.xingyun.bbc.mallpc.model.dto.article.ArticleMenuVo;
 import com.xingyun.bbc.mallpc.model.vo.article.ArticleContentVo;
@@ -23,6 +24,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ArticleServiceImpl implements ArticleService {
@@ -110,5 +113,14 @@ public class ArticleServiceImpl implements ArticleService {
             }
         }
         return Result.success(content);
+    }
+
+    @Override
+    public Map<Integer, Integer> queryArticlesByContractIds(List<Long> contractIds) {
+        List<ArticleMenuRelation> articleMenuRelations = EnsureHelper.checkNotNullAndGetData(articleMenuRelationApi.queryByCriteria(Criteria.of(ArticleMenuRelation.class).andIn(ArticleMenuRelation::getFmenuId, contractIds)
+                .andEqualTo(ArticleMenuRelation::getFrelationType, 1)
+                .fields(ArticleMenuRelation::getFmenuId, ArticleMenuRelation::getFarticleId)
+        ));
+        return articleMenuRelations.stream().collect(Collectors.toMap(ArticleMenuRelation::getFmenuId, ArticleMenuRelation::getFarticleId, (t1, t2) -> t1));
     }
 }
