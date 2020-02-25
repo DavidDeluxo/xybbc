@@ -38,7 +38,7 @@ dependencies {
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-common', version: '1.0'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-supplier-api', version: '1.0.70'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-sku-api', version: '1.0.27'
-    compile group: 'com.xingyun.bbc', name: 'xybbc-core-operate-api', version: '1.0.98'
+    compile group: 'com.xingyun.bbc', name: 'xybbc-core-operate-api', version: '1.0.101'
     compile group: 'com.xingyun.bbc', name: 'xybbc-express-service-api', version: '1.0.2'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-helper-api', version: '1.0.5'
     compile group: 'com.xingyun.bbc', name: 'xybbc-core-user-api', version: '1.0.36'
