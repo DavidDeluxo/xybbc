@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class UserFeedBackServiceImpl implements UserFeedBackService {
@@ -61,6 +62,7 @@ public class UserFeedBackServiceImpl implements UserFeedBackService {
             feedback.setFfeedbackStatus(0);
             feedback.setFisCollect(0);
             feedback.setFisDelete(0);
+            feedback.setFfeedbackPic(Objects.isNull(dto.getFfeedbackPiclis()) ? "" : StringUtils.join(dto.getFfeedbackPiclis(), ","));
             Result<Integer> saveResult = userFeedbackApi.create(feedback);
             Ensure.that(saveResult.isSuccess()).isTrue(new MallExceptionCode(saveResult.getCode(), saveResult.getMsg()));
         } catch (Exception e) {
