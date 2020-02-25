@@ -18,4 +18,7 @@ public class UserFeedBackVo implements Serializable {
     @ApiModelProperty("问题类型（1.功能异常 2.体验问题 3.新功能建议 4.没有我想要的商品 5.其他反馈）")
     private String ffeedbackTypeStr;
 
+    @ApiModelProperty("问题类型描述")
+    private String ffeedbackTypeInfor;
+
 }

@@ -45,6 +45,7 @@ public class UserFeedBackServiceImpl implements UserFeedBackService {
             UserFeedBackVo userFeedBackVo = new UserFeedBackVo();
             userFeedBackVo.setFfeedbackType(value.getValue());
             userFeedBackVo.setFfeedbackTypeStr(value.getName());
+            userFeedBackVo.setFfeedbackTypeInfor(value.getInfor());
             result.add(userFeedBackVo);
         }
         return Result.success(result);
