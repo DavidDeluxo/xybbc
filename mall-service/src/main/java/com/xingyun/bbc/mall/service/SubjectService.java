@@ -2,6 +2,7 @@ package com.xingyun.bbc.mall.service;
 
 import com.xingyun.bbc.core.operate.po.Subject;
 import com.xingyun.bbc.mall.model.dto.SubjectQueryDto;
+import com.xingyun.bbc.mall.model.vo.ChildSubjectVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemListVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemVo;
 import com.xingyun.bbc.mall.model.vo.SubjectVo;
@@ -54,4 +55,12 @@ public interface SubjectService {
      * @throws Exception
      */
     void updateSubjectInfoToEsByAliasAll(List<Long> fsubjectIds, Integer pageSize, Integer pageIndex);
+
+    /**
+     * 查询子专题
+     *
+     * @param subjectQueryDto
+     * @return
+     */
+    SearchItemListVo<ChildSubjectVo> getChildSubject(SubjectQueryDto subjectQueryDto);
 }

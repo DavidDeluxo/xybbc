@@ -5,10 +5,7 @@ import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.utils.JwtParser;
 import com.xingyun.bbc.mall.model.dto.SubjectEsSkuUpdateDto;
 import com.xingyun.bbc.mall.model.dto.SubjectQueryDto;
-import com.xingyun.bbc.mall.model.vo.SearchItemListVo;
-import com.xingyun.bbc.mall.model.vo.SearchItemVo;
-import com.xingyun.bbc.mall.model.vo.SubjectVo;
-import com.xingyun.bbc.mall.model.vo.TokenInfoVo;
+import com.xingyun.bbc.mall.model.vo.*;
 import com.xingyun.bbc.mall.service.SubjectService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -64,5 +61,15 @@ public class SubjectController {
                 subjectEsSkuUpdateDto.getPageSize(),
                 subjectEsSkuUpdateDto.getPageIndex());
         return Result.success();
+    }
+
+    @ApiOperation(value = "查询子专题信息", httpMethod = "POST")
+    @PostMapping("/via/searchChild")
+    public Result<SearchItemListVo<ChildSubjectVo>> getChildSubject(@Validated @RequestBody SubjectQueryDto subjectQueryDto, HttpServletRequest request) {
+        TokenInfoVo infoVo = jwtParser.getTokenInfo(request);
+        subjectQueryDto.setIsLogin(infoVo.getIsLogin());
+        subjectQueryDto.setFuid(infoVo.getFuid());
+        subjectQueryDto.setFoperateType(infoVo.getFoperateType());
+        return Result.success(subjectService.getChildSubject(subjectQueryDto));
     }
 }

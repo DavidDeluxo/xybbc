@@ -13,9 +13,11 @@ import com.xingyun.bbc.core.market.enums.CouponApplicableSkuEnum;
 import com.xingyun.bbc.core.operate.api.SubjectApi;
 import com.xingyun.bbc.core.operate.api.SubjectApplicableSkuApi;
 import com.xingyun.bbc.core.operate.api.SubjectApplicableSkuConditionApi;
+import com.xingyun.bbc.core.operate.api.SubjectFloorApi;
 import com.xingyun.bbc.core.operate.po.Subject;
 import com.xingyun.bbc.core.operate.po.SubjectApplicableSku;
 import com.xingyun.bbc.core.operate.po.SubjectApplicableSkuCondition;
+import com.xingyun.bbc.core.operate.po.SubjectFloor;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.sku.api.*;
 import com.xingyun.bbc.core.sku.po.*;
@@ -28,6 +30,7 @@ import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.model.dto.SearchItemDto;
 import com.xingyun.bbc.mall.model.dto.SubjectQueryDto;
 import com.xingyun.bbc.mall.model.dto.SubjectSkuQueryDto;
+import com.xingyun.bbc.mall.model.vo.ChildSubjectVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemListVo;
 import com.xingyun.bbc.mall.model.vo.SearchItemVo;
 import com.xingyun.bbc.mall.model.vo.SubjectVo;
@@ -113,6 +116,9 @@ public class SubjectServiceImpl implements SubjectService {
     @Resource
     private GoodsService goodsService;
 
+    @Resource
+    private SubjectFloorApi subjectFloorApi;
+
     @Override
     public SubjectVo getById(SubjectQueryDto subjectQueryDto) {
         Long fsubjectId = subjectQueryDto.getFsubjectId();
@@ -156,7 +162,7 @@ public class SubjectServiceImpl implements SubjectService {
     private void getSubjectSkuIdList(SubjectQueryDto subjectQueryDto, SearchItemListVo<SearchItemVo> pageVo) {
         Criteria<SubjectApplicableSku, Object> subjectSku = Criteria.of(SubjectApplicableSku.class)
                 .fields(SubjectApplicableSku::getFskuId)
-                .andEqualTo(SubjectApplicableSku::getFsubjectId, subjectQueryDto.getFsubjectId());
+                .andEqualTo(SubjectApplicableSku::getFsubjectId, subjectQueryDto.getFsubjectId()).andEqualTo(SubjectApplicableSku::getFsubjectFloorId, 0);
 
         Result<Integer> subjectSkuCountResult = subjectApplicableSkuApi.countByCriteria(subjectSku);
         Integer subjectSkuCount = ResultUtils.getData(subjectSkuCountResult);
@@ -394,7 +400,7 @@ public class SubjectServiceImpl implements SubjectService {
     }
 
     @Override
-    public void updateSubjectInfoToEsByAliasAll(List<Long> fsubjectIds, Integer pageSize, Integer pageIndex){
+    public void updateSubjectInfoToEsByAliasAll(List<Long> fsubjectIds, Integer pageSize, Integer pageIndex) {
         Criteria<Subject, Object> criteria = Criteria.of(Subject.class).fields(Subject::getFsubjectId).page(pageIndex, pageSize);
         if (CollectionUtils.isNotEmpty(fsubjectIds)) {
             criteria.andIn(Subject::getFsubjectId, fsubjectIds);
@@ -404,12 +410,86 @@ public class SubjectServiceImpl implements SubjectService {
         for (Subject subject : updateList) {
             try {
                 this.updateSubjectInfoToEsByAlias(subject);
-            }catch (Exception e){
-                log.info("更新专题:{}失败",subject.getFsubjectId());
+            } catch (Exception e) {
+                log.info("更新专题:{}失败", subject.getFsubjectId());
                 e.printStackTrace();
             }
         }
     }
+
+    @Override
+    public SearchItemListVo<ChildSubjectVo> getChildSubject(SubjectQueryDto subjectQueryDto) {
+        SearchItemListVo<ChildSubjectVo> pageVo = new SearchItemListVo<>();
+        pageVo.setIsLogin(subjectQueryDto.getIsLogin());
+//        pageVo.setTotalCount(0);
+        pageVo.setCurrentPage(subjectQueryDto.getPageIndex());
+        pageVo.setPageSize(subjectQueryDto.getPageSize());
+//        pageVo.setPageCount(0);
+
+        Criteria<SubjectFloor, Object> subjectFloorCriteria = Criteria.of(SubjectFloor.class)
+                .fields(SubjectFloor::getFsubjectFloorId,
+                        SubjectFloor::getFsubjectParentId,
+                        SubjectFloor::getFsubjectId,
+                        SubjectFloor::getFsubjectFloorSort,
+                        SubjectFloor::getFsubjectMobileLayout,
+                        SubjectFloor::getFsubjectFloorContentType)
+                .andEqualTo(SubjectFloor::getFsubjectParentId, subjectQueryDto.getFsubjectId())
+                .sort(SubjectFloor::getFsubjectFloorSort);
+
+        Integer subjectFloorCount = ResultUtils.getData(subjectFloorApi.countByCriteria(subjectFloorCriteria));
+        if (subjectFloorCount == null || subjectFloorCount.equals(0)) {
+            return pageVo;
+        }
+        pageVo.setTotalCount(subjectFloorCount);
+        subjectFloorCriteria.page(subjectQueryDto.getPageIndex(), subjectQueryDto.getPageSize());
+        List<SubjectFloor> subjectFloorList = ResultUtils.getData(subjectFloorApi.queryByCriteria(subjectFloorCriteria));
+        List<ChildSubjectVo> childSubjectVoList = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(subjectFloorList)) {
+            for (SubjectFloor subjectFloor : subjectFloorList) {
+                childSubjectVoList.add(generateChildSubjectVo(subjectFloor, subjectQueryDto));
+            }
+        }
+        pageVo.setList(childSubjectVoList);
+        return pageVo;
+    }
+
+
+    private ChildSubjectVo generateChildSubjectVo(SubjectFloor subjectFloor, SubjectQueryDto subjectQueryDto) {
+        ChildSubjectVo childSubjectVo = dozerHolder.convert(subjectFloor, ChildSubjectVo.class);
+        SubjectQueryDto subjectQuery = new SubjectQueryDto();
+        subjectQuery.setFsubjectId(subjectFloor.getFsubjectId());
+
+        SubjectVo subjectVo = getById(subjectQuery);
+        if (null == subjectVo){
+            return childSubjectVo;
+        }
+        childSubjectVo.setFsubjectName(subjectVo.getFsubjectName());
+        childSubjectVo.setFsubjectDescription(subjectVo.getFsubjectDescription());
+        childSubjectVo.setFsubjectStatus(subjectVo.getFsubjectStatus());
+        childSubjectVo.setFsubjectBackgroundColor(subjectVo.getFsubjectBackgroundColor());
+        childSubjectVo.setFsubjectMobileBackgroundPic(subjectVo.getFsubjectMobileBackgroundPic());
+        childSubjectVo.setFsubjectMobilePic(subjectVo.getFsubjectMobilePic());
+        List<SearchItemVo> searchItemVoList = generateChildSubjectGoods(childSubjectVo, subjectQueryDto);
+        childSubjectVo.setSearchItemVoList(searchItemVoList);
+        return childSubjectVo;
+    }
+
+    private List<SearchItemVo> generateChildSubjectGoods(ChildSubjectVo childSubjectVo, SubjectQueryDto subjectQueryDto) {
+        List<SearchItemVo> searchItemVoList = new ArrayList<>();
+        Criteria<SubjectApplicableSku, Object> subjectSku = Criteria.of(SubjectApplicableSku.class)
+                .fields(SubjectApplicableSku::getFskuId)
+                .andEqualTo(SubjectApplicableSku::getFsubjectId, childSubjectVo.getFsubjectId()).andEqualTo(SubjectApplicableSku::getFsubjectFloorId, childSubjectVo.getFsubjectFloorId());
+
+        Result<List<SubjectApplicableSku>> skuIdResult = subjectApplicableSkuApi.queryByCriteria(subjectSku);
+        List<SubjectApplicableSku> subjectApplicableSkuList = ResultUtils.getData(skuIdResult);
+
+        if (CollectionUtils.isNotEmpty(subjectApplicableSkuList)) {
+            List<Long> fskuIds = subjectApplicableSkuList.stream().map(SubjectApplicableSku::getFskuId).collect(toList());
+            genarateSearchItemVoBySku(searchItemVoList, subjectQueryDto, fskuIds);
+        }
+        return searchItemVoList;
+    }
+
 
     @Override
     public void updateSubjectInfoToEsByAlias(Subject subject) throws Exception {
