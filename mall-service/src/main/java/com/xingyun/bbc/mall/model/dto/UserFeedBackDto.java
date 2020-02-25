@@ -28,7 +28,7 @@ public class UserFeedBackDto implements Serializable {
 
     /** 问题反馈图片（多张逗号分隔） */
     @ApiModelProperty("问题反馈图片（多张逗号分隔）")
-    private String ffeedbackPic;
+    private String[] ffeedbackPiclis;
 
     /** 用户联系方式 */
     @ApiModelProperty("用户联系方式")
