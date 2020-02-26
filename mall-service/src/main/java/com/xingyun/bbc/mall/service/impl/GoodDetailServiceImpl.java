@@ -33,10 +33,7 @@ import com.xingyun.bbc.core.user.enums.UserVerifyStatusEnum;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.user.po.UserDelivery;
 import com.xingyun.bbc.core.utils.Result;
-import com.xingyun.bbc.mall.base.utils.DozerHolder;
-import com.xingyun.bbc.mall.base.utils.PriceUtil;
-import com.xingyun.bbc.mall.base.utils.RandomUtils;
-import com.xingyun.bbc.mall.base.utils.ResultUtils;
+import com.xingyun.bbc.mall.base.utils.*;
 import com.xingyun.bbc.mall.common.constans.MallConstants;
 import com.xingyun.bbc.mall.common.ensure.Ensure;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
@@ -330,7 +327,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                     detailVo.setFskuCode(skuVo.getFskuCode());
                     detailVo.setFskuSpecValue(skuVo.getFskuSpecValue());
                     detailVo.setFskuBatchId(batchVo.getFsupplierSkuBatchId());
-                    detailVo.setFqualityEndDate(this.fillFqualityDateStr(batchVo.getFqualityStartDate(), batchVo.getFqualityEndDate()));
+                    detailVo.setFqualityEndDate(DateUtil.fillFqualityDateStr(batchVo.getFqualityStartDate(), batchVo.getFqualityEndDate()));
                     detailVo.setFbatchPackageId(packageVo.getFbatchPackageId());
                     detailVo.setFbatchPackageNum(packageVo.getFbatchPackageNum());
                     detailVo.setFbatchStartNum(packageVo.getFbatchStartNum());
@@ -364,7 +361,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         for (GoodsSkuBatchVo batchRe : batchRes) {
             MallTVo tVoBatch = new MallTVo();
             tVoBatch.setTId(batchRe.getFsupplierSkuBatchId());
-            tVoBatch.setTName(this.fillFqualityDateStr(batchRe.getFqualityStartDate(), batchRe.getFqualityEndDate()));
+            tVoBatch.setTName(DateUtil.fillFqualityDateStr(batchRe.getFqualityStartDate(), batchRe.getFqualityEndDate()));
             batchMall.add(tVoBatch);
         }
         GoodspecificationExVo batchEx = new GoodspecificationExVo();
@@ -398,23 +395,6 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     private static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
         Map<Object, Boolean> seen = new ConcurrentHashMap<>();
         return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
-    }
-
-    //效期拼装字符串
-    private String fillFqualityDateStr(Date fqualityStartDate, Date fqualityEndDate) {
-        if (Objects.nonNull(fqualityStartDate) && Objects.nonNull(fqualityEndDate)) {
-            Calendar startCal = Calendar.getInstance();
-            startCal.setTime(fqualityStartDate);
-            Calendar endCal = Calendar.getInstance();
-            endCal.setTime(fqualityEndDate);
-            StringBuffer sbf = new StringBuffer();
-            sbf.append(String.valueOf(startCal.get(Calendar.YEAR)).substring(2, 4)).append("年")
-                    .append(startCal.get(Calendar.MONTH) + 1).append("月").append("~")
-                    .append(String.valueOf(endCal.get(Calendar.YEAR)).substring(2, 4)).append("年")
-                    .append(endCal.get(Calendar.MONTH) + 1).append("月");
-            return sbf.toString();
-        }
-        return "";
     }
 
     @Override
@@ -1048,7 +1028,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         allCouponShow.addAll(receiveCoupon);
         allCouponShow.addAll(unReceiceCoupon);
 
-        List<CouponVo> collect = allCouponShow.stream().sorted(Comparator.comparing(CouponVo::getFthresholdAmount).reversed()).limit(3).collect(toList());
+        List<CouponVo> collect = allCouponShow.stream().sorted(Comparator.comparing(CouponVo::getFthresholdAmount).reversed()).limit(5).collect(toList());
         this.dealAmount(collect);
         return Result.success(collect);
     }
