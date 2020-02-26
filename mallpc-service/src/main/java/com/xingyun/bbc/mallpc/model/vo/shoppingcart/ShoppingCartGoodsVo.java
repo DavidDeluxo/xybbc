@@ -69,6 +69,11 @@ public class ShoppingCartGoodsVo implements Serializable {
     private String fqualityEndDate;
 
     /**
+     * 保质有效期直接拼好 20年02月~20年05月
+     */
+    private String fqualityDateStr;
+
+    /**
      * sku销售价
      */
     private BigDecimal fskuPrice;

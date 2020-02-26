@@ -84,6 +84,7 @@ public class MallExceptionCode implements IResultStatus {
 
     public static final MallExceptionCode SUBJECT_NOT_FOUND = new MallExceptionCode("5000", "没有找到主题");
     public static final MallExceptionCode SUBJECT_NOT_PUBLISHED = new MallExceptionCode("5000", "主题不是发布状态");
+    public static final MallExceptionCode GOODS_LABEL_NOT_EXIST = new MallExceptionCode("5001", "商品标签不存在");
 
     private String code;
     private String msg;

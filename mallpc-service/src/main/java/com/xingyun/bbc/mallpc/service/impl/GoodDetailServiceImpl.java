@@ -33,14 +33,12 @@ import com.xingyun.bbc.core.user.api.UserVerifyApi;
 import com.xingyun.bbc.core.user.enums.UserVerifyStatusEnum;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.user.po.UserDelivery;
-import com.xingyun.bbc.core.utils.DateUtil;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.components.DozerHolder;
 import com.xingyun.bbc.mallpc.common.components.lock.XybbcLock;
 import com.xingyun.bbc.mallpc.common.constants.MallPcConstants;
 import com.xingyun.bbc.mallpc.common.ensure.Ensure;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
-import com.xingyun.bbc.mallpc.common.utils.DateUtils;
 import com.xingyun.bbc.mallpc.common.utils.PriceUtil;
 import com.xingyun.bbc.mallpc.common.utils.RandomUtils;
 import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
@@ -1079,7 +1077,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         allCouponShow.addAll(receiveCoupon);
         allCouponShow.addAll(unReceiceCoupon);
 
-        List<CouponVo> collect = allCouponShow.stream().sorted(Comparator.comparing(CouponVo::getFthresholdAmount).reversed()).limit(3).collect(toList());
+        List<CouponVo> collect = allCouponShow.stream().sorted(Comparator.comparing(CouponVo::getFthresholdAmount).reversed()).limit(5).collect(toList());
         this.dealAmount(collect);
         return Result.success(collect);
     }

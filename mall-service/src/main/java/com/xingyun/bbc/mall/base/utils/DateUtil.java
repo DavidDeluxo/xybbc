@@ -1203,6 +1203,30 @@ public class DateUtil {
         return null;
     }
 
+    /**
+     * @param
+     * @return java.lang.String
+     * @Title: fillFqualityDateStr
+     * @Description: 拼装效期年月区间字符串如 20年02月~21年02月
+     * @Author yangli
+     * @date 2020/2/24
+     */
+    public static String fillFqualityDateStr(Date fqualityStartDate, Date fqualityEndDate) {
+        if (Objects.nonNull(fqualityStartDate) && Objects.nonNull(fqualityEndDate)) {
+            Calendar startCal = Calendar.getInstance();
+            startCal.setTime(fqualityStartDate);
+            Calendar endCal = Calendar.getInstance();
+            endCal.setTime(fqualityEndDate);
+            StringBuffer sbf = new StringBuffer();
+            sbf.append(String.valueOf(startCal.get(Calendar.YEAR)).substring(2, 4)).append("年")
+                    .append(startCal.get(Calendar.MONTH) + 1).append("月").append("~")
+                    .append(String.valueOf(endCal.get(Calendar.YEAR)).substring(2, 4)).append("年")
+                    .append(endCal.get(Calendar.MONTH) + 1).append("月");
+            return sbf.toString();
+        }
+        return "";
+    }
+
 
     /**
      * @Title: main @Description: TODO(这里用一句话描述这个方法的作用) @param @param args

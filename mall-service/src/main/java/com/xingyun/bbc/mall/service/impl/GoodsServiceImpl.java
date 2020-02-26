@@ -21,14 +21,12 @@ import com.xingyun.bbc.core.operate.api.PageConfigApi;
 import com.xingyun.bbc.core.operate.po.PageConfig;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.sku.api.*;
-import com.xingyun.bbc.core.sku.po.Goods;
-import com.xingyun.bbc.core.sku.po.GoodsBrand;
-import com.xingyun.bbc.core.sku.po.GoodsCategory;
-import com.xingyun.bbc.core.sku.po.GoodsSku;
+import com.xingyun.bbc.core.sku.po.*;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.enums.UserVerifyStatusEnum;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.core.utils.StringUtil;
 import com.xingyun.bbc.mall.base.enums.MallResultStatus;
 import com.xingyun.bbc.mall.base.utils.ResultUtils;
 import com.xingyun.bbc.mall.common.ensure.Ensure;
@@ -64,7 +62,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 
 @Slf4j
@@ -112,6 +110,8 @@ public class GoodsServiceImpl implements GoodsService {
     @Resource
     private SubjectService subjectService;
 
+    @Resource
+    private GoodsLabelApi goodsLabelApi;
 
     @Override
     public Result<SearchFilterVo> searchSkuFilter(SearchItemDto searchItemDto) {
@@ -699,10 +699,25 @@ public class GoodsServiceImpl implements GoodsService {
                 if (map.get("fstockRemainNumTotal") != null) {
                     vo.setFremainTotal(Long.parseLong(String.valueOf(map.get("fstockRemainNumTotal"))));
                 }
-                if (map.get("flabelUrl") != null){
-                    vo.setFlabelUrl(String.valueOf(map.get("flabelUrl")));
-                }
                 voList.add(vo);
+            }
+            Set<Long> labelIds = voList.stream().filter(vo -> Objects.nonNull(vo.getFlabelId())).map(SearchItemVo::getFlabelId).map(vo -> vo.longValue()).collect(toSet());
+            if (CollectionUtil.isNotEmpty(labelIds)) {
+                Result<List<GoodsLabel>> goodsLabelResult = goodsLabelApi.queryByCriteria(Criteria.of(GoodsLabel.class)
+                        .fields(GoodsLabel::getFlabelUrl, GoodsLabel::getFlabelId)
+                        .andEqualTo(GoodsLabel::getFisDelete, 0)
+                        .andEqualTo(GoodsLabel::getFisDisplay, 1)
+                        .andIn(GoodsLabel::getFlabelId, labelIds));
+                List<GoodsLabel> goodsLabelList = goodsLabelResult.getData();
+                Ensure.that(CollectionUtil.isNotEmpty(goodsLabelList)).isTrue(MallExceptionCode.GOODS_LABEL_NOT_EXIST);
+                Map<Long, String> labelMap = goodsLabelList.stream().collect(toMap(GoodsLabel::getFlabelId, GoodsLabel::getFlabelUrl));
+                voList.stream().forEach(vo -> {
+                    if (Objects.nonNull(vo.getFlabelId())) {
+                        String labelUrl = labelMap.get(vo.getFlabelId().longValue());
+                        labelUrl = StringUtil.isNotBlank(labelUrl) ? labelUrl : "";
+                        vo.setFlabelUrl(labelUrl);
+                    }
+                });
             }
             pageVo.setPageSize(searchItemDto.getPageSize());
             pageVo.setCurrentPage(searchItemDto.getPageIndex());
