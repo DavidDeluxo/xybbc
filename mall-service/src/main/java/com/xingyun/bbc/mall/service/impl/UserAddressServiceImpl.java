@@ -104,6 +104,18 @@ public class UserAddressServiceImpl implements UserAddressService {
             criteria.addRight();
 
             criteria.orLeft();
+            criteria.andLike(UserDelivery::getFdeliveryProvinceName,keyWord);
+            criteria.addRight();
+
+            criteria.orLeft();
+            criteria.andLike(UserDelivery::getFdeliveryCityName,keyWord);
+            criteria.addRight();
+
+            criteria.orLeft();
+            criteria.andLike(UserDelivery::getFdeliveryAreaName,keyWord);
+            criteria.addRight();
+
+            criteria.orLeft();
             criteria.andLike(UserDelivery::getFdeliveryAddr,keyWord);
             criteria.addRight();
 
