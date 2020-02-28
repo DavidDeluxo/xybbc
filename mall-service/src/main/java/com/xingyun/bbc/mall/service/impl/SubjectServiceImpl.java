@@ -421,10 +421,9 @@ public class SubjectServiceImpl implements SubjectService {
     public SearchItemListVo<ChildSubjectVo> getChildSubject(SubjectQueryDto subjectQueryDto) {
         SearchItemListVo<ChildSubjectVo> pageVo = new SearchItemListVo<>();
         pageVo.setIsLogin(subjectQueryDto.getIsLogin());
-//        pageVo.setTotalCount(0);
+        pageVo.setTotalCount(0);
         pageVo.setCurrentPage(subjectQueryDto.getPageIndex());
         pageVo.setPageSize(subjectQueryDto.getPageSize());
-//        pageVo.setPageCount(0);
 
         Criteria<SubjectFloor, Object> subjectFloorCriteria = Criteria.of(SubjectFloor.class)
                 .fields(SubjectFloor::getFsubjectFloorId,
