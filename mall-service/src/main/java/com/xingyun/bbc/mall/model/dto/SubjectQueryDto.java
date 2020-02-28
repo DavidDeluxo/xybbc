@@ -46,4 +46,7 @@ public class SubjectQueryDto {
 
     @ApiModelProperty(value = "用户类型", hidden = true)
     private String fuserTypeId;
+
+    @ApiModelProperty("优惠券ID")
+    private Long couponId;
 }

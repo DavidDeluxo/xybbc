@@ -144,11 +144,17 @@ public class SubjectServiceImpl implements SubjectService {
         pageVo.setPageSize(subjectQueryDto.getPageSize());
         pageVo.setPageCount(0);
         pageVo.setList(Lists.newArrayList());
+        SubjectVo subjectVo = getById(subjectQueryDto);
+        if (null == subjectVo){
+            return pageVo;
+        }
+        subjectQueryDto.setFsubjectId(subjectVo.getFsubjectId());
+        subjectQueryDto.setCouponId(subjectVo.getFcouponId());
         try {
             return goodsService.searchSkuList(dozerHolder.convert(subjectQueryDto, SearchItemDto.class)).getData();
         } catch (Exception e) {
-            logger.info("es 查询专题id[{}]商品失败，转查数据库", subjectQueryDto.getFsubjectId());
-            getSubjectSkuIdList(subjectQueryDto, pageVo);
+//            logger.info("es 查询专题id[{}]商品失败，转查数据库", subjectQueryDto.getFsubjectId());
+//            getSubjectSkuIdList(subjectQueryDto, pageVo);
             return pageVo;
         }
     }

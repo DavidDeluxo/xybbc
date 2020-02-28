@@ -73,4 +73,6 @@ public class SubjectVo {
     @ApiModelProperty("专题楼层展示样式(移动端) 1 单列单大图 2 单列单小图 3 单列双小图 4 单列三小图")
     private Integer fsubjectMobileLayout;
 
+    @ApiModelProperty("优惠券id")
+    private Long fcouponId;
 }
