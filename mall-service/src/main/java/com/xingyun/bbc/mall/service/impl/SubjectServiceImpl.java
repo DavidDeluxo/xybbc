@@ -477,8 +477,7 @@ public class SubjectServiceImpl implements SubjectService {
     private List<SearchItemVo> generateChildSubjectGoods(ChildSubjectVo childSubjectVo, SubjectQueryDto subjectQueryDto) {
         List<SearchItemVo> searchItemVoList = new ArrayList<>();
         Criteria<SubjectApplicableSku, Object> subjectSku = Criteria.of(SubjectApplicableSku.class)
-                .fields(SubjectApplicableSku::getFskuId)
-                .andEqualTo(SubjectApplicableSku::getFsubjectId, childSubjectVo.getFsubjectId()).andEqualTo(SubjectApplicableSku::getFsubjectFloorId, childSubjectVo.getFsubjectFloorId());
+                .fields(SubjectApplicableSku::getFskuId).andEqualTo(SubjectApplicableSku::getFsubjectFloorId, childSubjectVo.getFsubjectFloorId());
 
         Result<List<SubjectApplicableSku>> skuIdResult = subjectApplicableSkuApi.queryByCriteria(subjectSku);
         List<SubjectApplicableSku> subjectApplicableSkuList = ResultUtils.getData(skuIdResult);
