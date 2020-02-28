@@ -9,7 +9,9 @@ import com.xingyun.bbc.common.elasticsearch.config.EsCriteria;
 import com.xingyun.bbc.common.elasticsearch.config.EsManager;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
+import com.xingyun.bbc.core.market.api.CouponApi;
 import com.xingyun.bbc.core.market.enums.CouponApplicableSkuEnum;
+import com.xingyun.bbc.core.market.po.Coupon;
 import com.xingyun.bbc.core.operate.api.SubjectApi;
 import com.xingyun.bbc.core.operate.api.SubjectApplicableSkuApi;
 import com.xingyun.bbc.core.operate.api.SubjectApplicableSkuConditionApi;
@@ -47,6 +49,7 @@ import org.elasticsearch.index.query.IdsQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -119,6 +122,9 @@ public class SubjectServiceImpl implements SubjectService {
     @Resource
     private SubjectFloorApi subjectFloorApi;
 
+    @Resource
+    private CouponApi couponApi;
+
     @Override
     public SubjectVo getById(SubjectQueryDto subjectQueryDto) {
         Long fsubjectId = subjectQueryDto.getFsubjectId();
@@ -131,6 +137,11 @@ public class SubjectServiceImpl implements SubjectService {
         if (subject == null) {
             logger.info("专题id[{}]信息不存在", fsubjectId);
             return null;
+        }
+        if (subject.getFsubjectContentType().equals(3)){
+            Coupon coupon = ResultUtils.getDataNotNull(couponApi.queryById(subject.getFcouponId()));
+            subject.setFsubjectName(coupon.getFcouponName());
+            subject.setFsubjectStatus(2);
         }
         return dozerHolder.convert(subject, SubjectVo.class);
     }
