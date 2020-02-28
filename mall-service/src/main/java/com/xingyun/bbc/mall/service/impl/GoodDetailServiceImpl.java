@@ -1418,7 +1418,8 @@ public class GoodDetailServiceImpl implements GoodDetailService {
                 .andEqualTo(CouponApplicableSkuCondition::getFcouponId, fcouponId)
                 .fields(CouponApplicableSkuCondition::getFbrandId,
                         CouponApplicableSkuCondition::getFcategoryId,
-                        CouponApplicableSkuCondition::getFlabelId));
+                        CouponApplicableSkuCondition::getFlabelId,
+                        CouponApplicableSkuCondition::getFtradeCode));
         return skuConditionRes;
     }
 
