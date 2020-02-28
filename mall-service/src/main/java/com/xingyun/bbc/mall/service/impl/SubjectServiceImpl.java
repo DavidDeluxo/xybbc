@@ -535,7 +535,7 @@ public class SubjectServiceImpl implements SubjectService {
     private List<String> getApplicableSkuIds(Subject subject) {
 
         Criteria<SubjectApplicableSku, Object> criteria = Criteria.of(SubjectApplicableSku.class)
-                .fields(SubjectApplicableSku::getFskuId).andEqualTo(SubjectApplicableSku::getFsubjectId, subject.getFsubjectId());
+                .fields(SubjectApplicableSku::getFskuId).andEqualTo(SubjectApplicableSku::getFsubjectId, subject.getFsubjectId()).andEqualTo(SubjectApplicableSku::getFsubjectFloorId,0);
 
         Result<List<SubjectApplicableSku>> skuResult = subjectApplicableSkuApi.queryByCriteria(criteria);
         List<SubjectApplicableSku> subjectApplicableSkus = ResultUtils.getData(skuResult);
