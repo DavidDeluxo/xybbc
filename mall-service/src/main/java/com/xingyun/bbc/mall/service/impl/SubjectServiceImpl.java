@@ -142,6 +142,7 @@ public class SubjectServiceImpl implements SubjectService {
             Coupon coupon = ResultUtils.getDataNotNull(couponApi.queryById(subject.getFcouponId()));
             subject.setFsubjectName(coupon.getFcouponName());
             subject.setFsubjectStatus(2);
+            subject.setFsubjectMobileLayout(3);
         }
         return dozerHolder.convert(subject, SubjectVo.class);
     }
