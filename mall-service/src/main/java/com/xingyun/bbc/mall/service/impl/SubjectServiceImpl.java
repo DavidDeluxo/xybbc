@@ -159,7 +159,7 @@ public class SubjectServiceImpl implements SubjectService {
         if (null == subjectVo){
             return pageVo;
         }
-        if(!subjectVo.getFcgetFcouponId().equals(0)){
+        if(!subjectVo.getFcouponId().equals(0)){
             subjectQueryDto.setFsubjectId(null);
             subjectQueryDto.setCouponId(subjectVo.getFcouponId());
         }
