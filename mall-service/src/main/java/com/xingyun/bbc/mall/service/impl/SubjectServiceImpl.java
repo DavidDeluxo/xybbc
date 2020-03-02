@@ -159,8 +159,10 @@ public class SubjectServiceImpl implements SubjectService {
         if (null == subjectVo){
             return pageVo;
         }
-        subjectQueryDto.setFsubjectId(subjectVo.getFsubjectId());
-        subjectQueryDto.setCouponId(subjectVo.getFcouponId());
+        if(!subjectVo.getFcgetFcouponId().equals(0)){
+            subjectQueryDto.setFsubjectId(null);
+            subjectQueryDto.setCouponId(subjectVo.getFcouponId());
+        }
         try {
             return goodsService.searchSkuList(dozerHolder.convert(subjectQueryDto, SearchItemDto.class)).getData();
         } catch (Exception e) {
