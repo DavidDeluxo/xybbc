@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
+import java.io.FileOutputStream;
 
 /**
  * @author nick
@@ -81,6 +82,20 @@ public class ExcelUtils {
         }
     }
 
+    public static void createExcelByEasyPoi(String path, String fileName, PageDto pageDto, Class<?> voClass, IExcelExportServer excelExportServer) {
+        try {
+            //每次查询1千的数据量
+            pageDto.setPageSize(MallPcConstants.EASYPOI_EXPORT_EXCEL_APPEND_OFFSET);
+            try (Workbook workbook = ExcelExportUtil.exportBigExcel(new ExportParams(null, fileName), voClass, excelExportServer, pageDto)) {
+                try (FileOutputStream output = new FileOutputStream(path + fileName + ".xlsx")) {
+                    workbook.write(output);
+                }
+            }
+        } catch (Throwable e) {
+            log.error("生成文件{}出错", fileName, e);
+            throw new BizException(MallPcExceptionCode.SYSTEM_ERROR);
+        }
+    }
 
     /**
      * 判断是否为excel文件
