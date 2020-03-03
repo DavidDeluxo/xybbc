@@ -2,8 +2,14 @@ package com.xingyun.bbc.mallpc.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.xingyun.bbc.core.order.enums.OrderStatus;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mallpc.common.utils.ExcelUtils;
 import com.xingyun.bbc.mallpc.common.utils.RequestHolder;
+import com.xingyun.bbc.mallpc.model.dto.pay.OrderExportDto;
+import com.xingyun.bbc.mallpc.model.vo.pay.OrderDetailExportVo;
+import com.xingyun.bbc.mallpc.model.vo.pay.OrderPaymentExportVo;
+import com.xingyun.bbc.mallpc.service.OrderService;
 import com.xingyun.bbc.order.api.OrderPaymentCenterApi;
 import com.xingyun.bbc.order.model.dto.order.OrderCanelDto;
 import com.xingyun.bbc.order.model.dto.order.OrderDetailDto;
@@ -14,12 +20,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author Administrator
@@ -38,6 +42,9 @@ public class OrderPaymentController {
 
     @Resource
     private OrderPaymentCenterApi orderPaymentApi;
+
+    @Resource
+    private OrderService orderService;
 
     @ApiOperation("查询订单列表")
     @PostMapping("/selectOrderList")
@@ -58,5 +65,20 @@ public class OrderPaymentController {
     @PostMapping("/cancelOrder")
     public Result<OrderCancelVo> cancelOrder(@RequestBody OrderCanelDto orderCanelDto) {
         return orderPaymentApi.cancelOrder(orderCanelDto);
+    }
+
+    @ApiOperation("导出用户订单列表")
+    @GetMapping("/export")
+    public void exportOrderList(OrderExportDto orderExportDto, HttpServletResponse response) {
+        logger.info("查询导出订单参数：{}", JSON.toJSONString(orderExportDto));
+        Long fuid = RequestHolder.getUserId();
+        orderExportDto.setFuid(fuid);
+        if (orderExportDto.getForderStatus() == null
+                || OrderStatus.WAIT_PAYMENT.getCode().equals(orderExportDto.getForderStatus())) {
+            ExcelUtils.exportExcelByEasyPoi("支付订单数据", orderExportDto, OrderPaymentExportVo.class, orderService, response);
+        } else {
+            ExcelUtils.exportExcelByEasyPoi("销售订单数据", orderExportDto, OrderDetailExportVo.class, orderService, response);
+        }
+
     }
 }
