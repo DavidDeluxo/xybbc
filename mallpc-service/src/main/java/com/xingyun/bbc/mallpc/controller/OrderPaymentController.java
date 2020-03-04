@@ -105,9 +105,9 @@ public class OrderPaymentController {
 
     @ApiOperation("导出在售sku")
     @GetMapping("/exportSaleSku")
-    public Result<?> exportSaleSku(HttpServletResponse response) {
-        User user = ResultUtils.getDataNotNull(userApi.queryById(RequestHolder.getUserId()));
-        Integer operateType = user.getFoperateType();
+    public Result<?> exportSaleSku(HttpServletResponse response,Integer operateType) {
+//        User user = ResultUtils.getDataNotNull(userApi.queryById(RequestHolder.getUserId()));
+//        Integer operateType = 1;
         String fileFdfsPath = redisHolder.get(MallPcRedisConstant.SALE_SKU_TMP_FILE + operateType);
         try {
             byte[] byteArr = ResultUtils.getDataNotNull(fdfsApi.download(fileFdfsPath));
