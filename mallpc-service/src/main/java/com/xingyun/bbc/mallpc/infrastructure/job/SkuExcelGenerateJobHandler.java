@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.io.File;
 
 /**
  * @author lchm
@@ -38,6 +39,7 @@ public class SkuExcelGenerateJobHandler extends IJobHandler {
 
     @Override
     public ReturnT<String> execute(String param) throws Exception {
+        saleSkuFile = saleSkuFile + File.separator;
         if (StringUtils.isNotEmpty(param)) {
             try {
                 Integer foperateType = Integer.parseInt(param);

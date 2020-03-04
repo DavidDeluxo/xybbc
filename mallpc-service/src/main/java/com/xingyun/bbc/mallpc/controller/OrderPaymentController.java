@@ -3,9 +3,14 @@ package com.xingyun.bbc.mallpc.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.xingyun.bbc.core.order.enums.OrderStatus;
+import com.xingyun.bbc.core.user.api.UserApi;
+import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.common.utils.ExcelUtils;
+import com.xingyun.bbc.mallpc.common.utils.FileUtils;
 import com.xingyun.bbc.mallpc.common.utils.RequestHolder;
+import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
 import com.xingyun.bbc.mallpc.model.dto.pay.OrderExportDto;
 import com.xingyun.bbc.mallpc.model.vo.pay.OrderDetailExportVo;
 import com.xingyun.bbc.mallpc.model.vo.pay.OrderPaymentExportVo;
@@ -20,10 +25,12 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 
 /**
  * @author Administrator
@@ -40,11 +47,17 @@ public class OrderPaymentController {
 
     public static final Logger logger = LoggerFactory.getLogger(OrderPaymentController.class);
 
+    @Value("${file.path.saleSku}")
+    private String saleSkuFile;
+
     @Resource
     private OrderPaymentCenterApi orderPaymentApi;
 
     @Resource
     private OrderService orderService;
+
+    @Resource
+    private UserApi userApi;
 
     @ApiOperation("查询订单列表")
     @PostMapping("/selectOrderList")
@@ -80,5 +93,23 @@ public class OrderPaymentController {
             ExcelUtils.exportExcelByEasyPoi("销售订单数据", orderExportDto, OrderDetailExportVo.class, orderService, response);
         }
 
+    }
+
+    @ApiOperation("导出在售sku")
+    @GetMapping("/exportSaleSku")
+    public Result<?> exportSaleSku(HttpServletResponse response) {
+        User user = ResultUtils.getDataNotNull(userApi.queryById(RequestHolder.getUserId()));
+        String fileName = user.getFoperateType() + ".xlsx";
+        String filePath = saleSkuFile + File.separator + fileName;
+        File file = new File(filePath);
+        if (!file.exists()) {
+            return Result.failure(MallPcExceptionCode.FILE_NOT_EXIST);
+        }
+        try {
+            FileUtils.download(fileName, file, response);
+        } catch (Exception e) {
+            return Result.failure(MallPcExceptionCode.FILE_NOT_EXIST);
+        }
+        return Result.success();
     }
 }
