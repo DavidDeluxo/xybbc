@@ -47,7 +47,7 @@ public class OrderPaymentController {
 
     public static final Logger logger = LoggerFactory.getLogger(OrderPaymentController.class);
 
-    @Value("${file.path.saleSku}")
+    @Value("${tmpFile.path.saleSku}")
     private String saleSkuFile;
 
     @Resource

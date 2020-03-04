@@ -34,7 +34,7 @@ public class SkuExcelGenerateJobHandler extends IJobHandler {
     @Resource
     private SkuService skuService;
 
-    @Value("${file.path.saleSku}")
+    @Value("${tmpFile.path.saleSku}")
     private String saleSkuFile;
 
     @Override
