@@ -1,10 +1,16 @@
 package com.xingyun.bbc.mallpc.common.utils;
 
+import com.xingyun.bbc.core.exception.BizException;
+import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.config.system.SystemConfig;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.util.UriUtils;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 /**
  * @author penglu
@@ -41,9 +47,9 @@ public class FileUtils {
             }
             out.flush();
         } catch (FileNotFoundException e) {
-            throw new Exception("文件不存在");
+            throw new BizException(MallPcExceptionCode.FILE_NOT_EXIST);
         } catch (IOException e) {
-            throw new Exception("文件下载失败");
+            throw new BizException(MallPcExceptionCode.FILE_NOT_EXIST);
         } finally {
             try {
                 if (in != null) {
@@ -53,8 +59,90 @@ public class FileUtils {
                     out.close();
                 }
             } catch (Exception e) {
-                System.out.println("文件下载失败");
+                throw new BizException(MallPcExceptionCode.FILE_NOT_EXIST);
             }
         }
     }
+
+    public static byte[] url2Byte(String urlStr) {
+        InputStream is = null;
+        ByteArrayOutputStream os = null;
+        byte[] buff = new byte[1024];
+        int len = 0;
+        try {
+            URL url = new URL(UriUtils.encodePath(urlStr, "UTF-8"));
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestProperty("Content-Type", "plain/text;charset=" + "UTF-8");
+            conn.setRequestProperty("charset", "UTF-8");
+            conn.setDoInput(true);
+            conn.setDoOutput(true);
+            conn.setRequestMethod("GET");
+            conn.setReadTimeout(500);
+            conn.connect();
+            is = conn.getInputStream();
+            os = new ByteArrayOutputStream();
+            while ((len = is.read(buff)) != -1) {
+                os.write(buff, 0, len);
+            }
+            return os.toByteArray();
+        } catch (IOException e) {
+            throw new BizException(MallPcExceptionCode.FILE_NOT_EXIST);
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    throw new BizException(MallPcExceptionCode.FILE_NOT_EXIST);
+                }
+            }
+            if (os != null) {
+                try {
+                    os.close();
+                } catch (IOException e) {
+                    throw new BizException(MallPcExceptionCode.FILE_NOT_EXIST);
+                }
+            }
+        }
+    }
+
+    public static void download(byte[] byteArr, HttpServletResponse response, String fileName) throws Exception {
+        if (StringUtils.isEmpty(fileName)) {
+            throw new BizException(MallPcExceptionCode.FILE_NOT_EXIST);
+        }
+        if (null == byteArr) {
+            throw new BizException(MallPcExceptionCode.FILE_NOT_EXIST);
+        }
+        response.setContentType("multipart/form-data");
+        response.addHeader("Content-Disposition", "attachment;filename=" + new String(fileName.getBytes("UTF-8"), "ISO8859-1"));
+        String len = String.valueOf(byteArr.length);
+        response.setHeader("Content-Length", len);
+        try (ServletOutputStream out = response.getOutputStream()) {
+            out.write(byteArr);
+            out.flush();
+        } catch (IOException e) {
+            throw new BizException(MallPcExceptionCode.FILE_NOT_EXIST);
+        }
+    }
+
+    public static byte[] file2byte(File file) {
+        byte[] buffer = null;
+        try {
+            FileInputStream fis = new FileInputStream(file);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            byte[] b = new byte[1024];
+            int n;
+            while ((n = fis.read(b)) != -1) {
+                bos.write(b, 0, n);
+            }
+            fis.close();
+            bos.close();
+            buffer = bos.toByteArray();
+        } catch (FileNotFoundException e) {
+            throw new BizException(MallPcExceptionCode.FILE_NOT_EXIST);
+        } catch (IOException e) {
+            throw new BizException(MallPcExceptionCode.FILE_NOT_EXIST);
+        }
+        return buffer;
+    }
+
 }
