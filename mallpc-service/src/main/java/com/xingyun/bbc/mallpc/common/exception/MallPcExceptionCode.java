@@ -93,15 +93,15 @@ public class MallPcExceptionCode implements IResultStatus {
     public static final MallPcExceptionCode BUSINESSLICENSENO_REPEAT = new MallPcExceptionCode("1030", "该营业执照编号已注册");
 
     public static final MallPcExceptionCode USER_PAY_PWD_NOT_SET = new MallPcExceptionCode("1031", "未设置提现支付密码");
-    public static final MallPcExceptionCode WITHDRAW_ACCOUNT_EMPTY = new MallPcExceptionCode("1032","支付宝账号或银行卡号为空");
+    public static final MallPcExceptionCode WITHDRAW_ACCOUNT_EMPTY = new MallPcExceptionCode("1032", "支付宝账号或银行卡号为空");
     public static final MallPcExceptionCode ACCOUNT_BALANCE_INSUFFICIENT = new MallPcExceptionCode("1033", "账户余额不足");
-    public static final MallPcExceptionCode WITHDRAW_PASSWORD_ERROR = new MallPcExceptionCode("1034","提现密码不正确");
-    public static final MallPcExceptionCode  BANK_NOT_CONFIG = new MallPcExceptionCode("1035","银行开户行数据未配置，稍后再试..");
-    public static final MallPcExceptionCode  REEZE_WITHDRAW_ERROR = new MallPcExceptionCode("1036","提现冻结金额小于0");
-    public static final MallPcExceptionCode  LESS_THAN_ONE_RMB = new MallPcExceptionCode("1037", "最低提现金额不得小于1元");
-    public static final MallPcExceptionCode  WITHDRAW_LES_MIN_AMOUNT = new MallPcExceptionCode("1038", "不得小于最低提现金额");
-    public static final MallPcExceptionCode  NAME_NOT_EXIST = new MallPcExceptionCode("1039", "账号不存在");
-    public static final MallPcExceptionCode  ACCOUNT_NOT_AUTH = new MallPcExceptionCode("1040", "账户未认证或认证不通过");
+    public static final MallPcExceptionCode WITHDRAW_PASSWORD_ERROR = new MallPcExceptionCode("1034", "提现密码不正确");
+    public static final MallPcExceptionCode BANK_NOT_CONFIG = new MallPcExceptionCode("1035", "银行开户行数据未配置，稍后再试..");
+    public static final MallPcExceptionCode REEZE_WITHDRAW_ERROR = new MallPcExceptionCode("1036", "提现冻结金额小于0");
+    public static final MallPcExceptionCode LESS_THAN_ONE_RMB = new MallPcExceptionCode("1037", "最低提现金额不得小于1元");
+    public static final MallPcExceptionCode WITHDRAW_LES_MIN_AMOUNT = new MallPcExceptionCode("1038", "不得小于最低提现金额");
+    public static final MallPcExceptionCode NAME_NOT_EXIST = new MallPcExceptionCode("1039", "账号不存在");
+    public static final MallPcExceptionCode ACCOUNT_NOT_AUTH = new MallPcExceptionCode("1040", "账户未认证或认证不通过");
     public static final MallPcExceptionCode SKU_PACKAGE_IS_NONE = new MallPcExceptionCode("1041", "没有批次包装规格");
 
     /**
@@ -144,4 +144,6 @@ public class MallPcExceptionCode implements IResultStatus {
      * SKU错误信息
      */
     public static final MallPcExceptionCode SKU_IS_NONE = new MallPcExceptionCode("5000", "查不到sku信息");
+
+    public static final MallPcExceptionCode FILE_NOT_EXIST = new MallPcExceptionCode("5001", "文件不存在");
 }
