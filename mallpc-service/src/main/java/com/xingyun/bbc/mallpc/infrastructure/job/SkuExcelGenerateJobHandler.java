@@ -40,7 +40,7 @@ public class SkuExcelGenerateJobHandler extends IJobHandler {
     private SkuService skuService;
 
     @Value("${tmpFile.path.saleSku}")
-    private String saleSkuFile;
+    private String saleSkuFile ;
 
     @Resource
     private FdfsApi fdfsApi;
@@ -50,7 +50,6 @@ public class SkuExcelGenerateJobHandler extends IJobHandler {
 
     @Override
     public ReturnT<String> execute(String param) throws Exception {
-        saleSkuFile = saleSkuFile + File.separator;
         if (StringUtils.isNotEmpty(param)) {
             try {
                 Integer foperateType = Integer.parseInt(param);
@@ -58,14 +57,14 @@ public class SkuExcelGenerateJobHandler extends IJobHandler {
                 if (StringUtils.isNotEmpty(type)) {
                     LOGGER.info("任务-在售sku定时生成excel ({}) 开始", type);
                     XxlJobLogger.log("任务-在售sku定时生成excel ({}) 开始", type);
-                    ExcelUtils.createExcelByEasyPoi(saleSkuFile, foperateType.toString(), new SaleSkuExportDto(foperateType), SaleSkuExportVo.class, skuService);
+                    ExcelUtils.createExcelByEasyPoi(saleSkuFile + File.separator, foperateType.toString(), new SaleSkuExportDto(foperateType), SaleSkuExportVo.class, skuService);
                     dealLocalFile(foperateType);
                     LOGGER.info("任务-在售sku定时生成excel ({}) 结束", type);
                     XxlJobLogger.log("任务-在售sku定时生成excel ({}) 结束", type);
                 } else {
                     LOGGER.info("任务-在售sku定时生成excel (普通会员) 开始");
                     XxlJobLogger.log("任务-在售sku定时生成excel (普通会员) 开始");
-                    ExcelUtils.createExcelByEasyPoi(saleSkuFile, "0", new SaleSkuExportDto(0), SaleSkuExportVo.class, skuService);
+                    ExcelUtils.createExcelByEasyPoi(saleSkuFile + File.separator, "0", new SaleSkuExportDto(0), SaleSkuExportVo.class, skuService);
                     dealLocalFile(0);
                     LOGGER.info("任务-在售sku定时生成excel (普通会员) 结束");
                     XxlJobLogger.log("任务-在售sku定时生成excel (普通会员) 结束");
@@ -78,7 +77,7 @@ public class SkuExcelGenerateJobHandler extends IJobHandler {
         //非会员折扣
         LOGGER.info("任务-在售sku定时生成excel (普通会员) 开始");
         XxlJobLogger.log("任务-在售sku定时生成excel (普通会员) 开始");
-        ExcelUtils.createExcelByEasyPoi(saleSkuFile, "0", new SaleSkuExportDto(0), SaleSkuExportVo.class, skuService);
+        ExcelUtils.createExcelByEasyPoi(saleSkuFile + File.separator, "0", new SaleSkuExportDto(0), SaleSkuExportVo.class, skuService);
         dealLocalFile(0);
         LOGGER.info("任务-在售sku定时生成excel (普通会员) 结束");
         XxlJobLogger.log("任务-在售sku定时生成excel (普通会员) 结束");
@@ -86,7 +85,7 @@ public class SkuExcelGenerateJobHandler extends IJobHandler {
         //1实体门店
         LOGGER.info("任务-在售sku定时生成excel (实体门店) 开始");
         XxlJobLogger.log("任务-在售sku定时生成excel (实体门店) 开始");
-        ExcelUtils.createExcelByEasyPoi(saleSkuFile, "1", new SaleSkuExportDto(1), SaleSkuExportVo.class, skuService);
+        ExcelUtils.createExcelByEasyPoi(saleSkuFile + File.separator, "1", new SaleSkuExportDto(1), SaleSkuExportVo.class, skuService);
         dealLocalFile(1);
         LOGGER.info("任务-在售sku定时生成excel (实体门店) 结束");
         XxlJobLogger.log("任务-在售sku定时生成excel (实体门店) 结束");
@@ -94,7 +93,7 @@ public class SkuExcelGenerateJobHandler extends IJobHandler {
         //2网络店铺
         LOGGER.info("任务-在售sku定时生成excel (网络店铺) 开始");
         XxlJobLogger.log("任务-在售sku定时生成excel (网络店铺) 开始");
-        ExcelUtils.createExcelByEasyPoi(saleSkuFile, "2", new SaleSkuExportDto(2), SaleSkuExportVo.class, skuService);
+        ExcelUtils.createExcelByEasyPoi(saleSkuFile + File.separator, "2", new SaleSkuExportDto(2), SaleSkuExportVo.class, skuService);
         dealLocalFile(2);
         LOGGER.info("任务-在售sku定时生成excel (网络店铺) 结束");
         XxlJobLogger.log("任务-在售sku定时生成excel (网络店铺) 结束");
@@ -102,7 +101,7 @@ public class SkuExcelGenerateJobHandler extends IJobHandler {
         //3网络平台
         LOGGER.info("任务-在售sku定时生成excel (网络平台) 开始");
         XxlJobLogger.log("任务-在售sku定时生成excel (网络平台) 开始");
-        ExcelUtils.createExcelByEasyPoi(saleSkuFile, "3", new SaleSkuExportDto(3), SaleSkuExportVo.class, skuService);
+        ExcelUtils.createExcelByEasyPoi(saleSkuFile + File.separator, "3", new SaleSkuExportDto(3), SaleSkuExportVo.class, skuService);
         dealLocalFile(3);
         LOGGER.info("任务-在售sku定时生成excel (网络平台) 结束");
         XxlJobLogger.log("任务-在售sku定时生成excel (网络平台) 结束");
@@ -110,7 +109,7 @@ public class SkuExcelGenerateJobHandler extends IJobHandler {
         //4批采企业
         LOGGER.info("任务-在售sku定时生成excel (批采企业) 开始");
         XxlJobLogger.log("任务-在售sku定时生成excel (批采企业) 开始");
-        ExcelUtils.createExcelByEasyPoi(saleSkuFile, "4", new SaleSkuExportDto(4), SaleSkuExportVo.class, skuService);
+        ExcelUtils.createExcelByEasyPoi(saleSkuFile + File.separator, "4", new SaleSkuExportDto(4), SaleSkuExportVo.class, skuService);
         dealLocalFile(4);
         LOGGER.info("任务-在售sku定时生成excel (批采企业) 结束");
         XxlJobLogger.log("任务-在售sku定时生成excel (批采企业) 结束");
@@ -118,7 +117,7 @@ public class SkuExcelGenerateJobHandler extends IJobHandler {
         //5微商代购
         LOGGER.info("任务-在售sku定时生成excel (微商代购) 开始");
         XxlJobLogger.log("任务-在售sku定时生成excel (微商代购) 开始");
-        ExcelUtils.createExcelByEasyPoi(saleSkuFile, "5", new SaleSkuExportDto(5), SaleSkuExportVo.class, skuService);
+        ExcelUtils.createExcelByEasyPoi(saleSkuFile + File.separator, "5", new SaleSkuExportDto(5), SaleSkuExportVo.class, skuService);
         dealLocalFile(5);
         LOGGER.info("任务-在售sku定时生成excel (微商代购) 结束");
         XxlJobLogger.log("任务-在售sku定时生成excel (微商代购) 结束");
@@ -129,7 +128,7 @@ public class SkuExcelGenerateJobHandler extends IJobHandler {
      * 临时文件上传fdfs
      */
     private void dealLocalFile(Integer foperateType) {
-        String fileTmpPath = saleSkuFile = saleSkuFile + File.separator + foperateType + ExcelUtils.XLSX_SUFFIX;
+        String fileTmpPath = saleSkuFile + File.separator + foperateType + ExcelUtils.XLSX_SUFFIX;
         File file = new File(fileTmpPath);
         if (!file.exists()) {
             LOGGER.info("任务-在售sku定时生成excel 结束,上传fdfs失败，临时文件{}不存在", fileTmpPath);
