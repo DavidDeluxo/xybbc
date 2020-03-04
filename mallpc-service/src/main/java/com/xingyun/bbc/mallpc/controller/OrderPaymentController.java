@@ -2,6 +2,7 @@ package com.xingyun.bbc.mallpc.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.helper.api.FdfsApi;
 import com.xingyun.bbc.core.order.enums.OrderStatus;
 import com.xingyun.bbc.core.user.api.UserApi;
@@ -105,16 +106,17 @@ public class OrderPaymentController {
 
     @ApiOperation("导出在售sku")
     @GetMapping("/exportSaleSku")
-    public Result<?> exportSaleSku(HttpServletResponse response,Integer operateType) {
-//        User user = ResultUtils.getDataNotNull(userApi.queryById(RequestHolder.getUserId()));
-//        Integer operateType = 1;
+    public void exportSaleSku(HttpServletResponse response) {
+        User user = ResultUtils.getDataNotNull(userApi.queryById(RequestHolder.getUserId()));
+        Integer operateType = user.getFoperateType();
         String fileFdfsPath = redisHolder.get(MallPcRedisConstant.SALE_SKU_TMP_FILE + operateType);
+        byte[] byteArr = ResultUtils.getDataNotNull(fdfsApi.download(fileFdfsPath));
         try {
-            byte[] byteArr = ResultUtils.getDataNotNull(fdfsApi.download(fileFdfsPath));
             FileUtils.download(byteArr, response, "saleSku_" + operateType + ".xlsx");
+            logger.info("文件：{}下载成功,operateType:{}", fileFdfsPath, operateType);
         } catch (Exception e) {
-            return Result.failure(MallPcExceptionCode.FILE_NOT_EXIST);
+            logger.info("文件：{}下载失败,operateType:{}", fileFdfsPath, operateType);
+            new BizException(MallPcExceptionCode.FILE_NOT_EXIST);
         }
-        return Result.success();
     }
 }
