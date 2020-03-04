@@ -74,4 +74,9 @@ public interface MallPcRedisConstant {
      * 首页一级分类楼层商品数据,一级分类id
      */
     String PC_MALL_CATE_SKU = KEY_PREFIX + "index_cate_sku:";
+
+    String TMP_FILE = KEY_PREFIX + "tmp_file:";
+
+    String SALE_SKU_TMP_FILE = TMP_FILE + "sale_sku:";
+
 }

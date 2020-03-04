@@ -28,6 +28,10 @@ import java.io.FileOutputStream;
 @Slf4j
 public class ExcelUtils {
 
+    public static final String XLS_SUFFIX = ".xls";
+
+    public static final String XLSX_SUFFIX = ".xlsx";
+
     /**
      * 导出一个空内容的Excel
      *
@@ -87,7 +91,7 @@ public class ExcelUtils {
             //每次查询1千的数据量
             pageDto.setPageSize(MallPcConstants.EASYPOI_EXPORT_EXCEL_APPEND_OFFSET);
             try (Workbook workbook = ExcelExportUtil.exportBigExcel(new ExportParams(null, fileName), voClass, excelExportServer, pageDto)) {
-                try (FileOutputStream output = new FileOutputStream(path + fileName + ".xlsx")) {
+                try (FileOutputStream output = new FileOutputStream(path + fileName + XLSX_SUFFIX)) {
                     workbook.write(output);
                 }
             }

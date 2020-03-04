@@ -2,10 +2,13 @@ package com.xingyun.bbc.mallpc.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.xingyun.bbc.core.helper.api.FdfsApi;
 import com.xingyun.bbc.core.order.enums.OrderStatus;
 import com.xingyun.bbc.core.user.api.UserApi;
 import com.xingyun.bbc.core.user.po.User;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mallpc.common.components.RedisHolder;
+import com.xingyun.bbc.mallpc.common.constants.MallPcRedisConstant;
 import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.common.utils.ExcelUtils;
 import com.xingyun.bbc.mallpc.common.utils.FileUtils;
@@ -30,7 +33,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 
 /**
  * @author Administrator
@@ -58,6 +60,12 @@ public class OrderPaymentController {
 
     @Resource
     private UserApi userApi;
+
+    @Resource
+    private FdfsApi fdfsApi;
+
+    @Resource
+    private RedisHolder redisHolder;
 
     @ApiOperation("查询订单列表")
     @PostMapping("/selectOrderList")
@@ -99,14 +107,11 @@ public class OrderPaymentController {
     @GetMapping("/exportSaleSku")
     public Result<?> exportSaleSku(HttpServletResponse response) {
         User user = ResultUtils.getDataNotNull(userApi.queryById(RequestHolder.getUserId()));
-        String fileName = user.getFoperateType() + ".xlsx";
-        String filePath = saleSkuFile + File.separator + fileName;
-        File file = new File(filePath);
-        if (!file.exists()) {
-            return Result.failure(MallPcExceptionCode.FILE_NOT_EXIST);
-        }
+        Integer operateType = user.getFoperateType();
+        String fileFdfsPath = redisHolder.get(MallPcRedisConstant.SALE_SKU_TMP_FILE + operateType);
         try {
-            FileUtils.download(fileName, file, response);
+            byte[] byteArr = ResultUtils.getDataNotNull(fdfsApi.download(fileFdfsPath));
+            FileUtils.download(byteArr, response, "saleSku_" + operateType + ".xlsx");
         } catch (Exception e) {
             return Result.failure(MallPcExceptionCode.FILE_NOT_EXIST);
         }
