@@ -90,8 +90,8 @@ public class OrderPaymentController {
     }
 
     @ApiOperation("导出用户订单列表")
-    @GetMapping("/export")
-    public void exportOrderList(OrderExportDto orderExportDto, HttpServletResponse response) {
+    @PostMapping("/export")
+    public void exportOrderList(@RequestBody OrderExportDto orderExportDto, HttpServletResponse response) {
         logger.info("查询导出订单参数：{}", JSON.toJSONString(orderExportDto));
         Long fuid = RequestHolder.getUserId();
         orderExportDto.setFuid(fuid);
@@ -105,7 +105,7 @@ public class OrderPaymentController {
     }
 
     @ApiOperation("导出在售sku")
-    @GetMapping("/exportSaleSku")
+    @PostMapping("/exportSaleSku")
     public void exportSaleSku(HttpServletResponse response) {
         User user = ResultUtils.getDataNotNull(userApi.queryById(RequestHolder.getUserId()));
         Integer operateType = user.getFoperateType();
