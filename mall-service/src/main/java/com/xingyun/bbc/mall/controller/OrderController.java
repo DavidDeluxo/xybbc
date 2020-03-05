@@ -3,7 +3,9 @@ package com.xingyun.bbc.mall.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.xingyun.bbc.core.enums.ResultStatus;
+import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.mall.model.dto.ExpressDto;
 import com.xingyun.bbc.order.api.OrderCenterApi;
 import com.xingyun.bbc.order.api.TransportOrderCenterApi;
 import com.xingyun.bbc.order.api.UserDeliveryCenterApi;
@@ -72,8 +74,20 @@ public class OrderController {
 
     @ApiOperation("查询发货单物流信息")
     @PostMapping("/queryExpress")
-    public Result<ExpressVo> queryExpress(@RequestBody @Validated TransportOrderDto transportOrderDto) {
-        return transportOrderCenterApi.queryExpress(transportOrderDto);
+    public Result<ExpressVo> queryExpress(@RequestBody @Validated ExpressDto expressDto) {
+        //通过订单号查询需拼接的订单流转信息
+        ExpressVo expressVo = new ExpressVo();
+        if(!expressDto.getFtransportOrderId().equals("")){
+            TransportOrderDto transportOrderDto = new TransportOrderDto();
+            transportOrderDto.setFtransportOrderId(expressDto.getFtransportOrderId());
+            Result<ExpressVo> expressVoResult = transportOrderCenterApi.queryExpress(transportOrderDto);
+            if (expressVoResult.isSuccess()) {
+                expressVo = expressVoResult.getData();
+            }
+        }
+        //通过订单号查询需拼接的订单流转信息
+
+        return Result.success(expressVo);
     }
 
     @ApiOperation("查询商品订单下所有发货单的物流信息")
