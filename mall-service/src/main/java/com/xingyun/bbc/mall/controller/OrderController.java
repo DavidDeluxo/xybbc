@@ -74,7 +74,7 @@ public class OrderController {
 
     @ApiOperation("查询发货单物流信息")
     @PostMapping("/queryExpress")
-    public Result<ExpressVo> queryExpress(@RequestBody @Validated ExpressDto expressDto) {
+    public Result<ExpressVo> queryExpress(@RequestBody ExpressDto expressDto) {
         //通过订单号查询需拼接的订单流转信息
         ExpressVo expressVo = new ExpressVo();
         if(!expressDto.getFtransportOrderId().equals("")){

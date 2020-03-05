@@ -21,6 +21,6 @@ public class ExpressDto {
     private String forderId;
 
     @ApiModelProperty(value = "发货单号",dataType ="string")
-    @NotBlank(message = "订单号不能为空")
+    @NotBlank(message = "发货单号不能为空")
     private String ftransportOrderId;
 }
