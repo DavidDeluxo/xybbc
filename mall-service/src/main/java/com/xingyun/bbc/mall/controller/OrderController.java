@@ -5,8 +5,11 @@ import com.alibaba.fastjson.JSONObject;
 import com.xingyun.bbc.core.enums.ResultStatus;
 import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.utils.Result;
+import com.xingyun.bbc.express.model.vo.ExpressBillDetailVo;
+import com.xingyun.bbc.express.model.vo.ExpressBillVo;
 import com.xingyun.bbc.mall.model.dto.ExpressDto;
 import com.xingyun.bbc.order.api.OrderCenterApi;
+import com.xingyun.bbc.order.api.OrderPaymentCenterApi;
 import com.xingyun.bbc.order.api.TransportOrderCenterApi;
 import com.xingyun.bbc.order.api.UserDeliveryCenterApi;
 import com.xingyun.bbc.order.model.dto.order.*;
@@ -30,10 +33,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * @author Thstone
@@ -56,6 +56,8 @@ public class OrderController {
     TransportOrderCenterApi transportOrderCenterApi;
     @Autowired
     UserDeliveryCenterApi userDeliveryCenterApi;
+    @Autowired
+    OrderPaymentCenterApi orderPaymentCenterApi;
 
     private static final String ACCESS_TOKEN = "accessToken";
 
@@ -77,6 +79,9 @@ public class OrderController {
     public Result<ExpressVo> queryExpress(@RequestBody ExpressDto expressDto) {
         //通过订单号查询需拼接的订单流转信息
         ExpressVo expressVo = new ExpressVo();
+        List<TransportSkuVo> transportSkuVoList = new ArrayList<>();
+        expressVo.setTransportSkuVoList(transportSkuVoList);
+        ExpressStatusTimeVo expressStatusTimeVo = new ExpressStatusTimeVo();
         if(!expressDto.getFtransportOrderId().equals("")){
             TransportOrderDto transportOrderDto = new TransportOrderDto();
             transportOrderDto.setFtransportOrderId(expressDto.getFtransportOrderId());
@@ -84,10 +89,77 @@ public class OrderController {
             if (expressVoResult.isSuccess()) {
                 expressVo = expressVoResult.getData();
             }
+            //根据发货单号反查订单号,后面可能会存在只有发货单号一个传参，需要用发货单反查销售订单号
+            //仓库处理中对应发货单创建时间、出库时间对应发货时间
+            Result<ExpressStatusTimeVo> result = transportOrderCenterApi.queryExpressStatusTime(transportOrderDto);
+            if (result.isSuccess()) {
+                if(result.getData() != null){
+                    expressStatusTimeVo = result.getData();
+                    expressDto.setForderId(expressStatusTimeVo.getForderId());
+                }
+            }
         }
-        //通过订单号查询需拼接的订单流转信息
-
+        if(!expressDto.getForderId().equals("")){
+            expressVo = queryOrderStatusTime(expressDto,expressVo,expressStatusTimeVo);
+        }
         return Result.success(expressVo);
+    }
+
+    private ExpressVo queryOrderStatusTime(ExpressDto expressDto, ExpressVo expressVo, ExpressStatusTimeVo expressStatusTimeVo) {
+        List<ExpressBillDetailVo> data = new ArrayList<>();
+        ExpressBillVo expressBillVo = new ExpressBillVo();
+        //查询订单确认和推送时间
+        OnlyOrderIdDto onlyOrderIdDto = new OnlyOrderIdDto();
+        onlyOrderIdDto.setForderId(expressDto.getForderId());
+        Result<OrderStatusTimeVo> orderStatusTimeVoResult = orderPaymentCenterApi.selectOrderStatusTime(onlyOrderIdDto);
+        if(orderStatusTimeVoResult.isSuccess()){
+            OrderStatusTimeVo orderStatusTimeVo = orderStatusTimeVoResult.getData();
+            if(expressStatusTimeVo != null){
+                if(expressStatusTimeVo.getFdeliveryTime() != null && !expressStatusTimeVo.getFdeliveryTime().equals("1970-01-01 00:00:00")){
+                    ExpressBillDetailVo expressBillDetailVo = new ExpressBillDetailVo();
+                    expressBillDetailVo.setFtime(expressStatusTimeVo.getFdeliveryTime());
+                    expressBillDetailVo.setContext("包裹已出库");
+                    data.add(expressBillDetailVo);
+                }
+                if(expressStatusTimeVo.getFcreateTime() != null && !expressStatusTimeVo.getFcreateTime().equals("1970-01-01 00:00:00")){
+                    ExpressBillDetailVo expressBillDetailVo = new ExpressBillDetailVo();
+                    expressBillDetailVo.setFtime(expressStatusTimeVo.getFcreateTime());
+                    expressBillDetailVo.setContext("仓库处理中");
+                    data.add(expressBillDetailVo);
+                }
+            }
+            if(orderStatusTimeVo != null){
+                if(orderStatusTimeVo.getFpushTime() != null && !orderStatusTimeVo.getFpushTime().equals("1970-01-01 00:00:00")){
+                    ExpressBillDetailVo expressBillDetailVo = new ExpressBillDetailVo();
+                    expressBillDetailVo.setFtime(orderStatusTimeVo.getFpushTime());
+                    expressBillDetailVo.setContext("仓库已接单");
+                    data.add(expressBillDetailVo);
+                }
+                if(orderStatusTimeVo.getFaffirmTime() != null && !orderStatusTimeVo.getFaffirmTime().equals("1970-01-01 00:00:00")){
+                    ExpressBillDetailVo expressBillDetailVo = new ExpressBillDetailVo();
+                    expressBillDetailVo.setFtime(orderStatusTimeVo.getFaffirmTime());
+                    expressBillDetailVo.setContext("订单支付成功，正在处理你的订单");
+                    data.add(expressBillDetailVo);
+                }
+                if(orderStatusTimeVo.getFcreateTime() != null && !orderStatusTimeVo.getFcreateTime().equals("1970-01-01 00:00:00")){
+                    ExpressBillDetailVo expressBillDetailVo = new ExpressBillDetailVo();
+                    expressBillDetailVo.setFtime(orderStatusTimeVo.getFcreateTime());
+                    expressBillDetailVo.setContext("订单提交成功");
+                    data.add(expressBillDetailVo);
+                }
+                if(expressVo.getExpressData() != null){
+                    expressBillVo = expressVo.getExpressData();
+                    if(expressBillVo.getData().size() != 0){
+                        for(int i = expressBillVo.getData().size(); i > 0; i--){
+                            data.add(expressBillVo.getData().get(i));
+                        }
+                    }
+                }
+                expressBillVo.setData(data);
+                expressVo.setExpressData(expressBillVo);
+            }
+        }
+        return expressVo;
     }
 
     @ApiOperation("查询商品订单下所有发货单的物流信息")
