@@ -167,22 +167,29 @@ public class OrderController {
     public Result<List<ExpressVo>> queryExpressBatch(@RequestBody @Validated OrderExpressDto orderExpressDto) {
         Result<List<ExpressVo>> listResult = transportOrderCenterApi.queryExpressBatch(orderExpressDto);
         if(listResult.isSuccess()){
-            for(ExpressVo expressVo: listResult.getData()){
-                List<TransportSkuVo> transportSkuVoList = expressVo.getTransportSkuVoList();
-                ExpressStatusTimeVo expressStatusTimeVo = new ExpressStatusTimeVo();
-                if(transportSkuVoList.size() != 0){
-                    TransportOrderDto transportOrderDto = new TransportOrderDto();
-                    transportOrderDto.setFtransportOrderId(transportSkuVoList.get(0).getFtransportOrderId());
-                    Result<ExpressStatusTimeVo> result = transportOrderCenterApi.queryExpressStatusTime(transportOrderDto);
-                    if (result.isSuccess()) {
-                        if(result.getData() != null){
-                            expressStatusTimeVo = result.getData();
+            ExpressDto expressDto = new ExpressDto();
+            expressDto.setForderId(orderExpressDto.getForderId());
+            if(listResult.getData().size() != 0){
+                for(ExpressVo expressVo: listResult.getData()){
+                    List<TransportSkuVo> transportSkuVoList = expressVo.getTransportSkuVoList();
+                    ExpressStatusTimeVo expressStatusTimeVo = new ExpressStatusTimeVo();
+                    if(transportSkuVoList.size() != 0){
+                        TransportOrderDto transportOrderDto = new TransportOrderDto();
+                        transportOrderDto.setFtransportOrderId(transportSkuVoList.get(0).getFtransportOrderId());
+                        Result<ExpressStatusTimeVo> result = transportOrderCenterApi.queryExpressStatusTime(transportOrderDto);
+                        if (result.isSuccess()) {
+                            if(result.getData() != null){
+                                expressStatusTimeVo = result.getData();
+                            }
                         }
                     }
+                    expressVo = queryOrderStatusTime(expressDto,expressVo,expressStatusTimeVo);
                 }
-                ExpressDto expressDto = new ExpressDto();
-                expressDto.setForderId(orderExpressDto.getForderId());
+            }else{
+                ExpressVo expressVo = new ExpressVo();
+                ExpressStatusTimeVo expressStatusTimeVo = new ExpressStatusTimeVo();
                 expressVo = queryOrderStatusTime(expressDto,expressVo,expressStatusTimeVo);
+                listResult.getData().add(expressVo);
             }
         }
         return listResult;
