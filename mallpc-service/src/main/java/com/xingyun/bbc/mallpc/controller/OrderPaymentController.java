@@ -27,6 +27,7 @@ import com.xingyun.bbc.order.model.vo.order.OrderCancelVo;
 import com.xingyun.bbc.order.model.vo.order.OrderDetailVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -110,6 +111,10 @@ public class OrderPaymentController {
         User user = ResultUtils.getDataNotNull(userApi.queryById(RequestHolder.getUserId()));
         Integer operateType = user.getFoperateType();
         String fileFdfsPath = redisHolder.get(MallPcRedisConstant.SALE_SKU_TMP_FILE + operateType);
+        if (StringUtils.isEmpty(fileFdfsPath)){
+            logger.info("文件：{}下载失败,operateType:{},redis记录的文件不存在", fileFdfsPath, operateType);
+            new BizException(MallPcExceptionCode.FILE_NOT_EXIST);
+        }
         byte[] byteArr = ResultUtils.getDataNotNull(fdfsApi.download(fileFdfsPath));
         try {
             FileUtils.download(byteArr, response, "saleSku_" + operateType + ".xlsx");
