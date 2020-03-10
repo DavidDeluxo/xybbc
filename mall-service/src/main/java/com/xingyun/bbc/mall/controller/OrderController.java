@@ -117,6 +117,7 @@ public class OrderController {
             OrderStatusTimeVo orderStatusTimeVo = orderStatusTimeVoResult.getData();
             if(expressVo.getExpressData() != null){
                 data = expressVo.getExpressData().getData();
+                expressBillVo = expressVo.getExpressData();
             }
             if(expressStatusTimeVo != null){
                 if(expressStatusTimeVo.getFdeliveryTime() != null && !expressStatusTimeVo.getFdeliveryTime().equals("1970-01-01 00:00:00")){
