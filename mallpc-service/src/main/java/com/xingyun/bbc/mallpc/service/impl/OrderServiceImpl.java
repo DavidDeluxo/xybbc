@@ -293,7 +293,15 @@ public class OrderServiceImpl implements OrderService {
             orderCriteria.andEqualTo(Order::getForderId, orderExportDto.getForderId());
         }
         if (null != orderExportDto.getForderStatus()) {
-            orderCriteria.andEqualTo(Order::getForderStatus, orderExportDto.getForderStatus());
+            if (orderExportDto.getForderStatus().equals(2) || orderExportDto.getForderStatus().equals(3) || orderExportDto.getForderStatus().equals(4)){
+                List<Integer> orderStatusList = new ArrayList<>();
+                orderStatusList.add(2);
+                orderStatusList.add(3);
+                orderStatusList.add(4);
+                orderCriteria.andIn(Order::getForderStatus,orderStatusList);
+            }else {
+                orderCriteria.andEqualTo(Order::getForderStatus, orderExportDto.getForderStatus());
+            }
         }
         if (StringUtils.isNotEmpty(orderExportDto.getForderTimeStart())) {
             orderCriteria.andGreaterThanOrEqualTo(Order::getFcreateTime, DateUtils.parseDate(orderExportDto.getForderTimeStart()));
