@@ -99,6 +99,10 @@ public class OrderServiceImpl implements OrderService {
 
             dealOrder(orderPaymentExportVo, orderPayment.getForderPaymentId());
 
+            if (!Integer.valueOf(2).equals(orderPayment.getForderType())){
+                orderPaymentExportVo.setFpayerName("");
+                orderPaymentExportVo.setFpayerCardId("");
+            }
             exportDataList.add(orderPaymentExportVo);
         }
         log.info("支付单导出数据构造完成");
@@ -132,6 +136,10 @@ public class OrderServiceImpl implements OrderService {
         OrderPaymentStatusEnum orderPaymentStatusEnum = OrderPaymentStatusEnum.getByStatus(orderPayment.getForderStatus());
         orderDetailExportVo.setForderPaymentStatusStr(orderPaymentStatusEnum == null ? "" : orderPaymentStatusEnum.getStatusDesc());
         orderDetailExportVo.setFcreateTime(DateUtils.formatDate(orderPayment.getFcreateTime()));
+        if (!Integer.valueOf(2).equals(orderPayment.getForderType())){
+            orderDetailExportVo.setFpayerName("");
+            orderDetailExportVo.setFpayerCardId("");
+        }
     }
 
     private void dealOrder(OrderPaymentExportVo orderPaymentExportVo, String forderPaymentId) {
