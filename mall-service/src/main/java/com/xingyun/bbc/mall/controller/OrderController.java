@@ -7,6 +7,7 @@ import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.express.model.vo.ExpressBillDetailVo;
 import com.xingyun.bbc.express.model.vo.ExpressBillVo;
+import com.xingyun.bbc.mall.common.enums.ExpressContextEnum;
 import com.xingyun.bbc.mall.model.dto.ExpressDto;
 import com.xingyun.bbc.order.api.OrderCenterApi;
 import com.xingyun.bbc.order.api.OrderPaymentCenterApi;
@@ -114,17 +115,20 @@ public class OrderController {
         Result<OrderStatusTimeVo> orderStatusTimeVoResult = orderPaymentCenterApi.selectOrderStatusTime(onlyOrderIdDto);
         if(orderStatusTimeVoResult.isSuccess()){
             OrderStatusTimeVo orderStatusTimeVo = orderStatusTimeVoResult.getData();
+            if(expressVo.getExpressData() != null){
+                data = expressVo.getExpressData().getData();
+            }
             if(expressStatusTimeVo != null){
                 if(expressStatusTimeVo.getFdeliveryTime() != null && !expressStatusTimeVo.getFdeliveryTime().equals("1970-01-01 00:00:00")){
                     ExpressBillDetailVo expressBillDetailVo = new ExpressBillDetailVo();
                     expressBillDetailVo.setFtime(expressStatusTimeVo.getFdeliveryTime());
-                    expressBillDetailVo.setContext("包裹已出库");
+                    expressBillDetailVo.setContext(ExpressContextEnum.THE_PARCEL_HAS_BEEN_DELIVERED_FROM_THE_WAREHOUSE.getDesc());
                     data.add(expressBillDetailVo);
                 }
                 if(expressStatusTimeVo.getFcreateTime() != null && !expressStatusTimeVo.getFcreateTime().equals("1970-01-01 00:00:00")){
                     ExpressBillDetailVo expressBillDetailVo = new ExpressBillDetailVo();
                     expressBillDetailVo.setFtime(expressStatusTimeVo.getFcreateTime());
-                    expressBillDetailVo.setContext("仓库处理中");
+                    expressBillDetailVo.setContext(ExpressContextEnum.WAREHOUSE_PROCESSING.getDesc());
                     data.add(expressBillDetailVo);
                 }
             }
@@ -132,28 +136,24 @@ public class OrderController {
                 if(orderStatusTimeVo.getFpushTime() != null && !orderStatusTimeVo.getFpushTime().equals("1970-01-01 00:00:00")){
                     ExpressBillDetailVo expressBillDetailVo = new ExpressBillDetailVo();
                     expressBillDetailVo.setFtime(orderStatusTimeVo.getFpushTime());
-                    expressBillDetailVo.setContext("仓库已接单");
+                    expressBillDetailVo.setContext(ExpressContextEnum.THE_WAREHOUSE_HAS_RECEICED_THE_ORDER.getDesc());
                     data.add(expressBillDetailVo);
                 }
                 if(orderStatusTimeVo.getFaffirmTime() != null && !orderStatusTimeVo.getFaffirmTime().equals("1970-01-01 00:00:00")){
                     ExpressBillDetailVo expressBillDetailVo = new ExpressBillDetailVo();
                     expressBillDetailVo.setFtime(orderStatusTimeVo.getFaffirmTime());
-                    expressBillDetailVo.setContext("订单支付成功，正在处理你的订单");
+                    if(orderStatusTimeVo.getForderType().equals(1)){
+                        expressBillDetailVo.setContext(ExpressContextEnum.ORDER_PAYMENT_SUCCESSFUL.getDesc());
+                    }else{
+                        expressBillDetailVo.setContext(ExpressContextEnum.ORDER_PAYMENT_SUCCESSFUL_WAITING_FOR_CUSTOMS_CLEARANCE.getDesc());
+                    }
                     data.add(expressBillDetailVo);
                 }
                 if(orderStatusTimeVo.getFcreateTime() != null && !orderStatusTimeVo.getFcreateTime().equals("1970-01-01 00:00:00")){
                     ExpressBillDetailVo expressBillDetailVo = new ExpressBillDetailVo();
                     expressBillDetailVo.setFtime(orderStatusTimeVo.getFcreateTime());
-                    expressBillDetailVo.setContext("订单提交成功");
+                    expressBillDetailVo.setContext(ExpressContextEnum.ORDER_SUBMISSION_SUCCESSFUL.getDesc());
                     data.add(expressBillDetailVo);
-                }
-                if(expressVo.getExpressData() != null){
-                    expressBillVo = expressVo.getExpressData();
-                    if(expressBillVo.getData().size() != 0){
-                        for(int i = expressBillVo.getData().size(); i > 0; i--){
-                            data.add(expressBillVo.getData().get(i));
-                        }
-                    }
                 }
                 expressBillVo.setData(data);
                 expressVo.setExpressData(expressBillVo);
