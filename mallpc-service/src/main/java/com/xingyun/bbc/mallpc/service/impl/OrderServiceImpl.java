@@ -156,9 +156,13 @@ public class OrderServiceImpl implements OrderService {
     private OrderExportVo buildOrderExportVo(Order order) {
         OrderExportVo orderExportVo = dozerHolder.convert(order, OrderExportVo.class);
 
-        String orderStatus = OrderStatus.getName(order.getForderStatus());
-        orderExportVo.setForderStatusStr(StringUtils.equals(orderStatus, "undefined") ? "null" : orderStatus);
-
+        //待确认+待推送+待发货  全部展示待发货
+        if (OrderStatus.WAIT_CONFIRM.getCode().equals(order.getForderStatus()) || OrderStatus.WAIT_PUSH.getCode().equals(order.getForderStatus()) || OrderStatus.WAIT_DELIVERY.getCode().equals(order.getForderStatus())) {
+            orderExportVo.setForderStatusStr(OrderStatus.WAIT_DELIVERY.getName());
+        } else {
+            String orderStatus = OrderStatus.getName(order.getForderStatus());
+            orderExportVo.setForderStatusStr(StringUtils.equals(orderStatus, "undefined") ? "null" : orderStatus);
+        }
         orderExportVo.setFfreightAmountStr(new BigDecimal(order.getFfreightAmount()).divide(MallPcConstants.ONE_HUNDRED).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
         orderExportVo.setFtaxAmountStr(new BigDecimal(order.getFtaxAmount()).divide(MallPcConstants.ONE_HUNDRED).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
         orderExportVo.setForderDiscountAmountStr(new BigDecimal(order.getForderDiscountAmount()).divide(MallPcConstants.ONE_HUNDRED).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
