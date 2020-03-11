@@ -75,7 +75,7 @@ public class SkuServiceImpl implements SkuService {
         Integer foperateType = saleSkuExportDto.getFoperateType();
         Criteria<GoodsSku, Object> goodsSkuCriteria = Criteria.of(GoodsSku.class);
         //只统计在售上架的sku
-        goodsSkuCriteria.andEqualTo(GoodsSku::getFgoodStatus, 1).andEqualTo(GoodsSku::getFskuStatus, 1);
+        goodsSkuCriteria.andEqualTo(GoodsSku::getFgoodStatus, 1).andEqualTo(GoodsSku::getFskuStatus, 1).andEqualTo(GoodsSku::getFisDelete,0);
         goodsSkuCriteria.page(page, saleSkuExportDto.getPageSize());
         List<GoodsSku> goodsSkuList = ResultUtils.getData(goodsSkuApi.queryByCriteria(goodsSkuCriteria));
         if (CollectionUtils.isEmpty(goodsSkuList)) {
