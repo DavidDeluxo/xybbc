@@ -137,7 +137,7 @@ public class SkuExcelGenerateJobHandler extends IJobHandler {
         String fileFdfsPath = ResultUtils.getDataNotNull(fdfsApi.uploadFileBytes("xlsx", FileUtils.file2byte(file)));
         LOGGER.info("任务-在售sku定时生成excel 结束,上传fdfs成功 地址 {}，type :{}", fileFdfsPath, foperateType);
         XxlJobLogger.log("任务-在售sku定时生成excel 结束,上传fdfs成功，地址{} type :{}", fileFdfsPath, foperateType);
-        if (!redisHolder.put(MallPcRedisConstant.SALE_SKU_TMP_FILE + foperateType, fileFdfsPath)) {
+        if (!redisHolder.put(MallPcRedisConstant.SALE_SKU_TMP_FILE + foperateType, fileFdfsPath, 7 * 24 * 60 * 60L)) {
             LOGGER.info("保存redis失败,foperateType :{}", foperateType);
             XxlJobLogger.log("保存redis失败,foperateType :{}", foperateType);
         }

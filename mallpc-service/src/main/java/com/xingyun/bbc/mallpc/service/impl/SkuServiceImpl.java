@@ -36,7 +36,7 @@ import java.util.List;
 @Service
 public class SkuServiceImpl implements SkuService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SkuServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(SkuServiceImpl.class);
 
     @Resource
     private DozerHolder dozerHolder;
@@ -75,21 +75,27 @@ public class SkuServiceImpl implements SkuService {
         Integer foperateType = saleSkuExportDto.getFoperateType();
         Criteria<GoodsSku, Object> goodsSkuCriteria = Criteria.of(GoodsSku.class);
         //只统计在售上架的sku
-        goodsSkuCriteria.andEqualTo(GoodsSku::getFgoodStatus, 1).andEqualTo(GoodsSku::getFskuStatus, 1);
+        goodsSkuCriteria.andEqualTo(GoodsSku::getFgoodStatus, 1).andEqualTo(GoodsSku::getFskuStatus, 1).andEqualTo(GoodsSku::getFisDelete,0);
         goodsSkuCriteria.page(page, saleSkuExportDto.getPageSize());
         List<GoodsSku> goodsSkuList = ResultUtils.getData(goodsSkuApi.queryByCriteria(goodsSkuCriteria));
         if (CollectionUtils.isEmpty(goodsSkuList)) {
+            logger.info("文件生成完成，类型：{}",foperateType);
             return Lists.newArrayList(exportDataList);
         }
         for (GoodsSku goodsSku : goodsSkuList) {
             SaleSkuExportVo saleSkuExportVo = dozerHolder.convert(goodsSku, SaleSkuExportVo.class);
-            //原产地 + 贸易类型
-            buildTradeAndSource(saleSkuExportVo, goodsSku);
             //填充批次信息
             buildSkuBatch(saleSkuExportVo, goodsSku, foperateType);
+            //过滤没有上架批次的sku
+            if (CollectionUtils.isEmpty(saleSkuExportVo.getSkuBatchExportVoList())){
+                continue;
+            }
+            //原产地 + 贸易类型
+            buildTradeAndSource(saleSkuExportVo, goodsSku);
 
             exportDataList.add(saleSkuExportVo);
         }
+        logger.info("文件生成完成，类型：{}，页码：{}",foperateType,page);
         return Lists.newArrayList(exportDataList);
     }
 

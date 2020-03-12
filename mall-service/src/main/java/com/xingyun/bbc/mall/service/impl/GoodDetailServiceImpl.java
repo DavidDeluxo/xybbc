@@ -831,8 +831,17 @@ public class GoodDetailServiceImpl implements GoodDetailService {
 
     @Override
     public Result<GoodStockSellVo> getGoodStock(GoodsDetailMallDto goodsDetailMallDto) {
-        //获取库存--库存前端查出来单件的库存--前端有除件装数展示
+        //获取库存--库存查出来单件的库存--前端除件装数展示
         GoodStockSellVo result = new GoodStockSellVo();
+
+        //前端可能fsupplierSkuBatchId和fskuId传0 过来当null处理
+        if(new Integer(0).equals(goodsDetailMallDto.getFsupplierSkuBatchId())) {
+            goodsDetailMallDto.setFsupplierSkuBatchId(null);
+        }
+        if(new Integer(0).equals(goodsDetailMallDto.getFskuId())) {
+            goodsDetailMallDto.setFskuId(null);
+        }
+
         //到批次
         if (null != goodsDetailMallDto.getFsupplierSkuBatchId()) {
             result = this.getBatchStock(goodsDetailMallDto);
@@ -907,6 +916,15 @@ public class GoodDetailServiceImpl implements GoodDetailService {
     public Result<GoodStockSellVo> getGoodSell(GoodsDetailMallDto goodsDetailMallDto) {
         //获取销量
         GoodStockSellVo result = new GoodStockSellVo();
+
+        //前端可能fsupplierSkuBatchId和fskuId传0 过来当null处理
+        if(new Integer(0).equals(goodsDetailMallDto.getFsupplierSkuBatchId())) {
+            goodsDetailMallDto.setFsupplierSkuBatchId(null);
+        }
+        if(new Integer(0).equals(goodsDetailMallDto.getFskuId())) {
+            goodsDetailMallDto.setFskuId(null);
+        }
+
         //到批次
         if (null != goodsDetailMallDto.getFsupplierSkuBatchId()) {
             result = this.getBatchSell(goodsDetailMallDto);
