@@ -22,6 +22,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.dozer.Mapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -38,6 +40,9 @@ import java.util.stream.Collectors;
  */
 @Service
 public class ShoppingCartServiceImpl implements ShoppingCartService {
+
+
+    private static Logger logger = LoggerFactory.getLogger(ShoppingCartServiceImpl.class);
 
     /**
      * 进货单商品数量上限
@@ -180,7 +185,9 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
      */
     @Override
     public Result<List<ShoppingCartGoodsVo>> refresh(ShoppingCartDto shoppingCartDto) {
+        logger.info("刷新商品");
         Result<List<CartsVo>> result = cartApi.refresh(new CartRefreshDto().setShopCarIds(shoppingCartDto.getIds()).setUserId(RequestHolder.getUserId()));
+        logger.info(result.getCode());
         Ensure.that(result).isSuccess(new MallPcExceptionCode(result.getCode(), result.getMsg()));
         List<CartsVo> cartsVos = result.getData();
         if (CollectionUtils.isEmpty(cartsVos)) {
