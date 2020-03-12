@@ -4,6 +4,7 @@ package com.xingyun.bbc.mall.service.impl;
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONException;
+import com.google.common.collect.Maps;
 import com.xingyun.bbc.common.elasticsearch.config.EsBeanUtil;
 import com.xingyun.bbc.common.elasticsearch.config.EsCriteria;
 import com.xingyun.bbc.common.elasticsearch.config.EsManager;
@@ -709,11 +710,14 @@ public class GoodsServiceImpl implements GoodsService {
                         .andEqualTo(GoodsLabel::getFisDisplay, 1)
                         .andIn(GoodsLabel::getFlabelId, labelIds));
                 List<GoodsLabel> goodsLabelList = goodsLabelResult.getData();
-                Ensure.that(CollectionUtil.isNotEmpty(goodsLabelList)).isTrue(MallExceptionCode.GOODS_LABEL_NOT_EXIST);
                 Map<Long, String> labelMap = goodsLabelList.stream().collect(toMap(GoodsLabel::getFlabelId, GoodsLabel::getFlabelUrl));
+                if (CollectionUtil.isEmpty(labelMap)){
+                    labelMap = Maps.newHashMap();
+                }
+                Map<Long, String> finalLabelMap = labelMap;
                 voList.stream().forEach(vo -> {
                     if (Objects.nonNull(vo.getFlabelId())) {
-                        String labelUrl = labelMap.get(vo.getFlabelId().longValue());
+                        String labelUrl = finalLabelMap.get(vo.getFlabelId().longValue());
                         labelUrl = StringUtil.isNotBlank(labelUrl) ? labelUrl : "";
                         vo.setFlabelUrl(labelUrl);
                     }
