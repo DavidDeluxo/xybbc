@@ -138,7 +138,7 @@ public class SkuServiceImpl implements SkuService {
 
 
         Criteria<SkuUserDiscountConfig, Object> skuUserDiscountConfigCriteria = Criteria.of(SkuUserDiscountConfig.class)
-                .fields(SkuUserDiscountConfig::getFdiscountId,SkuUserDiscountConfig::getFskuId);
+                .fields(SkuUserDiscountConfig::getFdiscountId, SkuUserDiscountConfig::getFskuId);
         skuUserDiscountConfigCriteria.andIn(SkuUserDiscountConfig::getFskuId, skuIdList);
         skuUserDiscountConfigCriteria.andEqualTo(SkuUserDiscountConfig::getFuserTypeId, foperateType);
         skuUserDiscountConfigCriteria.andEqualTo(SkuUserDiscountConfig::getFisDelete, 0);
@@ -150,6 +150,7 @@ public class SkuServiceImpl implements SkuService {
                         , SkuBatchUserPrice::getFbatchSellPrice
                         , SkuBatchUserPrice::getFsupplierSkuBatchId
                         , SkuBatchUserPrice::getFbatchSellPrice);
+        skuBatchUserPriceCriteria.andEqualTo(SkuBatchUserPrice::getFuserTypeId,foperateType);
         skuBatchUserPriceCriteria.andIn(SkuBatchUserPrice::getFsupplierSkuBatchId, supplierSkuBatchIdList);
         skuBatchUserPriceCriteria.orIn(SkuBatchUserPrice::getFbatchPackageId, batchPackageIdList);
         List<SkuBatchUserPrice> skuBatchUserPriceList = ResultUtils.getData(skuBatchUserPriceApi.queryByCriteria(skuBatchUserPriceCriteria));
