@@ -231,10 +231,7 @@ public class SkuServiceImpl implements SkuService {
             price = getSkuNormalPrice(goodsSkuBatchPriceList, skuBatch.getFsupplierSkuBatchId(), skuBatchPackage.getFbatchPackageId());
         } else {
 
-            Optional<SkuUserDiscountConfig> skuUserDiscountConfigOptional = skuUserDiscountConfigList.stream().filter(t ->
-                    foperateType.equals(t.getFuserTypeId()) &&
-                            goodsSku.getFskuId().equals(t.getFskuId())
-            ).findFirst();
+            Optional<SkuUserDiscountConfig> skuUserDiscountConfigOptional = skuUserDiscountConfigList.stream().filter(t -> goodsSku.getFskuId().equals(t.getFskuId())).findFirst();
 
             if (!skuUserDiscountConfigOptional.isPresent()) {
                 price = getSkuNormalPrice(goodsSkuBatchPriceList, skuBatch.getFsupplierSkuBatchId(), skuBatchPackage.getFbatchPackageId());
