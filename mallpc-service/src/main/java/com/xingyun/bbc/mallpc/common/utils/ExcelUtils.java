@@ -89,7 +89,7 @@ public class ExcelUtils {
     public static void createExcelByEasyPoi(String path, String fileName, PageDto pageDto, Class<?> voClass, IExcelExportServer excelExportServer) {
         try {
             //每次查询1千的数据量
-            pageDto.setPageSize(MallPcConstants.EASYPOI_EXPORT_EXCEL_APPEND_OFFSET);
+            pageDto.setPageSize(100);
             try (Workbook workbook = ExcelExportUtil.exportBigExcel(new ExportParams(null, fileName), voClass, excelExportServer, pageDto)) {
                 try (FileOutputStream output = new FileOutputStream(path + fileName + XLSX_SUFFIX)) {
                     workbook.write(output);
