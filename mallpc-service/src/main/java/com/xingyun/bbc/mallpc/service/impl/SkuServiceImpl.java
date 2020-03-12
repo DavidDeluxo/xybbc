@@ -149,10 +149,15 @@ public class SkuServiceImpl implements SkuService {
                 .fields(SkuBatchUserPrice::getFbatchPackageId
                         , SkuBatchUserPrice::getFbatchSellPrice
                         , SkuBatchUserPrice::getFsupplierSkuBatchId
+                        , SkuBatchUserPrice::getFuserTypeId
                         , SkuBatchUserPrice::getFbatchSellPrice);
-        skuBatchUserPriceCriteria.andEqualTo(SkuBatchUserPrice::getFuserTypeId,foperateType);
+        skuBatchUserPriceCriteria.andEqualTo(SkuBatchUserPrice::getFuserTypeId, foperateType);
+
+        skuBatchUserPriceCriteria.andLeft();
         skuBatchUserPriceCriteria.andIn(SkuBatchUserPrice::getFsupplierSkuBatchId, supplierSkuBatchIdList);
         skuBatchUserPriceCriteria.orIn(SkuBatchUserPrice::getFbatchPackageId, batchPackageIdList);
+        skuBatchUserPriceCriteria.addRight();
+
         List<SkuBatchUserPrice> skuBatchUserPriceList = ResultUtils.getData(skuBatchUserPriceApi.queryByCriteria(skuBatchUserPriceCriteria));
 
         for (GoodsSku goodsSku : goodsSkuList) {
@@ -237,9 +242,7 @@ public class SkuServiceImpl implements SkuService {
             if (!skuUserDiscountConfigOptional.isPresent()) {
                 price = getSkuNormalPrice(goodsSkuBatchPriceList, skuBatch.getFsupplierSkuBatchId(), skuBatchPackage.getFbatchPackageId());
             } else {
-                Optional<SkuBatchUserPrice> goodsSkuBatchPriceOptional = skuBatchUserPriceList.stream().filter(t ->
-                        StringUtils.equals(t.getFsupplierSkuBatchId(), skuBatch.getFsupplierSkuBatchId()) &&
-                                skuBatchPackage.getFbatchPackageId().equals(t.getFbatchPackageId())
+                Optional<SkuBatchUserPrice> goodsSkuBatchPriceOptional = skuBatchUserPriceList.stream().filter(t -> StringUtils.equals(t.getFsupplierSkuBatchId(), skuBatch.getFsupplierSkuBatchId()) && skuBatchPackage.getFbatchPackageId().equals(t.getFbatchPackageId()) && Long.valueOf(foperateType).equals(t.getFuserTypeId())
                 ).findFirst();
                 price = goodsSkuBatchPriceOptional.isPresent() ? new BigDecimal(goodsSkuBatchPriceOptional.get().getFbatchSellPrice()) : getSkuNormalPrice(goodsSkuBatchPriceList, skuBatch.getFsupplierSkuBatchId(), skuBatchPackage.getFbatchPackageId());
             }
