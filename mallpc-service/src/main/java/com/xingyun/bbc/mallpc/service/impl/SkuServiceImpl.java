@@ -138,7 +138,7 @@ public class SkuServiceImpl implements SkuService {
 
 
         Criteria<SkuUserDiscountConfig, Object> skuUserDiscountConfigCriteria = Criteria.of(SkuUserDiscountConfig.class)
-                .fields(SkuUserDiscountConfig::getFdiscountId);
+                .fields(SkuUserDiscountConfig::getFdiscountId,SkuUserDiscountConfig::getFskuId);
         skuUserDiscountConfigCriteria.andIn(SkuUserDiscountConfig::getFskuId, skuIdList);
         skuUserDiscountConfigCriteria.andEqualTo(SkuUserDiscountConfig::getFuserTypeId, foperateType);
         skuUserDiscountConfigCriteria.andEqualTo(SkuUserDiscountConfig::getFisDelete, 0);
