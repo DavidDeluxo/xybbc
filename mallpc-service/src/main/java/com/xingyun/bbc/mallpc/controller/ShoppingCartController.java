@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mallpc.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.model.dto.shoppingcart.ShoppingCartDto;
 import com.xingyun.bbc.mallpc.model.validation.ShoppingCartValidator;
@@ -7,6 +8,7 @@ import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartGoodsVo;
 import com.xingyun.bbc.mallpc.model.vo.shoppingcart.ShoppingCartVo;
 import com.xingyun.bbc.mallpc.service.ShoppingCartService;
 import com.xingyun.bbc.order.model.vo.order.OrderSettleVo;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +26,7 @@ import java.util.List;
  * @date 2019-11-19
  * @copyright 本内容仅限于深圳市天行云供应链有限公司内部传阅，禁止外泄以及用于其他的商业目的
  */
+@Slf4j
 @RestController
 @RequestMapping(value = "shoppingCart")
 public class ShoppingCartController {
@@ -105,6 +108,7 @@ public class ShoppingCartController {
      */
     @PostMapping("refresh")
     public Result<List<ShoppingCartGoodsVo>> refresh(@RequestBody @Validated(ShoppingCartValidator.Refresh.class) ShoppingCartDto shoppingCartDto) {
+        log.info("参数shoppingCartDto:{}", JSON.toJSONString(shoppingCartDto));
         return shoppingCartService.refresh(shoppingCartDto);
     }
 
