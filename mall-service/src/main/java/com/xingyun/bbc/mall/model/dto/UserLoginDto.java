@@ -45,6 +45,9 @@ public class UserLoginDto {
     @ApiModelProperty("设备类型: 1iOS 2安卓")
     private Integer fdeviceType;
 
+    @ApiModelProperty("app版本号")
+    private String fappVersion;
+
     @ApiModelProperty("是否触发滑块验证 0否 1是")
     private Integer isCheck;
 

@@ -29,7 +29,7 @@ public class UserController {
 
     @ApiOperation("登陆")
     @PostMapping("/via/userLogin")
-    public Result<UserLoginVo> userLogin(@RequestBody UserLoginDto dto,HttpServletRequest request) {
+    public Result<UserLoginVo> userLogin(@RequestBody UserLoginDto dto, HttpServletRequest request) {
         dto.setIpAddress(HttpUtil.getClientIP(request));
         if(request.getHeader("source") != null){
             if(request.getHeader("source").equals("Android")){
@@ -37,6 +37,7 @@ public class UserController {
             }else if(request.getHeader("source").equals("iOS")){
                 dto.setFdeviceType(1);
             }
+            dto.setFappVersion(request.getHeader("appVersion"));
         }
         return userService.userLogin(dto);
     }

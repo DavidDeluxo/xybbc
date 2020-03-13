@@ -28,15 +28,9 @@ import com.xingyun.bbc.core.operate.po.MarketUser;
 import com.xingyun.bbc.core.operate.po.MarketUserStatistics;
 import com.xingyun.bbc.core.operate.po.MessageUserDevice;
 import com.xingyun.bbc.core.query.Criteria;
-import com.xingyun.bbc.core.user.api.UserAccountApi;
-import com.xingyun.bbc.core.user.api.UserApi;
-import com.xingyun.bbc.core.user.api.UserLoginInformationApi;
-import com.xingyun.bbc.core.user.api.UserVerifyApi;
+import com.xingyun.bbc.core.user.api.*;
 import com.xingyun.bbc.core.user.enums.UserVerifyEnums;
-import com.xingyun.bbc.core.user.po.User;
-import com.xingyun.bbc.core.user.po.UserAccount;
-import com.xingyun.bbc.core.user.po.UserLoginInformation;
-import com.xingyun.bbc.core.user.po.UserVerify;
+import com.xingyun.bbc.core.user.po.*;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mall.base.enums.*;
 import com.xingyun.bbc.mall.base.utils.DozerHolder;
@@ -45,6 +39,7 @@ import com.xingyun.bbc.mall.base.utils.Md5Utils;
 import com.xingyun.bbc.mall.base.utils.ResultUtils;
 import com.xingyun.bbc.mall.common.RedisHolder;
 import com.xingyun.bbc.mall.common.constans.UserConstants;
+import com.xingyun.bbc.mall.common.ensure.EnsureHelper;
 import com.xingyun.bbc.mall.common.exception.MallExceptionCode;
 import com.xingyun.bbc.mall.common.lock.XybbcLock;
 import com.xingyun.bbc.mall.infrastructure.message.interceptor.ModifyMobileMessage;
@@ -63,6 +58,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -92,6 +88,8 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserApi userApi;
+    @Resource
+    private UserAppVersionApi userAppVersionApi;
     @Autowired
     private UserAccountApi userAccountApi;
     @Autowired
@@ -170,7 +168,33 @@ public class UserServiceImpl implements UserService {
         }
         //更新用户登录信息
         updateUserLoginInformation(dto, userResult.getData().getFuid());
+        //根据登录信息更新用户-app版本号关系
+        updateUserAppVersion(dto, userResult.getData().getFuid());
         return Result.success(userLoginVo);
+    }
+
+    /**
+     * 根据登录信息更新用户-app版本号关系
+     */
+    private void updateUserAppVersion(UserLoginDto dto, Long fuid) {
+        if (Objects.isNull(dto.getFdeviceType()) || Objects.isNull(dto.getFappVersion()) || Objects.isNull(fuid)) {
+            return;
+        }
+        UserAppVersion appVersion = EnsureHelper.checkSuccessAndGetData(userAppVersionApi.queryOneByCriteria(Criteria.of(UserAppVersion.class).andEqualTo(UserAppVersion::getFuid, fuid)));
+        //用户-版本号关联关系没变化,直接返回
+        if (Objects.nonNull(appVersion) && dto.getFappVersion().equals(appVersion.getFversionNo()) && dto.getFdeviceType().equals(appVersion.getFplatform())) {
+            return;
+        }
+        UserAppVersion userAppVersion = new UserAppVersion();
+        userAppVersion.setFuid(fuid);
+        userAppVersion.setFplatform(dto.getFdeviceType());
+        userAppVersion.setFversionNo(dto.getFappVersion());
+        //原本没有该用户的记录,则创建,否则更新
+        if (Objects.isNull(appVersion)) {
+            EnsureHelper.checkSuccess(userAppVersionApi.create(userAppVersion));
+        } else {
+            EnsureHelper.checkSuccess(userAppVersionApi.updateNotNull(userAppVersion));
+        }
     }
 
 //    private void updateUserDevice(UserLoginDto dto,Long fuid) {
