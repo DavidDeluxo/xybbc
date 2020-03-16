@@ -5,6 +5,7 @@ import com.xingyun.bbc.mallpc.model.dto.detail.GoodsDetailMallDto;
 import com.xingyun.bbc.mallpc.model.dto.detail.ReceiveCouponDto;
 import com.xingyun.bbc.mallpc.model.vo.detail.*;
 
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +22,9 @@ public interface GoodDetailService {
 
     //获取各种规格
     Result<GoodspecificationVo> getGoodsSpecifi(Long fgoodsId);
+
+    //判断日期是否同年月
+    Boolean isSameYearAndMonth(Calendar cal1, Calendar cal2);
 
 //    //获取sku批次有效期
 //    Result<List<GoodsSkuBatchVo>> getSkuBatchSpecifi(Long fskuId);

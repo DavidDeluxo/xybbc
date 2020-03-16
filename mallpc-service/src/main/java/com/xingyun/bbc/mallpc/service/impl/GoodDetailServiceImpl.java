@@ -444,7 +444,7 @@ public class GoodDetailServiceImpl implements GoodDetailService {
         return "";
     }
 
-    public static boolean isSameYearAndMonth(Calendar cal1, Calendar cal2) {
+    public Boolean isSameYearAndMonth(Calendar cal1, Calendar cal2) {
         if (Objects.nonNull(cal1) && Objects.nonNull(cal2)) {
             boolean isSameYear = cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR);
             boolean isSameMonth = cal1.get(Calendar.MONTH) == cal2.get(Calendar.MONTH);

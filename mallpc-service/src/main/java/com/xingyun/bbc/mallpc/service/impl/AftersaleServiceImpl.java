@@ -38,6 +38,7 @@ import com.xingyun.bbc.mallpc.model.vo.aftersale.AftersaleBackVo;
 import com.xingyun.bbc.mallpc.model.vo.aftersale.AftersaleDetailVo;
 import com.xingyun.bbc.mallpc.model.vo.aftersale.AftersaleListVo;
 import com.xingyun.bbc.mallpc.service.AftersaleService;
+import com.xingyun.bbc.mallpc.service.GoodDetailService;
 import com.xingyun.bbc.message.business.MessagePushChannel;
 import com.xingyun.bbc.message.model.dto.MsgPushDto;
 import com.xingyun.bbc.message.model.dto.MsgTemplateVariableDto;
@@ -124,6 +125,8 @@ public class AftersaleServiceImpl implements AftersaleService {
     @Autowired
     private AsyncTaskExecutor asyncTaskExecutor;
 
+    @Autowired
+    private GoodDetailService goodDetailService;
 
     @Override
     public Result<PageVo<AftersaleListVo>> getAftersaleLis(AftersalePcLisDto aftersaleLisDto) {
@@ -485,10 +488,21 @@ public class AftersaleServiceImpl implements AftersaleService {
         SkuBatch data = skuBatchResult.getData();
         if (skuBatchResult.isSuccess() && null != data) {
             StringBuffer sb = new StringBuffer();
-            validityPeriod = sb.append(sdf.format(data.getFqualityStartDate())).append("~").append(sdf.format(data.getFqualityEndDate())).toString();
+            if (Objects.nonNull(data.getFqualityStartDate()) && Objects.nonNull(data.getFqualityEndDate())) {
+                Calendar startDateCal = Calendar.getInstance();
+                Calendar endDateCal = Calendar.getInstance();
+                startDateCal.setTime(data.getFqualityStartDate());
+                endDateCal.setTime(data.getFqualityEndDate());
+                if (goodDetailService.isSameYearAndMonth(startDateCal, endDateCal)) {
+                    validityPeriod = sb.append(sdf.format(data.getFqualityStartDate())).toString();
+                } else {
+                    validityPeriod = sb.append(sdf.format(data.getFqualityStartDate())).append("~").append(sdf.format(data.getFqualityEndDate())).toString();
+                }
+            }
         }
         return validityPeriod;
     }
+
 
     //获取订单收件人信息
     private OrderAftersaleBack getNameMobile(String forderId) {
