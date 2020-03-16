@@ -429,13 +429,28 @@ public class GoodDetailServiceImpl implements GoodDetailService {
             Calendar endCal = Calendar.getInstance();
             endCal.setTime(fqualityEndDate);
             StringBuffer sbf = new StringBuffer();
-            sbf.append(String.valueOf(startCal.get(Calendar.YEAR)).substring(2, 4)).append("年")
-                    .append(startCal.get(Calendar.MONTH) + 1).append("月").append("~")
-                    .append(String.valueOf(endCal.get(Calendar.YEAR)).substring(2, 4)).append("年")
-                    .append(endCal.get(Calendar.MONTH) + 1).append("月");
+            //2020/03/16 同效合一 如果效期年份和月份相同,则展示一个日期
+            if (isSameYearAndMonth(startCal, endCal)) {
+                sbf.append(String.valueOf(startCal.get(Calendar.YEAR)).substring(2, 4)).append("年")
+                        .append(startCal.get(Calendar.MONTH) + 1).append("月");
+            } else {
+                sbf.append(String.valueOf(startCal.get(Calendar.YEAR)).substring(2, 4)).append("年")
+                        .append(startCal.get(Calendar.MONTH) + 1).append("月").append("~")
+                        .append(String.valueOf(endCal.get(Calendar.YEAR)).substring(2, 4)).append("年")
+                        .append(endCal.get(Calendar.MONTH) + 1).append("月");
+            }
             return sbf.toString();
         }
         return "";
+    }
+
+    public static boolean isSameYearAndMonth(Calendar cal1, Calendar cal2) {
+        if (Objects.nonNull(cal1) && Objects.nonNull(cal2)) {
+            boolean isSameYear = cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR);
+            boolean isSameMonth = cal1.get(Calendar.MONTH) == cal2.get(Calendar.MONTH);
+            return isSameYear && isSameMonth;
+        }
+        return false;
     }
 
     @Override
