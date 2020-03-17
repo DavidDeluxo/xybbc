@@ -36,7 +36,7 @@ public class SearchItemVo {
     private Integer fgoodsId;
 
     @ApiModelProperty("商品库存剩余数量")
-    private Integer fremainTotal;
+    private Long fremainTotal;
 
     @ApiModelProperty(value = "sku状态(1.已上架 2.已下架 3.待上架 4.新增)", hidden = true)
     private Integer fskuStatus;
