@@ -16,6 +16,7 @@ import com.xingyun.bbc.core.sku.api.*;
 import com.xingyun.bbc.core.sku.po.*;
 import com.xingyun.bbc.core.utils.Result;
 import com.xingyun.bbc.mallpc.common.components.DozerHolder;
+import com.xingyun.bbc.mallpc.common.exception.MallPcExceptionCode;
 import com.xingyun.bbc.mallpc.common.utils.PriceUtil;
 import com.xingyun.bbc.mallpc.common.utils.ResultUtils;
 import com.xingyun.bbc.mallpc.model.dto.search.SearchItemDto;
@@ -99,7 +100,7 @@ public class SubjectServiceImpl implements SubjectService {
         Subject subject = subjectResult.getData();
         if (subject == null) {
             logger.info("专题id[{}]信息不存在", fsubjectId);
-            return null;
+            throw new BizException(MallPcExceptionCode.SUBJECT_NOT_FOUND);
         }
         if (subject.getFsubjectContentType().equals(3)) {
             Coupon coupon = ResultUtils.getDataNotNull(couponApi.queryById(subject.getFcouponId()));

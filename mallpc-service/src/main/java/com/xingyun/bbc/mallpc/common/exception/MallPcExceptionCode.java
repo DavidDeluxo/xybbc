@@ -141,6 +141,11 @@ public class MallPcExceptionCode implements IResultStatus {
     public static final MallPcExceptionCode CODE_IS_USED = new MallPcExceptionCode("6010", "该券码已兑换过");
 
     /**
+     * Mall专题
+     */
+    public static final MallPcExceptionCode SUBJECT_NOT_FOUND = new MallPcExceptionCode("2000", "找不到该专题");
+
+    /**
      * SKU错误信息
      */
     public static final MallPcExceptionCode SKU_IS_NONE = new MallPcExceptionCode("5000", "查不到sku信息");
