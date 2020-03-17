@@ -19,14 +19,8 @@ import com.xingyun.bbc.core.market.api.CouponReceiveApi;
 import com.xingyun.bbc.core.market.po.Coupon;
 import com.xingyun.bbc.core.market.po.CouponBindUser;
 import com.xingyun.bbc.core.market.po.CouponReceive;
-import com.xingyun.bbc.core.operate.api.CityRegionApi;
-import com.xingyun.bbc.core.operate.api.MarketUserApi;
-import com.xingyun.bbc.core.operate.api.MarketUserStatisticsApi;
-import com.xingyun.bbc.core.operate.api.MessageUserDeviceApi;
-import com.xingyun.bbc.core.operate.po.CityRegion;
-import com.xingyun.bbc.core.operate.po.MarketUser;
-import com.xingyun.bbc.core.operate.po.MarketUserStatistics;
-import com.xingyun.bbc.core.operate.po.MessageUserDevice;
+import com.xingyun.bbc.core.operate.api.*;
+import com.xingyun.bbc.core.operate.po.*;
 import com.xingyun.bbc.core.query.Criteria;
 import com.xingyun.bbc.core.user.api.*;
 import com.xingyun.bbc.core.user.enums.UserVerifyEnums;
@@ -55,6 +49,7 @@ import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -90,6 +85,8 @@ public class UserServiceImpl implements UserService {
     private UserApi userApi;
     @Resource
     private UserAppVersionApi userAppVersionApi;
+    @Resource
+    private AppVersionApi appVersionApi;
     @Autowired
     private UserAccountApi userAccountApi;
     @Autowired
@@ -131,6 +128,10 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private RegisterListenerMessage registerListenerMessage;
 
+    @Resource(name = "threadPoolTaskExecutor")
+    private TaskExecutor taskExecutor;
+
+
     @Override
     public Result<UserLoginVo> userLogin(UserLoginDto dto) {
         String passWord = EncryptUtils.aesDecrypt(dto.getPassword());
@@ -169,7 +170,7 @@ public class UserServiceImpl implements UserService {
         //更新用户登录信息
         updateUserLoginInformation(dto, userResult.getData().getFuid());
         //根据登录信息更新用户-app版本号关系
-        updateUserAppVersion(dto, userResult.getData().getFuid());
+        taskExecutor.execute(() -> this.updateUserAppVersion(dto, userResult.getData().getFuid()));
         return Result.success(userLoginVo);
     }
 
@@ -180,17 +181,20 @@ public class UserServiceImpl implements UserService {
         if (Objects.isNull(dto.getFdeviceType()) || Objects.isNull(dto.getFappVersion()) || Objects.isNull(fuid)) {
             return;
         }
-        UserAppVersion appVersion = EnsureHelper.checkSuccessAndGetData(userAppVersionApi.queryOneByCriteria(Criteria.of(UserAppVersion.class).andEqualTo(UserAppVersion::getFuid, fuid)));
+        AppVersion appVersion = EnsureHelper.checkNotNullAndGetData(appVersionApi.queryOneByCriteria(Criteria.of(AppVersion.class).andEqualTo(AppVersion::getFversionNo, dto.getFappVersion())
+                .andIn(AppVersion::getFplatform, Arrays.asList(dto.getFdeviceType(), 0))));
+        UserAppVersion oldAppVersion = EnsureHelper.checkSuccessAndGetData(userAppVersionApi.queryOneByCriteria(Criteria.of(UserAppVersion.class).andEqualTo(UserAppVersion::getFuid, fuid)));
         //用户-版本号关联关系没变化,直接返回
-        if (Objects.nonNull(appVersion) && dto.getFappVersion().equals(appVersion.getFversionNo()) && dto.getFdeviceType().equals(appVersion.getFplatform())) {
+        if (Objects.nonNull(oldAppVersion) && dto.getFappVersion().equals(oldAppVersion.getFversionNo()) && dto.getFdeviceType().equals(oldAppVersion.getFplatform())) {
             return;
         }
         UserAppVersion userAppVersion = new UserAppVersion();
         userAppVersion.setFuid(fuid);
+        userAppVersion.setFversionId(appVersion.getFid());
         userAppVersion.setFplatform(dto.getFdeviceType());
         userAppVersion.setFversionNo(dto.getFappVersion());
         //原本没有该用户的记录,则创建,否则更新
-        if (Objects.isNull(appVersion)) {
+        if (Objects.isNull(oldAppVersion)) {
             EnsureHelper.checkSuccess(userAppVersionApi.create(userAppVersion));
         } else {
             EnsureHelper.checkSuccess(userAppVersionApi.updateNotNull(userAppVersion));
