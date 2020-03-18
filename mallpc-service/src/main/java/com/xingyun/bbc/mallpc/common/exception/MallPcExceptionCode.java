@@ -151,4 +151,6 @@ public class MallPcExceptionCode implements IResultStatus {
     public static final MallPcExceptionCode SKU_IS_NONE = new MallPcExceptionCode("5000", "查不到sku信息");
 
     public static final MallPcExceptionCode FILE_NOT_EXIST = new MallPcExceptionCode("5001", "文件不存在");
+
+    public static final MallPcExceptionCode ORDER_OVER_ERROR = new MallPcExceptionCode("5002", "抱歉，当前最多可导入%s个商品");
 }
