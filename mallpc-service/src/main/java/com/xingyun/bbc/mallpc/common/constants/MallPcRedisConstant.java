@@ -13,6 +13,16 @@ public interface MallPcRedisConstant {
      */
     long DEFAULT_LOCK_EXPIRING = 5L;
 
+    /**
+     * 1分钟 失效时间
+     */
+    Long EXPIRE_TIME_MIN = 60L;
+
+    /**
+     * 1小时 失效时间
+     */
+    Long EXPIRE_TIME_HOUR = 60 * EXPIRE_TIME_MIN;
+
     String KEY_PREFIX = "pc_mall:";
 
     /**
@@ -57,7 +67,6 @@ public interface MallPcRedisConstant {
      */
     String PC_MALL_PAGECONFIG_TOPIC_UPDATE = KEY_PREFIX + "topic_lock";
 
-
     /**
      * pc发送验证码前缀
      */
@@ -79,4 +88,8 @@ public interface MallPcRedisConstant {
 
     String SALE_SKU_TMP_FILE = TMP_FILE + "sale_sku:";
 
+    /**
+     * 导入进货单 临时redis key 前缀
+     */
+    String IMPORT_SHOPPING_CART_NO_PREFIX = "import_shopping_cart_no:";
 }
