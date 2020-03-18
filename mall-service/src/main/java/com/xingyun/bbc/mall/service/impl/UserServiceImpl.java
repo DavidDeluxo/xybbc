@@ -134,6 +134,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Result<UserLoginVo> userLogin(UserLoginDto dto) {
+        logger.info("进入userLogin,UserLoginDto:{},fuid:{}", JSON.toJSONString(dto));
         String passWord = EncryptUtils.aesDecrypt(dto.getPassword());
         if (passWord == null || passWord.equals("")) {
             return Result.failure(MallResultStatus.LOGIN_FAILURE);
@@ -170,6 +171,7 @@ public class UserServiceImpl implements UserService {
         //更新用户登录信息
         updateUserLoginInformation(dto, userResult.getData().getFuid());
         //根据登录信息更新用户-app版本号关系
+        logger.info("根据登录信息更新用户-app版本号关系,UserLoginDto:{},fuid:{}", JSON.toJSONString(dto), userResult.getData().getFuid());
         taskExecutor.execute(() -> this.updateUserAppVersion(dto, userResult.getData().getFuid()));
         return Result.success(userLoginVo);
     }
@@ -178,6 +180,7 @@ public class UserServiceImpl implements UserService {
      * 根据登录信息更新用户-app版本号关系
      */
     private void updateUserAppVersion(UserLoginDto dto, Long fuid) {
+        logger.info("UserLoginDto:{},fuid:{}", JSON.toJSONString(dto), fuid);
         if (Objects.isNull(dto.getFdeviceType()) || Objects.isNull(dto.getFappVersion()) || Objects.isNull(fuid)) {
             return;
         }
