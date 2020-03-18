@@ -1,5 +1,6 @@
 package com.xingyun.bbc.mall.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.base.Strings;
 import com.xingyun.bbc.activity.api.CouponProviderApi;
@@ -14,9 +15,13 @@ import com.xingyun.bbc.core.exception.BizException;
 import com.xingyun.bbc.core.helper.api.EmailApi;
 import com.xingyun.bbc.core.helper.api.SMSApi;
 import com.xingyun.bbc.core.market.api.CouponApi;
+import com.xingyun.bbc.core.market.api.CouponAppVersionApi;
 import com.xingyun.bbc.core.market.api.CouponBindUserApi;
 import com.xingyun.bbc.core.market.api.CouponReceiveApi;
+import com.xingyun.bbc.core.market.enums.CouponReleaseTypeEnum;
+import com.xingyun.bbc.core.market.enums.CouponStatusEnum;
 import com.xingyun.bbc.core.market.po.Coupon;
+import com.xingyun.bbc.core.market.po.CouponAppVersion;
 import com.xingyun.bbc.core.market.po.CouponBindUser;
 import com.xingyun.bbc.core.market.po.CouponReceive;
 import com.xingyun.bbc.core.operate.api.*;
@@ -86,6 +91,8 @@ public class UserServiceImpl implements UserService {
     @Resource
     private UserAppVersionApi userAppVersionApi;
     @Resource
+    private CouponAppVersionApi couponAppVersionApi;
+    @Resource
     private AppVersionApi appVersionApi;
     @Autowired
     private UserAccountApi userAccountApi;
@@ -134,7 +141,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Result<UserLoginVo> userLogin(UserLoginDto dto) {
-        logger.info("进入userLogin,UserLoginDto:{},fuid:{}", JSON.toJSONString(dto));
         String passWord = EncryptUtils.aesDecrypt(dto.getPassword());
         if (passWord == null || passWord.equals("")) {
             return Result.failure(MallResultStatus.LOGIN_FAILURE);
@@ -171,7 +177,6 @@ public class UserServiceImpl implements UserService {
         //更新用户登录信息
         updateUserLoginInformation(dto, userResult.getData().getFuid());
         //根据登录信息更新用户-app版本号关系
-        logger.info("根据登录信息更新用户-app版本号关系,UserLoginDto:{},fuid:{}", JSON.toJSONString(dto), userResult.getData().getFuid());
         taskExecutor.execute(() -> this.updateUserAppVersion(dto, userResult.getData().getFuid()));
         return Result.success(userLoginVo);
     }
@@ -180,15 +185,15 @@ public class UserServiceImpl implements UserService {
      * 根据登录信息更新用户-app版本号关系
      */
     private void updateUserAppVersion(UserLoginDto dto, Long fuid) {
-        logger.info("UserLoginDto:{},fuid:{}", JSON.toJSONString(dto), fuid);
+        logger.info("根据登录信息更新用户-app版本号关系,userLoginDto:{},fuid:{}", JSON.toJSONString(dto), fuid);
         if (Objects.isNull(dto.getFdeviceType()) || Objects.isNull(dto.getFappVersion()) || Objects.isNull(fuid)) {
             return;
         }
         AppVersion appVersion = EnsureHelper.checkNotNullAndGetData(appVersionApi.queryOneByCriteria(Criteria.of(AppVersion.class).andEqualTo(AppVersion::getFversionNo, dto.getFappVersion())
                 .andIn(AppVersion::getFplatform, Arrays.asList(dto.getFdeviceType(), 0))));
-        UserAppVersion oldAppVersion = EnsureHelper.checkSuccessAndGetData(userAppVersionApi.queryOneByCriteria(Criteria.of(UserAppVersion.class).andEqualTo(UserAppVersion::getFuid, fuid)));
+        UserAppVersion oldUserAppVersion = EnsureHelper.checkSuccessAndGetData(userAppVersionApi.queryOneByCriteria(Criteria.of(UserAppVersion.class).andEqualTo(UserAppVersion::getFuid, fuid)));
         //用户-版本号关联关系没变化,直接返回
-        if (Objects.nonNull(oldAppVersion) && dto.getFappVersion().equals(oldAppVersion.getFversionNo()) && dto.getFdeviceType().equals(oldAppVersion.getFplatform())) {
+        if (Objects.nonNull(oldUserAppVersion) && dto.getFappVersion().equals(oldUserAppVersion.getFversionNo()) && dto.getFdeviceType().equals(oldUserAppVersion.getFplatform())) {
             return;
         }
         UserAppVersion userAppVersion = new UserAppVersion();
@@ -197,11 +202,42 @@ public class UserServiceImpl implements UserService {
         userAppVersion.setFplatform(dto.getFdeviceType());
         userAppVersion.setFversionNo(dto.getFappVersion());
         //原本没有该用户的记录,则创建,否则更新
-        if (Objects.isNull(oldAppVersion)) {
+        if (Objects.isNull(oldUserAppVersion)) {
             EnsureHelper.checkSuccess(userAppVersionApi.create(userAppVersion));
         } else {
             EnsureHelper.checkSuccess(userAppVersionApi.updateNotNull(userAppVersion));
         }
+        //发送指定app版本优惠券
+        receiveCouponForSpecifyAppVersion(fuid,appVersion.getFid());
+
+    }
+
+    /**
+     * 发送指定app版本优惠券
+     *
+     * @param fuid
+     */
+    private void receiveCouponForSpecifyAppVersion(Long fuid,Integer fversionId) {
+        Criteria<Coupon, Object> couponObjectCriteria = Criteria.of(Coupon.class).fields(Coupon::getFcouponId)
+                .andEqualTo(Coupon::getFcouponStatus, CouponStatusEnum.PUSHED.getCode()).andEqualTo(Coupon::getFreleaseType, CouponReleaseTypeEnum.SPECIFY_APP_VERSION.getCode())
+                .andGreaterThan(Coupon::getFsurplusReleaseQty, 0);
+        List<Coupon> coupons = EnsureHelper.checkNotNullAndGetData(couponApi.queryByCriteria(couponObjectCriteria));
+        if(CollectionUtil.isEmpty(coupons)){
+            return;
+        }
+        List<Long> fcouponIds = coupons.stream().map(Coupon::getFcouponId).collect(Collectors.toList());
+        List<CouponAppVersion> couponAppVersions = EnsureHelper.checkNotNullAndGetData(couponAppVersionApi.queryByCriteria(Criteria.of(CouponAppVersion.class)
+                .andIn(CouponAppVersion::getFcouponId,fcouponIds)
+                .andEqualTo(CouponAppVersion::getFcouponId, fversionId)));
+        couponAppVersions.forEach(
+                couponAppVersion -> {
+                    CouponReleaseDto dto = new CouponReleaseDto();
+                    dto.setCouponScene(CouponScene.SPECIFY_APP_VERSION);
+                    dto.setCouponId(couponAppVersion.getFcouponId());
+                    dto.setUserId(fuid);
+                    couponProviderApi.receive(dto);
+                }
+        );
     }
 
 //    private void updateUserDevice(UserLoginDto dto,Long fuid) {
